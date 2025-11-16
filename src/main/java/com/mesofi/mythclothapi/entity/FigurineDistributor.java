@@ -12,7 +12,7 @@ import lombok.Setter;
 public class FigurineDistributor {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private long id;
+  private Long id;
 
   // Many figurines → many distributions
   @ManyToOne(optional = false)
