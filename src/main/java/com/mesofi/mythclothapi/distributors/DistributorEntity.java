@@ -28,6 +28,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(
+    name = "distributors",
     uniqueConstraints =
         @UniqueConstraint(
             name = "uk_distributor_name_country",

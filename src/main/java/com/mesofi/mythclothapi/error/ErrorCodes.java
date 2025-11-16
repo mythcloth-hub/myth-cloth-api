@@ -1,0 +1,10 @@
+package com.mesofi.mythclothapi.error;
+
+public enum ErrorCodes {
+  DISTRIBUTOR_ALREADY_EXISTS,
+  DISTRIBUTOR_NOT_FOUND,
+  // FIGURE_NOT_FOUND,
+  // FIGURE_ALREADY_EXISTS,
+  INVALID_REQUEST,
+  INTERNAL_ERROR
+}

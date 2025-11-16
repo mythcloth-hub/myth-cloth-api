@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: myth-cloth-api
+
+  datasource:
+    url: jdbc:h2:mem:mythcclothtest;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true   # <- Pretty-print SQL
+        show_sql: true     # <- Log SQL to console
+        use_sql_comments: false # <- Adds Hibernate comments to queries
+
+server:
+  servlet:
+    context-path: /api/v1
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters

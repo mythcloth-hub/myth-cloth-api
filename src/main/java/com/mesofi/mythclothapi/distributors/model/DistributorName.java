@@ -4,10 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum DistributorName {
-  DTM("Distribuidora Mexico"),
+  BANDAI("Tamashii Nations"),
+  DTM("Distribuidora Toyvision México"),
   DAM("Distribuidora Animéxico"),
   DS_DISTRIBUTIONS("DS Distribuciones"),
-  BLUE_FIN("Blue Fin");
+  BLUE_FIN("Bluefin");
+
   private final String description;
 
   DistributorName(String description) {
