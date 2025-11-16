@@ -1,8 +1,7 @@
-package com.mesofi.mythclothapi.controller;
+package com.mesofi.mythclothapi.distributors;
 
-import com.mesofi.mythclothapi.model.DistributorRequest;
-import com.mesofi.mythclothapi.model.DistributorResponse;
-import com.mesofi.mythclothapi.service.DistributorService;
+import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
+import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +27,4 @@ public class DistributorController {
   public List<DistributorResponse> retrieveDistributors() {
     return distributorService.retrieveDistributors();
   }
-
-  // @PostMapping
-  // public ResponseEntity<Figurine> createFigurine(@RequestBody Figurine figurine) { ... }
-
-  // @PutMapping("/{id}")
-  // public ResponseEntity<Figurine> updateFigurine(@PathVariable Long id, @RequestBody Figurine
-  // figurine) { ... }
 }

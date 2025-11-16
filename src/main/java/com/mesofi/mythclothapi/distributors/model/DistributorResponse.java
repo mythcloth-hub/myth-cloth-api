@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.model;
+package com.mesofi.mythclothapi.distributors.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

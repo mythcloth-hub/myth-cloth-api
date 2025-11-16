@@ -1,7 +1,8 @@
-package com.mesofi.mythclothapi.entity;
+package com.mesofi.mythclothapi.distributors;
 
-import com.mesofi.mythclothapi.model.CountryCode;
-import com.mesofi.mythclothapi.model.DistributorName;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.distributors.model.DistributorName;
+import com.mesofi.mythclothapi.entity.FigurineDistributor;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +17,7 @@ import lombok.Setter;
         @UniqueConstraint(
             name = "uk_distributor_name_country",
             columnNames = {"name", "country"}))
-public class Distributor {
+public class DistributorEntity {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private long id;

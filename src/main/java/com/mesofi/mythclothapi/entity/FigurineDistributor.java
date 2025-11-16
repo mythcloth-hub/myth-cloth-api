@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.entity;
 
+import com.mesofi.mythclothapi.distributors.DistributorEntity;
 import com.mesofi.mythclothapi.model.CurrencyCode;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,7 +19,7 @@ public class FigurineDistributor {
   private Figurine figurine;
 
   @ManyToOne(optional = false)
-  private Distributor distributor;
+  private DistributorEntity distributor;
 
   private Double price; // Price for that territory
   private CurrencyCode currency; // MXN, JPY, USD, etc

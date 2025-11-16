@@ -1,9 +1,7 @@
-package com.mesofi.mythclothapi.service;
+package com.mesofi.mythclothapi.distributors;
 
-import com.mesofi.mythclothapi.mapper.DistributorMapper;
-import com.mesofi.mythclothapi.model.DistributorRequest;
-import com.mesofi.mythclothapi.model.DistributorResponse;
-import com.mesofi.mythclothapi.repository.DistributorRepository;
+import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
+import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

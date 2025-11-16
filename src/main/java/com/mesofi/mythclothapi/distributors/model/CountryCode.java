@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.model;
+package com.mesofi.mythclothapi.distributors.model;
 
 public enum CountryCode {
   JP,
