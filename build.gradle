@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.25.0'
+    id 'jacoco'
 }
 
 group = 'com.mesofi'
@@ -29,6 +30,23 @@ spotless {
         indentWithSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true   // for CI tools
+        html.required = true  // human-readable report
     }
 }
 
