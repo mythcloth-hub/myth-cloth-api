@@ -1,12 +1,13 @@
 package com.mesofi.mythclothapi.distributors;
 
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+
+import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
+import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 
 /**
  * MapStruct mapper responsible for converting between distributor-related DTOs ({@link
@@ -40,7 +41,9 @@ public interface DistributorMapper {
    * @param distributorEntity the entity to map
    * @return a mapped {@link DistributorResponse}
    */
-  @Mapping(target = "name", expression = "java(distributorEntity.getName().getDescription())")
+  @Mapping(
+      target = "description",
+      expression = "java(distributorEntity.getName().getDescription())")
   DistributorResponse toDistributorResponse(DistributorEntity distributorEntity);
 
   /**

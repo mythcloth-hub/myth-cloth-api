@@ -1,9 +1,5 @@
 package com.mesofi.mythclothapi.service;
 
-import com.mesofi.mythclothapi.entity.Figurine;
-import com.mesofi.mythclothapi.entity.FigurineDistributor;
-import com.mesofi.mythclothapi.model.CurrencyCode;
-import com.mesofi.mythclothapi.repository.FigurineRepository;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -14,11 +10,18 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
+
+import com.mesofi.mythclothapi.entity.Figurine;
+import com.mesofi.mythclothapi.entity.FigurineDistributor;
+import com.mesofi.mythclothapi.model.CurrencyCode;
+import com.mesofi.mythclothapi.repository.FigurineRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service

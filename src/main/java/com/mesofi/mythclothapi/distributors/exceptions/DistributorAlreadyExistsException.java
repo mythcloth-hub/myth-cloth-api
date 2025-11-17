@@ -1,9 +1,10 @@
 package com.mesofi.mythclothapi.distributors.exceptions;
 
-import com.mesofi.mythclothapi.error.ApiException;
-import com.mesofi.mythclothapi.error.ErrorCodes;
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import com.mesofi.mythclothapi.error.ApiException;
+
+import lombok.Getter;
 
 @Getter
 public class DistributorAlreadyExistsException extends ApiException {
@@ -11,9 +12,7 @@ public class DistributorAlreadyExistsException extends ApiException {
   private final String country;
 
   public DistributorAlreadyExistsException(String name, String country) {
-    super(
-        "Distributor already exists: " + name + " - " + country,
-        ErrorCodes.DISTRIBUTOR_ALREADY_EXISTS.name());
+    super("Distributor already exists", "Distributor already exists: " + name + " - " + country);
     this.name = name;
     this.country = country;
   }

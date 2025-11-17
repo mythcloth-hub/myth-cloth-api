@@ -1,15 +1,22 @@
 package com.mesofi.mythclothapi.error;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public abstract class ApiException extends RuntimeException {
-  private final String errorCode;
-  private final HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
 
-  public ApiException(String message, String errorCode) {
+  private final HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+  private final String causeDetail;
+
+  public ApiException(String message) {
     super(message);
-    this.errorCode = errorCode;
+    this.causeDetail = message;
+  }
+
+  public ApiException(String message, String causeDetail) {
+    super(message);
+    this.causeDetail = causeDetail;
   }
 }

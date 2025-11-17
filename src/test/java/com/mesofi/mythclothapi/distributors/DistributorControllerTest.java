@@ -1,18 +1,37 @@
 package com.mesofi.mythclothapi.distributors;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
+import static com.mesofi.mythclothapi.utils.CommonAssertions.hasDescription;
+import static com.mesofi.mythclothapi.utils.CommonAssertions.hasId;
+import static com.mesofi.mythclothapi.utils.CommonAssertions.hasName;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.containsDetail;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.defaultType;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasDetail;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasErrors;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasStatus;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTimestamp;
+import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
+import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 
 @WebMvcTest(DistributorController.class)
 public class DistributorControllerTest {
@@ -24,18 +43,170 @@ public class DistributorControllerTest {
   @MockitoBean DistributorService service;
 
   private final DistributorRequest mockRequest =
-      new DistributorRequest("BigBangToys", "US", "url.com");
+      new DistributorRequest(BANDAI, JP, "https://tamashiiweb.com/");
+
+  @Test
+  void shouldReturn404_whenEndpointDoesNotExist() throws Exception {
+    mockMvc
+        .perform(post("/unknown"))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Endpoint not found"))
+        .andExpect(hasStatus(404))
+        .andExpect(hasDetail("The URL you are calling does not exist."))
+        .andExpect(hasInstance("/unknown"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn400_whenBodyIsMissing() throws Exception {
+    mockMvc
+        .perform(post("/distributors"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(containsDetail("Required request body is missing"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn415_whenBodyIsText() throws Exception {
+    mockMvc
+        .perform(post("/distributors").content("The Body"))
+        .andDo(print())
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Unsupported Media Type"))
+        .andExpect(hasStatus(415))
+        .andExpect(hasDetail("Content-Type 'application/octet-stream' is not supported"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn400_whenBodyIsUnparseable() throws Exception {
+    mockMvc
+        .perform(post("/distributors").contentType(APPLICATION_JSON).content("The Body"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(
+            hasDetail(
+                "JSON parse error: Unrecognized token 'The': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn400_whenBodyIsEmpty() throws Exception {
+    mockMvc
+        .perform(post("/distributors").contentType(APPLICATION_JSON).content("{}"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(Map.of("country", "country is required", "name", "name must not be blank")));
+  }
+
+  @Test
+  void shouldReturn400_whenNameIsInvalid() throws Exception {
+    mockMvc
+        .perform(post("/distributors").contentType(APPLICATION_JSON).content("{\"name\":\"-\"}"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(
+            containsDetail(
+                "not one of the values accepted for Enum class: [DAM, BANDAI, BLUE_FIN, DS_DISTRIBUTIONS, DTM]"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn400_whenCountryIsMissing() throws Exception {
+    mockMvc
+        .perform(
+            post("/distributors").contentType(APPLICATION_JSON).content("{\"name\":\"BANDAI\"}"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp())
+        .andExpect(hasErrors(Map.of("country", "country is required")));
+  }
+
+  @Test
+  void shouldReturn400_whenCountryIsInvalid() throws Exception {
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(APPLICATION_JSON)
+                .content("{\"name\":\"BANDAI\",\"country\":\"-\"}"))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(
+            containsDetail("not one of the values accepted for Enum class: [MX, JP, ES, US]"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
 
   @Test
   void shouldReturn409_whenDistributorAlreadyExists() throws Exception {
     when(service.createDistributor(mockRequest))
-        .thenThrow(new DistributorAlreadyExistsException("BigBangToys", "US"));
+        .thenThrow(new DistributorAlreadyExistsException(BANDAI.toString(), JP.toString()));
 
     mockMvc
         .perform(
             post("/distributors")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(mockRequest)))
-        .andExpect(status().isConflict());
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isConflict())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Distributor already exists"))
+        .andExpect(hasStatus(409))
+        .andExpect(hasDetail("Distributor already exists: BANDAI - JP"))
+        .andExpect(hasInstance("/distributors"))
+        .andExpect(hasTimestamp());
+  }
+
+  @Test
+  void shouldReturn201_whenDistributorIsValid() throws Exception {
+    when(service.createDistributor(mockRequest))
+        .thenReturn(
+            new DistributorResponse(
+                1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
+
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isCreated())
+        .andExpect(hasId(1))
+        .andExpect(hasName("BANDAI"))
+        .andExpect(hasDescription("Tamashii Nations"))
+        .andExpect(jsonPath("$.country").value("JP"))
+        .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
   }
 }

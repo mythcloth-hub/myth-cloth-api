@@ -1,14 +1,17 @@
 package com.mesofi.mythclothapi.distributors;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
 import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
-import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service layer responsible for managing {@link DistributorEntity} records.
@@ -44,7 +47,8 @@ public class DistributorService {
 
     // Validate unique constraint manually before hitting DB
     if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
-      throw new DistributorAlreadyExistsException(request.name(), request.country());
+      throw new DistributorAlreadyExistsException(
+          request.name().toString(), request.country().toString());
     }
 
     var saved = repository.save(entity);
@@ -98,10 +102,10 @@ public class DistributorService {
 
     // Check unique name+country but allow same record to stay unchanged
     if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())
-        && !(existing.getName().name().equals(request.name())
-            && existing.getCountry().name().equals(request.country()))) {
+        && !(existing.getName() == request.name() && existing.getCountry() == request.country())) {
 
-      throw new DistributorAlreadyExistsException(request.name(), request.country());
+      throw new DistributorAlreadyExistsException(
+          request.name().toString(), request.country().toString());
     }
 
     // Ask MapStruct to update only the changed fields

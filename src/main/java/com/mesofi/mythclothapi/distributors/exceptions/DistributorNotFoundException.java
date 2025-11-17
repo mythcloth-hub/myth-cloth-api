@@ -1,16 +1,17 @@
 package com.mesofi.mythclothapi.distributors.exceptions;
 
-import com.mesofi.mythclothapi.error.ApiException;
-import com.mesofi.mythclothapi.error.ErrorCodes;
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import com.mesofi.mythclothapi.error.ApiException;
+
+import lombok.Getter;
 
 @Getter
 public class DistributorNotFoundException extends ApiException {
   private final Long id;
 
   public DistributorNotFoundException(Long id) {
-    super("Distributor not found given id: " + id, ErrorCodes.DISTRIBUTOR_NOT_FOUND.name());
+    super("Distributor not found");
     this.id = id;
   }
 

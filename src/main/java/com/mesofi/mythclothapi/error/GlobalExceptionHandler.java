@@ -1,86 +1,65 @@
 package com.mesofi.mythclothapi.error;
 
-import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
-import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.time.Instant;
-import org.springframework.http.HttpStatus;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
+import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(ApiException.class)
-  public ProblemDetail handleApiExceptions(ApiException ex) {
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ProblemDetail handleNoResourceFound(NoResourceFoundException ex) {
+    return Problem.of(NOT_FOUND, "Endpoint not found", "The URL you are calling does not exist.");
+  }
 
-    ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ProblemDetail handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+    return Problem.of(BAD_REQUEST, "Invalid body", ex.getMessage());
+  }
 
-    problem.setTitle(ex.getMessage());
-    problem.setDetail(ex.getMessage()); // Optional
-    problem.setProperty("errorCode", ex.getErrorCode());
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ProblemDetail handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+    return Problem.of(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type", ex.getMessage());
+  }
 
-    // Include timestamp
-    problem.setProperty("timestamp", Instant.now());
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ProblemDetail handleValidationErrors(MethodArgumentNotValidException ex) {
+    ProblemDetail problemDetail =
+        Problem.of(BAD_REQUEST, "Validation Failed", "Your request parameters didn't validate");
 
-    return problem;
+    Map<String, String> errors = new HashMap<>();
+
+    ex.getBindingResult()
+        .getFieldErrors()
+        .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+
+    problemDetail.setProperty("errors", errors);
+    return problemDetail;
   }
 
   @ExceptionHandler(DistributorAlreadyExistsException.class)
-  public ProblemDetail handleDistributorAlreadyExists(
-      DistributorAlreadyExistsException ex, HttpServletRequest request) {
+  public ProblemDetail handleDistributorAlreadyExists(DistributorAlreadyExistsException ex) {
 
-    // Build the URI based on the current server name
-    String baseUrl =
-        request.getRequestURL().toString().replace(request.getRequestURI(), ""); // remove path
-
-    URI type = URI.create(baseUrl + "/errors/distributor-already-exists");
-
-    ProblemDetail problem = createProblemDetail(ex.getStatus());
-
-    problem.setTitle("Distributor already exists");
-    problem.setDetail(ex.getMessage());
-    problem.setType(type);
-    problem.setProperty("errorCode", ex.getErrorCode());
-    problem.setProperty("timestamp", Instant.now());
-
-    // Domain-specific contextual fields
-    problem.setProperty("name", ex.getName());
-    problem.setProperty("country", ex.getCountry());
-    problem.setInstance(URI.create(request.getRequestURI()));
-
-    return problem;
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
   @ExceptionHandler(DistributorNotFoundException.class)
-  public ProblemDetail handleDistributorNotFound(
-      DistributorNotFoundException ex, HttpServletRequest request) {
+  public ProblemDetail handleDistributorNotFound(DistributorNotFoundException ex) {
 
-    // Build the URI based on the current server name
-    String baseUrl =
-        request.getRequestURL().toString().replace(request.getRequestURI(), ""); // remove path
-
-    URI type = URI.create(baseUrl + "/errors/distributor-not-found");
-
-    ProblemDetail problem = createProblemDetail(ex.getStatus());
-
-    problem.setTitle("Distributor not found");
-    problem.setDetail(ex.getMessage());
-    problem.setType(type);
-    problem.setProperty("errorCode", ex.getErrorCode());
-    problem.setProperty("timestamp", Instant.now());
-
-    // Domain-specific contextual fields
-    // problem.setProperty("name", ex.getName());
-    // problem.setProperty("country", ex.getCountry());
-    problem.setInstance(URI.create(request.getRequestURI()));
-
-    return problem;
-  }
-
-  private ProblemDetail createProblemDetail(HttpStatus status) {
-    return ProblemDetail.forStatus(status);
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 }

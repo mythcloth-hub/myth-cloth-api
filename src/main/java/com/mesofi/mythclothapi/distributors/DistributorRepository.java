@@ -1,8 +1,9 @@
 package com.mesofi.mythclothapi.distributors;
 
+import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
  * Repository interface for managing {@link DistributorEntity} persistence operations.
