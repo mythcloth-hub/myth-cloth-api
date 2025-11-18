@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.controller;
+package com.mesofi.mythclothapi.figurines;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;

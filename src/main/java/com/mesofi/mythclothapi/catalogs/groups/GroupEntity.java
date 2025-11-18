@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.groups;
+package com.mesofi.mythclothapi.catalogs.groups;
 
 import java.util.ArrayList;
 import java.util.List;

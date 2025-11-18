@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.lineups;
+package com.mesofi.mythclothapi.catalogs.series;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +16,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "lineups")
-public class LineUpEntity extends DescriptiveEntity {
+@Table(name = "series")
+public class SeriesEntity extends DescriptiveEntity {
 
-  @OneToMany(mappedBy = "lineup", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "series", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FigurineEntity> figurines = new ArrayList<>();
 }

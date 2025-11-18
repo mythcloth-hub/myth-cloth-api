@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.distributions;
+package com.mesofi.mythclothapi.catalogs.distributions;
 
 import java.util.ArrayList;
 import java.util.List;
