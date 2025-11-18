@@ -10,13 +10,17 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true   # <- Pretty-print SQL
         show_sql: true     # <- Log SQL to console
-        use_sql_comments: true # <- Adds Hibernate comments to queries
+        use_sql_comments: false # <- Adds Hibernate comments to queries
 
 server:
   servlet:

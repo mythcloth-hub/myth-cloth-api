@@ -11,6 +11,10 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    defer-datasource-initialization: false
+  sql:
+    init:
+      mode: never
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
