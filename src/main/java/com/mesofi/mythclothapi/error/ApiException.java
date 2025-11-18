@@ -7,6 +7,7 @@ import lombok.Getter;
 @Getter
 public abstract class ApiException extends RuntimeException {
 
+  private static final long serialVersionUID = -7517595644718400266L;
   private final HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
   private final String causeDetail;
 

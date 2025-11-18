@@ -8,6 +8,7 @@ import lombok.Getter;
 
 @Getter
 public class DistributorAlreadyExistsException extends ApiException {
+  private static final long serialVersionUID = 2305428537502137069L;
   private final String name;
   private final String country;
 

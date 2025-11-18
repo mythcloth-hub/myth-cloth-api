@@ -8,6 +8,7 @@ import lombok.Getter;
 
 @Getter
 public class DistributorNotFoundException extends ApiException {
+  private static final long serialVersionUID = -4170723581171178442L;
   private final Long id;
 
   public DistributorNotFoundException(Long id) {

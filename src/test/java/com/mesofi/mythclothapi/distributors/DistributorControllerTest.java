@@ -13,23 +13,33 @@ import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasStatus;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTimestamp;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
+import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
 import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 
@@ -45,18 +55,28 @@ public class DistributorControllerTest {
   private final DistributorRequest mockRequest =
       new DistributorRequest(BANDAI, JP, "https://tamashiiweb.com/");
 
-  @Test
-  void shouldReturn404_whenEndpointDoesNotExist() throws Exception {
+  @ParameterizedTest
+  @MethodSource("provideHttpRequestsAndExpectedPaths")
+  void shouldReturn404_whenEndpointsDoNotExist(RequestBuilder requestBuilder, String invalidUri)
+      throws Exception {
     mockMvc
-        .perform(post("/unknown"))
+        .perform(requestBuilder)
         .andDo(print())
         .andExpect(status().isNotFound())
         .andExpect(defaultType())
         .andExpect(hasTitle("Endpoint not found"))
         .andExpect(hasStatus(404))
         .andExpect(hasDetail("The URL you are calling does not exist."))
-        .andExpect(hasInstance("/unknown"))
+        .andExpect(hasInstance(invalidUri))
         .andExpect(hasTimestamp());
+  }
+
+  private static Stream<Arguments> provideHttpRequestsAndExpectedPaths() {
+    return Stream.of(
+        Arguments.of(post("/unknown"), "/unknown"),
+        Arguments.of(get("/distributor"), "/distributor"),
+        Arguments.of(put("/distribution"), "/distribution"),
+        Arguments.of(delete("/"), "/"));
   }
 
   @Test
@@ -208,5 +228,41 @@ public class DistributorControllerTest {
         .andExpect(hasDescription("Tamashii Nations"))
         .andExpect(jsonPath("$.country").value("JP"))
         .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
+  }
+
+  @Test
+  void shouldReturn404_whenDistributorIdDoesNotExist() throws Exception {
+    when(service.retrieveDistributor(99L)).thenThrow(new DistributorNotFoundException(99L));
+
+    mockMvc
+        .perform(get("/distributors/{id}", "99"))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Distributor not found"))
+        .andExpect(hasStatus(404))
+        .andExpect(hasDetail("Distributor not found"))
+        .andExpect(hasInstance("/distributors/99"))
+        .andExpect(hasTimestamp());
+
+    verify(service).retrieveDistributor(99L);
+  }
+
+  @Test
+  void shouldReturn200_whenDistributorIdExists() throws Exception {
+    when(service.retrieveDistributor(1L))
+        .thenReturn(
+            new DistributorResponse(
+                1, "DAM", "Distribuidora Animéxico", "MX", "https://animexico-online.com/"));
+
+    mockMvc
+        .perform(get("/distributors/{id}", "1"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(hasId(1))
+        .andExpect(hasName("DAM"))
+        .andExpect(hasDescription("Distribuidora Animéxico"))
+        .andExpect(jsonPath("$.country").value("MX"))
+        .andExpect(jsonPath("$.website").value("https://animexico-online.com/"));
   }
 }
