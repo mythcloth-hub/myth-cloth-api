@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
+import com.mesofi.mythclothapi.entity.BaseIdEntity;
 import com.mesofi.mythclothapi.entity.FigurineDistributor;
 
 import jakarta.persistence.CascadeType;
@@ -12,9 +13,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -45,17 +43,8 @@ import lombok.Setter;
         @UniqueConstraint(
             name = "uk_distributor_name_country",
             columnNames = {"name", "country"}))
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class DistributorEntity {
-  /**
-   * Primary key identifier for the distributor.
-   *
-   * <p>Generated automatically by the underlying database using an identity column.
-   */
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @EqualsAndHashCode.Include
-  private Long id;
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
+public class DistributorEntity extends BaseIdEntity {
 
   /**
    * The commercial name of the distributor.
