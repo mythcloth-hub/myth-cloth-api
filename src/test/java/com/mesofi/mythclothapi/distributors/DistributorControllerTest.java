@@ -209,6 +209,8 @@ public class DistributorControllerTest {
         .andExpect(hasDetail("Distributor already exists: BANDAI - JP"))
         .andExpect(hasInstance("/distributors"))
         .andExpect(hasTimestamp());
+
+    verify(service).createDistributor(mockRequest);
   }
 
   @Test
@@ -230,6 +232,8 @@ public class DistributorControllerTest {
         .andExpect(hasDescription("Tamashii Nations"))
         .andExpect(jsonPath("$.country").value("JP"))
         .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
+
+    verify(service).createDistributor(mockRequest);
   }
 
   @Test
@@ -266,6 +270,8 @@ public class DistributorControllerTest {
         .andExpect(hasDescription("Distribuidora Animéxico"))
         .andExpect(jsonPath("$.country").value("MX"))
         .andExpect(jsonPath("$.website").value("https://animexico-online.com/"));
+
+    verify(service).retrieveDistributor(1L);
   }
 
   @Test
@@ -286,5 +292,62 @@ public class DistributorControllerTest {
         .andExpect(jsonPath("$[0].description").value("Distribuidora Animéxico"))
         .andExpect(jsonPath("$[0].country").value("MX"))
         .andExpect(jsonPath("$[0].website").value("https://animexico-online.com/"));
+
+    verify(service).retrieveDistributors();
+  }
+
+  @Test
+  void shouldReturn404_whenDistributorIdDoesNotFound() throws Exception {
+    when(service.updateDistributor(99L, mockRequest))
+        .thenThrow(new DistributorNotFoundException(99L));
+
+    mockMvc
+        .perform(
+            put("/distributors/{id}", "99")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Distributor not found"))
+        .andExpect(hasStatus(404))
+        .andExpect(hasDetail("Distributor not found"))
+        .andExpect(hasInstance("/distributors/99"))
+        .andExpect(hasTimestamp());
+
+    verify(service).updateDistributor(99L, mockRequest);
+  }
+
+  @Test
+  void shouldReturn200_whenDistributorIsUpdated() throws Exception {
+    when(service.updateDistributor(1L, mockRequest))
+        .thenReturn(
+            new DistributorResponse(
+                1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
+
+    mockMvc
+        .perform(
+            put("/distributors/{id}", "1")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(hasId(1))
+        .andExpect(hasName("BANDAI"))
+        .andExpect(hasDescription("Tamashii Nations"))
+        .andExpect(jsonPath("$.country").value("JP"))
+        .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
+
+    verify(service).updateDistributor(1L, mockRequest);
+  }
+
+  @Test
+  void shouldReturn200_whenDistributorWasDeleted() throws Exception {
+    mockMvc
+        .perform(delete("/distributors/{id}", "1").contentType(APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isOk());
+
+    verify(service).removeDistributor(1L);
   }
 }

@@ -48,6 +48,15 @@ jacocoTestReport {
         xml.required = true   // for CI tools
         html.required = true  // human-readable report
     }
+
+    classDirectories.setFrom(
+        files(classDirectories.files.collect { dir ->
+            fileTree(dir: dir, exclude: [
+                'com/mesofi/mythclothapi/Application*',
+                'com/mesofi/mythclothapi/distributors/DistributorMapperImpl*'
+            ])
+        })
+    )
 }
 
 configurations {

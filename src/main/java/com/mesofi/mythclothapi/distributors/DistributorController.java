@@ -56,7 +56,7 @@ public class DistributorController {
 
   @PutMapping("/{id}")
   public ResponseEntity<DistributorResponse> updateDistributor(
-      @PathVariable Long id, @RequestBody DistributorRequest distributorRequest) {
+      @PathVariable Long id, @Valid @RequestBody DistributorRequest distributorRequest) {
     DistributorResponse updated = service.updateDistributor(id, distributorRequest);
     return ResponseEntity.ok(updated);
   }
