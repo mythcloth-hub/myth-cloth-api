@@ -13,6 +13,7 @@ import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasStatus;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTimestamp;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -264,5 +266,25 @@ public class DistributorControllerTest {
         .andExpect(hasDescription("Distribuidora Animéxico"))
         .andExpect(jsonPath("$.country").value("MX"))
         .andExpect(jsonPath("$.website").value("https://animexico-online.com/"));
+  }
+
+  @Test
+  void shouldReturn200_whenDistributorsAreAvailable() throws Exception {
+    when(service.retrieveDistributors())
+        .thenReturn(
+            List.of(
+                new DistributorResponse(
+                    1, "DAM", "Distribuidora Animéxico", "MX", "https://animexico-online.com/")));
+
+    mockMvc
+        .perform(get("/distributors"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].id").value(1))
+        .andExpect(jsonPath("$[0].name").value("DAM"))
+        .andExpect(jsonPath("$[0].description").value("Distribuidora Animéxico"))
+        .andExpect(jsonPath("$[0].country").value("MX"))
+        .andExpect(jsonPath("$[0].website").value("https://animexico-online.com/"));
   }
 }
