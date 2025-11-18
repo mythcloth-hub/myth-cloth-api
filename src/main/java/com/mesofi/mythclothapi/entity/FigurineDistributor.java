@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.entity;
 
 import com.mesofi.mythclothapi.distributors.DistributorEntity;
+import com.mesofi.mythclothapi.figurines.FigurineEntity;
 import com.mesofi.mythclothapi.model.CurrencyCode;
 
 import jakarta.persistence.Entity;
@@ -21,7 +22,7 @@ public class FigurineDistributor {
 
   // Many figurines → many distributions
   @ManyToOne(optional = false)
-  private Figurine figurine;
+  private FigurineEntity figurine;
 
   @ManyToOne(optional = false)
   private DistributorEntity distributor;

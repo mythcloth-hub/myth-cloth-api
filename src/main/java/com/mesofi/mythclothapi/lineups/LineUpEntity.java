@@ -1,10 +1,10 @@
-package com.mesofi.mythclothapi.lineup;
+package com.mesofi.mythclothapi.lineups;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.mesofi.mythclothapi.entity.DescriptiveEntity;
-import com.mesofi.mythclothapi.entity.Figurine;
+import com.mesofi.mythclothapi.figurines.FigurineEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -20,5 +20,5 @@ import lombok.Setter;
 public class LineUpEntity extends DescriptiveEntity {
 
   @OneToMany(mappedBy = "lineup", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Figurine> figurines = new ArrayList<>();
+  private List<FigurineEntity> figurines = new ArrayList<>();
 }

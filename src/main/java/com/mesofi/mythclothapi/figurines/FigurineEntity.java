@@ -1,11 +1,13 @@
-package com.mesofi.mythclothapi.entity;
+package com.mesofi.mythclothapi.figurines;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mesofi.mythclothapi.distribution.DistributionEntity;
+import com.mesofi.mythclothapi.distributions.DistributionEntity;
+import com.mesofi.mythclothapi.entity.BaseIdEntity;
+import com.mesofi.mythclothapi.entity.FigurineDistributor;
 import com.mesofi.mythclothapi.groups.GroupEntity;
-import com.mesofi.mythclothapi.lineup.LineUpEntity;
+import com.mesofi.mythclothapi.lineups.LineUpEntity;
 import com.mesofi.mythclothapi.series.SeriesEntity;
 
 import jakarta.persistence.CascadeType;
@@ -22,8 +24,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(indexes = @Index(name = "idx_figurine_unique_name", columnList = "uniqueName"))
-public class Figurine extends BaseIdEntity {
+@Table(
+    name = "figurines",
+    indexes = @Index(name = "idx_figurine_unique_name", columnList = "uniqueName"))
+public class FigurineEntity extends BaseIdEntity {
 
   @Column(unique = true, nullable = false)
   private String uniqueName;

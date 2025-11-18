@@ -15,10 +15,10 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 
-import com.mesofi.mythclothapi.entity.Figurine;
 import com.mesofi.mythclothapi.entity.FigurineDistributor;
+import com.mesofi.mythclothapi.figurines.FigurineEntity;
+import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.model.CurrencyCode;
-import com.mesofi.mythclothapi.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +61,7 @@ public class FigurineService {
           // figurineDistributor.setDistributor(distributor);
           figurineDistributor.setPrice(price);
 
-          Figurine figurine = new Figurine();
+          FigurineEntity figurine = new FigurineEntity();
           figurine.setUniqueName(row.get("Myth Cloth Original Name"));
           figurine.setNormalizedName(row.get("Base Name"));
           figurine.setDistributors(List.of(figurineDistributor));
@@ -72,10 +72,10 @@ public class FigurineService {
               .findByUniqueName(figurine.getUniqueName())
               .ifPresentOrElse(
                   existing -> {
-                    log.info("Updating existing: {}", existing.getUniqueName());
+                    // log.info("Updating existing: {}", existing.getUniqueName());
 
-                    existing.setNormalizedName(figurine.getNormalizedName());
-                    figurineRepository.save(existing);
+                    // existing.setNormalizedName(figurine.getNormalizedName());
+                    // figurineRepository.save(existing);
 
                     // increment update counter
                     updates.incrementAndGet();
