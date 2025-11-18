@@ -52,8 +52,11 @@ jacocoTestReport {
     classDirectories.setFrom(
         files(classDirectories.files.collect { dir ->
             fileTree(dir: dir, exclude: [
-                'com/mesofi/mythclothapi/Application*',
-                'com/mesofi/mythclothapi/distributors/DistributorMapperImpl*'
+                '**/*Application.class',
+                '**/*DistributorMapperImpl.class',
+                '**/*IT.class',
+                '**/*ITCase.class',
+                '**/*IntegrationTest.class'
             ])
         })
     )
