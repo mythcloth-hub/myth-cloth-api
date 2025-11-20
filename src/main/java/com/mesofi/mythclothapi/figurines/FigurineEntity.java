@@ -3,12 +3,12 @@ package com.mesofi.mythclothapi.figurines;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mesofi.mythclothapi.catalogs.distributions.DistributionEntity;
-import com.mesofi.mythclothapi.catalogs.groups.GroupEntity;
-import com.mesofi.mythclothapi.catalogs.lineups.LineUpEntity;
-import com.mesofi.mythclothapi.catalogs.series.SeriesEntity;
 import com.mesofi.mythclothapi.entity.BaseIdEntity;
 import com.mesofi.mythclothapi.entity.FigurineDistributor;
+import com.mesofi.mythclothapi.references.entity.DistributionEntity;
+import com.mesofi.mythclothapi.references.entity.GroupEntity;
+import com.mesofi.mythclothapi.references.entity.LineUpEntity;
+import com.mesofi.mythclothapi.references.entity.SeriesEntity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
