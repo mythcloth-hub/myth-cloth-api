@@ -23,39 +23,35 @@ public class ReferencePairService {
   private final ReferencePairMapper mapper;
 
   /** Maps resource names to entity-conversion functions. */
-  private Map<String, Function<ReferencePairRequest, DescriptiveEntity>> converters;
+  private Map<String, Function<ReferencePairRequest, DescriptiveEntity>> entityFactories;
 
   @PostConstruct
   void init() {
-    converters =
+    entityFactories =
         Map.of(
             "groups", mapper::toGroupEntity,
             "series", mapper::toSeriesEntity,
             "lineups", mapper::toLineUpEntity,
-            "distributions", mapper::toDistributionEntityEntity);
+            "distributions", mapper::toDistributionEntity);
   }
 
   @Transactional
-  public ReferencePairResponse create(String catalogName, ReferencePairRequest request) {
-    DescriptiveEntity saved = save(catalogName, convert(catalogName, request));
+  public ReferencePairResponse createEntry(String referenceName, ReferencePairRequest request) {
+    DescriptiveEntity saved = saveEntry(referenceName, mapToEntity(referenceName, request));
     return mapper.toCatalogResponse(saved);
   }
 
-  private DescriptiveEntity convert(String catalogName, ReferencePairRequest request) {
-    return Optional.ofNullable(converters.get(catalogName))
+  private DescriptiveEntity mapToEntity(String referenceName, ReferencePairRequest request) {
+    return Optional.ofNullable(entityFactories.get(referenceName))
         .map($ -> $.apply(request))
-        .orElseThrow(() -> new IllegalArgumentException("Unknown catalog: " + catalogName));
+        .orElseThrow(() -> new ReferencePairNotFoundException(referenceName));
   }
 
   @SuppressWarnings("unchecked")
-  private <T> T save(String catalogName, T entity) {
-    IdDescPairRepository<T, Long> repo =
-        (IdDescPairRepository<T, Long>) repositories.get(catalogName);
-
-    if (repo == null) {
-      throw new IllegalArgumentException("Unknown catalog: " + catalogName);
-    }
-
-    return repo.save(entity);
+  private <T> T saveEntry(String referenceName, T entity) {
+    return Optional.ofNullable(repositories.get(referenceName))
+        .map($ -> (IdDescPairRepository<T, Long>) $)
+        .map(repo -> repo.save(entity))
+        .orElseThrow(() -> new ReferencePairNotFoundException(referenceName));
   }
 }

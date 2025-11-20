@@ -31,7 +31,7 @@ public class ReferencePairController {
   public ResponseEntity<ReferencePairResponse> createDistributor(
       @PathVariable String referenceName, @Valid @RequestBody ReferencePairRequest request) {
 
-    ReferencePairResponse response = referencePairService.create(referenceName, request);
+    ReferencePairResponse response = referencePairService.createEntry(referenceName, request);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/series
             .path("/{id}") // append /{id}

@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.distributors.exceptions;
 
+import java.io.Serial;
+
 import org.springframework.http.HttpStatus;
 
 import com.mesofi.mythclothapi.error.ApiException;
@@ -8,7 +10,7 @@ import lombok.Getter;
 
 @Getter
 public class DistributorAlreadyExistsException extends ApiException {
-  private static final long serialVersionUID = 2305428537502137069L;
+  @Serial private static final long serialVersionUID = 2305428537502137069L;
   private final String name;
   private final String country;
 

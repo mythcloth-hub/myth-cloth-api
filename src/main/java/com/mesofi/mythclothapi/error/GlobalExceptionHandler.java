@@ -17,6 +17,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+import com.mesofi.mythclothapi.references.ReferencePairNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -59,6 +60,12 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(DistributorNotFoundException.class)
   public ProblemDetail handleDistributorNotFound(DistributorNotFoundException ex) {
+
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
+
+  @ExceptionHandler(ReferencePairNotFoundException.class)
+  public ProblemDetail handleReferenceNotFound(ReferencePairNotFoundException ex) {
 
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
