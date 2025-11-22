@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.catalogs.groups;
+package com.mesofi.mythclothapi.references.entity;
 
 import java.util.ArrayList;
 import java.util.List;
