@@ -20,6 +20,7 @@ public class ReferencePairControllerIT {
 
   @Autowired private TestRestTemplate rest;
 
+  private final String REF = "/ref";
   private final String SERIES = "/series";
   private final String GROUP = "/groups";
   private final String DISTRIBUTION = "/distributions";
@@ -42,7 +43,7 @@ public class ReferencePairControllerIT {
 
   private Long createReferences(String resource, ReferencePairRequest request) {
     ResponseEntity<ReferencePairResponse> createResp =
-        rest.postForEntity(resource, request, ReferencePairResponse.class);
+        rest.postForEntity(REF + resource, request, ReferencePairResponse.class);
 
     assertThat(createResp.getStatusCode()).isEqualTo(CREATED);
     assertThat(createResp.getBody()).isNotNull();

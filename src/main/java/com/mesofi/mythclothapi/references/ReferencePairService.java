@@ -6,16 +6,22 @@ import java.util.function.Function;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.entity.DescriptiveEntity;
+import com.mesofi.mythclothapi.references.exceptions.ReferencePairNotFoundException;
+import com.mesofi.mythclothapi.references.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.references.model.ReferencePairRequest;
 import com.mesofi.mythclothapi.references.model.ReferencePairResponse;
+import com.mesofi.mythclothapi.references.model.ReferencePairType;
 import com.mesofi.mythclothapi.references.repository.IdDescPairRepository;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 @Service
+@Validated
 @RequiredArgsConstructor
 public class ReferencePairService {
 
@@ -23,26 +29,27 @@ public class ReferencePairService {
   private final ReferencePairMapper mapper;
 
   /** Maps resource names to entity-conversion functions. */
-  private Map<String, Function<ReferencePairRequest, DescriptiveEntity>> entityFactories;
+  private Map<ReferencePairType, Function<ReferencePairRequest, DescriptiveEntity>> entityFactories;
 
   @PostConstruct
   void init() {
     entityFactories =
         Map.of(
-            "groups", mapper::toGroupEntity,
-            "series", mapper::toSeriesEntity,
-            "lineups", mapper::toLineUpEntity,
-            "distributions", mapper::toDistributionEntity);
+            ReferencePairType.groups, mapper::toGroupEntity,
+            ReferencePairType.series, mapper::toSeriesEntity,
+            ReferencePairType.lineups, mapper::toLineUpEntity,
+            ReferencePairType.distributions, mapper::toDistributionEntity);
   }
 
   @Transactional
-  public ReferencePairResponse createEntry(String referenceName, ReferencePairRequest request) {
+  public ReferencePairResponse createReference(
+      @NotNull String referenceName, @NotNull ReferencePairRequest request) {
     DescriptiveEntity saved = saveEntry(referenceName, mapToEntity(referenceName, request));
     return mapper.toCatalogResponse(saved);
   }
 
   private DescriptiveEntity mapToEntity(String referenceName, ReferencePairRequest request) {
-    return Optional.ofNullable(entityFactories.get(referenceName))
+    return Optional.ofNullable(entityFactories.get(ReferencePairType.valueOf(referenceName)))
         .map($ -> $.apply(request))
         .orElseThrow(() -> new ReferencePairNotFoundException(referenceName));
   }
@@ -52,6 +59,6 @@ public class ReferencePairService {
     return Optional.ofNullable(repositories.get(referenceName))
         .map($ -> (IdDescPairRepository<T, Long>) $)
         .map(repo -> repo.save(entity))
-        .orElseThrow(() -> new ReferencePairNotFoundException(referenceName));
+        .orElseThrow(() -> new RepositoryNotFoundException(referenceName));
   }
 }

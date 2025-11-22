@@ -4,7 +4,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ProblemDetail;
@@ -13,11 +15,13 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import com.mesofi.mythclothapi.references.ReferencePairNotFoundException;
+import com.mesofi.mythclothapi.references.exceptions.ReferencePairNotFoundException;
+import com.mesofi.mythclothapi.references.exceptions.RepositoryNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -35,6 +39,28 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   public ProblemDetail handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
     return Problem.of(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type", ex.getMessage());
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ProblemDetail handleEnumConversionError(MethodArgumentTypeMismatchException ex) {
+    ProblemDetail problemDetail =
+        Problem.of(
+            BAD_REQUEST, "Validation Failed", "Your request parameters didn't convert correctly");
+
+    // Check specifically for Enum conversion failure
+    if (ex.getRequiredType() != null && ex.getRequiredType().isEnum()) {
+      String invalidValue = ex.getValue() != null ? ex.getValue().toString() : "null";
+      List<String> allowedValues =
+          Arrays.stream(ex.getRequiredType().getEnumConstants()).map(Object::toString).toList();
+
+      String error =
+          String.format(
+              "Value '%s' is not valid, provide one of the following values: %s",
+              invalidValue, allowedValues);
+      problemDetail.setProperty("error", error);
+    }
+
+    return problemDetail;
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -66,6 +92,12 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(ReferencePairNotFoundException.class)
   public ProblemDetail handleReferenceNotFound(ReferencePairNotFoundException ex) {
+
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
+
+  @ExceptionHandler(RepositoryNotFoundException.class)
+  public ProblemDetail handleRepositoryNotFound(RepositoryNotFoundException ex) {
 
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
