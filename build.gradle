@@ -4,6 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.25.0'
     id 'jacoco'
+    id 'info.solidsoft.pitest' version '1.19.0-rc.2'
 }
 
 group = 'com.mesofi'
@@ -35,6 +36,25 @@ spotless {
 
 jacoco {
     toolVersion = "0.8.11"
+}
+
+pitest {
+    pitestVersion = '1.22.0'   // core PIT version
+    junit5PluginVersion = '1.2.1'
+    targetClasses = ['com.mesofi.*']     // classes to mutate
+    targetTests = ['com.mesofi.*']       // tests that cover them
+    threads = 4
+    mutationThreshold = 82     // fail if under 82%
+    excludedClasses = [
+            'com.mesofi.mythclothapi.figurines.*',
+            'com.mesofi.mythclothapi.service.*',
+            'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
+            'com.mesofi.mythclothapi.references.ReferencePairMapperImpl'
+    ]
+    excludedTestClasses = [
+            'com.mesofi.*IntegrationTest*',
+            'com.mesofi.*IT*'
+    ]
 }
 
 test {

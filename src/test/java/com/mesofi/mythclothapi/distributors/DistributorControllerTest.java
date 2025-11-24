@@ -14,8 +14,11 @@ import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasStatus;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTimestamp;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.OK;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +38,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -348,6 +352,17 @@ public class DistributorControllerTest {
         .andDo(print())
         .andExpect(status().isOk());
 
+    verify(service).removeDistributor(1L);
+  }
+
+  @Test
+  void shouldReturnNonNullResponse() {
+    DistributorController controller = new DistributorController(service);
+
+    ResponseEntity<?> response = controller.removeDistributor(1L);
+
+    assertNotNull(response); // KILLS mutation
+    assertEquals(OK, response.getStatusCode());
     verify(service).removeDistributor(1L);
   }
 }
