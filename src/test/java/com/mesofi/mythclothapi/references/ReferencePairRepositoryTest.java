@@ -85,97 +85,85 @@ public class ReferencePairRepositoryTest {
     return ((IdDescPairRepository<T, Long>) repo).save((T) e);
   }
 
+  @ParameterizedTest
+  @MethodSource("repositoryProvider")
+  void findById_shouldFindReferenceById_whenExists(
+      String referenceName, IdDescPairRepository<?, Long> repo) {
+    // Arrange
+    DescriptiveEntity descriptiveEntity = createReference(referenceName);
+    DescriptiveEntity saved = save(repo, descriptiveEntity);
+
+    // Act
+    DescriptiveEntity found = findById(repo, saved.getId());
+
+    // Assert
+    assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+
+    assertThat(found.getDescription())
+        .as("Description must match saved value")
+        .isEqualTo("The Description");
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T extends DescriptiveEntity> T findById(IdDescPairRepository<?, Long> repo, long id) {
+    IdDescPairRepository<T, Long> f = (IdDescPairRepository<T, Long>) repo;
+    return f.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Unable to find entity with id: " + id));
+  }
+
   /*
 
 
-  @Test
-  void shouldFindDistributorById_whenExists() {
-    // Arrange
-    DistributorEntity distributor = createDistributor(DistributorName.DTM, CountryCode.MX, null);
-    DistributorEntity saved = repository.save(distributor);
+    @Test
+    void shouldUpdateDistributor_whenValidChangesProvided() {
+      // Arrange
+      DistributorEntity distributor =
+          createDistributor(DistributorName.BLUE_FIN, CountryCode.US, "https://www.bluefincorp.com");
+      DistributorEntity saved = repository.save(distributor);
 
-    // Act
-    DistributorEntity found = repository.findById(saved.getId()).orElse(null);
+      // Act
+      saved.setWebsite("https://wholesale.bandai.com/");
+      DistributorEntity updated = repository.save(saved);
 
-    // Assert
-    assertThat(found).isNotNull();
-    assertThat(found.getName()).isEqualTo(DistributorName.DTM);
+      // Assert
+      assertThat(updated.getWebsite()).isEqualTo("https://wholesale.bandai.com/");
+    }
+
+    @Test
+    void shouldDeleteDistributor_whenValidIdProvided() {
+      // Arrange
+      DistributorEntity distributor =
+          createDistributor(
+              DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://www.sddistribuciones.com/");
+      DistributorEntity saved = repository.save(distributor);
+
+      // Act
+      repository.delete(saved);
+
+      // Assert
+      assertThat(repository.findById(saved.getId())).isEmpty();
+    }
+
+    @Test
+    void shouldThrowException_whenNameAndCountryAreDuplicated() {
+      // Arrange
+      DistributorEntity d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
+      DistributorEntity d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
+
+      repository.saveAndFlush(d1);
+
+      // Act + Assert
+      assertThatThrownBy(() -> repository.saveAndFlush(d2))
+          .isInstanceOf(DataIntegrityViolationException.class)
+          .hasMessageContaining(
+              "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
+    }
+  */
+  private DescriptiveEntity createReference(String referenceName) {
+
+    DescriptiveEntity descriptiveEntity = newEntityFor(referenceName);
+    descriptiveEntity.setDescription("The Description");
+
+    return descriptiveEntity;
   }
-
-  @Test
-  void shouldReturnTrue_whenDistributorExistsByNameAndCountry() {
-    // Arrange
-    repository.save(
-        createDistributor(DistributorName.DAM, CountryCode.MX, "https://app.tamashii.mx/"));
-
-    // Act
-    boolean exists = repository.existsByNameAndCountry(DistributorName.DAM, CountryCode.MX);
-
-    // Assert
-    assertThat(exists).isTrue();
-  }
-
-  @Test
-  void shouldReturnFalse_whenDistributorDoesNotExistByNameAndCountry() {
-    // Act
-    boolean exists = repository.existsByNameAndCountry(DistributorName.BLUE_FIN, CountryCode.US);
-
-    // Assert
-    assertThat(exists).isFalse();
-  }
-
-  @Test
-  void shouldUpdateDistributor_whenValidChangesProvided() {
-    // Arrange
-    DistributorEntity distributor =
-        createDistributor(DistributorName.BLUE_FIN, CountryCode.US, "https://www.bluefincorp.com");
-    DistributorEntity saved = repository.save(distributor);
-
-    // Act
-    saved.setWebsite("https://wholesale.bandai.com/");
-    DistributorEntity updated = repository.save(saved);
-
-    // Assert
-    assertThat(updated.getWebsite()).isEqualTo("https://wholesale.bandai.com/");
-  }
-
-  @Test
-  void shouldDeleteDistributor_whenValidIdProvided() {
-    // Arrange
-    DistributorEntity distributor =
-        createDistributor(
-            DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://www.sddistribuciones.com/");
-    DistributorEntity saved = repository.save(distributor);
-
-    // Act
-    repository.delete(saved);
-
-    // Assert
-    assertThat(repository.findById(saved.getId())).isEmpty();
-  }
-
-  @Test
-  void shouldThrowException_whenNameAndCountryAreDuplicated() {
-    // Arrange
-    DistributorEntity d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
-    DistributorEntity d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
-
-    repository.saveAndFlush(d1);
-
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(d2))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining(
-            "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
-  }
-
-  private DistributorEntity createDistributor(
-      DistributorName name, CountryCode country, String website) {
-
-    DistributorEntity e = new DistributorEntity();
-    e.setName(name);
-    e.setCountry(country);
-    e.setWebsite(website);
-    return e;
-  }*/
 }

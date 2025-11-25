@@ -48,6 +48,12 @@ public class ReferencePairService {
     return mapper.toCatalogResponse(saved);
   }
 
+  @Transactional(readOnly = true)
+  public ReferencePairResponse retrieveReference(@NotNull String referenceName, @NotNull Long id) {
+    DescriptiveEntity found = findByIdEntry(referenceName, id);
+    return mapper.toCatalogResponse(found);
+  }
+
   private DescriptiveEntity mapToEntity(String referenceName, ReferencePairRequest request) {
     return Optional.ofNullable(entityFactories.get(ReferencePairType.valueOf(referenceName)))
         .map($ -> $.apply(request))
@@ -57,8 +63,22 @@ public class ReferencePairService {
   @SuppressWarnings("unchecked")
   private <T> T saveEntry(String referenceName, T entity) {
     return Optional.ofNullable(repositories.get(referenceName))
-        .map($ -> (IdDescPairRepository<T, Long>) $)
+        .map(repo -> (IdDescPairRepository<T, Long>) repo)
         .map(repo -> repo.save(entity))
+        .orElseThrow(() -> new RepositoryNotFoundException(referenceName));
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> T findByIdEntry(String referenceName, Long id) {
+    return Optional.ofNullable(repositories.get(referenceName))
+        .map(repo -> (IdDescPairRepository<T, Long>) repo)
+        .map(
+            repo ->
+                repo.findById(id)
+                    .orElseThrow(
+                        () ->
+                            new ReferencePairNotFoundException(
+                                "ID %d not found in reference '%s'".formatted(id, referenceName))))
         .orElseThrow(() -> new RepositoryNotFoundException(referenceName));
   }
 }

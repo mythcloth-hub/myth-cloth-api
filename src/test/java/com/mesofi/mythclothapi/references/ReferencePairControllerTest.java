@@ -13,6 +13,7 @@ import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -33,6 +34,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mesofi.mythclothapi.references.exceptions.ReferencePairNotFoundException;
 import com.mesofi.mythclothapi.references.model.ReferencePairRequest;
 import com.mesofi.mythclothapi.references.model.ReferencePairResponse;
 import com.mesofi.mythclothapi.references.model.ReferencePairType;
@@ -49,7 +51,7 @@ public class ReferencePairControllerTest {
   private final String REF = "/ref";
 
   @Test
-  void shouldReturn404_whenEndpointsDoNotExist() throws Exception {
+  void createReference_shouldReturn404_whenEndpointsDoNotExist() throws Exception {
     mockMvc
         .perform(post(REF))
         .andDo(print())
@@ -63,7 +65,7 @@ public class ReferencePairControllerTest {
   }
 
   @Test
-  void shouldReturn400_whenReferenceNotFound() throws Exception {
+  void createReference_shouldReturn400_whenReferenceNotFound() throws Exception {
     mockMvc
         .perform(post(REF + "/unknown"))
         .andDo(print())
@@ -85,7 +87,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn400_whenBodyIsMissing(String resource) throws Exception {
+  void createReference_shouldReturn400_whenBodyIsMissing(String resource) throws Exception {
     mockMvc
         .perform(post(REF + resource))
         .andDo(print())
@@ -100,7 +102,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn415_whenBodyIsText(String resource) throws Exception {
+  void createReference_shouldReturn415_whenBodyIsText(String resource) throws Exception {
     mockMvc
         .perform(post(REF + resource).content("The Body"))
         .andDo(print())
@@ -115,7 +117,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn400_whenBodyIsUnparseable(String resource) throws Exception {
+  void createReference_shouldReturn400_whenBodyIsUnparseable(String resource) throws Exception {
     mockMvc
         .perform(post(REF + resource).contentType(APPLICATION_JSON).content("The Body"))
         .andDo(print())
@@ -132,7 +134,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn400_whenBodyIsEmpty(String resource) throws Exception {
+  void createReference_shouldReturn400_whenBodyIsEmpty(String resource) throws Exception {
     mockMvc
         .perform(post(REF + resource).contentType(APPLICATION_JSON).content("{}"))
         .andDo(print())
@@ -148,7 +150,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn400_whenDescriptionIsTooLong(String resource) throws Exception {
+  void createReference_shouldReturn400_whenDescriptionIsTooLong(String resource) throws Exception {
     ReferencePairRequest mockRequest = new ReferencePairRequest(("Lorem ").repeat(50));
 
     mockMvc
@@ -169,7 +171,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void shouldReturn201_whenValidInfoIsProvided(String resource) throws Exception {
+  void createReference_shouldReturn201_whenValidInfoIsProvided(String resource) throws Exception {
     ReferencePairRequest mockRequest = new ReferencePairRequest("The description");
 
     when(service.createReference(resource.substring(1), mockRequest))
@@ -188,5 +190,48 @@ public class ReferencePairControllerTest {
         .andExpect(hasDescription("The description"));
 
     verify(service).createReference(resource.substring(1), mockRequest);
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void retrieveReference_shouldReturn405_whenMethodIsNotSupported(String resource)
+      throws Exception {
+    mockMvc.perform(get(REF + resource)).andDo(print()).andExpect(status().isMethodNotAllowed());
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void retrieveReference_shouldReturn404_whenReferenceNotFound(String resource) throws Exception {
+    when(service.retrieveReference(resource.substring(1), 0L))
+        .thenThrow(new ReferencePairNotFoundException(resource));
+
+    mockMvc
+        .perform(get(REF + resource + "/0"))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Reference not found: " + resource))
+        .andExpect(hasStatus(404))
+        .andExpect(containsDetail("Reference not found: " + resource))
+        .andExpect(hasInstance(REF + resource + "/" + 0))
+        .andExpect(hasTimestamp());
+
+    verify(service).retrieveReference(resource.substring(1), 0L);
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void retrieveReference_shouldReturn200_whenReferenceIsFound(String resource) throws Exception {
+    when(service.retrieveReference(resource.substring(1), 1L))
+        .thenReturn(new ReferencePairResponse(1, "The description"));
+
+    mockMvc
+        .perform(get(REF + resource + "/1"))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(hasId(1))
+        .andExpect(hasDescription("The description"));
+
+    verify(service).retrieveReference(resource.substring(1), 1L);
   }
 }

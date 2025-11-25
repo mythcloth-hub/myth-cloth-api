@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.references;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,12 @@ public class ReferencePairControllerIT {
     Long idGroup = createReferences(GROUP, reqGroup);
     Long idDistribution = createReferences(DISTRIBUTION, reqDistribution);
     Long idLineUp = createReferences(LINE_UP, reqLineUp);
+
+    // READ (find by id)
+    assertThat(readDistributor(SERIES, idSeries)).isEqualTo(1);
+    assertThat(readDistributor(GROUP, idGroup)).isEqualTo(1);
+    assertThat(readDistributor(DISTRIBUTION, idDistribution)).isEqualTo(1);
+    assertThat(readDistributor(LINE_UP, idLineUp)).isEqualTo(1);
   }
 
   private Long createReferences(String resource, ReferencePairRequest request) {
@@ -47,6 +54,17 @@ public class ReferencePairControllerIT {
 
     assertThat(createResp.getStatusCode()).isEqualTo(CREATED);
     assertThat(createResp.getBody()).isNotNull();
+
+    return createResp.getBody().id();
+  }
+
+  private Long readDistributor(String resource, Long id) {
+    ResponseEntity<ReferencePairResponse> createResp =
+        rest.getForEntity(REF + resource + "/" + id, ReferencePairResponse.class);
+
+    assertThat(createResp.getStatusCode()).isEqualTo(OK);
+    assertThat(createResp.getBody()).isNotNull();
+    assertThat(createResp.getBody().id()).isEqualTo(id);
 
     return createResp.getBody().id();
   }

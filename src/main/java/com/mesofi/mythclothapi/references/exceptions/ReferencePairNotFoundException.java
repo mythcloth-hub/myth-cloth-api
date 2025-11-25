@@ -2,6 +2,8 @@ package com.mesofi.mythclothapi.references.exceptions;
 
 import java.io.Serial;
 
+import org.springframework.http.HttpStatus;
+
 import com.mesofi.mythclothapi.error.ApiException;
 
 import lombok.Getter;
@@ -13,7 +15,12 @@ public class ReferencePairNotFoundException extends ApiException {
   private final String name;
 
   public ReferencePairNotFoundException(String name) {
-    super("Distributor not found: " + name);
+    super("Reference not found: " + name);
     this.name = name;
+  }
+
+  @Override
+  public HttpStatus getStatus() {
+    return HttpStatus.NOT_FOUND;
   }
 }

@@ -4,6 +4,7 @@ import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,15 +28,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ReferencePairController {
 
-  private final ReferencePairService referencePairService;
+  private final ReferencePairService service;
 
   @PostMapping("/{referenceName}")
   public ResponseEntity<ReferencePairResponse> createReference(
       @NotNull @Valid @PathVariable ReferencePairType referenceName,
       @NotNull @Valid @RequestBody ReferencePairRequest request) {
 
-    ReferencePairResponse response =
-        referencePairService.createReference(referenceName.name(), request);
+    ReferencePairResponse response = service.createReference(referenceName.name(), request);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/series
             .path("/{id}") // append /{id}
@@ -43,5 +43,11 @@ public class ReferencePairController {
             .toUri();
 
     return ResponseEntity.created(location).body(response);
+  }
+
+  @GetMapping("/{referenceName}/{id}")
+  public ReferencePairResponse retrieveReference(
+      @PathVariable ReferencePairType referenceName, @PathVariable Long id) {
+    return service.retrieveReference(referenceName.name(), id);
   }
 }
