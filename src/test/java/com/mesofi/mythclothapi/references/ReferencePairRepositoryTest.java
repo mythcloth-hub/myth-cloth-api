@@ -22,11 +22,14 @@ import com.mesofi.mythclothapi.references.entity.LineUpEntity;
 import com.mesofi.mythclothapi.references.entity.SeriesEntity;
 import com.mesofi.mythclothapi.references.repository.IdDescPairRepository;
 
+import jakarta.persistence.EntityManager;
+
 @DataJpaTest // Bootstraps only JPA components + H2
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ReferencePairRepositoryTest {
   @Autowired Map<String, IdDescPairRepository<?, Long>> repositories;
+  @Autowired EntityManager entityManager;
 
   /**
    * Matches reference name to an empty **new instance** of its entity, so no casting and no
@@ -104,6 +107,27 @@ public class ReferencePairRepositoryTest {
         .isEqualTo("The Description");
   }
 
+  @ParameterizedTest
+  @MethodSource("repositoryProvider")
+  void update_shouldUpdateReference_whenValidChangesProvided(
+      String referenceName, IdDescPairRepository<?, Long> repo) {
+    // Arrange
+    DescriptiveEntity descriptiveEntity = createReference(referenceName);
+    DescriptiveEntity saved = save(repo, descriptiveEntity);
+    DescriptiveEntity found = findById(repo, saved.getId());
+    found.setDescription("Updated description");
+
+    // Act
+    DescriptiveEntity updated = save(repo, found);
+    entityManager.flush();
+
+    // Assert
+    assertThat(updated.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+    assertThat(found.getDescription())
+        .as("Description must match saved value")
+        .isEqualTo("Updated description");
+  }
+
   @SuppressWarnings("unchecked")
   private <T extends DescriptiveEntity> T findById(IdDescPairRepository<?, Long> repo, long id) {
     IdDescPairRepository<T, Long> f = (IdDescPairRepository<T, Long>) repo;
@@ -112,22 +136,6 @@ public class ReferencePairRepositoryTest {
   }
 
   /*
-
-
-    @Test
-    void shouldUpdateDistributor_whenValidChangesProvided() {
-      // Arrange
-      DistributorEntity distributor =
-          createDistributor(DistributorName.BLUE_FIN, CountryCode.US, "https://www.bluefincorp.com");
-      DistributorEntity saved = repository.save(distributor);
-
-      // Act
-      saved.setWebsite("https://wholesale.bandai.com/");
-      DistributorEntity updated = repository.save(saved);
-
-      // Assert
-      assertThat(updated.getWebsite()).isEqualTo("https://wholesale.bandai.com/");
-    }
 
     @Test
     void shouldDeleteDistributor_whenValidIdProvided() {
@@ -144,20 +152,6 @@ public class ReferencePairRepositoryTest {
       assertThat(repository.findById(saved.getId())).isEmpty();
     }
 
-    @Test
-    void shouldThrowException_whenNameAndCountryAreDuplicated() {
-      // Arrange
-      DistributorEntity d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
-      DistributorEntity d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
-
-      repository.saveAndFlush(d1);
-
-      // Act + Assert
-      assertThatThrownBy(() -> repository.saveAndFlush(d2))
-          .isInstanceOf(DataIntegrityViolationException.class)
-          .hasMessageContaining(
-              "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
-    }
   */
   private DescriptiveEntity createReference(String referenceName) {
 

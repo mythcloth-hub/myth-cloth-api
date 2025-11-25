@@ -19,7 +19,9 @@ import com.mesofi.mythclothapi.references.repository.IdDescPairRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @Validated
 @RequiredArgsConstructor
@@ -52,6 +54,16 @@ public class ReferencePairService {
   public ReferencePairResponse retrieveReference(@NotNull String referenceName, @NotNull Long id) {
     DescriptiveEntity found = findByIdEntry(referenceName, id);
     return mapper.toCatalogResponse(found);
+  }
+
+  @Transactional
+  public ReferencePairResponse updateReference(
+      @NotNull String referenceName, @NotNull Long id, @NotNull ReferencePairRequest request) {
+    DescriptiveEntity existing = findByIdEntry(referenceName, id);
+    // updates the description
+    existing.setDescription(request.description());
+
+    return mapper.toCatalogResponse(saveEntry(referenceName, existing));
   }
 
   private DescriptiveEntity mapToEntity(String referenceName, ReferencePairRequest request) {

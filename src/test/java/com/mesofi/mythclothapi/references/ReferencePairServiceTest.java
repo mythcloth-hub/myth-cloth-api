@@ -100,4 +100,62 @@ public class ReferencePairServiceTest {
     assertThat(response.id()).isNotZero();
     assertThat(response.description()).isEqualTo("Some description");
   }
+
+  @Test
+  void updateReference_shouldThrowException_whenRequiredFieldsAreNull() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.updateReference(null, null, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("updateReference.referenceName")
+        .hasMessageContaining("updateReference.id")
+        .hasMessageContaining("updateReference.request")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void updateReference_shouldThrowException_whenIsAndRequestAreNull() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.updateReference("some-reference", null, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("updateReference.id")
+        .hasMessageContaining("updateReference.request")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void updateReference_shouldThrowException_whenRequestIsNull() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.updateReference("some-reference", -1L, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("updateReference.request")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void updateReference_shouldThrowException_whenReferenceNotFound() {
+    // Arrange
+    ReferencePairRequest request = new ReferencePairRequest("Some description");
+
+    // Act, Assert
+    assertThatThrownBy(() -> service.updateReference("series", -1L, request))
+        .isInstanceOf(ReferencePairNotFoundException.class)
+        .hasMessage("Reference not found: ID -1 not found in reference 'series'");
+  }
+
+  @Test
+  void updateReference_shouldUpdateReference_whenGroupIsProvided() {
+    // Arrange
+    ReferencePairRequest request = new ReferencePairRequest("Some description");
+    ReferencePairResponse response = service.createReference("groups", request);
+    ReferencePairRequest updatedRequest = new ReferencePairRequest("Updated description");
+
+    // Act
+    ReferencePairResponse updatedResponse =
+        service.updateReference("groups", response.id(), updatedRequest);
+
+    // Assert
+    assertThat(updatedResponse).isNotNull();
+    assertThat(updatedResponse.id()).isNotZero();
+    assertThat(updatedResponse.description()).isEqualTo("Updated description");
+  }
 }

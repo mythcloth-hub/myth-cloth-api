@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -233,5 +234,60 @@ public class ReferencePairControllerTest {
         .andExpect(hasDescription("The description"));
 
     verify(service).retrieveReference(resource.substring(1), 1L);
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void updateReference_shouldReturn405_whenMethodIsNotSupported(String resource) throws Exception {
+    mockMvc.perform(put(REF + resource)).andDo(print()).andExpect(status().isMethodNotAllowed());
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void updateReference_shouldReturn404_whenReferenceNotFound(String resource) throws Exception {
+    ReferencePairRequest mockRequest = new ReferencePairRequest("The description");
+    when(service.updateReference(
+            resource.substring(1), 0L, new ReferencePairRequest("The description")))
+        .thenThrow(new ReferencePairNotFoundException(resource));
+
+    mockMvc
+        .perform(
+            put(REF + resource + "/0")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Reference not found: " + resource))
+        .andExpect(hasStatus(404))
+        .andExpect(containsDetail("Reference not found: " + resource))
+        .andExpect(hasInstance(REF + resource + "/" + 0))
+        .andExpect(hasTimestamp());
+
+    verify(service)
+        .updateReference(resource.substring(1), 0L, new ReferencePairRequest("The description"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void updateReference_shouldReturn404_whenReferenceNotFound_(String resource) throws Exception {
+    ReferencePairRequest mockRequest = new ReferencePairRequest("Updated Description");
+    when(service.updateReference(
+            resource.substring(1), 1L, new ReferencePairRequest("Updated Description")))
+        .thenReturn(new ReferencePairResponse(1, "Updated Description"));
+
+    mockMvc
+        .perform(
+            put(REF + resource + "/1")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsBytes(mockRequest)))
+        .andDo(print())
+        .andExpect(status().isOk())
+        .andExpect(hasId(1))
+        .andExpect(hasDescription("Updated Description"));
+
+    verify(service)
+        .updateReference(
+            resource.substring(1), 1L, new ReferencePairRequest("Updated Description"));
   }
 }

@@ -7,6 +7,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,5 +50,15 @@ public class ReferencePairController {
   public ReferencePairResponse retrieveReference(
       @PathVariable ReferencePairType referenceName, @PathVariable Long id) {
     return service.retrieveReference(referenceName.name(), id);
+  }
+
+  @PutMapping("/{referenceName}/{id}")
+  public ResponseEntity<ReferencePairResponse> updateReference(
+      @NotNull @Valid @PathVariable ReferencePairType referenceName,
+      @PathVariable Long id,
+      @Valid @RequestBody ReferencePairRequest referencePairRequest) {
+    ReferencePairResponse updated =
+        service.updateReference(referenceName.name(), id, referencePairRequest);
+    return ResponseEntity.ok(updated);
   }
 }
