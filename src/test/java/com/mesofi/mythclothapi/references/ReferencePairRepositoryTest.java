@@ -81,13 +81,6 @@ public class ReferencePairRepositoryTest {
         .isNotNull();
   }
 
-  /** Makes the generic type explicit and removes the raw cast noise. */
-  @SuppressWarnings("unchecked")
-  private <T extends DescriptiveEntity> T save(
-      IdDescPairRepository<?, Long> repo, DescriptiveEntity e) {
-    return ((IdDescPairRepository<T, Long>) repo).save((T) e);
-  }
-
   @ParameterizedTest
   @MethodSource("repositoryProvider")
   void findById_shouldFindReferenceById_whenExists(
@@ -128,6 +121,40 @@ public class ReferencePairRepositoryTest {
         .isEqualTo("Updated description");
   }
 
+  @ParameterizedTest
+  @MethodSource("repositoryProvider")
+  void update_shouldDeleteReference_whenValidChangesProvided(
+      String referenceName, IdDescPairRepository<?, Long> repo) {
+    // Arrange
+    DescriptiveEntity descriptiveEntity = createReference(referenceName);
+    DescriptiveEntity saved = save(repo, descriptiveEntity);
+    DescriptiveEntity found = findById(repo, saved.getId());
+
+    // Act
+    delete(repo, found);
+    entityManager.flush();
+
+    // Assert
+    assertThatThrownBy(() -> findById(repo, saved.getId()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Unable to find entity with id: " + saved.getId());
+  }
+
+  private DescriptiveEntity createReference(String referenceName) {
+    DescriptiveEntity descriptiveEntity = newEntityFor(referenceName);
+    descriptiveEntity.setDescription("The Description");
+
+    return descriptiveEntity;
+  }
+
+  /** Makes the generic type explicit and removes the raw cast noise. */
+  @SuppressWarnings("unchecked")
+  private <T extends DescriptiveEntity> T save(
+      IdDescPairRepository<?, Long> repo, DescriptiveEntity e) {
+    return ((IdDescPairRepository<T, Long>) repo).save((T) e);
+  }
+
+  /** Makes the generic type explicit and removes the raw cast noise. */
   @SuppressWarnings("unchecked")
   private <T extends DescriptiveEntity> T findById(IdDescPairRepository<?, Long> repo, long id) {
     IdDescPairRepository<T, Long> f = (IdDescPairRepository<T, Long>) repo;
@@ -135,29 +162,10 @@ public class ReferencePairRepositoryTest {
         .orElseThrow(() -> new IllegalArgumentException("Unable to find entity with id: " + id));
   }
 
-  /*
-
-    @Test
-    void shouldDeleteDistributor_whenValidIdProvided() {
-      // Arrange
-      DistributorEntity distributor =
-          createDistributor(
-              DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://www.sddistribuciones.com/");
-      DistributorEntity saved = repository.save(distributor);
-
-      // Act
-      repository.delete(saved);
-
-      // Assert
-      assertThat(repository.findById(saved.getId())).isEmpty();
-    }
-
-  */
-  private DescriptiveEntity createReference(String referenceName) {
-
-    DescriptiveEntity descriptiveEntity = newEntityFor(referenceName);
-    descriptiveEntity.setDescription("The Description");
-
-    return descriptiveEntity;
+  /** Makes the generic type explicit and removes the raw cast noise. */
+  @SuppressWarnings("unchecked")
+  private <T extends DescriptiveEntity> void delete(
+      IdDescPairRepository<?, Long> repo, DescriptiveEntity e) {
+    ((IdDescPairRepository<T, Long>) repo).delete((T) e);
   }
 }

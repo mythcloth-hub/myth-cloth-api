@@ -113,7 +113,7 @@ public class ReferencePairServiceTest {
   }
 
   @Test
-  void updateReference_shouldThrowException_whenIsAndRequestAreNull() {
+  void updateReference_shouldThrowException_whenIdAndRequestAreNull() {
     // Arrange, Act, Assert
     assertThatThrownBy(() -> service.updateReference("some-reference", null, null))
         .isInstanceOf(ConstraintViolationException.class)
@@ -157,5 +157,54 @@ public class ReferencePairServiceTest {
     assertThat(updatedResponse).isNotNull();
     assertThat(updatedResponse.id()).isNotZero();
     assertThat(updatedResponse.description()).isEqualTo("Updated description");
+  }
+
+  @Test
+  void deleteReference_shouldThrowException_whenRequiredFieldsAreNull() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.deleteReference(null, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("deleteReference.referenceName")
+        .hasMessageContaining("deleteReference.id")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void deleteReference_shouldThrowException_whenIdIsNull() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.deleteReference("some-reference", null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("deleteReference.id")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void deleteReference_shouldThrowException_whenRepositoryNotFound() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.deleteReference("some-reference", -1L))
+        .isInstanceOf(RepositoryNotFoundException.class)
+        .hasMessage("Repository not found: some-reference");
+  }
+
+  @Test
+  void deleteReference_shouldThrowException_whenReferenceNotFound() {
+    // Arrange, Act, Assert
+    assertThatThrownBy(() -> service.deleteReference("series", -1L))
+        .isInstanceOf(ReferencePairNotFoundException.class)
+        .hasMessage("Reference not found: ID -1 not found in reference 'series'");
+  }
+
+  @Test
+  void deleteReference_shouldUpdateReference_whenSeriesIsProvided() {
+    // Arrange
+    ReferencePairRequest request = new ReferencePairRequest("Some description");
+    ReferencePairResponse response = service.createReference("series", request);
+
+    // Act
+    service.deleteReference("series", response.id());
+
+    // Assert
+    assertThatThrownBy(() -> service.retrieveReference("series", response.id()))
+        .isInstanceOf(ReferencePairNotFoundException.class);
   }
 }

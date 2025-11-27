@@ -10,9 +10,12 @@ import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasStatus;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTimestamp;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasTitle;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -270,7 +273,7 @@ public class ReferencePairControllerTest {
 
   @ParameterizedTest
   @MethodSource("resourcesProvider")
-  void updateReference_shouldReturn404_whenReferenceNotFound_(String resource) throws Exception {
+  void updateReference_shouldReturn200_whenReferenceIsUpdated(String resource) throws Exception {
     ReferencePairRequest mockRequest = new ReferencePairRequest("Updated Description");
     when(service.updateReference(
             resource.substring(1), 1L, new ReferencePairRequest("Updated Description")))
@@ -289,5 +292,45 @@ public class ReferencePairControllerTest {
     verify(service)
         .updateReference(
             resource.substring(1), 1L, new ReferencePairRequest("Updated Description"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void deleteReference_shouldReturn405_whenMethodIsNotSupported(String resource) throws Exception {
+    mockMvc.perform(delete(REF + resource)).andDo(print()).andExpect(status().isMethodNotAllowed());
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void deleteReference_shouldReturn404_whenReferenceNotFound(String resource) throws Exception {
+    doThrow(new ReferencePairNotFoundException(resource))
+        .when(service)
+        .deleteReference(resource.substring(1), 0L);
+
+    mockMvc
+        .perform(delete(REF + resource + "/0").contentType(APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isNotFound())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Reference not found: " + resource))
+        .andExpect(hasStatus(404))
+        .andExpect(containsDetail("Reference not found: " + resource))
+        .andExpect(hasInstance(REF + resource + "/" + 0))
+        .andExpect(hasTimestamp());
+
+    verify(service).deleteReference(resource.substring(1), 0L);
+  }
+
+  @ParameterizedTest
+  @MethodSource("resourcesProvider")
+  void deleteReference_shouldReturn200_whenReferenceIsDeleted(String resource) throws Exception {
+    doNothing().when(service).deleteReference(resource.substring(1), 1L);
+
+    mockMvc
+        .perform(delete(REF + resource + "/1").contentType(APPLICATION_JSON))
+        .andDo(print())
+        .andExpect(status().isOk());
+
+    verify(service).deleteReference(resource.substring(1), 1L);
   }
 }

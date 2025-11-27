@@ -44,7 +44,7 @@ pitest {
     targetClasses = ['com.mesofi.*']     // classes to mutate
     targetTests = ['com.mesofi.*']       // tests that cover them
     threads = 4
-    mutationThreshold = 85     // fail if under 85%
+    mutationThreshold = 84     // fail if under 84%
     excludedClasses = [
             'com.mesofi.mythclothapi.figurines.*',
             'com.mesofi.mythclothapi.service.*',

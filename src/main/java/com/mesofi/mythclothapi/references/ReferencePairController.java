@@ -4,6 +4,7 @@ import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -60,5 +61,12 @@ public class ReferencePairController {
     ReferencePairResponse updated =
         service.updateReference(referenceName.name(), id, referencePairRequest);
     return ResponseEntity.ok(updated);
+  }
+
+  @DeleteMapping("/{referenceName}/{id}")
+  public ResponseEntity<?> removeReference(
+      @NotNull @Valid @PathVariable ReferencePairType referenceName, @PathVariable Long id) {
+    service.deleteReference(referenceName.name(), id);
+    return ResponseEntity.ok().build();
   }
 }

@@ -66,6 +66,12 @@ public class ReferencePairService {
     return mapper.toCatalogResponse(saveEntry(referenceName, existing));
   }
 
+  @Transactional
+  public void deleteReference(@NotNull String referenceName, @NotNull Long id) {
+    DescriptiveEntity existing = findByIdEntry(referenceName, id);
+    deleteEntry(referenceName, existing);
+  }
+
   private DescriptiveEntity mapToEntity(String referenceName, ReferencePairRequest request) {
     return Optional.ofNullable(entityFactories.get(ReferencePairType.valueOf(referenceName)))
         .map($ -> $.apply(request))
@@ -92,5 +98,15 @@ public class ReferencePairService {
                             new ReferencePairNotFoundException(
                                 "ID %d not found in reference '%s'".formatted(id, referenceName))))
         .orElseThrow(() -> new RepositoryNotFoundException(referenceName));
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> void deleteEntry(String referenceName, T entity) {
+    IdDescPairRepository<T, Long> repo =
+        Optional.ofNullable(repositories.get(referenceName))
+            .map(r -> (IdDescPairRepository<T, Long>) r)
+            .orElseThrow(() -> new RepositoryNotFoundException(referenceName));
+
+    repo.delete(entity);
   }
 }
