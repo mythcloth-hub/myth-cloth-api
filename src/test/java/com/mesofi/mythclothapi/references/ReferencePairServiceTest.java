@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.mesofi.mythclothapi.entity.DescriptiveEntity;
 import com.mesofi.mythclothapi.references.exceptions.ReferencePairNotFoundException;
 import com.mesofi.mythclothapi.references.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.references.model.ReferencePairRequest;
@@ -91,14 +92,58 @@ public class ReferencePairServiceTest {
   }
 
   @Test
-  void retrieveReference_shouldCreateReference_whenSeriesIsProvided() {
-    ReferencePairRequest request = new ReferencePairRequest("Some description");
+  void retrieveReference_shouldRetrieveReference_whenSeriesIsProvided() {
+    ReferencePairRequest request = new ReferencePairRequest("The description");
     ReferencePairResponse resp = service.createReference("series", request);
 
     ReferencePairResponse response = service.retrieveReference("series", resp.id());
     assertThat(response).isNotNull();
     assertThat(response.id()).isNotZero();
-    assertThat(response.description()).isEqualTo("Some description");
+    assertThat(response.description()).isEqualTo("The description");
+  }
+
+  @Test
+  void retrieveReferenceWithDescription_shouldThrowException_whenRequiredFieldsAreNull() {
+    assertThatThrownBy(() -> service.retrieveReferenceWithDescription(null, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("retrieveReferenceWithDescription.description")
+        .hasMessageContaining("retrieveReferenceWithDescription.referenceName")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void retrieveReferenceWithDescription_shouldThrowException_whenIdIsNull() {
+    assertThatThrownBy(() -> service.retrieveReferenceWithDescription("some-reference", null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("retrieveReferenceWithDescription.description")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void retrieveReferenceWithDescription_shouldThrowException_whenRepositoryNotFound() {
+    assertThatThrownBy(
+            () -> service.retrieveReferenceWithDescription("some-reference", "The description"))
+        .isInstanceOf(RepositoryNotFoundException.class)
+        .hasMessage("Repository not found: some-reference");
+  }
+
+  @Test
+  void retrieveReferenceWithDescription_shouldThrowException_whenIdNotFound_() {
+    assertThatThrownBy(() -> service.retrieveReferenceWithDescription("series", "The description"))
+        .isInstanceOf(ReferencePairNotFoundException.class)
+        .hasMessage(
+            "Reference not found: Description 'The description' not found in reference 'series'");
+  }
+
+  @Test
+  void retrieveReferenceWithDescription_shouldRetrieveReference_whenSeriesIsProvided() {
+    ReferencePairRequest request = new ReferencePairRequest("Some description");
+    ReferencePairResponse resp = service.createReference("series", request);
+
+    DescriptiveEntity descriptiveEntity =
+        service.retrieveReferenceWithDescription("series", resp.description());
+    assertThat(descriptiveEntity).isNotNull();
+    assertThat(descriptiveEntity.getDescription()).isEqualTo("Some description");
   }
 
   @Test
@@ -195,7 +240,7 @@ public class ReferencePairServiceTest {
   }
 
   @Test
-  void deleteReference_shouldUpdateReference_whenSeriesIsProvided() {
+  void deleteReference_shouldDeleteReference_whenSeriesIsProvided() {
     // Arrange
     ReferencePairRequest request = new ReferencePairRequest("Some description");
     ReferencePairResponse response = service.createReference("series", request);
@@ -204,7 +249,7 @@ public class ReferencePairServiceTest {
     service.deleteReference("series", response.id());
 
     // Assert
-    assertThatThrownBy(() -> service.retrieveReference("series", response.id()))
+    assertThatThrownBy(() -> service.deleteReference("series", response.id()))
         .isInstanceOf(ReferencePairNotFoundException.class);
   }
 }

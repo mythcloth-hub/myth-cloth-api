@@ -102,6 +102,24 @@ public class ReferencePairRepositoryTest {
 
   @ParameterizedTest
   @MethodSource("repositoryProvider")
+  void findByDescription_shouldFindReferenceByDescription_whenExists(
+      String referenceName, IdDescPairRepository<?, Long> repo) {
+    // Arrange
+    DescriptiveEntity descriptiveEntity = createReference(referenceName, "Custom Description");
+    DescriptiveEntity saved = save(repo, descriptiveEntity);
+
+    // Act
+    DescriptiveEntity found = findByDescription(repo, "Custom Description");
+
+    // Assert
+    assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+    assertThat(found.getDescription())
+        .as("Description must match saved value")
+        .isEqualTo("Custom Description");
+  }
+
+  @ParameterizedTest
+  @MethodSource("repositoryProvider")
   void update_shouldUpdateReference_whenValidChangesProvided(
       String referenceName, IdDescPairRepository<?, Long> repo) {
     // Arrange
@@ -141,8 +159,12 @@ public class ReferencePairRepositoryTest {
   }
 
   private DescriptiveEntity createReference(String referenceName) {
+    return createReference(referenceName, "The Description");
+  }
+
+  private DescriptiveEntity createReference(String referenceName, String description) {
     DescriptiveEntity descriptiveEntity = newEntityFor(referenceName);
-    descriptiveEntity.setDescription("The Description");
+    descriptiveEntity.setDescription(description);
 
     return descriptiveEntity;
   }
@@ -160,6 +182,18 @@ public class ReferencePairRepositoryTest {
     IdDescPairRepository<T, Long> f = (IdDescPairRepository<T, Long>) repo;
     return f.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Unable to find entity with id: " + id));
+  }
+
+  /** Makes the generic type explicit and removes the raw cast noise. */
+  @SuppressWarnings("unchecked")
+  private <T extends DescriptiveEntity> T findByDescription(
+      IdDescPairRepository<?, Long> repo, String description) {
+    IdDescPairRepository<T, Long> f = (IdDescPairRepository<T, Long>) repo;
+    return f.findByDescription(description)
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Unable to find entity having description: " + description));
   }
 
   /** Makes the generic type explicit and removes the raw cast noise. */

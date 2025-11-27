@@ -135,6 +135,9 @@ public class DistributorRepositoryTest {
             "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
   }
 
+  @Test
+  void shouldThrowExceptdon_whenNameAndCountryAreDuplicated() {}
+
   private DistributorEntity createDistributor(
       DistributorName name, CountryCode country, String website) {
 
