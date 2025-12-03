@@ -32,7 +32,7 @@ public class CatalogController {
 
   private final CatalogService service;
 
-  @PostMapping("/{catalogName}")
+  @PostMapping("/{catalogType}")
   public ResponseEntity<CatalogResp> createCatalog(
       @NotNull @Valid @PathVariable CatalogType catalogType,
       @NotNull @Valid @RequestBody CatalogReq request) {
@@ -47,12 +47,12 @@ public class CatalogController {
     return ResponseEntity.created(location).body(response);
   }
 
-  @GetMapping("/{catalogName}/{id}")
+  @GetMapping("/{catalogType}/{id}")
   public CatalogResp retrieveCatalog(@PathVariable CatalogType catalogType, @PathVariable Long id) {
     return service.retrieveCatalog(catalogType.name(), id);
   }
 
-  @PutMapping("/{catalogName}/{id}")
+  @PutMapping("/{catalogType}/{id}")
   public ResponseEntity<CatalogResp> updateCatalog(
       @NotNull @Valid @PathVariable CatalogType catalogType,
       @PathVariable Long id,
@@ -61,7 +61,7 @@ public class CatalogController {
     return ResponseEntity.ok(updated);
   }
 
-  @DeleteMapping("/{catalogName}/{id}")
+  @DeleteMapping("/{catalogType}/{id}")
   public ResponseEntity<?> removeCatalog(
       @NotNull @Valid @PathVariable CatalogType catalogType, @PathVariable Long id) {
     service.deleteCatalog(catalogType.name(), id);
