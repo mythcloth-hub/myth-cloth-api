@@ -49,7 +49,7 @@ pitest {
             'com.mesofi.mythclothapi.figurines.*',
             'com.mesofi.mythclothapi.service.*',
             'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
-            'com.mesofi.mythclothapi.references.ReferencePairMapperImpl'
+            'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
     ]
     excludedTestClasses = [
             'com.mesofi.*IntegrationTest*',
@@ -101,7 +101,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
     // --- CSV ---
-    implementation 'org.apache.commons:commons-csv:1.11.0'
+    implementation 'com.opencsv:opencsv:5.12.0' // Use the latest stable version
 
     // --- Lombok ---
     compileOnly 'org.projectlombok:lombok'

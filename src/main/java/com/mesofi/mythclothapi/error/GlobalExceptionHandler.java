@@ -18,10 +18,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import com.mesofi.mythclothapi.references.exceptions.ReferencePairNotFoundException;
-import com.mesofi.mythclothapi.references.exceptions.RepositoryNotFoundException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -90,8 +90,8 @@ public class GlobalExceptionHandler {
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
-  @ExceptionHandler(ReferencePairNotFoundException.class)
-  public ProblemDetail handleReferenceNotFound(ReferencePairNotFoundException ex) {
+  @ExceptionHandler(CatalogNotFoundException.class)
+  public ProblemDetail handleCatalogNotFound(CatalogNotFoundException ex) {
 
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }

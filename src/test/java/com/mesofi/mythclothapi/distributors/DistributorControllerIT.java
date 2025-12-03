@@ -16,8 +16,9 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -30,8 +31,8 @@ public class DistributorControllerIT {
   @Test
   @DisplayName("Test flow to create and process distributors")
   void fullCrudDistributorFlow() {
-    DistributorRequest reqBandai = new DistributorRequest(BANDAI, JP, "https://tamashiiweb.com/");
-    DistributorRequest reqDam = new DistributorRequest(DAM, MX, "https://animexico-online.com/");
+    DistributorReq reqBandai = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
+    DistributorReq reqDam = new DistributorReq(DAM, MX, "https://animexico-online.com/");
 
     // CREATE
     Long idBandai = createDistributor(reqBandai);
@@ -46,19 +47,19 @@ public class DistributorControllerIT {
 
     // UPDATE
     updateDistributor(
-        idBandai, new DistributorRequest(BANDAI, MX, "https://tamashiiweb.com/")); // JP -> MX
+        idBandai, new DistributorReq(BANDAI, MX, "https://tamashiiweb.com/")); // JP -> MX
 
     // READ UPDATED (find by id)
     assertThat(readDistributor(idBandai)).isEqualTo(1);
   }
 
-  private void updateDistributor(Long existingId, DistributorRequest newRequest) {
+  private void updateDistributor(Long existingId, DistributorReq newRequest) {
     rest.put(DISTRIBUTORS + "/" + existingId, newRequest);
   }
 
-  private Long createDistributor(DistributorRequest request) {
-    ResponseEntity<DistributorResponse> createResp =
-        rest.postForEntity(DISTRIBUTORS, request, DistributorResponse.class);
+  private Long createDistributor(DistributorReq request) {
+    ResponseEntity<DistributorResp> createResp =
+        rest.postForEntity(DISTRIBUTORS, request, DistributorResp.class);
 
     assertThat(createResp.getStatusCode()).isEqualTo(CREATED);
     assertThat(createResp.getBody()).isNotNull();
@@ -67,8 +68,8 @@ public class DistributorControllerIT {
   }
 
   private Long readDistributor(Long id) {
-    ResponseEntity<DistributorResponse> createResp =
-        rest.getForEntity(DISTRIBUTORS + "/" + id, DistributorResponse.class);
+    ResponseEntity<DistributorResp> createResp =
+        rest.getForEntity(DISTRIBUTORS + "/" + id, DistributorResp.class);
 
     assertThat(createResp.getStatusCode()).isEqualTo(OK);
     assertThat(createResp.getBody()).isNotNull();
@@ -78,8 +79,8 @@ public class DistributorControllerIT {
   }
 
   private void readAll() {
-    ResponseEntity<DistributorEntity[]> findAllResp =
-        rest.getForEntity(DISTRIBUTORS, DistributorEntity[].class);
+    ResponseEntity<Distributor[]> findAllResp =
+        rest.getForEntity(DISTRIBUTORS, Distributor[].class);
     assertThat(findAllResp.getBody()).hasSize(2);
   }
 }

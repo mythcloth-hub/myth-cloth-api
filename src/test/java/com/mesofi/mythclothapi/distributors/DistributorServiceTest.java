@@ -19,10 +19,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 
 @ExtendWith(MockitoExtension.class)
 public class DistributorServiceTest {
@@ -33,54 +34,54 @@ public class DistributorServiceTest {
 
   @InjectMocks private DistributorService service;
 
-  private DistributorRequest request;
-  private DistributorEntity entity;
-  private DistributorResponse response;
+  private DistributorReq request;
+  private Distributor entity;
+  private DistributorResp response;
 
   @BeforeEach
   void setup() {
-    request = new DistributorRequest(BANDAI, JP, "https://tamashiiweb.com/");
-    entity = new DistributorEntity();
+    request = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
+    entity = new Distributor();
     entity.setId(1L);
     entity.setName(BANDAI);
     entity.setCountry(JP);
     entity.setWebsite("https://tamashiiweb.com/");
 
     response =
-        new DistributorResponse(1L, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/");
+        new DistributorResp(1L, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/");
   }
 
   @Test
   void createDistributor_shouldThrowException_whenDistributorExists() {
     // Arrange
-    when(mapper.toDistributorEntity(request)).thenReturn(entity);
+    when(mapper.toDistributor(request)).thenReturn(entity);
     when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(true);
 
     // Act + Assert
     assertThatThrownBy(() -> service.createDistributor(request))
         .isInstanceOf(DistributorAlreadyExistsException.class);
 
-    verify(mapper).toDistributorEntity(request);
+    verify(mapper).toDistributor(request);
     verify(repository).existsByNameAndCountry(BANDAI, JP);
   }
 
   @Test
   void createDistributor_shouldCreateSuccessfully_whenUnique() {
     // Arrange
-    when(mapper.toDistributorEntity(request)).thenReturn(entity);
+    when(mapper.toDistributor(request)).thenReturn(entity);
     when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(false);
     when(repository.save(entity)).thenReturn(entity);
-    when(mapper.toDistributorResponse(entity)).thenReturn(response);
+    when(mapper.toDistributorResp(entity)).thenReturn(response);
 
     // Act
-    DistributorResponse result = service.createDistributor(request);
+    DistributorResp result = service.createDistributor(request);
 
     // Assert
     assertThat(result).isEqualTo(response);
-    verify(mapper).toDistributorEntity(request);
+    verify(mapper).toDistributor(request);
     verify(repository).existsByNameAndCountry(BANDAI, JP);
     verify(repository).save(entity);
-    verify(mapper).toDistributorResponse(entity);
+    verify(mapper).toDistributorResp(entity);
   }
 
   @Test
@@ -99,32 +100,32 @@ public class DistributorServiceTest {
   void retrieveDistributor_shouldReturnResponse_whenFound() {
     // Arrange
     when(repository.findById(1L)).thenReturn(Optional.of(entity));
-    when(mapper.toDistributorResponse(entity)).thenReturn(response);
+    when(mapper.toDistributorResp(entity)).thenReturn(response);
 
     // Act
-    DistributorResponse result = service.retrieveDistributor(1L);
+    DistributorResp result = service.retrieveDistributor(1L);
 
     // Assert
     assertThat(result).isEqualTo(response);
 
     verify(repository).findById(1L);
-    verify(mapper).toDistributorResponse(entity);
+    verify(mapper).toDistributorResp(entity);
   }
 
   @Test
   void retrieveDistributors_shouldReturnList() {
     // Arrange
     when(repository.findAll()).thenReturn(List.of(entity));
-    when(mapper.toDistributorResponse(entity)).thenReturn(response);
+    when(mapper.toDistributorResp(entity)).thenReturn(response);
 
     // Act
-    List<DistributorResponse> result = service.retrieveDistributors();
+    List<DistributorResp> result = service.retrieveDistributors();
 
     // Assert
     assertThat(result).containsExactly(response);
 
     verify(repository).findAll();
-    verify(mapper).toDistributorResponse(entity);
+    verify(mapper).toDistributorResp(entity);
   }
 
   @Test
@@ -144,11 +145,11 @@ public class DistributorServiceTest {
     // Arrange
     when(repository.findById(1L)).thenReturn(Optional.of(entity));
 
-    DistributorEntity incoming = new DistributorEntity();
+    Distributor incoming = new Distributor();
     incoming.setName(BANDAI);
     incoming.setCountry(JP);
 
-    when(mapper.toDistributorEntity(request)).thenReturn(incoming);
+    when(mapper.toDistributor(request)).thenReturn(incoming);
     when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(true);
 
     // name+country mismatch triggers exception
@@ -159,7 +160,7 @@ public class DistributorServiceTest {
         .isInstanceOf(DistributorAlreadyExistsException.class);
 
     verify(repository).findById(1L);
-    verify(mapper).toDistributorEntity(request);
+    verify(mapper).toDistributor(request);
     verify(repository).existsByNameAndCountry(BANDAI, JP);
   }
 
@@ -168,28 +169,28 @@ public class DistributorServiceTest {
     // Arrange
     when(repository.findById(1L)).thenReturn(Optional.of(entity));
 
-    DistributorEntity mappedEntity = new DistributorEntity();
+    Distributor mappedEntity = new Distributor();
     mappedEntity.setName(BANDAI);
     mappedEntity.setCountry(JP);
 
-    when(mapper.toDistributorEntity(request)).thenReturn(mappedEntity);
+    when(mapper.toDistributor(request)).thenReturn(mappedEntity);
     when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(false);
 
-    doAnswer(inv -> null).when(mapper).updateDistributorEntity(request, entity);
+    doAnswer(inv -> null).when(mapper).updateDistributor(request, entity);
     when(repository.save(entity)).thenReturn(entity);
-    when(mapper.toDistributorResponse(entity)).thenReturn(response);
+    when(mapper.toDistributorResp(entity)).thenReturn(response);
 
     // Act
-    DistributorResponse result = service.updateDistributor(1L, request);
+    DistributorResp result = service.updateDistributor(1L, request);
 
     // Assert
     assertThat(result).isEqualTo(response);
 
     verify(repository).findById(1L);
-    verify(mapper).toDistributorEntity(request);
+    verify(mapper).toDistributor(request);
     verify(repository).existsByNameAndCountry(BANDAI, JP);
     verify(repository).save(entity);
-    verify(mapper).toDistributorResponse(entity);
+    verify(mapper).toDistributorResp(entity);
   }
 
   @Test

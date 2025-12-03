@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
 @DataJpaTest // Bootstraps only JPA components + H2
@@ -20,7 +21,7 @@ public class DistributorRepositoryTest {
   @Test
   void shouldThrowException_whenCountryAndNameAreNull() {
     // Arrange
-    DistributorEntity distributor = createDistributor(null, null, null);
+    Distributor distributor = createDistributor(null, null, null);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(distributor))
@@ -31,7 +32,7 @@ public class DistributorRepositoryTest {
   @Test
   void shouldThrowException_whenNameIsNull() {
     // Arrange
-    DistributorEntity distributor = createDistributor(null, CountryCode.MX, null);
+    Distributor distributor = createDistributor(null, CountryCode.MX, null);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(distributor))
@@ -42,11 +43,11 @@ public class DistributorRepositoryTest {
   @Test
   void shouldCreateDistributor_whenValidDataProvided() {
     // Arrange
-    DistributorEntity distributor =
+    Distributor distributor =
         createDistributor(DistributorName.DAM, CountryCode.MX, "https://animexico-online.com/");
 
     // Act
-    DistributorEntity saved = repository.save(distributor);
+    Distributor saved = repository.save(distributor);
 
     // Assert
     assertThat(saved.getId()).isNotNull();
@@ -57,11 +58,11 @@ public class DistributorRepositoryTest {
   @Test
   void shouldFindDistributorById_whenExists() {
     // Arrange
-    DistributorEntity distributor = createDistributor(DistributorName.DTM, CountryCode.MX, null);
-    DistributorEntity saved = repository.save(distributor);
+    Distributor distributor = createDistributor(DistributorName.DTM, CountryCode.MX, null);
+    Distributor saved = repository.save(distributor);
 
     // Act
-    DistributorEntity found = repository.findById(saved.getId()).orElse(null);
+    Distributor found = repository.findById(saved.getId()).orElse(null);
 
     // Assert
     assertThat(found).isNotNull();
@@ -93,13 +94,13 @@ public class DistributorRepositoryTest {
   @Test
   void shouldUpdateDistributor_whenValidChangesProvided() {
     // Arrange
-    DistributorEntity distributor =
+    Distributor distributor =
         createDistributor(DistributorName.BLUE_FIN, CountryCode.US, "https://www.bluefincorp.com");
-    DistributorEntity saved = repository.save(distributor);
+    Distributor saved = repository.save(distributor);
 
     // Act
     saved.setWebsite("https://wholesale.bandai.com/");
-    DistributorEntity updated = repository.save(saved);
+    Distributor updated = repository.save(saved);
 
     // Assert
     assertThat(updated.getWebsite()).isEqualTo("https://wholesale.bandai.com/");
@@ -108,10 +109,10 @@ public class DistributorRepositoryTest {
   @Test
   void shouldDeleteDistributor_whenValidIdProvided() {
     // Arrange
-    DistributorEntity distributor =
+    Distributor distributor =
         createDistributor(
             DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://www.sddistribuciones.com/");
-    DistributorEntity saved = repository.save(distributor);
+    Distributor saved = repository.save(distributor);
 
     // Act
     repository.delete(saved);
@@ -123,8 +124,8 @@ public class DistributorRepositoryTest {
   @Test
   void shouldThrowException_whenNameAndCountryAreDuplicated() {
     // Arrange
-    DistributorEntity d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
-    DistributorEntity d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
+    Distributor d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
+    Distributor d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
 
     repository.saveAndFlush(d1);
 
@@ -135,13 +136,9 @@ public class DistributorRepositoryTest {
             "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
   }
 
-  @Test
-  void shouldThrowExceptdon_whenNameAndCountryAreDuplicated() {}
+  private Distributor createDistributor(DistributorName name, CountryCode country, String website) {
 
-  private DistributorEntity createDistributor(
-      DistributorName name, CountryCode country, String website) {
-
-    DistributorEntity e = new DistributorEntity();
+    Distributor e = new Distributor();
     e.setName(name);
     e.setCountry(country);
     e.setWebsite(website);

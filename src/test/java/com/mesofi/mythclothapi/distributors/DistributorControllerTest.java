@@ -44,10 +44,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 
 @WebMvcTest(DistributorController.class)
 public class DistributorControllerTest {
@@ -58,8 +58,8 @@ public class DistributorControllerTest {
 
   @MockitoBean DistributorService service;
 
-  private final DistributorRequest mockRequest =
-      new DistributorRequest(BANDAI, JP, "https://tamashiiweb.com/");
+  private final DistributorReq mockRequest =
+      new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
 
   @ParameterizedTest
   @MethodSource("provideHttpRequestsAndExpectedPaths")
@@ -156,7 +156,7 @@ public class DistributorControllerTest {
         .andExpect(hasStatus(400))
         .andExpect(
             containsDetail(
-                "not one of the values accepted for Enum class: [DAM, BANDAI, BLUE_FIN, DS_DISTRIBUTIONS, DTM]"))
+                "not one of the values accepted for Enum class: [DAM, BANDAI_CHINA, BLUE_FIN, BANDAI, DS_DISTRIBUTIONS, DTM]"))
         .andExpect(hasInstance("/distributors"))
         .andExpect(hasTimestamp());
   }
@@ -221,8 +221,7 @@ public class DistributorControllerTest {
   void shouldReturn201_whenDistributorIsValid() throws Exception {
     when(service.createDistributor(mockRequest))
         .thenReturn(
-            new DistributorResponse(
-                1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
+            new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
 
     mockMvc
         .perform(
@@ -262,7 +261,7 @@ public class DistributorControllerTest {
   void shouldReturn200_whenDistributorIdExists() throws Exception {
     when(service.retrieveDistributor(1L))
         .thenReturn(
-            new DistributorResponse(
+            new DistributorResp(
                 1, "DAM", "Distribuidora Animéxico", "MX", "https://animexico-online.com/"));
 
     mockMvc
@@ -283,7 +282,7 @@ public class DistributorControllerTest {
     when(service.retrieveDistributors())
         .thenReturn(
             List.of(
-                new DistributorResponse(
+                new DistributorResp(
                     1, "DAM", "Distribuidora Animéxico", "MX", "https://animexico-online.com/")));
 
     mockMvc
@@ -326,8 +325,7 @@ public class DistributorControllerTest {
   void shouldReturn200_whenDistributorIsUpdated() throws Exception {
     when(service.updateDistributor(1L, mockRequest))
         .thenReturn(
-            new DistributorResponse(
-                1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
+            new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/"));
 
     mockMvc
         .perform(

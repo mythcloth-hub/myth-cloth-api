@@ -6,12 +6,13 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 
 /**
  * MapStruct mapper responsible for converting between distributor-related DTOs ({@link
- * DistributorRequest}, {@link DistributorResponse}) and the {@link DistributorEntity} domain model.
+ * DistributorReq}, {@link DistributorResp}) and the {@link Distributor} domain model.
  *
  * <p>Uses MapStruct's code generation to provide efficient, compile-time-safe mappings. Configured
  * as a Spring component.
@@ -20,35 +21,35 @@ import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
 public interface DistributorMapper {
 
   /**
-   * Converts a {@link DistributorRequest} into a new {@link DistributorEntity}.
+   * Converts a {@link DistributorReq} into a new {@link Distributor}.
    *
    * <p>The {@code id} and {@code figurines} fields are ignored, as they are either auto-generated
    * or managed through separate logic.
    *
    * @param request the incoming distributor creation/update request
-   * @return a new mapped {@link DistributorEntity}
+   * @return a new mapped {@link Distributor}
    */
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "figurines", ignore = true)
-  DistributorEntity toDistributorEntity(DistributorRequest request);
+  Distributor toDistributor(DistributorReq request);
 
   /**
-   * Converts a {@link DistributorEntity} into a {@link DistributorResponse}.
+   * Converts a {@link Distributor} into a {@link DistributorResp}.
    *
    * <p>Extracts the textual description from the distributor name enum to expose a meaningful
    * string in the API response.
    *
    * @param distributorEntity the entity to map
-   * @return a mapped {@link DistributorResponse}
+   * @return a mapped {@link DistributorResp}
    */
   @Mapping(
       target = "description",
       expression = "java(distributorEntity.getName().getDescription())")
-  DistributorResponse toDistributorResponse(DistributorEntity distributorEntity);
+  DistributorResp toDistributorResp(Distributor distributorEntity);
 
   /**
-   * Updates an existing {@link DistributorEntity} using the non-null fields provided in a {@link
-   * DistributorRequest}.
+   * Updates an existing {@link Distributor} using the non-null fields provided in a {@link
+   * DistributorReq}.
    *
    * <p>Null properties in the request are ignored to avoid overwriting existing values. The {@code
    * id} and {@code figurines} fields are not modified.
@@ -59,5 +60,5 @@ public interface DistributorMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "figurines", ignore = true)
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void updateDistributorEntity(DistributorRequest request, @MappingTarget DistributorEntity entity);
+  void updateDistributor(DistributorReq request, @MappingTarget Distributor entity);
 }
