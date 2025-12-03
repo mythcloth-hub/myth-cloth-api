@@ -190,7 +190,7 @@ public class DistributorControllerTest {
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
-            containsDetail("not one of the values accepted for Enum class: [MX, JP, ES, US]"))
+            containsDetail("not one of the values accepted for Enum class: [MX, JP, CN, ES, US]"))
         .andExpect(hasInstance("/distributors"))
         .andExpect(hasTimestamp());
   }
