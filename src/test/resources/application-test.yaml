@@ -9,18 +9,19 @@ spring:
     driver-class-name: org.h2.Driver
 
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
-    defer-datasource-initialization: false
-  sql:
-    init:
-      mode: never
+      #ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true   # <- Pretty-print SQL
         show_sql: true     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
+  sql:
+    init:
+      mode: never   # FORCE data.sql to run with 'always'
 
 server:
   servlet:

@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.mesofi.mythclothapi.distributors.model.DistributorRequest;
-import com.mesofi.mythclothapi.distributors.model.DistributorResponse;
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,9 +32,9 @@ public class DistributorController {
   private final DistributorService service;
 
   @PostMapping
-  public ResponseEntity<DistributorResponse> createDistributor(
-      @Valid @RequestBody DistributorRequest distributorRequest) {
-    DistributorResponse response = service.createDistributor(distributorRequest);
+  public ResponseEntity<DistributorResp> createDistributor(
+      @Valid @RequestBody DistributorReq distributorRequest) {
+    DistributorResp response = service.createDistributor(distributorRequest);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
             .path("/{id}") // append /{id}
@@ -45,19 +45,19 @@ public class DistributorController {
   }
 
   @GetMapping("/{id}")
-  public DistributorResponse retrieveDistributor(@PathVariable Long id) {
+  public DistributorResp retrieveDistributor(@PathVariable Long id) {
     return service.retrieveDistributor(id);
   }
 
   @GetMapping
-  public List<DistributorResponse> retrieveDistributors() {
+  public List<DistributorResp> retrieveDistributors() {
     return service.retrieveDistributors();
   }
 
   @PutMapping("/{id}")
-  public ResponseEntity<DistributorResponse> updateDistributor(
-      @PathVariable Long id, @Valid @RequestBody DistributorRequest distributorRequest) {
-    DistributorResponse updated = service.updateDistributor(id, distributorRequest);
+  public ResponseEntity<DistributorResp> updateDistributor(
+      @PathVariable Long id, @Valid @RequestBody DistributorReq distributorRequest) {
+    DistributorResp updated = service.updateDistributor(id, distributorRequest);
     return ResponseEntity.ok(updated);
   }
 

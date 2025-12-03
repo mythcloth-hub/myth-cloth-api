@@ -3,15 +3,16 @@ package com.mesofi.mythclothapi.distributors;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
 /**
- * Repository interface for managing {@link DistributorEntity} persistence operations.
+ * Repository interface for managing {@link Distributor} persistence operations.
  *
  * <p>Extends {@link JpaRepository} to provide basic CRUD functionality and adds custom query
  * methods for application-specific needs.
  */
-public interface DistributorRepository extends JpaRepository<DistributorEntity, Long> {
+public interface DistributorRepository extends JpaRepository<Distributor, Long> {
   /**
    * Checks whether a distributor exists with the given name and country.
    *
