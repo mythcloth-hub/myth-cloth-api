@@ -37,6 +37,7 @@ INSERT INTO groups (description) VALUES ('Specter');
 INSERT INTO groups (description) VALUES ('Judge');
 INSERT INTO groups (description) VALUES ('God');
 INSERT INTO groups (description) VALUES ('Gold Inheritor');
+INSERT INTO groups (description) VALUES ('-');
 
 INSERT INTO lineups (description) VALUES ('Myth Cloth EX');
 INSERT INTO lineups (description) VALUES ('Myth Cloth');

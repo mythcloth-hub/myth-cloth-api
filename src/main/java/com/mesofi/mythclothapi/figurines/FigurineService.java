@@ -9,21 +9,13 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
-import com.mesofi.mythclothapi.catalogs.model.Distribution;
-import com.mesofi.mythclothapi.catalogs.model.Group;
-import com.mesofi.mythclothapi.catalogs.model.LineUp;
-import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.AnniversaryRepository;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
-import com.mesofi.mythclothapi.distributors.model.CountryCode;
-import com.mesofi.mythclothapi.distributors.model.Distributor;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -37,25 +29,22 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
-  private final FigurineRepository figurineRepository;
-  private final FigurineMapper figurineMapper;
+  private static final String DRIVE_URL =
+      "https://docs.google.com/spreadsheets/d/%s/export?format=csv";
+
+  private final FigurineMapper mapper;
   private final DistributorRepository distributorRepository;
   private final DistributionRepository distributionRepository;
   private final LineUpRepository lineUpRepository;
   private final SeriesRepository seriesRepository;
   private final GroupRepository groupRepository;
   private final AnniversaryRepository anniversaryRepository;
+  private final FigurineRepository figurineRepository;
 
-  public int importFromPublicDrive(String fileId) {
-    String fileUrl =
-        "https://docs.google.com/spreadsheets/d/%s/export?format=csv".formatted(fileId);
+  public void importFromPublicDrive(String fileId) {
+    String fileUrl = DRIVE_URL.formatted(fileId);
 
-    List<Distributor> distributorList = distributorRepository.findAll();
-    List<Distribution> distributionList = distributionRepository.findAll();
-    List<LineUp> lineUpList = lineUpRepository.findAll();
-    List<Series> seriesList = seriesRepository.findAll();
-    List<Group> groupList = groupRepository.findAll();
-    List<Anniversary> anniversaryList = anniversaryRepository.findAll();
+    CatalogContext catalogContext = loadCatalogs();
 
     try (Reader reader = new InputStreamReader(URI.create(fileUrl).toURL().openStream())) {
       List<FigurineCsv> figurineCsvList =
@@ -65,51 +54,11 @@ public class FigurineService {
               .build()
               .parse();
 
+      figurineCsvList.stream().limit(15).toList().forEach($ -> log.info("CSV {}", $));
       List<Figurine> figurineList =
           figurineCsvList.stream()
-              .peek(
-                  f -> {
-                    f.setDistribution(
-                        figurineMapper.toDistribution(f.getDistributionString(), distributionList));
-                    f.setLineup(figurineMapper.toLineup(f.getLineupString(), lineUpList));
-                    f.setSeries(figurineMapper.toSeries(f.getSeriesString(), seriesList));
-                    f.setGroup(figurineMapper.toGroup(f.getGroupString(), groupList));
-                    f.setAnniversary(
-                        figurineMapper.toAnniversary(f.getAnniversaryNumber(), anniversaryList));
-                  })
-              .map(figurineMapper::toFigurine)
-              .peek(
-                  f -> {
-                    if (f.getDistributors() != null) {
-                      List<FigurineDistributor> ff = f.getDistributors();
-                      ff.forEach(
-                          fd -> {
-                            fd.setFigurine(f);
-                            if (CurrencyCode.JPY == fd.getCurrency()) {
-                              Optional<Distributor> dd =
-                                  distributorList.stream()
-                                      .filter(dl -> dl.getCountry() == CountryCode.JP)
-                                      .findFirst();
-                              dd.ifPresent(fd::setDistributor);
-                              // System.out.println(fd.getDistributor());
-                            }
-                            if (CurrencyCode.MXN == fd.getCurrency()) {
-                              Optional<Distributor> dd =
-                                  distributorList.stream()
-                                      .filter(dl -> dl.getCountry() == CountryCode.MX)
-                                      .findFirst();
-                              dd.ifPresent(fd::setDistributor);
-                            }
-                            if (CurrencyCode.CNY == fd.getCurrency()) {
-                              Optional<Distributor> dd =
-                                  distributorList.stream()
-                                      .filter(dl -> dl.getCountry() == CountryCode.CN)
-                                      .findFirst();
-                              dd.ifPresent(fd::setDistributor);
-                            }
-                          });
-                    }
-                  })
+              .map(f -> mapper.toFigurine(f, catalogContext))
+              .map(this::linkDistributors)
               .toList();
 
       figurineRepository.saveAllAndFlush(figurineList);
@@ -117,7 +66,21 @@ public class FigurineService {
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
+  }
 
-    return 0;
+  private Figurine linkDistributors(Figurine figurine) {
+    Optional.ofNullable(figurine.getDistributors())
+        .ifPresent(list -> list.forEach(fd -> fd.setFigurine(figurine)));
+    return figurine;
+  }
+
+  private CatalogContext loadCatalogs() {
+    return new CatalogContext(
+        distributorRepository.findAll(),
+        distributionRepository.findAll(),
+        lineUpRepository.findAll(),
+        seriesRepository.findAll(),
+        groupRepository.findAll(),
+        anniversaryRepository.findAll());
   }
 }

@@ -3,11 +3,6 @@ package com.mesofi.mythclothapi.figurines.mapper;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
-import com.mesofi.mythclothapi.catalogs.model.Distribution;
-import com.mesofi.mythclothapi.catalogs.model.Group;
-import com.mesofi.mythclothapi.catalogs.model.LineUp;
-import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.figurines.mapper.converters.AmountConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.ListStringConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.LocalDateConfirmedConverter;
@@ -22,6 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FigurineCsv {
+
   @CsvBindByName(column = "Myth Cloth Original Name")
   private String originalName;
 
@@ -55,27 +51,17 @@ public class FigurineCsv {
   @CsvBindByName(column = "Distribution")
   private String distributionString;
 
-  private Distribution distribution;
-
   @CsvBindByName(column = "LineUp")
   private String lineupString;
-
-  private LineUp lineup;
 
   @CsvBindByName(column = "Series")
   private String seriesString;
 
-  private Series series;
-
   @CsvBindByName(column = "Group")
   private String groupString;
 
-  private Group group;
-
   @CsvBindByName(column = "Anniversary")
   private Integer anniversaryNumber;
-
-  private Anniversary anniversary;
 
   @CsvCustomBindByName(column = "Metal", converter = TrueFalseConverter.class)
   private boolean metalBody;

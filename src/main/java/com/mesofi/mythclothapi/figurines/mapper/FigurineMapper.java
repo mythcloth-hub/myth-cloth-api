@@ -4,7 +4,6 @@ import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.C
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -19,89 +18,220 @@ import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurines.dto.DistributorInfo;
+import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @Mapper(componentModel = "spring")
 public interface FigurineMapper {
 
-  @Mapping(target = "id", ignore = true)
+  /* -----------------------------
+   *   CSV → Figurine
+   * ----------------------------- */
+  @Mapping(target = "id", ignore = true) // populated by DB
   @Mapping(target = "legacyName", source = "originalName")
   @Mapping(target = "normalizedName", source = "baseName")
   @Mapping(
       target = "distributors",
-      expression =
-          "java(createDistributors(csv.getPriceJPY(), csv.getAnnouncementJPY(), csv.getPreorderJPY(), csv.getReleaseJPY(), csv.getPriceMXN(), csv.getPreorderMXN(), csv.getReleaseMXN(), csv.isHk()))")
-  Figurine toFigurine(FigurineCsv csv);
+      expression = "java(toDistributors(csv, catalogs.distributors()))")
+  @Mapping(target = "distribution", source = "distributionString")
+  @Mapping(target = "lineup", source = "lineupString")
+  @Mapping(target = "series", source = "seriesString")
+  @Mapping(target = "group", source = "groupString")
+  @Mapping(target = "anniversary", source = "anniversaryNumber")
+  Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
-  default List<FigurineDistributor> createDistributors(
-      Double priceJPY,
-      LocalDate announcementJPY,
-      LocalDate preorderJPY,
-      LocalDateConfirmed releaseJPY,
-      Double priceMXN,
-      LocalDate preorderMXN,
-      LocalDate releaseMXN,
-      boolean isHk) {
+  /* -----------------------------
+   *   API Request → Figurine
+   * ----------------------------- */
+  @Mapping(target = "id", ignore = true) // populated by DB
+  @Mapping(target = "legacyName", ignore = true) // no needed
+  @Mapping(target = "normalizedName", source = "name")
+  @Mapping(target = "distributors", source = "distributors")
+  @Mapping(target = "distribution", source = "distributionId")
+  @Mapping(target = "lineup", source = "lineUpId")
+  @Mapping(target = "series", source = "seriesId")
+  @Mapping(target = "group", source = "groupId")
+  @Mapping(target = "anniversary", source = "anniversaryId")
+  Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
-    List<FigurineDistributor> distributorList = new ArrayList<>();
+  @Mapping(target = "id", ignore = true) // populated by DB
+  @Mapping(target = "figurine", ignore = true) // will be set later in service
+  @Mapping(target = "distributor", source = "distributorId")
+  FigurineDistributor toDistributor(DistributorInfo info, @Context CatalogContext catalogs);
 
-    FigurineDistributor jp = new FigurineDistributor();
-    Optional<LocalDateConfirmed> opt = Optional.ofNullable(releaseJPY);
-
-    jp.setCurrency(isHk ? CNY : JPY); // In case the figurine has been released in China or Japan
-    jp.setPrice(priceJPY);
-    jp.setAnnouncementDate(announcementJPY);
-    jp.setPreorderDate(preorderJPY);
-    jp.setReleaseDate(opt.map(LocalDateConfirmed::getDate).orElse(null));
-    jp.setReleaseDateConfirmed(opt.map(LocalDateConfirmed::isConfirmed).orElse(false));
-    distributorList.add(jp);
-
-    Optional.ofNullable(priceMXN)
-        .ifPresent(
-            price -> {
-              FigurineDistributor mx = new FigurineDistributor();
-              mx.setCurrency(MXN);
-              mx.setPrice(price);
-              mx.setPreorderDate(preorderMXN);
-              mx.setReleaseDate(releaseMXN);
-
-              distributorList.add(mx);
-            });
-
-    return distributorList;
+  /* -----------------------------
+   *   LineUp mapping methods
+   * ----------------------------- */
+  /** Map Long → LineUp */
+  default LineUp toLineUp(Long id, @Context CatalogContext catalogs) {
+    if (id == null) {
+      return null;
+    }
+    return catalogs.lineUps().stream()
+        .filter(l -> Objects.equals(l.getId(), id))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("LineUp not found for id=" + id));
   }
 
-  default Distribution toDistribution(
-      String distributionString, @Context List<Distribution> distributionList) {
-    return findByDescription(distributionString, distributionList);
+  default Distribution toDistribution(Long id, @Context CatalogContext catalogs) {
+    if (id == null) {
+      return null;
+    }
+    return catalogs.distributions().stream()
+        .filter(l -> Objects.equals(l.getId(), id))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Distribution not found for id=" + id));
   }
 
-  default LineUp toLineup(String lineupString, @Context List<LineUp> lineUpList) {
-    return findByDescription(lineupString, lineUpList);
+  default Series toSeries(Long id, @Context CatalogContext catalogs) {
+    if (id == null) {
+      return null;
+    }
+    return catalogs.series().stream()
+        .filter(l -> Objects.equals(l.getId(), id))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Series not found for id=" + id));
   }
 
-  default Series toSeries(String seriesString, @Context List<Series> seriesList) {
-    return findByDescription(seriesString, seriesList);
+  default Group toGroup(Long id, @Context CatalogContext catalogs) {
+    if (id == null) {
+      return null;
+    }
+    return catalogs.groups().stream()
+        .filter(l -> Objects.equals(l.getId(), id))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Group not found for id=" + id));
   }
 
-  default Group toGroup(String groupString, @Context List<Group> groupList) {
-    return findByDescription(groupString, groupList);
+  default Anniversary toAnniversary(Long id, @Context CatalogContext catalogs) {
+    if (id == null) {
+      return null;
+    }
+    return catalogs.anniversaries().stream()
+        .filter(l -> Objects.equals(l.getId(), id))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Anniversary not found for id=" + id));
   }
 
-  default Anniversary toAnniversary(Integer anniversaryNumber, List<Anniversary> anniversaryList) {
-    return anniversaryList.stream()
+  default Distribution toDistribution(String description, @Context CatalogContext catalogs) {
+    if (description == null || description.isBlank()) {
+      return null;
+    }
+    return catalogs.distributions().stream()
+        .filter(l -> description.equalsIgnoreCase(l.getDescription()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Distribution not found for description='" + description + "'"));
+  }
+
+  /** Map String → LineUp */
+  default LineUp toLineUp(String description, @Context CatalogContext catalogs) {
+    if (description == null || description.isBlank()) {
+      return null;
+    }
+    return catalogs.lineUps().stream()
+        .filter(l -> description.equalsIgnoreCase(l.getDescription()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "LineUp not found for description='" + description + "'"));
+  }
+
+  default Series toSeries(String description, @Context CatalogContext catalogs) {
+    if (description == null || description.isBlank()) {
+      return null;
+    }
+    return catalogs.series().stream()
+        .filter(l -> description.equalsIgnoreCase(l.getDescription()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Series not found for description='" + description + "'"));
+  }
+
+  default Group toGroup(String description, @Context CatalogContext catalogs) {
+    if (description == null || description.isBlank()) {
+      return null;
+    }
+    return catalogs.groups().stream()
+        .filter(l -> description.equalsIgnoreCase(l.getDescription()))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Group not found for description='" + description + "'"));
+  }
+
+  default Anniversary toAnniversary(Integer anniversaryNumber, @Context CatalogContext catalogs) {
+    return catalogs.anniversaries().stream()
         .filter(item -> Objects.nonNull(item.getYear()))
         .filter(item -> item.getYear().equals(anniversaryNumber))
         .findFirst()
         .orElse(null);
   }
 
-  private <T extends Descriptive> T findByDescription(String description, List<T> list) {
-    return list.stream()
-        .filter(item -> item.getDescription().equalsIgnoreCase(description))
+  default Distributor mapDistributorId(Long id, @Context CatalogContext catalogs) {
+    return catalogs.distributors().stream()
+        .filter(d -> Objects.equals(d.getId(), id))
         .findFirst()
-        .orElse(null);
+        .orElseThrow(() -> new IllegalArgumentException("Distributor not found for id=" + id));
+  }
+
+  default List<FigurineDistributor> toDistributors(
+      FigurineCsv csv, @Context List<Distributor> distributors) {
+
+    List<FigurineDistributor> distributorList = new ArrayList<>();
+    FigurineDistributor jp = new FigurineDistributor();
+    Optional<LocalDateConfirmed> opt = Optional.ofNullable(csv.getReleaseJPY());
+
+    jp.setCurrency(
+        csv.isHk() ? CNY : JPY); // In case the figurine has been released in China or Japan
+    jp.setPrice(csv.getPriceJPY());
+    jp.setAnnouncementDate(csv.getAnnouncementJPY());
+    jp.setPreorderDate(csv.getPreorderJPY());
+    jp.setReleaseDate(opt.map(LocalDateConfirmed::getDate).orElse(null));
+    jp.setReleaseDateConfirmed(opt.map(LocalDateConfirmed::isConfirmed).orElse(false));
+
+    Distributor distributorFound =
+        distributors.stream()
+            .filter(d -> d.getCountry() == CountryCode.JP)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Distributor not found for code='" + CountryCode.JP + ""));
+
+    jp.setDistributor(distributorFound);
+    distributorList.add(jp);
+
+    Optional.ofNullable(csv.getPriceMXN())
+        .ifPresent(
+            price -> {
+              FigurineDistributor mx = new FigurineDistributor();
+              mx.setCurrency(MXN);
+              mx.setPrice(price);
+              mx.setPreorderDate(csv.getPreorderMXN());
+              mx.setReleaseDate(csv.getReleaseMXN());
+              mx.setDistributor(
+                  distributors.stream()
+                      .filter(d -> d.getCountry() == CountryCode.MX)
+                      .findFirst()
+                      .orElseThrow(
+                          () ->
+                              new IllegalArgumentException(
+                                  "Distributor not found for code='" + CountryCode.MX + "")));
+
+              distributorList.add(mx);
+            });
+
+    return distributorList;
   }
 }
