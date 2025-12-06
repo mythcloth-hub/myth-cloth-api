@@ -41,7 +41,7 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository figurineRepository;
 
-  public void importFromPublicDrive(String fileId) {
+  public void importFromPublicDrive(final String fileId) {
     String fileUrl = DRIVE_URL.formatted(fileId);
 
     CatalogContext catalogContext = loadCatalogs();
@@ -54,15 +54,14 @@ public class FigurineService {
               .build()
               .parse();
 
-      figurineCsvList.stream().limit(15).toList().forEach($ -> log.info("CSV {}", $));
       List<Figurine> figurineList =
           figurineCsvList.stream()
-              .map(f -> mapper.toFigurine(f, catalogContext))
+              .map(csv -> mapper.toFigurine(csv, catalogContext))
               .map(this::linkDistributors)
               .toList();
 
-      figurineRepository.saveAllAndFlush(figurineList);
-      log.info("All figurines have been saved correctly!!");
+      List<Figurine> savedFigurines = figurineRepository.saveAllAndFlush(figurineList);
+      log.info("{} figurines have been saved correctly!!", savedFigurines.size());
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
