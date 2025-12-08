@@ -10,6 +10,7 @@ import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -100,6 +101,9 @@ public class Figurine extends BaseId {
 
   @Column(length = 800)
   private String remarks;
+
+  @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<FigurineEvent> events = new ArrayList<>();
 
   @ElementCollection
   @CollectionTable(name = "official_images", joinColumns = @JoinColumn(name = "figurine_id"))
