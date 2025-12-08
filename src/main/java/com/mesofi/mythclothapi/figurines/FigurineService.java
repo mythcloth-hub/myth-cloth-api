@@ -5,7 +5,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +47,6 @@ public class FigurineService {
 
   public void importFromPublicDrive(final String fileId) {
     String fileUrl = DRIVE_URL.formatted(fileId);
-
     CatalogContext catalogContext = loadCatalogs();
 
     try (Reader reader = new InputStreamReader(URI.create(fileUrl).toURL().openStream())) {
@@ -62,38 +60,32 @@ public class FigurineService {
       List<Figurine> figurineList =
           figurineCsvList.stream()
               .map(csv -> mapper.toFigurine(csv, catalogContext))
-              .map(this::linkDistributors)
-              .map(this::linkEvents)
+              .peek(this::linkReferences)
               .toList();
 
       List<Figurine> savedFigurines = repository.saveAllAndFlush(figurineList);
       log.info("{} figurines have been saved correctly!!", savedFigurines.size());
     } catch (IOException ex) {
-      throw new RuntimeException(ex);
+      throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
     }
   }
 
   @Transactional
   public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
-    log.info("Creating figurine {})", request.name());
+    log.info("Creating figurine '{}'", request.name());
 
     CatalogContext catalogContext = loadCatalogs();
 
     Figurine figurine = mapper.toFigurine(request, catalogContext);
+    linkReferences(figurine);
+
     var saved = repository.save(figurine);
     return mapper.toFigurineResp(saved);
   }
 
-  private Figurine linkDistributors(Figurine figurine) {
-    Optional.ofNullable(figurine.getDistributors())
-        .ifPresent(list -> list.forEach(fd -> fd.setFigurine(figurine)));
-    return figurine;
-  }
-
-  private Figurine linkEvents(Figurine figurine) {
-    Optional.ofNullable(figurine.getEvents())
-        .ifPresent(list -> list.forEach(fd -> fd.setFigurine(figurine)));
-    return figurine;
+  private void linkReferences(Figurine figurine) {
+    figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+    figurine.getEvents().forEach(e -> e.setFigurine(figurine));
   }
 
   private CatalogContext loadCatalogs() {

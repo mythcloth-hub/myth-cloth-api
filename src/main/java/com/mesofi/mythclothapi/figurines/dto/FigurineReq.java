@@ -14,7 +14,7 @@ public record FigurineReq(
     @NotNull Long lineUpId,
     @NotNull Long seriesId,
     @NotNull Long groupId,
-    @NotNull Long anniversaryId,
+    Long anniversaryId,
     boolean metalBody,
     boolean oce,
     boolean revival,
