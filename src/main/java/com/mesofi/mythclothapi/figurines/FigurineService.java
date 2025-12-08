@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.catalogs.repository.AnniversaryRepository;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
@@ -15,12 +16,16 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.opencsv.bean.CsvToBeanBuilder;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,7 +44,7 @@ public class FigurineService {
   private final SeriesRepository seriesRepository;
   private final GroupRepository groupRepository;
   private final AnniversaryRepository anniversaryRepository;
-  private final FigurineRepository figurineRepository;
+  private final FigurineRepository repository;
 
   public void importFromPublicDrive(final String fileId) {
     String fileUrl = DRIVE_URL.formatted(fileId);
@@ -58,17 +63,35 @@ public class FigurineService {
           figurineCsvList.stream()
               .map(csv -> mapper.toFigurine(csv, catalogContext))
               .map(this::linkDistributors)
+              .map(this::linkEvents)
               .toList();
 
-      List<Figurine> savedFigurines = figurineRepository.saveAllAndFlush(figurineList);
+      List<Figurine> savedFigurines = repository.saveAllAndFlush(figurineList);
       log.info("{} figurines have been saved correctly!!", savedFigurines.size());
     } catch (IOException ex) {
       throw new RuntimeException(ex);
     }
   }
 
+  @Transactional
+  public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
+    log.info("Creating figurine {})", request.name());
+
+    CatalogContext catalogContext = loadCatalogs();
+
+    Figurine figurine = mapper.toFigurine(request, catalogContext);
+    var saved = repository.save(figurine);
+    return mapper.toFigurineResp(saved);
+  }
+
   private Figurine linkDistributors(Figurine figurine) {
     Optional.ofNullable(figurine.getDistributors())
+        .ifPresent(list -> list.forEach(fd -> fd.setFigurine(figurine)));
+    return figurine;
+  }
+
+  private Figurine linkEvents(Figurine figurine) {
+    Optional.ofNullable(figurine.getEvents())
         .ifPresent(list -> list.forEach(fd -> fd.setFigurine(figurine)));
     return figurine;
   }

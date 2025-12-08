@@ -4,6 +4,8 @@ import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.C
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,8 +25,10 @@ import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurines.dto.DistributorInfo;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 /**
@@ -48,6 +52,8 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
  */
 @Mapper(componentModel = "spring")
 public interface FigurineMapper {
+
+  DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");
 
   /* ============================
     CSV → Figurine
@@ -94,7 +100,10 @@ public interface FigurineMapper {
   @Mapping(target = "series", source = "seriesId")
   @Mapping(target = "group", source = "groupId")
   @Mapping(target = "anniversary", source = "anniversaryId")
+  @Mapping(target = "events", ignore = true) // it's ok, here it is not required to have events.
   Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
+
+  FigurineResp toFigurineResp(Figurine figurine);
 
   /* ============================
   API DistributorInfo → FigurineDistributor
@@ -253,6 +262,75 @@ public interface FigurineMapper {
             });
 
     return distributorList;
+  }
+
+  /**
+   * Converts a list of raw event strings into a list of {@link FigurineEvent} entities.
+   *
+   * <p>Each input string must follow the format:
+   *
+   * <pre>
+   *   "M/d/yyyy: Description text"
+   *   "M/d/yyyy"
+   * </pre>
+   *
+   * Examples:
+   *
+   * <ul>
+   *   <li>{@code "12/5/2025: Preorder starts"} → event with date and description
+   *   <li>{@code "3/10/2024"} → event with date only
+   * </ul>
+   *
+   * <p>If the list is {@code null} or empty, an empty list is returned.
+   *
+   * @param eventStrings raw event strings from CSV or an API request
+   * @return a list of parsed {@link FigurineEvent} instances; never {@code null}
+   * @throws IllegalArgumentException if a date component cannot be parsed using {@link
+   *     #EVENT_DATE_FORMATTER}
+   */
+  default List<FigurineEvent> toFigurineEvents(List<String> eventStrings) {
+    if (eventStrings == null || eventStrings.isEmpty()) {
+      return List.of();
+    }
+    return eventStrings.stream().map(this::parseEventString).filter(Objects::nonNull).toList();
+  }
+
+  /**
+   * Parses a single event string into a {@link FigurineEvent}.
+   *
+   * <p>Expected input format:
+   *
+   * <pre>
+   *   "M/d/yyyy: Optional description"
+   * </pre>
+   *
+   * <p>If the input is blank or {@code null}, {@code null} is returned.
+   *
+   * @param raw the raw event string
+   * @return a new {@link FigurineEvent}, or {@code null} if the input is blank
+   * @throws IllegalArgumentException if the date part is malformed
+   */
+  private FigurineEvent parseEventString(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return null;
+    }
+
+    String[] parts = raw.split(":", 2);
+    String datePart = parts[0].trim();
+    String descriptionPart = parts.length > 1 ? parts[1].trim() : "";
+
+    // Validate date
+    LocalDate date;
+    try {
+      date = LocalDate.parse(datePart, EVENT_DATE_FORMATTER);
+    } catch (Exception ex) {
+      throw new IllegalArgumentException("Invalid event date format: '" + datePart + "'", ex);
+    }
+
+    FigurineEvent event = new FigurineEvent();
+    event.setEventDate(date);
+    event.setDescription(descriptionPart);
+    return event;
   }
 
   /**

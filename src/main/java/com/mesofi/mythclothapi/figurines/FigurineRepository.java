@@ -9,5 +9,5 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long> {
-  Optional<FigurineRepository> findByLegacyName(String legacyName);
+  Optional<Figurine> findByLegacyName(String legacyName);
 }
