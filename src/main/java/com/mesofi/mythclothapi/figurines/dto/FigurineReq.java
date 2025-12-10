@@ -2,13 +2,14 @@ package com.mesofi.mythclothapi.figurines.dto;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record FigurineReq(
     @NotBlank String name,
-    @NotEmpty List<DistributorInfo> distributors,
+    @NotEmpty @Valid List<DistributorInfo> distributors,
     String tamashiiUrl,
     @NotNull Long distributionId,
     @NotNull Long lineUpId,

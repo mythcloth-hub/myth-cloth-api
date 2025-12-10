@@ -12,9 +12,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import com.mesofi.mythclothapi.catalogs.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -103,6 +106,11 @@ public interface FigurineMapper {
   @Mapping(target = "events", ignore = true) // it's ok, here it is not required to have events.
   Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  void updateFigurine(@MappingTarget Figurine target, Figurine source);
+
+  @Mapping(target = "name", source = "normalizedName")
+  @Mapping(target = "standardName", ignore = true) // will be calculated in the service layer
   FigurineResp toFigurineResp(Figurine figurine);
 
   /* ============================

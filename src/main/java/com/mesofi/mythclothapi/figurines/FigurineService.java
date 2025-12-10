@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.catalogs.repository.AnniversaryRepository;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
@@ -30,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@Validated
 @RequiredArgsConstructor
 public class FigurineService {
 
@@ -50,24 +52,44 @@ public class FigurineService {
     CatalogContext catalogContext = loadCatalogs();
 
     try (Reader reader = new InputStreamReader(URI.create(fileUrl).toURL().openStream())) {
-      List<FigurineCsv> figurineCsvList =
+
+      List<FigurineCsv> csvRows =
           new CsvToBeanBuilder<FigurineCsv>(reader)
               .withType(FigurineCsv.class)
               .withIgnoreLeadingWhiteSpace(true)
               .build()
               .parse();
 
-      List<Figurine> figurineList =
-          figurineCsvList.stream()
-              .map(csv -> mapper.toFigurine(csv, catalogContext))
-              .peek(this::linkReferences)
-              .toList();
+      List<Figurine> figurines =
+          csvRows.stream().map(csv -> upsertFigurine(csv, catalogContext)).toList();
 
-      List<Figurine> savedFigurines = repository.saveAllAndFlush(figurineList);
-      log.info("{} figurines have been saved correctly!!", savedFigurines.size());
+      List<Figurine> saved = repository.saveAllAndFlush(figurines);
+      log.info("{} figurines have been processed (inserted or updated)", saved.size());
     } catch (IOException ex) {
       throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
     }
+  }
+
+  private Figurine upsertFigurine(FigurineCsv csv, CatalogContext context) {
+    // Convert CSV → Incoming entity
+    Figurine incoming = mapper.toFigurine(csv, context);
+
+    // Find existing by unique key (legacyName)
+    return repository
+        .findByLegacyName(incoming.getLegacyName())
+        .map(
+            existing -> {
+              // Update existing record
+              mapper.updateFigurine(existing, incoming);
+              linkReferences(existing);
+              return existing;
+            })
+        .orElseGet(
+            () -> {
+              // Create new record
+              linkReferences(incoming);
+              return incoming;
+            });
   }
 
   @Transactional

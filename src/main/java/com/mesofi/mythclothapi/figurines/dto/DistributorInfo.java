@@ -4,8 +4,10 @@ import java.time.LocalDate;
 
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
+import jakarta.validation.constraints.Positive;
+
 public record DistributorInfo(
-    Long distributorId,
+    @Positive Long distributorId,
     CurrencyCode currency,
     Double price,
     LocalDate announcementDate,
