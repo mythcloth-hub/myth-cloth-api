@@ -17,6 +17,20 @@
       "preorderOpensAt": "2025-05-12",
       "releaseDate": "2026-05-01",
       "releaseDateConfirmed": false
+    },
+    {
+      "distributor": {
+        "id": 32,
+        "name": "DAM",
+        "countryCode": "MX",
+        "website": "https://animexico-online.com/"
+      },
+      "currency": "MXN",
+      "price": 5200.00,
+      "announcedAt": "2025-12-13",
+      "preorderOpensAt": "2025-12-14",
+      "releaseDate": "2026-01-01",
+      "releaseDateConfirmed": true
     }
   ],
   "tamashiiUrl": "https://tamashiiweb.com/item/15695",
@@ -61,25 +75,36 @@
       "id": 1,
       "date": "2025-11-13",
       "type": "ANNOUNCEMENT",
+      "region": "JP",
       "description": "Revealed at Tamashii Nations 2025."
     },
     {
       "id": 2,
       "date": "2025-05-12",
       "type": "PREORDER_OPEN",
+      "region": "JP",
       "description": "Preorders open."
     },
     {
       "id": 3,
       "date": "2026-05-01",
       "type": "RELEASE",
+      "region": "JP",
       "description": "Official release in Japan."
     },
     {
       "id": 4,
       "date": "2026-04-15",
       "type": "RESTOCK",
+      "region": "JP",
       "description": "Small restock confirmed for Japan."
+    },
+    {
+      "id": 5,
+      "date": "2026-05-15",
+      "type": "LOCAL_RELEASE",
+      "region": "MX",
+      "description": "Mexico is releasing the figurine."
     }
   ],
   "createdAt": "2025-01-10T15:22:01Z",
