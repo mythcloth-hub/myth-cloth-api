@@ -76,7 +76,7 @@ public class FigurineControllerTest {
 
   @Test
   void shouldReturn400_whenBodyIsEmpty() throws Exception {
-    String json = JsonUtils.read("payloads/figurines/shouldReturn400_whenBodyIsEmpty.json");
+    String json = JsonUtils.read("payloads/figurines/response/shouldReturn400_whenBodyIsEmpty.json");
 
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(json))
@@ -107,7 +107,7 @@ public class FigurineControllerTest {
 
   @Test
   void shouldReturn400_whenDistributorIsEmpty() throws Exception {
-    String json = JsonUtils.read("payloads/figurines/shouldReturn400_whenDistributorIsEmpty.json");
+    String json = JsonUtils.read("payloads/figurines/response/shouldReturn400_whenDistributorIsEmpty.json");
 
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(json))
