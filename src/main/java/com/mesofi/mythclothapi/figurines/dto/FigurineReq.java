@@ -9,7 +9,8 @@ import jakarta.validation.constraints.NotNull;
 
 public record FigurineReq(
     @NotBlank String name,
-    @NotEmpty @Valid List<DistributorInfo> distributors,
+    @NotEmpty(message = "At least one distributor must be provided") @Valid
+        List<DistributorInfo> distributors,
     String tamashiiUrl,
     @NotNull Long distributionId,
     @NotNull Long lineUpId,

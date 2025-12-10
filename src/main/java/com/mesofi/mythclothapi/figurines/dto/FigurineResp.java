@@ -1,3 +1,6 @@
 package com.mesofi.mythclothapi.figurines.dto;
 
-public record FigurineResp(Long id, String name, String standardName) {}
+import java.util.List;
+
+public record FigurineResp(
+    long id, String name, String standardName, List<FigurineDistributorInfoResp> distributors) {}

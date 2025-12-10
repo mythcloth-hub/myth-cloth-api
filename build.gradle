@@ -46,10 +46,11 @@ pitest {
     threads = 4
     mutationThreshold = 85     // fail if under 85%
     excludedClasses = [
-            'com.mesofi.mythclothapi.figurines.*',
-            'com.mesofi.mythclothapi.service.*',
-            'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
-            'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
+            'com.mesofi.mythclothapi.Application',
+            'com.mesofi.mythclothapi.StartupRunner'
+      //      'com.mesofi.mythclothapi.figurines.*',
+      //      'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
+      //      'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
     ]
     excludedTestClasses = [
             'com.mesofi.*IntegrationTest*',

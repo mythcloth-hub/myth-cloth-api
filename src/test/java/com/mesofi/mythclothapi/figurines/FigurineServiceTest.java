@@ -1,11 +1,14 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -28,10 +31,10 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
-import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurines.dto.DistributorInfo;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorInfoResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -108,7 +111,7 @@ public class FigurineServiceTest {
   }
 
   @Test
-  void createFigurine_shouldThrowException_whenDistributorsIdIsNotPositive_() {
+  void createFigurine_shouldCreateNewFigurine_whenInputProvided() {
     // Arrange
     CatalogContext catalogContext =
         new CatalogContext(
@@ -126,7 +129,15 @@ public class FigurineServiceTest {
     when(groupRepository.findAll()).thenReturn(catalogContext.groups());
     when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
 
-    DistributorInfo info = new DistributorInfo(1L, null, null, null, null, null, false);
+    DistributorInfo info =
+        new DistributorInfo(
+            1L,
+            JPY,
+            3500d,
+            LocalDate.of(2025, 1, 1),
+            LocalDate.of(2025, 6, 6),
+            LocalDate.of(2025, 9, 9),
+            true);
     FigurineReq req = createFigurine("Pegasus Seiya", List.of(info), 1, 1, 1, 1, 1);
 
     Figurine figurine = mapper.toFigurine(req, catalogContext);
@@ -139,8 +150,24 @@ public class FigurineServiceTest {
     // Assert
     assertThat(figurineResp)
         .isNotNull()
-        .extracting(FigurineResp::id, FigurineResp::name, FigurineResp::standardName)
-        .containsExactly(1L, "Pegasus Seiya", null);
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::standardName,
+            FigurineResp::distributors)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            null,
+            List.of(
+                new FigurineDistributorInfoResp(
+                    new Distributor(),
+                    JPY,
+                    3500d,
+                    LocalDate.of(2025, 1, 1),
+                    LocalDate.of(2025, 6, 6),
+                    LocalDate.of(2025, 9, 9),
+                    true)));
 
     verify(distributorRepository).findAll();
     verify(distributionRepository).findAll();
@@ -155,7 +182,7 @@ public class FigurineServiceTest {
     Distributor distributor1 = new Distributor();
     distributor1.setId(1L);
     distributor1.setName(DistributorName.BANDAI);
-    distributor1.setCountry(CountryCode.JP);
+    distributor1.setCountry(JP);
     return List.of(distributor1);
   }
 
