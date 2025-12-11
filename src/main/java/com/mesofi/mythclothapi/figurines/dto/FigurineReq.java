@@ -3,12 +3,13 @@ package com.mesofi.mythclothapi.figurines.dto;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record FigurineReq(
-    @NotBlank String name,
+    @NotBlank @Max(value = 100) String name,
     @NotEmpty(message = "At least one distributor must be provided") @Valid
         List<DistributorReq> distributors,
     String tamashiiUrl,

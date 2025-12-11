@@ -1,0 +1,10 @@
+{
+  "distributors": [
+    {
+      "supplierId": 1,
+      "currency": "JPY",
+      "price": 1,
+      "announcedAt": "-"
+    }
+  ]
+}

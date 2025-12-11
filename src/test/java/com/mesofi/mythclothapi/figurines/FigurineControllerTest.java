@@ -165,4 +165,99 @@ public class FigurineControllerTest {
                     "distributors[0].supplierId",
                     "must be greater than 0")));
   }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributorPriceIsNegative(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(
+                Map.of(
+                    "distributionId",
+                    "must not be null",
+                    "lineUpId",
+                    "must not be null",
+                    "groupId",
+                    "must not be null",
+                    "name",
+                    "must not be blank",
+                    "seriesId",
+                    "must not be null",
+                    "distributors[0].price",
+                    "must be greater than 0")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributorCurrencyIsInvalid(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(
+            hasDetail(
+                "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode` from String \"-\": not one of the values accepted for Enum class: [EUR, JPY, USD, MXN, CNY]"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp());
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributorDateIsInvalid(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Invalid body"))
+        .andExpect(hasStatus(400))
+        .andExpect(
+            hasDetail(
+                "JSON parse error: Cannot deserialize value of type `java.time.LocalDate` from String \"-\": Failed to deserialize java.time.LocalDate: (java.time.format.DateTimeParseException) Text '-' could not be parsed at index 1"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp());
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenNameIsTooLong(String jsonRequest) throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(
+                Map.of(
+                    "distributionId",
+                    "must not be null",
+                    "lineUpId",
+                    "must not be null",
+                    "groupId",
+                    "must not be null",
+                    "name",
+                    "must be less than or equal to 100",
+                    "seriesId",
+                    "must not be null")));
+  }
 }
