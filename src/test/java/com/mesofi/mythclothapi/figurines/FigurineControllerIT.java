@@ -88,7 +88,6 @@ public class FigurineControllerIT {
         true,
         false,
         false,
-        false,
         true,
         "Some comment",
         List.of("https://imagizer.imageshack.com/img924/4413/Pl86x4.jpg"),

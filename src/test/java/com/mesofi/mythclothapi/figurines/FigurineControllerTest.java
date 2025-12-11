@@ -256,8 +256,110 @@ public class FigurineControllerTest {
                     "groupId",
                     "must not be null",
                     "name",
-                    "must be less than or equal to 100",
+                    "Name must not exceed 100 characters",
                     "seriesId",
                     "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributionLineupGroupAndSeriesAreNull(
+      String jsonRequest) throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(
+                Map.of(
+                    "distributionId",
+                    "must not be null",
+                    "lineUpId",
+                    "must not be null",
+                    "groupId",
+                    "must not be null",
+                    "seriesId",
+                    "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenLineupGroupAndSeriesAreNull(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(
+                Map.of(
+                    "lineUpId",
+                    "must not be null",
+                    "groupId",
+                    "must not be null",
+                    "seriesId",
+                    "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenGroupAndSeriesIdAreNull(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(Map.of("groupId", "must not be null", "seriesId", "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenGroupIdIsNull(String jsonRequest) throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(hasErrors(Map.of("groupId", "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn200_whenRequestIsValid(String jsonRequest) throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(hasErrors(Map.of("distributionId", "must not be null")));
   }
 }

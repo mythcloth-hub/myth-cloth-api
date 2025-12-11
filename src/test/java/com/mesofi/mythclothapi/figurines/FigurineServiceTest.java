@@ -255,7 +255,6 @@ public class FigurineServiceTest {
         false,
         false,
         false,
-        false,
         null,
         null,
         null);

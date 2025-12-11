@@ -34,6 +34,10 @@
     }
   ],
   "tamashiiUrl": "https://tamashiiweb.com/item/15695",
+  "distribution": {
+    "id": 6,
+    "description": "Tamashii Web Shop"
+  },
   "lineUp": {
     "id": 3,
     "description": "Myth Cloth EX"
