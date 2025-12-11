@@ -29,7 +29,7 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
-import com.mesofi.mythclothapi.figurines.dto.DistributorInfo;
+import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -117,17 +117,20 @@ public interface FigurineMapper {
   API DistributorInfo → FigurineDistributor
   ============================ */
   /**
-   * Maps a high-level API {@link DistributorInfo} wrapper into a {@link FigurineDistributor}
-   * entity. The figurine relation is intentionally ignored; it is set later by the service layer.
+   * Maps a high-level API {@link DistributorReq} wrapper into a {@link FigurineDistributor} entity.
+   * The figurine relation is intentionally ignored; it is set later by the service layer.
    *
-   * @param info distributor info sent from API
+   * @param distributorReq distributor req sent from API
    * @param catalogs catalogs used to resolve the distributor entity
    * @return a new {@link FigurineDistributor}
    */
   @Mapping(target = "id", ignore = true) // populated by DB
   @Mapping(target = "figurine", ignore = true) // will be set later in service
-  @Mapping(target = "distributor", source = "distributorId")
-  FigurineDistributor toDistributor(DistributorInfo info, @Context CatalogContext catalogs);
+  @Mapping(target = "distributor", source = "supplierId")
+  @Mapping(target = "announcementDate", source = "announcedAt")
+  @Mapping(target = "preorderDate", source = "preorderOpensAt")
+  FigurineDistributor toDistributor(
+      DistributorReq distributorReq, @Context CatalogContext catalogs);
 
   /** Resolves a {@link Distribution} by its ID. Returns {@code null} when the ID is missing. */
   default Distribution toDistribution(Long id, @Context CatalogContext catalogs) {

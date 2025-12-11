@@ -28,7 +28,7 @@ public class FigurineController {
 
   @PostMapping
   public ResponseEntity<FigurineResp> createFigurine(
-      @Valid @RequestBody FigurineReq figurineRequest) {
+      @RequestBody @Valid FigurineReq figurineRequest) {
 
     FigurineResp response = service.createFigurine(figurineRequest);
     URI location =

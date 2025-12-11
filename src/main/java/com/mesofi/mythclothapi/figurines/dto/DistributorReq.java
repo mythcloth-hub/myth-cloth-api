@@ -6,11 +6,11 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 import jakarta.validation.constraints.Positive;
 
-public record DistributorInfo(
-    @Positive Long distributorId,
+public record DistributorReq(
+    @Positive Long supplierId,
     CurrencyCode currency,
-    Double price,
-    LocalDate announcementDate,
-    LocalDate preorderDate,
+    @Positive Double price,
+    LocalDate announcedAt,
+    LocalDate preorderOpensAt,
     LocalDate releaseDate,
     boolean releaseDateConfirmed) {}

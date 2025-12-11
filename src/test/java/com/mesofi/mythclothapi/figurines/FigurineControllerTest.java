@@ -16,12 +16,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.mesofi.mythclothapi.utils.JsonUtils;
+import com.mesofi.mythclothapi.utils.MethodFileSource;
 
 @WebMvcTest(FigurineController.class)
 public class FigurineControllerTest {
@@ -31,7 +32,7 @@ public class FigurineControllerTest {
   @MockitoBean FigurineService service;
 
   @Test
-  void shouldReturn400_whenBodyIsMissing() throws Exception {
+  void createFigurine_shouldReturn400_whenBodyIsMissing() throws Exception {
     mockMvc
         .perform(post("/figurines"))
         .andDo(print())
@@ -45,7 +46,7 @@ public class FigurineControllerTest {
   }
 
   @Test
-  void shouldReturn415_whenBodyIsText() throws Exception {
+  void createFigurine_shouldReturn415_whenBodyIsText() throws Exception {
     mockMvc
         .perform(post("/figurines").content("The Body"))
         .andDo(print())
@@ -59,7 +60,7 @@ public class FigurineControllerTest {
   }
 
   @Test
-  void shouldReturn400_whenBodyIsUnparseable() throws Exception {
+  void createFigurine_shouldReturn400_whenBodyIsUnparseable() throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content("The Body"))
         .andDo(print())
@@ -74,12 +75,11 @@ public class FigurineControllerTest {
         .andExpect(hasTimestamp());
   }
 
-  @Test
-  void shouldReturn400_whenBodyIsEmpty() throws Exception {
-    String json = JsonUtils.read("payloads/figurines/response/shouldReturn400_whenBodyIsEmpty.json");
-
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenRequestIsEmpty(String jsonRequest) throws Exception {
     mockMvc
-        .perform(post("/figurines").contentType(APPLICATION_JSON).content(json))
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(defaultType())
@@ -105,12 +105,11 @@ public class FigurineControllerTest {
                     "must not be null")));
   }
 
-  @Test
-  void shouldReturn400_whenDistributorIsEmpty() throws Exception {
-    String json = JsonUtils.read("payloads/figurines/response/shouldReturn400_whenDistributorIsEmpty.json");
-
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributorIsEmpty(String jsonRequest) throws Exception {
     mockMvc
-        .perform(post("/figurines").contentType(APPLICATION_JSON).content(json))
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
         .andExpect(defaultType())
@@ -134,5 +133,36 @@ public class FigurineControllerTest {
                     "must not be blank",
                     "seriesId",
                     "must not be null")));
+  }
+
+  @ParameterizedTest
+  @MethodFileSource(folder = "/figurines/request")
+  void createFigurine_shouldReturn400_whenDistributorSupplierIdIsNegative(String jsonRequest)
+      throws Exception {
+    mockMvc
+        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
+        .andDo(print())
+        .andExpect(status().isBadRequest())
+        .andExpect(defaultType())
+        .andExpect(hasTitle("Validation Failed"))
+        .andExpect(hasStatus(400))
+        .andExpect(hasDetail("Your request parameters didn't validate"))
+        .andExpect(hasInstance("/figurines"))
+        .andExpect(hasTimestamp())
+        .andExpect(
+            hasErrors(
+                Map.of(
+                    "distributionId",
+                    "must not be null",
+                    "lineUpId",
+                    "must not be null",
+                    "groupId",
+                    "must not be null",
+                    "name",
+                    "must not be blank",
+                    "seriesId",
+                    "must not be null",
+                    "distributors[0].supplierId",
+                    "must be greater than 0")));
   }
 }
