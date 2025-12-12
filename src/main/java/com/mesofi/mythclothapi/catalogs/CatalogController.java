@@ -41,7 +41,7 @@ public class CatalogController {
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/series
             .path("/{id}") // append /{id}
-            .buildAndExpand(response.id())
+            .buildAndExpand(response.getId())
             .toUri();
 
     return ResponseEntity.created(location).body(response);

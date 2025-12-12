@@ -3,8 +3,15 @@ package com.mesofi.mythclothapi.figurineevents.dto;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FigurineEventResp(
-    long id, String description, LocalDate eventDate, Figurine figurine) {}
+    long id,
+    LocalDate date,
+    FigurineEventType type,
+    CountryCode region,
+    String description,
+    FigurineResp figurine) {}

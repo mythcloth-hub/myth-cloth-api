@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class CatalogResp {
-  private long id;
-  private String description;
+public class AnniversaryResp extends CatalogResp {
+  private int year;
 }

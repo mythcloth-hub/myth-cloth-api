@@ -1,12 +1,13 @@
 {
   "id": 3,
   "name": "Pegasus Seiya",
-  "displayableName": "Pegasus Seiya ~Final Bronze Cloth~ OCE EX",
+  "displayableName": "Pegasus Seiya [Final Bronze Cloth] ~Original Color Edition~",
   "distributors": [
     {
       "distributor": {
         "id": 23,
         "name": "BANDAI",
+        "description": "Tamashii Nations",
         "countryCode": "JP",
         "website": "https://tamashii.jp/"
       },
@@ -22,6 +23,7 @@
       "distributor": {
         "id": 32,
         "name": "DAM",
+        "description": "Distribuidora Animéxico",
         "countryCode": "MX",
         "website": "https://animexico-online.com/"
       },

@@ -33,7 +33,7 @@ public class FigurineController {
     FigurineResp response = service.createFigurine(figurineRequest);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
-            .path("/figurines/{id}") // append /{id}
+            .path("/{id}") // append /{id}
             .buildAndExpand(response.id())
             .toUri();
 

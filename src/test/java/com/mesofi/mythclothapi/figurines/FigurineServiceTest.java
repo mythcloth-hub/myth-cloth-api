@@ -32,10 +32,11 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
-import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorInfoResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -155,17 +156,18 @@ public class FigurineServiceTest {
         .extracting(
             FigurineResp::id,
             FigurineResp::name,
-            FigurineResp::standardName,
+            FigurineResp::displayableName,
             FigurineResp::distributors)
         .containsExactly(
             1L,
             "Pegasus Seiya",
             null,
             List.of(
-                new FigurineDistributorInfoResp(
-                    new Distributor(),
+                new FigurineDistributorResp(
+                    new DistributorResp(1, "", "", "", ""),
                     JPY,
                     3500d,
+                    null,
                     LocalDate.of(2025, 1, 1),
                     LocalDate.of(2025, 6, 6),
                     LocalDate.of(2025, 9, 9),

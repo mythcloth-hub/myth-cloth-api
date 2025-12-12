@@ -111,7 +111,7 @@ public class FigurineControllerIT {
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
     assertThat(response.getBody()).isNotNull();
 
-    return response.getBody().id();
+    return response.getBody().getId();
   }
 
   private Long createDistributor(com.mesofi.mythclothapi.distributors.dto.DistributorReq request) {

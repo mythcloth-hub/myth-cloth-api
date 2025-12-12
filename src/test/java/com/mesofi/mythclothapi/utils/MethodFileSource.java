@@ -12,4 +12,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @ArgumentsSource(MethodNameJsonProvider.class)
 public @interface MethodFileSource {
   String folder();
+
+  Class<?> type() default String.class;
 }

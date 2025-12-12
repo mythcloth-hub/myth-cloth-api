@@ -110,7 +110,7 @@ public interface FigurineMapper {
   void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
   @Mapping(target = "name", source = "normalizedName")
-  @Mapping(target = "standardName", ignore = true) // will be calculated in the service layer
+  @Mapping(target = "displayableName", ignore = true) // will be calculated in the service layer
   FigurineResp toFigurineResp(Figurine figurine);
 
   /* ============================

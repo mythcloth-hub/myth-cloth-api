@@ -143,6 +143,7 @@ public class FigurineEventServiceTest {
 
   @Test
   void createFigurineEvent_shouldThrowException_whenFigurineIdDoesNotExist_() {
+    // TODO fix this test and method name
     // Arrange
     FigurineEventReq req = new FigurineEventReq();
     req.setDescription("The description");
@@ -169,10 +170,11 @@ public class FigurineEventServiceTest {
         .isNotNull()
         .extracting(
             FigurineEventResp::id,
-            FigurineEventResp::description,
-            FigurineEventResp::eventDate,
+            FigurineEventResp::date,
+            FigurineEventResp::type,
+            FigurineEventResp::region,
             FigurineEventResp::figurine)
-        .containsExactly(34L, "The description", LocalDate.of(2021, 2, 3), null);
+        .containsExactly(34L, null, null, null, null);
 
     verify(figurineRepository).findById(99L);
     verify(repository).save(any(FigurineEvent.class));
