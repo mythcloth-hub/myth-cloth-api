@@ -110,7 +110,7 @@ public interface FigurineMapper {
   void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
   @Mapping(target = "name", source = "normalizedName")
-  @Mapping(target = "displayableName", ignore = true) // will be calculated in the service layer
+  @Mapping(target = "displayableName", expression = "java(createDisplayableName(figurine))")
   FigurineResp toFigurineResp(Figurine figurine);
 
   /* ============================
@@ -304,6 +304,11 @@ public interface FigurineMapper {
       return List.of();
     }
     return eventStrings.stream().map(this::parseEventString).filter(Objects::nonNull).toList();
+  }
+
+  default String createDisplayableName(Figurine figurine) {
+    // Call a static method from the service layer.
+    return "FIXME";
   }
 
   /**

@@ -160,7 +160,7 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Pegasus Seiya",
-            null,
+            "FIXME",
             List.of(
                 new FigurineDistributorResp(
                     new DistributorResp(1, "BANDAI", null, "JP", null),
