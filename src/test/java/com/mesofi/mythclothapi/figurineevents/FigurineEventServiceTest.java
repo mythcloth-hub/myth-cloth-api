@@ -20,6 +20,7 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.utils.MapperTestConfig;
 import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
 
 import jakarta.validation.ConstraintViolationException;
@@ -28,13 +29,12 @@ import jakarta.validation.ConstraintViolationException;
     classes = {
       FigurineEventService.class,
       MethodValidationTestConfig.class,
-      FigurineEventMapperImpl.class
+      MapperTestConfig.class
     })
 public class FigurineEventServiceTest {
 
   @MockitoBean private FigurineEventRepository repository;
   @MockitoBean private FigurineRepository figurineRepository;
-  @Autowired private FigurineEventMapper mapper;
 
   @Autowired private FigurineEventService service;
 

@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -41,24 +40,23 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
-import com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.utils.MapperTestConfig;
 import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
 
 import jakarta.validation.ConstraintViolationException;
 
-@Disabled("Temporarily disabled due to refactor")
 @SpringBootTest(
-    classes = {FigurineService.class, MethodValidationTestConfig.class, FigurineMapperImpl.class})
+    classes = {FigurineService.class, MethodValidationTestConfig.class, MapperTestConfig.class})
 public class FigurineServiceTest {
 
-  @MockitoBean private FigurineRepository repository;
   @MockitoBean private DistributorRepository distributorRepository;
   @MockitoBean private DistributionRepository distributionRepository;
   @MockitoBean private LineUpRepository lineUpRepository;
   @MockitoBean private SeriesRepository seriesRepository;
   @MockitoBean private GroupRepository groupRepository;
   @MockitoBean private AnniversaryRepository anniversaryRepository;
+  @MockitoBean private FigurineRepository repository;
 
   @Autowired private FigurineService service;
   @Autowired private FigurineMapper mapper;
@@ -83,7 +81,7 @@ public class FigurineServiceTest {
         .hasMessageContaining("createFigurine.request.name")
         .hasMessageContaining("must not be blank")
         .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("must not be empty");
+        .hasMessageContaining("At least one distributor must be provided");
   }
 
   @ParameterizedTest
@@ -97,7 +95,7 @@ public class FigurineServiceTest {
     assertThatThrownBy(() -> service.createFigurine(req))
         .isInstanceOf(ConstraintViolationException.class)
         .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("must not be empty");
+        .hasMessageContaining("At least one distributor must be provided");
   }
 
   @Test
@@ -109,7 +107,7 @@ public class FigurineServiceTest {
     // Act + Assert
     assertThatThrownBy(() -> service.createFigurine(req))
         .isInstanceOf(ConstraintViolationException.class)
-        .hasMessageContaining("createFigurine.request.distributors[0].distributorId")
+        .hasMessageContaining("createFigurine.request.distributors[0].supplierId")
         .hasMessageContaining("must be greater than 0");
   }
 
@@ -143,9 +141,10 @@ public class FigurineServiceTest {
             true);
     FigurineReq req = createFigurine("Pegasus Seiya", List.of(distributorReq), 1, 1, 1, 1, 1);
 
-    Figurine figurine = mapper.toFigurine(req, catalogContext);
-    figurine.setId(1L);
-    when(repository.save(any(Figurine.class))).thenReturn(figurine);
+    Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
+    figurineMapped.setId(1L);
+
+    when(repository.save(any(Figurine.class))).thenReturn(figurineMapped);
 
     // Act
     FigurineResp figurineResp = service.createFigurine(req);
@@ -164,12 +163,12 @@ public class FigurineServiceTest {
             null,
             List.of(
                 new FigurineDistributorResp(
-                    new DistributorResp(1, "", "", "", ""),
+                    new DistributorResp(1, "BANDAI", null, "JP", null),
                     JPY,
                     3500d,
                     null,
-                    LocalDate.of(2025, 1, 1),
-                    LocalDate.of(2025, 6, 6),
+                    null,
+                    null,
                     LocalDate.of(2025, 9, 9),
                     true)));
 
