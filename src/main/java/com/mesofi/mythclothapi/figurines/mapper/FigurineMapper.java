@@ -25,50 +25,57 @@ import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 /**
- * MapStruct mapper responsible for converting between CSV/API input models and internal {@link
- * Figurine} entities. It also resolves catalog-based relationships (Series, LineUp, Distribution,
- * Group, Anniversary, etc.) using a provided {@link CatalogContext}.
- *
- * <p>This mapper supports:
+ * MapStruct mapper responsible for converting between:
  *
  * <ul>
- *   <li>CSV → Figurine transformation ({@link FigurineCsv}).
- *   <li>API → Figurine transformation ({@link FigurineReq}).
- *   <li>API DistributorInfo → FigurineDistributor mapping.
- *   <li>Lookup helpers for catalog-based relationships.
- *   <li>Special logic for country-specific distributor generation (JP / MX).
+ *   <li>CSV import models → {@link Figurine}
+ *   <li>API request DTOs → {@link Figurine}
+ *   <li>Domain entities → API response DTOs
  * </ul>
  *
- * <p>Most ID/description resolution helpers use {@link Optional} to return {@code null} when the
- * input is missing, and throw a descriptive {@link IllegalArgumentException} when no catalog match
- * is found.
+ * <p>This mapper centralizes all transformation rules for figurines, including:
+ *
+ * <ul>
+ *   <li>Catalog lookups (distribution, lineup, series, group, anniversary)
+ *   <li>Distributor and pricing normalization
+ *   <li>Event parsing
+ *   <li>API-specific field naming conversions
+ * </ul>
+ *
+ * <p>{@link CatalogContext} is used extensively to resolve catalog references without performing
+ * database access inside the mapper.
  */
 @Mapper(componentModel = "spring")
 public interface FigurineMapper {
 
+  /** Formatter used to parse event dates coming from CSV or raw strings. */
   DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");
 
   /* ============================
     CSV → Figurine
   ============================ */
   /**
-   * Converts a {@link FigurineCsv} row into a {@link Figurine} entity. Resolves related catalog
-   * entities (distribution, lineup, series, etc.) and handles initialization of distributor entries
-   * from raw CSV columns.
+   * Maps a CSV row into a {@link Figurine} entity.
    *
-   * @param csv the CSV input row
-   * @param catalogs catalogs used to resolve references
-   * @return a new {@link Figurine} instance
+   * <p>This mapping is used during bulk imports. Catalog references are resolved using textual
+   * descriptions rather than IDs.
+   *
+   * @param csv the CSV representation of a figurine
+   * @param catalogs catalog context used to resolve reference data
+   * @return a new {@link Figurine} entity ready to be persisted
    */
   @Mapping(target = "id", ignore = true) // populated by DB
   @Mapping(target = "legacyName", source = "originalName")
@@ -83,66 +90,13 @@ public interface FigurineMapper {
   @Mapping(target = "anniversary", source = "anniversaryNumber")
   Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
-  /* ============================
-  API → Figurine
-  ============================ */
   /**
-   * Converts an incoming API request ({@link FigurineReq}) into a fully resolved {@link Figurine}
-   * entity.
+   * Resolves a {@link Distribution} by description.
    *
-   * @param req API request object
-   * @param catalogs catalogs used to resolve relationships by ID
-   * @return a new {@link Figurine}
-   */
-  @Mapping(target = "id", ignore = true) // populated by DB
-  @Mapping(target = "legacyName", ignore = true) // no needed
-  @Mapping(target = "normalizedName", source = "name")
-  @Mapping(target = "distributors", source = "distributors")
-  @Mapping(target = "distribution", source = "distributionId")
-  @Mapping(target = "lineup", source = "lineUpId")
-  @Mapping(target = "series", source = "seriesId")
-  @Mapping(target = "group", source = "groupId")
-  @Mapping(target = "anniversary", source = "anniversaryId")
-  @Mapping(target = "events", ignore = true) // it's ok, here it is not required to have events.
-  Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
-
-  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-  void updateFigurine(@MappingTarget Figurine target, Figurine source);
-
-  @Mapping(target = "name", source = "normalizedName")
-  @Mapping(target = "displayableName", expression = "java(createDisplayableName(figurine))")
-  FigurineResp toFigurineResp(Figurine figurine);
-
-  /* ============================
-  API DistributorInfo → FigurineDistributor
-  ============================ */
-  /**
-   * Maps a high-level API {@link DistributorReq} wrapper into a {@link FigurineDistributor} entity.
-   * The figurine relation is intentionally ignored; it is set later by the service layer.
-   *
-   * @param distributorReq distributor req sent from API
-   * @param catalogs catalogs used to resolve the distributor entity
-   * @return a new {@link FigurineDistributor}
-   */
-  @Mapping(target = "id", ignore = true) // populated by DB
-  @Mapping(target = "figurine", ignore = true) // will be set later in service
-  @Mapping(target = "distributor", source = "supplierId")
-  @Mapping(target = "announcementDate", source = "announcedAt")
-  @Mapping(target = "preorderDate", source = "preorderOpensAt")
-  FigurineDistributor toDistributor(
-      DistributorReq distributorReq, @Context CatalogContext catalogs);
-
-  /** Resolves a {@link Distribution} by its ID. Returns {@code null} when the ID is missing. */
-  default Distribution toDistribution(Long id, @Context CatalogContext catalogs) {
-    String msg = "Distribution not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.distributions(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
-  /**
-   * Resolves a {@link Distribution} by its description. Returns {@code null} for blank/empty
-   * descriptions.
+   * @param desc distribution description
+   * @param catalogs catalog context
+   * @return matching {@link Distribution} or {@code null} if input is blank
+   * @throws IllegalArgumentException if the description does not exist
    */
   default Distribution toDistribution(String desc, @Context CatalogContext catalogs) {
     String msg = "Distribution not found for desc=" + desc;
@@ -152,15 +106,7 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link LineUp} by its ID. */
-  default LineUp toLineUp(Long id, @Context CatalogContext catalogs) {
-    String msg = "LineUp not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.lineUps(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
-  /** Resolves a {@link LineUp} by its description. */
+  /** Resolves a {@link LineUp} by description. */
   default LineUp toLineUp(String desc, @Context CatalogContext catalogs) {
     String msg = "LineUp not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -169,15 +115,7 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link Series} by its ID. */
-  default Series toSeries(Long id, @Context CatalogContext catalogs) {
-    String msg = "Series not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.series(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
-  /** Resolves a {@link Series} by its description. */
+  /** Resolves a {@link Series} by description. */
   default Series toSeries(String desc, @Context CatalogContext catalogs) {
     String msg = "Series not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -186,15 +124,7 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link Group} by its ID. */
-  default Group toGroup(Long id, @Context CatalogContext catalogs) {
-    String msg = "Group not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.groups(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
-  /** Resolves a {@link Group} by its description. */
+  /** Resolves a {@link Group} by description. */
   default Group toGroup(String desc, @Context CatalogContext catalogs) {
     String msg = "Group not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -203,15 +133,7 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves an {@link Anniversary} by its ID. */
-  default Anniversary toAnniversary(Long id, @Context CatalogContext catalogs) {
-    String msg = "Anniversary not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.anniversaries(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
-  /** Resolves an {@link Anniversary} by its numeric year label (e.g., 10th anniversary = 10). */
+  /** Resolves an {@link Anniversary} by year number. */
   default Anniversary toAnniversary(Integer anniversaryNumber, @Context CatalogContext catalogs) {
     return catalogs.anniversaries().stream()
         .filter(item -> Objects.nonNull(item.getYear()))
@@ -220,28 +142,16 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link Distributor} by its ID. */
-  default Distributor mapDistributorId(Long id, @Context CatalogContext catalogs) {
-    String msg = "Distributor not found for id=" + id;
-    return Optional.ofNullable(id)
-        .map($ -> find(catalogs.distributors(), l -> Objects.equals(l.getId(), id), msg))
-        .orElse(null);
-  }
-
   /**
-   * Creates the list of distributor entries (JP, MX, etc.) from raw CSV pricing/release fields.
+   * Builds the list of {@link FigurineDistributor} entries for a figurine based on CSV pricing and
+   * release information.
    *
-   * <p>This method constructs multiple {@link FigurineDistributor} instances depending on available
-   * market-specific pricing data:
+   * <p>At minimum, a JP/Asia distributor is created. A Mexico distributor is added only if MXN
+   * pricing exists.
    *
-   * <ul>
-   *   <li>JP/CNY distributor (always created)
-   *   <li>MX distributor (created only when MX price is present)
-   * </ul>
-   *
-   * @param csv the raw CSV record
-   * @param distributors the master list of distributors used for lookups
-   * @return the list of resolved {@link FigurineDistributor} entries
+   * @param csv CSV data
+   * @param distributors available distributors
+   * @return list of distributor entries
    */
   default List<FigurineDistributor> toDistributors(
       FigurineCsv csv, @Context List<Distributor> distributors) {
@@ -276,28 +186,16 @@ public interface FigurineMapper {
   }
 
   /**
-   * Converts a list of raw event strings into a list of {@link FigurineEvent} entities.
+   * Converts a list of raw event strings into {@link FigurineEvent} entities.
    *
-   * <p>Each input string must follow the format:
+   * <p>Each string must follow the format:
    *
    * <pre>
-   *   "M/d/yyyy: Description text"
-   *   "M/d/yyyy"
+   * M/d/yyyy: Description
    * </pre>
    *
-   * Examples:
-   *
-   * <ul>
-   *   <li>{@code "12/5/2025: Preorder starts"} → event with date and description
-   *   <li>{@code "3/10/2024"} → event with date only
-   * </ul>
-   *
-   * <p>If the list is {@code null} or empty, an empty list is returned.
-   *
-   * @param eventStrings raw event strings from CSV or an API request
-   * @return a list of parsed {@link FigurineEvent} instances; never {@code null}
-   * @throws IllegalArgumentException if a date component cannot be parsed using {@link
-   *     #EVENT_DATE_FORMATTER}
+   * @param eventStrings raw event definitions
+   * @return parsed event list
    */
   default List<FigurineEvent> toFigurineEvents(List<String> eventStrings) {
     if (eventStrings == null || eventStrings.isEmpty()) {
@@ -306,25 +204,261 @@ public interface FigurineMapper {
     return eventStrings.stream().map(this::parseEventString).filter(Objects::nonNull).toList();
   }
 
+  /* ============================
+  API → Figurine
+  ============================ */
+  /**
+   * Maps an API request into a {@link Figurine} entity.
+   *
+   * <p>Catalog references are resolved using IDs. Boolean flags are normalized to internal domain
+   * fields.
+   *
+   * @param req API request
+   * @param catalogs catalog context
+   * @return a new {@link Figurine} entity
+   */
+  @Mapping(target = "id", ignore = true) // populated by DB
+  @Mapping(target = "legacyName", ignore = true) // no needed
+  @Mapping(target = "normalizedName", source = "name")
+  @Mapping(target = "distribution", source = "distributionId")
+  @Mapping(target = "lineup", source = "lineUpId")
+  @Mapping(target = "series", source = "seriesId")
+  @Mapping(target = "group", source = "groupId")
+  @Mapping(target = "anniversary", source = "anniversaryId")
+  @Mapping(target = "metalBody", source = "isMetalBody")
+  @Mapping(target = "oce", source = "isOriginalColorEdition")
+  @Mapping(target = "revival", source = "isRevival")
+  @Mapping(target = "plainCloth", source = "isPlainCloth")
+  @Mapping(target = "broken", source = "isBattleDamaged")
+  @Mapping(target = "golden", source = "isGoldenArmor")
+  @Mapping(target = "gold", source = "isGold24kEdition")
+  @Mapping(target = "manga", source = "isMangaVersion")
+  @Mapping(target = "surplice", ignore = true) // this will be removed in the future
+  @Mapping(target = "set", source = "isMultiPack")
+  @Mapping(target = "articulable", source = "isArticulable")
+  @Mapping(target = "remarks", source = "notes")
+  @Mapping(target = "events", ignore = true) // it's ok, here it is not required to have events.
+  @Mapping(target = "officialImages", source = "officialImageUrls")
+  @Mapping(target = "nonOfficialImages", source = "unofficialImageUrls")
+  Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
+
+  /**
+   * Resolves a {@link Distribution} catalog entry by its identifier.
+   *
+   * <p>This method is used when mapping API requests where catalog references are provided as IDs
+   * instead of descriptions.
+   *
+   * @param id distribution identifier
+   * @param catalogs catalog context containing cached distributions
+   * @return the matching {@link Distribution}, or {@code null} if the id is {@code null}
+   * @throws IllegalArgumentException if the id does not exist in the catalog
+   */
+  default Distribution toDistribution(Long id, @Context CatalogContext catalogs) {
+    String msg = "Distribution not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.distributions(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /** Resolves a {@link LineUp} catalog entry by its identifier. */
+  default LineUp toLineUp(Long id, @Context CatalogContext catalogs) {
+    String msg = "LineUp not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.lineUps(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /** Resolves a {@link Series} catalog entry by its identifier. */
+  default Series toSeries(Long id, @Context CatalogContext catalogs) {
+    String msg = "Series not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.series(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /** Resolves a {@link Group} catalog entry by its identifier. */
+  default Group toGroup(Long id, @Context CatalogContext catalogs) {
+    String msg = "Group not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.groups(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /** Resolves an {@link Anniversary} catalog entry by its identifier. */
+  default Anniversary toAnniversary(Long id, @Context CatalogContext catalogs) {
+    String msg = "Anniversary not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.anniversaries(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /**
+   * Maps a distributor request into a {@link FigurineDistributor} entity.
+   *
+   * <p>This mapping represents distributor-specific commercial data (pricing, preorder,
+   * announcement, release).
+   *
+   * <ul>
+   *   <li>{@code id} is ignored and generated by persistence
+   *   <li>{@code figurine} is set later during service orchestration
+   *   <li>{@code distributor} is resolved using the catalog context
+   * </ul>
+   *
+   * @param distributorReq distributor request payload
+   * @param catalogs catalog context used to resolve the distributor
+   * @return a new {@link FigurineDistributor} entity
+   */
+  @Mapping(target = "id", ignore = true) // populated by DB
+  @Mapping(target = "figurine", ignore = true) // will be set later in service
+  @Mapping(target = "distributor", source = "supplierId")
+  @Mapping(target = "announcementDate", source = "announcedAt")
+  @Mapping(target = "preorderDate", source = "preorderOpensAt")
+  FigurineDistributor toDistributor(
+      DistributorReq distributorReq, @Context CatalogContext catalogs);
+
+  /**
+   * Resolves a {@link Distributor} catalog entry by its identifier.
+   *
+   * @param id distributor identifier
+   * @param catalogs catalog context
+   * @return matching {@link Distributor}, or {@code null} if the id is {@code null}
+   * @throws IllegalArgumentException if the distributor does not exist
+   */
+  default Distributor mapDistributorId(Long id, @Context CatalogContext catalogs) {
+    String msg = "Distributor not found for id=" + id;
+    return Optional.ofNullable(id)
+        .map($ -> find(catalogs.distributors(), l -> Objects.equals(l.getId(), id), msg))
+        .orElse(null);
+  }
+
+  /* ============================
+  Figurine → API
+  ============================ */
+  /**
+   * Maps a {@link Figurine} domain entity to its API response representation.
+   *
+   * <p>This mapping adapts internal domain naming conventions and boolean flags to a
+   * client-friendly response format.
+   *
+   * <p>Derived fields such as {@code displayableName} are computed using helper methods.
+   *
+   * @param figurine domain entity
+   * @return API-facing {@link FigurineResp}
+   */
+  @Mapping(target = "name", source = "normalizedName")
+  @Mapping(target = "displayableName", expression = "java(createDisplayableName(figurine))")
+  @Mapping(target = "lineUp", source = "lineup")
+  @Mapping(target = "isMetalBody", source = "metalBody")
+  @Mapping(target = "isOriginalColorEdition", source = "oce")
+  @Mapping(target = "isRevival", source = "revival")
+  @Mapping(target = "isPlainCloth", source = "plainCloth")
+  @Mapping(target = "isBattleDamaged", source = "broken")
+  @Mapping(target = "isGoldenArmor", source = "golden")
+  @Mapping(target = "isGold24kEdition", source = "gold")
+  @Mapping(target = "isMangaVersion", source = "manga")
+  @Mapping(target = "isMultiPack", source = "set")
+  @Mapping(target = "isArticulable", source = "articulable")
+  @Mapping(target = "notes", source = "remarks")
+  @Mapping(target = "officialImageUrls", source = "officialImages")
+  @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
+  @Mapping(target = "createdAt", ignore = true) // map this later
+  @Mapping(target = "updatedAt", ignore = true) // map this later
+  FigurineResp toFigurineResp(Figurine figurine);
+
+  /**
+   * Builds a human-readable display name for a figurine.
+   *
+   * <p>This method centralizes display name generation logic, which may include suffixes, editions,
+   * or special markers.
+   *
+   * @param figurine domain entity
+   * @return displayable name
+   */
   default String createDisplayableName(Figurine figurine) {
-    // Call a static method from the service layer.
+    // TODO Call a static method from the service layer.
     return "FIXME";
   }
 
   /**
-   * Parses a single event string into a {@link FigurineEvent}.
+   * Maps a {@link FigurineDistributor} entity to its API response representation.
    *
-   * <p>Expected input format:
+   * <p>Pricing information may include derived values such as taxes, which are calculated via
+   * helper methods.
    *
-   * <pre>
-   *   "M/d/yyyy: Optional description"
-   * </pre>
+   * @param figurineDistributor distributor entity
+   * @return API-facing {@link FigurineDistributorResp}
+   */
+  @Mapping(target = "priceWithTax", expression = "java(calculatePriceWithTax(figurineDistributor))")
+  @Mapping(target = "announcedAt", source = "announcementDate")
+  @Mapping(target = "preorderOpensAt", source = "preorderDate")
+  FigurineDistributorResp toFigurineDistributorResp(FigurineDistributor figurineDistributor);
+
+  /**
+   * Calculates the final price including taxes for a distributor entry.
    *
-   * <p>If the input is blank or {@code null}, {@code null} is returned.
+   * <p>This method is a placeholder and is expected to delegate to a service-layer pricing utility
+   * in the future.
    *
-   * @param raw the raw event string
-   * @return a new {@link FigurineEvent}, or {@code null} if the input is blank
-   * @throws IllegalArgumentException if the date part is malformed
+   * @param figurineDistributor distributor pricing data
+   * @return price including tax
+   */
+  default Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
+    // TODO Call a static method from the service layer.
+    return 3.0;
+  }
+
+  /**
+   * Maps a {@link Distributor} domain entity to its API response representation.
+   *
+   * <p>The distributor description exposed by the API is derived from the {@code DistributorName}
+   * value object rather than a direct field on the entity. This ensures the response reflects the
+   * canonical, localized description defined in the catalog.
+   *
+   * @param distributor the domain distributor entity
+   * @return an API-facing {@link DistributorResp}
+   */
+  @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
+  DistributorResp toDistributorResp(Distributor distributor);
+
+  /**
+   * Maps a {@link FigurineEvent} domain entity to its API response representation.
+   *
+   * <p>This method exposes only the event data that is currently required by the API. Some fields
+   * are intentionally ignored because their mapping strategy has not yet been defined, or they are
+   * not needed in the response context.
+   *
+   * <ul>
+   *   <li>{@code type} – pending decision on event categorization
+   *   <li>{@code region} – pending region mapping rules
+   *   <li>{@code figurine} – omitted to avoid circular references
+   * </ul>
+   *
+   * @param figurineEvent the domain event entity
+   * @return an API-facing {@link FigurineEventResp}
+   */
+  @Mapping(target = "date", source = "eventDate")
+  @Mapping(target = "type", ignore = true) // figure out how to map this.
+  @Mapping(target = "region", ignore = true) // figure out how to map this.
+  @Mapping(target = "figurine", ignore = true) // it's ok
+  FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent);
+
+  /**
+   * Updates a {@link Figurine} entity using non-null values from another instance.
+   *
+   * <p>Null fields in {@code source} are ignored.
+   *
+   * @param target entity to update
+   * @param source new values
+   */
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  void updateFigurine(@MappingTarget Figurine target, Figurine source);
+
+  /**
+   * Parses a raw event string into a {@link FigurineEvent}.
+   *
+   * @param raw raw string in {@code M/d/yyyy: description} format
+   * @return parsed event or {@code null} if blank
+   * @throws IllegalArgumentException if date format is invalid
    */
   private FigurineEvent parseEventString(String raw) {
     if (raw == null || raw.isBlank()) {
@@ -352,10 +486,10 @@ public interface FigurineMapper {
   /**
    * Finds a distributor by country code.
    *
-   * @param distributors all available distributors
-   * @param countryCode the country code to match
+   * @param distributors available distributors
+   * @param countryCode country code
    * @return matching distributor
-   * @throws IllegalArgumentException when no distributor matches
+   * @throws IllegalArgumentException if none is found
    */
   private Distributor findDistributorByCountry(
       List<Distributor> distributors, CountryCode countryCode) {
@@ -369,12 +503,13 @@ public interface FigurineMapper {
   }
 
   /**
-   * Generic helper to find a catalog entity in a list.
+   * Generic helper used to resolve catalog entities.
    *
-   * @param list the catalog list
-   * @param predicate selection predicate
-   * @param errorMessage error thrown when not found
-   * @return the matched entity
+   * @param list catalog list
+   * @param predicate matching condition
+   * @param errorMessage error message if not found
+   * @param <T> catalog type
+   * @return matched catalog entry
    */
   private <T extends BaseId> T find(List<T> list, Predicate<T> predicate, String errorMessage) {
     return list.stream()
