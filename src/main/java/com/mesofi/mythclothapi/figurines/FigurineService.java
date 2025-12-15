@@ -16,6 +16,7 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -102,7 +103,15 @@ public class FigurineService {
     linkReferences(figurine);
 
     var saved = repository.save(figurine);
-    return mapper.toFigurineResp(saved);
+    return mapper.toFigurineResp(saved, this::createDisplayableName);
+  }
+
+  public String createDisplayableName(Figurine figurine) {
+    return "FIXME";
+  }
+
+  public Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
+    return 3.0;
   }
 
   private void linkReferences(Figurine figurine) {

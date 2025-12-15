@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.mapstruct.BeanMapping;
@@ -346,7 +347,9 @@ public interface FigurineMapper {
    * @return API-facing {@link FigurineResp}
    */
   @Mapping(target = "name", source = "normalizedName")
-  @Mapping(target = "displayableName", expression = "java(createDisplayableName(figurine))")
+  @Mapping(
+      target = "displayableName",
+      expression = "java(createDisplayableName(figurine, calculateDisplayableName))")
   @Mapping(target = "lineUp", source = "lineup")
   @Mapping(target = "isMetalBody", source = "metalBody")
   @Mapping(target = "isOriginalColorEdition", source = "oce")
@@ -363,7 +366,8 @@ public interface FigurineMapper {
   @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
   @Mapping(target = "createdAt", ignore = true) // map this later
   @Mapping(target = "updatedAt", ignore = true) // map this later
-  FigurineResp toFigurineResp(Figurine figurine);
+  FigurineResp toFigurineResp(
+      Figurine figurine, @Context Function<Figurine, String> calculateDisplayableName);
 
   /**
    * Builds a human-readable display name for a figurine.
@@ -374,9 +378,9 @@ public interface FigurineMapper {
    * @param figurine domain entity
    * @return displayable name
    */
-  default String createDisplayableName(Figurine figurine) {
-    // TODO Call a static method from the service layer.
-    return "FIXME";
+  default String createDisplayableName(
+      Figurine figurine, Function<Figurine, String> calculateDisplayableName) {
+    return calculateDisplayableName.apply(figurine);
   }
 
   /**
@@ -388,10 +392,14 @@ public interface FigurineMapper {
    * @param figurineDistributor distributor entity
    * @return API-facing {@link FigurineDistributorResp}
    */
-  @Mapping(target = "priceWithTax", expression = "java(calculatePriceWithTax(figurineDistributor))")
+  @Mapping(
+      target = "priceWithTax",
+      expression = "java(createPriceWithTax(figurineDistributor, calculatePriceWithTax))")
   @Mapping(target = "announcedAt", source = "announcementDate")
   @Mapping(target = "preorderOpensAt", source = "preorderDate")
-  FigurineDistributorResp toFigurineDistributorResp(FigurineDistributor figurineDistributor);
+  FigurineDistributorResp toFigurineDistributorResp(
+      FigurineDistributor figurineDistributor,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
   /**
    * Calculates the final price including taxes for a distributor entry.
@@ -402,9 +410,10 @@ public interface FigurineMapper {
    * @param figurineDistributor distributor pricing data
    * @return price including tax
    */
-  default Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
-    // TODO Call a static method from the service layer.
-    return 3.0;
+  default Double createPriceWithTax(
+      FigurineDistributor figurineDistributor,
+      Function<FigurineDistributor, Double> calculatePriceWithTax) {
+    return calculatePriceWithTax.apply(figurineDistributor);
   }
 
   /**
