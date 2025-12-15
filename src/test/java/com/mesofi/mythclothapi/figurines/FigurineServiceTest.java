@@ -156,21 +156,23 @@ public class FigurineServiceTest {
             FigurineResp::id,
             FigurineResp::name,
             FigurineResp::displayableName,
-            FigurineResp::distributors)
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl)
         .containsExactly(
             1L,
             "Pegasus Seiya",
             "FIXME",
             List.of(
                 new FigurineDistributorResp(
-                    new DistributorResp(1, "BANDAI", null, "JP", null),
+                    new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
                     JPY,
                     3500d,
                     null,
                     null,
                     null,
                     LocalDate.of(2025, 9, 9),
-                    true)));
+                    true)),
+            null);
 
     verify(distributorRepository).findAll();
     verify(distributionRepository).findAll();
