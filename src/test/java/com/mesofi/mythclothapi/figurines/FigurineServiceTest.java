@@ -20,14 +20,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import com.mesofi.mythclothapi.catalogs.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.catalogs.repository.AnniversaryRepository;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;

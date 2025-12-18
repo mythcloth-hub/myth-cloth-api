@@ -9,118 +9,92 @@ import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.util.StreamUtils;
 
-import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
-import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
-import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
-import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
-import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
-import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
+import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.it.AbstractIntegrationTest;
 
-@ActiveProfiles("test")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class FigurineControllerIT {
-
-  private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
-  @Autowired private TestRestTemplate rest;
-
-  private final String FIGURINES = "/figurines";
-
+/**
+ * Integration tests for {@code /figurines} endpoints.
+ *
+ * <p>These tests exercise the full HTTP stack, including:
+ *
+ * <ul>
+ *   <li>Catalog prepopulation
+ *   <li>Distributor creation
+ *   <li>Figurine creation and response mapping
+ * </ul>
+ */
+class FigurineControllerIT extends AbstractIntegrationTest {
   @Test
-  @DisplayName("Test flow to create and process figurines")
-  void fullCrudFigurinesFlow() {
-    long distributorId =
-        createDistributor(
-            new com.mesofi.mythclothapi.distributors.dto.DistributorReq(BANDAI, JP, null));
-    long distributionId = createCatalog(distributions, new CatalogReq("Stores"));
-    long lineupId = createCatalog(lineups, new CatalogReq("Myth Cloth EX"));
-    long seriesId = createCatalog(series, new CatalogReq("Saint Seiya"));
-    long groupId = createCatalog(groups, new CatalogReq("Bronze Saint V1"));
+  @DisplayName("Create figurine using JSON payload")
+  void createFigurine_usingJsonPayload_shouldReturnCreatedFigurine() throws Exception {
 
-    FigurineReq req = createReqFigurine(distributorId, distributionId, lineupId, seriesId, groupId);
+    // --- Prepopulate required catalogs
+    long distributorId = createDistributor(new DistributorReq(BANDAI, JP, null));
+    long distributionId = createCatalog(distributions, "Stores");
+    long lineupId = createCatalog(lineups, "Myth Cloth EX");
+    long seriesId = createCatalog(series, "Saint Seiya");
+    long groupId = createCatalog(groups, "Bronze Saint V1");
+    long anniversaryId =
+        createAnniversary(new AnniversaryReq("Masami Kurumada 40th Anniversary", 40));
 
-    // CREATE
-    // TODO fix the following lines
-    // Long figurineId = createFigurines(req);
-    // log.info("Created a new figurine with id: {}", figurineId);
-  }
-
-  private FigurineReq createReqFigurine(
-      long distributorId, long distributionId, long lineupId, long seriesId, long groupId) {
-
-    return new FigurineReq(
-        "Pegasus Seiya",
-        List.of(
-            new DistributorReq(
+    // --- Load and hydrate JSON payload
+    String payload =
+        loadJson(
+            "payloads/figurines/create-figurine.json",
+            Map.of(
+                "supplierId",
                 distributorId,
-                CurrencyCode.JPY,
-                12500d,
-                LocalDate.now(),
-                LocalDate.now(),
-                LocalDate.now(),
-                true)),
-        "https://tamashiiweb.com/item/14583",
-        distributionId,
-        lineupId,
-        seriesId,
-        groupId,
-        null,
-        false,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        true,
-        "Some comment",
-        List.of("https://imagizer.imageshack.com/img924/4413/Pl86x4.jpg"),
-        List.of("https://imagizer.imageshack.com/img923/7457/Mk6Y9K.jpg"));
-  }
+                "distributionId",
+                distributionId,
+                "lineUpId",
+                lineupId,
+                "seriesId",
+                seriesId,
+                "groupId",
+                groupId,
+                "anniversaryId",
+                anniversaryId));
 
-  private Long createFigurines(FigurineReq request) {
-    ResponseEntity<FigurineResp> createResp =
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> request = new HttpEntity<>(payload, headers);
+
+    // --- Execute request
+    ResponseEntity<FigurineResp> response =
         rest.postForEntity(FIGURINES, request, FigurineResp.class);
 
-    assertThat(createResp.getStatusCode()).isEqualTo(CREATED);
-    assertThat(createResp.getBody()).isNotNull();
-
-    return createResp.getBody().id();
-  }
-
-  private Long createCatalog(CatalogType catalogType, CatalogReq request) {
-    ResponseEntity<CatalogResp> response =
-        rest.postForEntity("/catalogs/{type}", request, CatalogResp.class, catalogType.name());
-
+    // --- Assertions
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
     assertThat(response.getBody()).isNotNull();
-
-    return response.getBody().getId();
+    assertThat(response.getBody().name()).isEqualTo("Pegasus Seiya");
+    assertThat(response.getBody().id()).isNotNull();
   }
 
-  private Long createDistributor(com.mesofi.mythclothapi.distributors.dto.DistributorReq request) {
-    ResponseEntity<DistributorResp> response =
-        rest.postForEntity("/distributors", request, DistributorResp.class);
+  /** Loads a JSON file and replaces {{placeholders}} with values. */
+  private String loadJson(String path, Map<String, Object> values) throws Exception {
+    String json =
+        StreamUtils.copyToString(
+            new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8);
 
-    assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    assertThat(response.getBody()).isNotNull();
+    for (Map.Entry<String, Object> entry : values.entrySet()) {
+      json = json.replace("{{" + entry.getKey() + "}}", entry.getValue().toString());
+    }
 
-    return response.getBody().id();
+    return json;
   }
 }

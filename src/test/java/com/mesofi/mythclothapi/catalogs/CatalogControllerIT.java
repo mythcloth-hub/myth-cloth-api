@@ -55,7 +55,7 @@ public class CatalogControllerIT {
     assertThat(createResp.getStatusCode()).isEqualTo(CREATED);
     assertThat(createResp.getBody()).isNotNull();
 
-    return createResp.getBody().getId();
+    return createResp.getBody().id();
   }
 
   private Long readDistributor(String resource, Long id) {
@@ -64,8 +64,8 @@ public class CatalogControllerIT {
 
     assertThat(createResp.getStatusCode()).isEqualTo(OK);
     assertThat(createResp.getBody()).isNotNull();
-    assertThat(createResp.getBody().getId()).isEqualTo(id);
+    assertThat(createResp.getBody().id()).isEqualTo(id);
 
-    return createResp.getBody().getId();
+    return createResp.getBody().id();
   }
 }

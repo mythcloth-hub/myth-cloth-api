@@ -37,7 +37,6 @@ public class CatalogService {
   void init() {
     entityFactories =
         Map.of(
-            CatalogType.anniversaries, mapper::toAnniversary,
             CatalogType.groups, mapper::toGroup,
             CatalogType.series, mapper::toSeries,
             CatalogType.lineups, mapper::toLineUp,

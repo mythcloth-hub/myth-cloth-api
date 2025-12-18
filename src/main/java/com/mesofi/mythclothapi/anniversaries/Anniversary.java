@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.catalogs.model;
+package com.mesofi.mythclothapi.anniversaries;
 
 import java.util.ArrayList;
 import java.util.List;

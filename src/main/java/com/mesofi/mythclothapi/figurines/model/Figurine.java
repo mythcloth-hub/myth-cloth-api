@@ -3,7 +3,7 @@ package com.mesofi.mythclothapi.figurines.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;

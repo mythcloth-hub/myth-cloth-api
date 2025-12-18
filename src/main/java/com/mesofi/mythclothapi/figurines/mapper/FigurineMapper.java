@@ -20,7 +20,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;

@@ -2,30 +2,21 @@
   "name": "Pegasus Seiya",
   "distributors": [
     {
-      "supplierId": 23,
+      "supplierId": "{{supplierId}}",
       "currency": "JPY",
       "price": 16000.00,
       "announcedAt": "2025-11-13",
       "preorderOpensAt": "2025-05-12",
       "releaseDate": "2026-05-01",
-      "releaseDateConfirmed": false
-    },
-    {
-      "supplierId": 32,
-      "currency": "MXN",
-      "price": 5200.00,
-      "announcedAt": "2025-12-13",
-      "preorderOpensAt": "2025-12-14",
-      "releaseDate": "2026-01-01",
       "releaseDateConfirmed": true
     }
   ],
   "tamashiiUrl": "https://tamashiiweb.com/item/15695",
-  "distributionId": 6,
-  "lineUpId": 3,
-  "seriesId": 7,
-  "groupId": 12,
-  "anniversaryId": 5,
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "anniversaryId": "{{anniversaryId}}",
   "isMetalBody": false,
   "isOriginalColorEdition": true,
   "isRevival": false,

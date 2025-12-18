@@ -29,7 +29,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.mesofi.mythclothapi.catalogs.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
@@ -368,10 +368,8 @@ public class FigurineControllerTest {
   @MethodFileSource(folder = "/figurines/request", type = FigurineReq.class)
   void createFigurine_shouldReturn200_whenRequestIsValid(String jsonRequest, FigurineReq req)
       throws Exception {
-    AnniversaryResp anniversaryResp = new AnniversaryResp();
-    anniversaryResp.setId(5);
-    anniversaryResp.setDescription("Masami Kurumada 40th Anniversary");
-    anniversaryResp.setYear(40);
+    AnniversaryResp anniversaryResp =
+        new AnniversaryResp(5, "Masami Kurumada 40th Anniversary", 40);
 
     when(service.createFigurine(req))
         .thenReturn(

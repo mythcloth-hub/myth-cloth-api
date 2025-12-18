@@ -53,8 +53,8 @@ public class CatalogServiceTest {
 
     CatalogResp response = service.createCatalog("groups", request);
     assertThat(response).isNotNull();
-    assertThat(response.getId()).isNotZero();
-    assertThat(response.getDescription()).isEqualTo("Some description");
+    assertThat(response.id()).isNotZero();
+    assertThat(response.description()).isEqualTo("Some description");
   }
 
   @Test
@@ -93,10 +93,10 @@ public class CatalogServiceTest {
     CatalogReq request = new CatalogReq("The description");
     CatalogResp resp = service.createCatalog("series", request);
 
-    CatalogResp response = service.retrieveCatalog("series", resp.getId());
+    CatalogResp response = service.retrieveCatalog("series", resp.id());
     assertThat(response).isNotNull();
-    assertThat(response.getId()).isNotZero();
-    assertThat(response.getDescription()).isEqualTo("The description");
+    assertThat(response.id()).isNotZero();
+    assertThat(response.description()).isEqualTo("The description");
   }
 
   @Test
@@ -138,7 +138,7 @@ public class CatalogServiceTest {
     CatalogResp resp = service.createCatalog("series", request);
 
     Descriptive descriptiveEntity =
-        service.retrieveCatalogWithDescription("series", resp.getDescription());
+        service.retrieveCatalogWithDescription("series", resp.description());
     assertThat(descriptiveEntity).isNotNull();
     assertThat(descriptiveEntity.getDescription()).isEqualTo("Some description");
   }
@@ -192,12 +192,12 @@ public class CatalogServiceTest {
     CatalogReq updatedRequest = new CatalogReq("Updated description");
 
     // Act
-    CatalogResp updatedResponse = service.updateCatalog("groups", response.getId(), updatedRequest);
+    CatalogResp updatedResponse = service.updateCatalog("groups", response.id(), updatedRequest);
 
     // Assert
     assertThat(updatedResponse).isNotNull();
-    assertThat(updatedResponse.getId()).isNotZero();
-    assertThat(updatedResponse.getDescription()).isEqualTo("Updated description");
+    assertThat(updatedResponse.id()).isNotZero();
+    assertThat(updatedResponse.description()).isEqualTo("Updated description");
   }
 
   @Test
@@ -242,10 +242,10 @@ public class CatalogServiceTest {
     CatalogResp response = service.createCatalog("series", request);
 
     // Act
-    service.deleteCatalog("series", response.getId());
+    service.deleteCatalog("series", response.id());
 
     // Assert
-    assertThatThrownBy(() -> service.deleteCatalog("series", response.getId()))
+    assertThatThrownBy(() -> service.deleteCatalog("series", response.id()))
         .isInstanceOf(CatalogNotFoundException.class);
   }
 }
