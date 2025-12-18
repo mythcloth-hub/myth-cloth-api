@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.mesofi.mythclothapi.catalogs.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
@@ -157,7 +159,28 @@ public class FigurineServiceTest {
             FigurineResp::name,
             FigurineResp::displayableName,
             FigurineResp::distributors,
-            FigurineResp::tamashiiUrl)
+            FigurineResp::tamashiiUrl,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
         .containsExactly(
             1L,
             "Pegasus Seiya",
@@ -167,11 +190,32 @@ public class FigurineServiceTest {
                     new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
                     JPY,
                     3500d,
-                    null,
-                    null,
-                    null,
+                    3850.0000000000005d,
+                    LocalDate.of(2025, 1, 1),
+                    LocalDate.of(2025, 6, 6),
                     LocalDate.of(2025, 9, 9),
                     true)),
+            null,
+            new CatalogResp(1, "Tamashii Web Shop"),
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            new CatalogResp(1, "Bronze Saint V3"),
+            new AnniversaryResp(1, "Masami Kurumada 40th Anniversar", 40),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            "Test notes",
+            null,
+            null,
+            List.of(),
+            null,
             null);
 
     verify(distributorRepository).findAll();
@@ -194,36 +238,36 @@ public class FigurineServiceTest {
   private List<Distribution> loadDistributions() {
     Distribution distribution1 = new Distribution();
     distribution1.setId(1L);
-    distribution1.setDescription("Test description");
+    distribution1.setDescription("Tamashii Web Shop");
     return List.of(distribution1);
   }
 
   private List<LineUp> loadLineups() {
     LineUp lineUp1 = new LineUp();
     lineUp1.setId(1L);
-    lineUp1.setDescription("Test description");
+    lineUp1.setDescription("Myth Cloth EX");
     return List.of(lineUp1);
   }
 
   private List<Series> loadSeries() {
     Series series1 = new Series();
     series1.setId(1L);
-    series1.setDescription("Test description");
+    series1.setDescription("Saint Seiya");
     return List.of(series1);
   }
 
   private List<Group> loadGroups() {
     Group group1 = new Group();
     group1.setId(1L);
-    group1.setDescription("Test description");
+    group1.setDescription("Bronze Saint V3");
     return List.of(group1);
   }
 
   private List<Anniversary> loadAnniversaries() {
     Anniversary anniversary1 = new Anniversary();
     anniversary1.setId(1L);
-    anniversary1.setDescription("Test description");
-    anniversary1.setYear(30);
+    anniversary1.setDescription("Masami Kurumada 40th Anniversar");
+    anniversary1.setYear(40);
     return List.of(anniversary1);
   }
 
@@ -257,8 +301,8 @@ public class FigurineServiceTest {
         false,
         false,
         false,
-        false,
-        null,
+        true,
+        "Test notes",
         null,
         null);
   }

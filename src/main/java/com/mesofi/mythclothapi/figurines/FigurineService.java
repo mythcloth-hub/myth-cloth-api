@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -103,7 +104,7 @@ public class FigurineService {
     linkReferences(figurine);
 
     var saved = repository.save(figurine);
-    return mapper.toFigurineResp(saved, this::createDisplayableName);
+    return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
   }
 
   public String createDisplayableName(Figurine figurine) {
@@ -111,7 +112,40 @@ public class FigurineService {
   }
 
   public Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
-    return 3.0;
+    if (figurineDistributor == null
+        || figurineDistributor.getPrice() == null
+        || figurineDistributor.getPrice() <= 0) {
+      return null;
+    }
+
+    return switch (figurineDistributor.getCurrency()) {
+      case JPY ->
+          calculateJapanesePriceWithTax(
+              figurineDistributor.getPrice(), figurineDistributor.getReleaseDate());
+      case MXN -> figurineDistributor.getPrice() * 1.16; // example IVA
+      case USD -> figurineDistributor.getPrice(); // no VAT by default
+      default -> figurineDistributor.getPrice();
+    };
+  }
+
+  private Double calculateJapanesePriceWithTax(Double price, LocalDate releaseDate) {
+    if (releaseDate == null) {
+      return price; // fallback: unknown tax date
+    }
+
+    double taxRate;
+
+    if (releaseDate.isBefore(LocalDate.of(1997, 4, 1))) {
+      taxRate = 0.03;
+    } else if (releaseDate.isBefore(LocalDate.of(2014, 4, 1))) {
+      taxRate = 0.05;
+    } else if (releaseDate.isBefore(LocalDate.of(2019, 10, 1))) {
+      taxRate = 0.08;
+    } else {
+      taxRate = 0.10;
+    }
+
+    return price * (1 + taxRate);
   }
 
   private void linkReferences(Figurine figurine) {

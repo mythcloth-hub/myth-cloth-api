@@ -107,7 +107,17 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link LineUp} by description. */
+  /**
+   * Resolves a {@link LineUp} catalog entry using its textual description.
+   *
+   * <p>This variant is primarily used during CSV imports where catalog references are provided as
+   * human-readable descriptions rather than identifiers.
+   *
+   * @param desc lineup description
+   * @param catalogs catalog context containing cached lineups
+   * @return the matching {@link LineUp}, or {@code null} if the description is blank
+   * @throws IllegalArgumentException if the description does not exist in the catalog
+   */
   default LineUp toLineUp(String desc, @Context CatalogContext catalogs) {
     String msg = "LineUp not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -116,7 +126,14 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link Series} by description. */
+  /**
+   * Resolves a {@link Series} catalog entry using its textual description.
+   *
+   * @param desc series description
+   * @param catalogs catalog context containing cached series
+   * @return the matching {@link Series}, or {@code null} if the description is blank
+   * @throws IllegalArgumentException if the description does not exist in the catalog
+   */
   default Series toSeries(String desc, @Context CatalogContext catalogs) {
     String msg = "Series not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -125,7 +142,14 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves a {@link Group} by description. */
+  /**
+   * Resolves a {@link Group} catalog entry using its textual description.
+   *
+   * @param desc group description
+   * @param catalogs catalog context containing cached groups
+   * @return the matching {@link Group}, or {@code null} if the description is blank
+   * @throws IllegalArgumentException if the description does not exist in the catalog
+   */
   default Group toGroup(String desc, @Context CatalogContext catalogs) {
     String msg = "Group not found for desc=" + desc;
     return Optional.ofNullable(desc)
@@ -134,7 +158,16 @@ public interface FigurineMapper {
         .orElse(null);
   }
 
-  /** Resolves an {@link Anniversary} by year number. */
+  /**
+   * Resolves an {@link Anniversary} catalog entry using its year value.
+   *
+   * <p>This method is intended for CSV imports where anniversaries are expressed as numeric years
+   * instead of catalog identifiers.
+   *
+   * @param anniversaryNumber anniversary year (e.g. 20, 30)
+   * @param catalogs catalog context containing cached anniversaries
+   * @return the matching {@link Anniversary}, or {@code null} if none matches
+   */
   default Anniversary toAnniversary(Integer anniversaryNumber, @Context CatalogContext catalogs) {
     return catalogs.anniversaries().stream()
         .filter(item -> Objects.nonNull(item.getYear()))
@@ -347,9 +380,7 @@ public interface FigurineMapper {
    * @return API-facing {@link FigurineResp}
    */
   @Mapping(target = "name", source = "normalizedName")
-  @Mapping(
-      target = "displayableName",
-      expression = "java(createDisplayableName(figurine, calculateDisplayableName))")
+  @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
   @Mapping(target = "lineUp", source = "lineup")
   @Mapping(target = "isMetalBody", source = "metalBody")
   @Mapping(target = "isOriginalColorEdition", source = "oce")
@@ -367,54 +398,30 @@ public interface FigurineMapper {
   @Mapping(target = "createdAt", ignore = true) // map this later
   @Mapping(target = "updatedAt", ignore = true) // map this later
   FigurineResp toFigurineResp(
-      Figurine figurine, @Context Function<Figurine, String> calculateDisplayableName);
+      Figurine figurine,
+      @Context Function<Figurine, String> createDisplayableName,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
   /**
-   * Builds a human-readable display name for a figurine.
+   * Maps a {@link FigurineDistributor} domain entity to its API response representation.
    *
-   * <p>This method centralizes display name generation logic, which may include suffixes, editions,
-   * or special markers.
+   * <p>The {@code priceWithTax} field is calculated dynamically using the provided pricing
+   * function, allowing tax logic to remain outside the mapper.
    *
-   * @param figurine domain entity
-   * @return displayable name
-   */
-  default String createDisplayableName(
-      Figurine figurine, Function<Figurine, String> calculateDisplayableName) {
-    return calculateDisplayableName.apply(figurine);
-  }
-
-  /**
-   * Maps a {@link FigurineDistributor} entity to its API response representation.
-   *
-   * <p>Pricing information may include derived values such as taxes, which are calculated via
-   * helper methods.
-   *
-   * @param figurineDistributor distributor entity
+   * @param figurineDistributor distributor-specific figurine data
+   * @param createDisplayableName function used to compute the figurine display name
+   * @param calculatePriceWithTax function used to compute the final price including tax
    * @return API-facing {@link FigurineDistributorResp}
    */
   @Mapping(
       target = "priceWithTax",
-      expression = "java(createPriceWithTax(figurineDistributor, calculatePriceWithTax))")
+      expression = "java(calculatePriceWithTax.apply(figurineDistributor))")
   @Mapping(target = "announcedAt", source = "announcementDate")
   @Mapping(target = "preorderOpensAt", source = "preorderDate")
   FigurineDistributorResp toFigurineDistributorResp(
       FigurineDistributor figurineDistributor,
+      @Context Function<Figurine, String> createDisplayableName,
       @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
-
-  /**
-   * Calculates the final price including taxes for a distributor entry.
-   *
-   * <p>This method is a placeholder and is expected to delegate to a service-layer pricing utility
-   * in the future.
-   *
-   * @param figurineDistributor distributor pricing data
-   * @return price including tax
-   */
-  default Double createPriceWithTax(
-      FigurineDistributor figurineDistributor,
-      Function<FigurineDistributor, Double> calculatePriceWithTax) {
-    return calculatePriceWithTax.apply(figurineDistributor);
-  }
 
   /**
    * Maps a {@link Distributor} domain entity to its API response representation.
@@ -432,24 +439,22 @@ public interface FigurineMapper {
   /**
    * Maps a {@link FigurineEvent} domain entity to its API response representation.
    *
-   * <p>This method exposes only the event data that is currently required by the API. Some fields
-   * are intentionally ignored because their mapping strategy has not yet been defined, or they are
-   * not needed in the response context.
+   * <p>Certain contextual fields such as event type, region, and figurine reference are
+   * intentionally ignored and populated later during response enrichment.
    *
-   * <ul>
-   *   <li>{@code type} – pending decision on event categorization
-   *   <li>{@code region} – pending region mapping rules
-   *   <li>{@code figurine} – omitted to avoid circular references
-   * </ul>
-   *
-   * @param figurineEvent the domain event entity
-   * @return an API-facing {@link FigurineEventResp}
+   * @param figurineEvent domain event entity
+   * @param createDisplayableName function used to compute the figurine display name
+   * @param calculatePriceWithTax function used for downstream pricing enrichment
+   * @return API-facing {@link FigurineEventResp}
    */
   @Mapping(target = "date", source = "eventDate")
-  @Mapping(target = "type", ignore = true) // figure out how to map this.
-  @Mapping(target = "region", ignore = true) // figure out how to map this.
-  @Mapping(target = "figurine", ignore = true) // it's ok
-  FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent);
+  @Mapping(target = "type", ignore = true) // map this later
+  @Mapping(target = "region", ignore = true) // map this later
+  @Mapping(target = "figurine", ignore = true) // map this later
+  FigurineEventResp toFigurineEventResp(
+      FigurineEvent figurineEvent,
+      @Context Function<Figurine, String> createDisplayableName,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
   /**
    * Updates a {@link Figurine} entity using non-null values from another instance.
