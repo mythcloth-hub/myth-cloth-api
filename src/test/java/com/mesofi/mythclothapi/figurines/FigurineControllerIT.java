@@ -21,6 +21,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
@@ -38,12 +43,18 @@ import com.mesofi.mythclothapi.it.AbstractIntegrationTest;
  * </ul>
  */
 class FigurineControllerIT extends AbstractIntegrationTest {
+
+  final ObjectMapper OBJECT_MAPPER =
+      new ObjectMapper()
+          .registerModule(new JavaTimeModule())
+          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // optional but recommended
+
   @Test
   @DisplayName("Create figurine using JSON payload")
   void createFigurine_usingJsonPayload_shouldReturnCreatedFigurine() throws Exception {
 
     // --- Prepopulate required catalogs
-    long distributorId = createDistributor(new DistributorReq(BANDAI, JP, null));
+    long distributorId = createDistributor(new DistributorReq(BANDAI, JP, "https://tamashii.jp/"));
     long distributionId = createCatalog(distributions, "Stores");
     long lineupId = createCatalog(lineups, "Myth Cloth EX");
     long seriesId = createCatalog(series, "Saint Seiya");
@@ -54,7 +65,7 @@ class FigurineControllerIT extends AbstractIntegrationTest {
     // --- Load and hydrate JSON payload
     String payload =
         loadJson(
-            "payloads/figurines/create-figurine.json",
+            "payloads/figurines/request/create-figurine.json",
             Map.of(
                 "supplierId",
                 distributorId,
@@ -80,9 +91,22 @@ class FigurineControllerIT extends AbstractIntegrationTest {
 
     // --- Assertions
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().name()).isEqualTo("Pegasus Seiya");
-    assertThat(response.getBody().id()).isNotNull();
+    JsonNode actualJson = OBJECT_MAPPER.valueToTree(response.getBody());
+    ObjectNode actualObject = (ObjectNode) actualJson;
+
+    // removeFields(actualObject, "id");
+
+    String expectedJson = loadJson("payloads/figurines/response/create-figurine.json", null);
+
+    assertThat(actualJson).isEqualTo(OBJECT_MAPPER.readTree(expectedJson));
+  }
+
+  private void removeFields(JsonNode node, String... fields) {
+    if (node instanceof ObjectNode objectNode) {
+      for (String field : fields) {
+        objectNode.remove(field);
+      }
+    }
   }
 
   /** Loads a JSON file and replaces {{placeholders}} with values. */
@@ -91,10 +115,12 @@ class FigurineControllerIT extends AbstractIntegrationTest {
         StreamUtils.copyToString(
             new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8);
 
-    for (Map.Entry<String, Object> entry : values.entrySet()) {
-      json = json.replace("{{" + entry.getKey() + "}}", entry.getValue().toString());
+    if (values != null) {
+      for (Map.Entry<String, Object> entry : values.entrySet()) {
+        json = json.replace("{{" + entry.getKey() + "}}", entry.getValue().toString());
+      }
+      return json;
     }
-
     return json;
   }
 }

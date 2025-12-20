@@ -434,6 +434,7 @@ public interface FigurineMapper {
    * @return an API-facing {@link DistributorResp}
    */
   @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
+  @Mapping(target = "countryCode", source = "country")
   DistributorResp toDistributorResp(Distributor distributor);
 
   /**
