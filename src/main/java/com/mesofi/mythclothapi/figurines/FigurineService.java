@@ -1,11 +1,18 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +25,8 @@ import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -89,7 +98,7 @@ public class FigurineService {
         .orElseGet(
             () -> {
               // Create new record
-              linkReferences(incoming);
+              prepareForPersistence(incoming);
               return incoming;
             });
   }
@@ -101,7 +110,7 @@ public class FigurineService {
     CatalogContext catalogContext = loadCatalogs();
 
     Figurine figurine = mapper.toFigurine(request, catalogContext);
-    linkReferences(figurine);
+    prepareForPersistence(figurine);
 
     var saved = repository.save(figurine);
     return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
@@ -146,6 +155,56 @@ public class FigurineService {
     }
 
     return price * (1 + taxRate);
+  }
+
+  private void prepareForPersistence(Figurine figurine) {
+    createDefaultEvents(figurine);
+    linkReferences(figurine);
+
+    Instant localDateTime = Instant.now();
+    figurine.setCreationDate(localDateTime);
+    figurine.setUpdateDate(localDateTime);
+  }
+
+  private void createDefaultEvents(Figurine figurine) {
+    // creates the default events ...
+    if (figurine.getDistributors() != null && !figurine.getDistributors().isEmpty()) {
+      FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
+
+      Optional.ofNullable(figurineDistributor.getAnnouncementDate())
+          .ifPresent(
+              announcementDate ->
+                  addDefaultEvent(
+                      "First announced as a possible future release.",
+                      announcementDate,
+                      ANNOUNCEMENT,
+                      figurine));
+      Optional.ofNullable(figurineDistributor.getPreorderDate())
+          .ifPresent(
+              preorderDate ->
+                  addDefaultEvent(
+                      "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
+      Optional.ofNullable(figurineDistributor.getReleaseDate())
+          .ifPresent(
+              releaseDate ->
+                  addDefaultEvent(
+                      "The global release date has been officially announced.",
+                      releaseDate,
+                      RELEASE,
+                      figurine));
+    }
+  }
+
+  private void addDefaultEvent(
+      String description, LocalDate date, FigurineEventType type, Figurine figurine) {
+
+    FigurineEvent event = new FigurineEvent();
+    event.setDescription(description);
+    event.setEventDate(date);
+    event.setType(type);
+    event.setRegion(JP);
+
+    figurine.getEvents().add(event);
   }
 
   private void linkReferences(Figurine figurine) {

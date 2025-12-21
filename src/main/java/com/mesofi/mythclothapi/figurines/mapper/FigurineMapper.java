@@ -395,8 +395,8 @@ public interface FigurineMapper {
   @Mapping(target = "notes", source = "remarks")
   @Mapping(target = "officialImageUrls", source = "officialImages")
   @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
-  @Mapping(target = "createdAt", ignore = true) // map this later
-  @Mapping(target = "updatedAt", ignore = true) // map this later
+  @Mapping(target = "createdAt", source = "creationDate")
+  @Mapping(target = "updatedAt", source = "updateDate")
   FigurineResp toFigurineResp(
       Figurine figurine,
       @Context Function<Figurine, String> createDisplayableName,
@@ -449,8 +449,6 @@ public interface FigurineMapper {
    * @return API-facing {@link FigurineEventResp}
    */
   @Mapping(target = "date", source = "eventDate")
-  @Mapping(target = "type", ignore = true) // map this later
-  @Mapping(target = "region", ignore = true) // map this later
   @Mapping(target = "figurine", ignore = true) // map this later
   FigurineEventResp toFigurineEventResp(
       FigurineEvent figurineEvent,

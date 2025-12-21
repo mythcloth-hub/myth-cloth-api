@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.figurines.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,4 +113,10 @@ public class Figurine extends BaseId {
   @ElementCollection
   @CollectionTable(name = "non_official_images", joinColumns = @JoinColumn(name = "figurine_id"))
   private List<String> nonOfficialImages;
+
+  @Column(nullable = false)
+  private Instant creationDate;
+
+  @Column(nullable = false)
+  private Instant updateDate;
 }

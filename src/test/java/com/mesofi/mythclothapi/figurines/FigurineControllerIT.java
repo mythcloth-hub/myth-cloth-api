@@ -55,10 +55,10 @@ class FigurineControllerIT extends AbstractIntegrationTest {
 
     // --- Prepopulate required catalogs
     long distributorId = createDistributor(new DistributorReq(BANDAI, JP, "https://tamashii.jp/"));
-    long distributionId = createCatalog(distributions, "Stores");
+    long distributionId = createCatalog(distributions, "Tamashii Web Shop");
     long lineupId = createCatalog(lineups, "Myth Cloth EX");
     long seriesId = createCatalog(series, "Saint Seiya");
-    long groupId = createCatalog(groups, "Bronze Saint V1");
+    long groupId = createCatalog(groups, "Bronze Saint V3");
     long anniversaryId =
         createAnniversary(new AnniversaryReq("Masami Kurumada 40th Anniversary", 40));
 
@@ -91,19 +91,20 @@ class FigurineControllerIT extends AbstractIntegrationTest {
 
     // --- Assertions
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
+    String expectedJsonString = loadJson("payloads/figurines/response/create-figurine.json", null);
+
     JsonNode actualJson = OBJECT_MAPPER.valueToTree(response.getBody());
-    ObjectNode actualObject = (ObjectNode) actualJson;
+    JsonNode expectedJson = OBJECT_MAPPER.readTree(expectedJsonString);
 
-    // removeFields(actualObject, "id");
+    removeFields(actualJson);
+    removeFields(expectedJson);
 
-    String expectedJson = loadJson("payloads/figurines/response/create-figurine.json", null);
-
-    assertThat(actualJson).isEqualTo(OBJECT_MAPPER.readTree(expectedJson));
+    assertThat(actualJson.asText()).isEqualTo(expectedJson.asText());
   }
 
-  private void removeFields(JsonNode node, String... fields) {
+  private void removeFields(JsonNode node) {
     if (node instanceof ObjectNode objectNode) {
-      for (String field : fields) {
+      for (String field : new String[] {"id", "createdAt", "updatedAt"}) {
         objectNode.remove(field);
       }
     }
