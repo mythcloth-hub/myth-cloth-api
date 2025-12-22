@@ -4,16 +4,24 @@ import static com.mesofi.mythclothapi.catalogs.dto.CatalogType.distributions;
 import static com.mesofi.mythclothapi.catalogs.dto.CatalogType.groups;
 import static com.mesofi.mythclothapi.catalogs.dto.CatalogType.lineups;
 import static com.mesofi.mythclothapi.catalogs.dto.CatalogType.series;
-import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
-import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -26,59 +34,72 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
-import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.it.AbstractIntegrationTest;
 
-/**
- * Integration tests for {@code /figurines} endpoints.
- *
- * <p>These tests exercise the full HTTP stack, including:
- *
- * <ul>
- *   <li>Catalog prepopulation
- *   <li>Distributor creation
- *   <li>Figurine creation and response mapping
- * </ul>
- */
-class FigurineControllerIT extends AbstractIntegrationTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class FigurineControllerIT extends AbstractIntegrationTest {
+
+  Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
 
   final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper()
           .registerModule(new JavaTimeModule())
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // optional but recommended
 
-  @Test
-  @DisplayName("Create figurine using JSON payload")
-  void createFigurine_usingJsonPayload_shouldReturnCreatedFigurine() throws Exception {
+  private List<DistributorResp> distributorRespList;
+  private List<CatalogResp> distributionRespList;
+  private List<CatalogResp> lineupRespList;
+  private List<CatalogResp> seriesRespList;
+  private List<CatalogResp> groupRespList;
+  private List<AnniversaryResp> anniversariesReqList;
 
-    // --- Prepopulate required catalogs
-    long distributorId = createDistributor(new DistributorReq(BANDAI, JP, "https://tamashii.jp/"));
-    long distributionId = createCatalog(distributions, "Tamashii Web Shop");
-    long lineupId = createCatalog(lineups, "Myth Cloth EX");
-    long seriesId = createCatalog(series, "Saint Seiya");
-    long groupId = createCatalog(groups, "Bronze Saint V3");
-    long anniversaryId =
-        createAnniversary(new AnniversaryReq("Masami Kurumada 40th Anniversary", 40));
+  @BeforeAll
+  void setUpCatalogs() {
+    distributorRespList = createDistributors();
+    distributionRespList = createCatalogs(distributions);
+    lineupRespList = createCatalogs(lineups);
+    seriesRespList = createCatalogs(series);
+    groupRespList = createCatalogs(groups);
+    anniversariesReqList = createAnniversaries();
+  }
+
+  @AfterAll
+  void cleanUpCatalogs() {
+    // jdbc.execute("DELETE FROM distributors");
+  }
+
+  @AfterEach
+  void deleteFigurines() {}
+
+  @ParameterizedTest(name = "{index} ⇒ {0}")
+  @MethodSource("createFigurineScenarios")
+  @DisplayName("Create figurine scenarios")
+  void createFigurine_usingJsonPayload_shouldReturnCreatedFigurine(
+      String description, String requestPayloadPath, String expectedResponsePath) throws Exception {
+
+    log.info("Create figurine scenarios: {}", description);
 
     // --- Load and hydrate JSON payload
     String payload =
         loadJson(
-            "payloads/figurines/request/create-figurine.json",
+            requestPayloadPath,
             Map.of(
                 "supplierId",
-                distributorId,
+                distributorRespList.getFirst().id(),
                 "distributionId",
-                distributionId,
+                distributionRespList.getFirst().id(),
                 "lineUpId",
-                lineupId,
+                lineupRespList.getFirst().id(),
                 "seriesId",
-                seriesId,
+                seriesRespList.getFirst().id(),
                 "groupId",
-                groupId,
+                groupRespList.getFirst().id(),
                 "anniversaryId",
-                anniversaryId));
+                anniversariesReqList.getFirst().id()));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -91,7 +112,7 @@ class FigurineControllerIT extends AbstractIntegrationTest {
 
     // --- Assertions
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    String expectedJsonString = loadJson("payloads/figurines/response/create-figurine.json", null);
+    String expectedJsonString = loadJson(expectedResponsePath, null);
 
     JsonNode actualJson = OBJECT_MAPPER.valueToTree(response.getBody());
     JsonNode expectedJson = OBJECT_MAPPER.readTree(expectedJsonString);
@@ -108,6 +129,22 @@ class FigurineControllerIT extends AbstractIntegrationTest {
         objectNode.remove(field);
       }
     }
+  }
+
+  static Stream<Arguments> createFigurineScenarios() {
+    return Stream.of(
+        Arguments.of(
+            "Standard unreleased figurine",
+            "payloads/figurines/request/it_create_figurine_to_be_released.json",
+            "payloads/figurines/request/it_create_figurine_to_be_released.json"),
+        Arguments.of(
+            "Released Figurine",
+            "payloads/figurines/request/it_create_figurine_released.json",
+            "payloads/figurines/response/it_create_figurine_released.json"),
+        Arguments.of(
+            "Prototype or unreleased",
+            "payloads/figurines/request/it_create_figurine_prototype.json",
+            "payloads/figurines/response/it_create_figurine_prototype.json"));
   }
 
   /** Loads a JSON file and replaces {{placeholders}} with values. */
