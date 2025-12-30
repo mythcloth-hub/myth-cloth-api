@@ -13,7 +13,7 @@ public record FigurineReq(
     @NotEmpty(message = "At least one distributor must be provided") @Valid
         List<DistributorReq> distributors,
     String tamashiiUrl,
-    @NotNull Long distributionId,
+    Long distributionId,
     @NotNull Long lineUpId,
     @NotNull Long seriesId,
     @NotNull Long groupId,

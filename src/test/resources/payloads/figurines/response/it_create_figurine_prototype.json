@@ -1,24 +1,35 @@
 {
-  "name": "Pegasus Seiya",
+  "id": 1,
+  "name": "Leo Aiolia",
+  "displayableName": "FIXME",
   "distributors": [
     {
-      "supplierId": "{{supplierId}}",
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
       "currency": "JPY",
-      "price": 16000.00,
-      "announcedAt": "2025-11-13",
-      "preorderOpensAt": "2025-05-12",
-      "releaseDate": "2026-05-01",
-      "releaseDateConfirmed": true
+      "announcedAt": "2018-10-27",
+      "releaseDateConfirmed": false
     }
   ],
-  "tamashiiUrl": "https://tamashiiweb.com/item/15695",
-  "distributionId": "{{distributionId}}",
-  "lineUpId": "{{lineUpId}}",
-  "seriesId": "{{seriesId}}",
-  "groupId": "{{groupId}}",
-  "anniversaryId": "{{anniversaryId}}",
+  "lineUp": {
+    "id": 1,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 2,
+    "description": "Saintia Sho"
+  },
+  "group": {
+    "id": 2,
+    "description": "Gold Saint"
+  },
   "isMetalBody": false,
-  "isOriginalColorEdition": true,
+  "isOriginalColorEdition": false,
   "isRevival": false,
   "isPlainCloth": false,
   "isBattleDamaged": false,
@@ -27,13 +38,21 @@
   "isMangaVersion": false,
   "isMultiPack": false,
   "isArticulable": true,
-  "notes": "Shown for the first time in Tamashii 2025",
+  "notes": "Shown for the first time in Tamashii 2018",
   "officialImageUrls": [
-    "https://imagizer.imageshack.com/img923/5373/mM9Vnw.jpg",
-    "https://imagizer.imageshack.com/img923/5718/9ekW8o.jpg",
-    "https://imagizer.imageshack.com/img922/8738/4a9Xam.jpg"
+    "https://imagizer.imageshack.com/img924/8470/UgxQru.jpg",
+    "https://imagizer.imageshack.com/img923/562/rE8qou.jpg",
+    "https://imagizer.imageshack.com/img922/2381/HOoH0L.jpg"
   ],
-  "unofficialImageUrls": [
-    "https://imagizer.imageshack.com/img922/5273/9ZUPz6.jpg"
-  ]
+  "events": [
+    {
+      "id": 1,
+      "date": "2018-10-27",
+      "type": "ANNOUNCEMENT",
+      "region": "JP",
+      "description": "First announced as a possible future release."
+    }
+  ],
+  "createdAt": "2025-12-30T02:35:01.433514Z",
+  "updatedAt": "2025-12-30T02:35:01.433514Z"
 }
