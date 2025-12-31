@@ -84,7 +84,27 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   /**
-   * Verifies that creating a released anniversary figurine returns HTTP 201 and includes
+   * Verifies that creating a future release figurine returns HTTP 201 and the expected response
+   * payload.
+   */
+  @Test
+  @FigurineScenario(
+      catalog =
+          @CatalogSelector(
+              lineUp = "Myth Cloth EX",
+              series = "Saint Seiya",
+              group = "Bronze Saint V4"),
+      data =
+          @ScenarioData(
+              name = "Create a future release figurine",
+              request = "it_create_future_release_figurine.json",
+              expectedResponse = "it_create_future_release_figurine.json"))
+  void createFutureReleaseFigurine_returnsCreated(ScenarioContext context) {
+    assertFigurineCreated(context);
+  }
+
+  /**
+   * Verifies that creating a future release figurine returns HTTP 201 and includes
    * anniversary-related data in the response.
    */
   @Test

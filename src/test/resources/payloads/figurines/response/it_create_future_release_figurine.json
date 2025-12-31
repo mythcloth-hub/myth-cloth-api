@@ -1,0 +1,43 @@
+{
+  "id": 1,
+  "name": "Phoenix Ikki",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "releaseDateConfirmed": false
+    }
+  ],
+  "lineUp": {
+    "id": 1,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 3,
+    "description": "Bronze Saint V4"
+  },
+  "isMetalBody": true,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "events": [],
+  "createdAt": "2025-12-31T22:14:07.035822Z",
+  "updatedAt": "2025-12-31T22:14:07.035822Z"
+}

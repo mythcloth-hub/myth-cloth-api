@@ -116,7 +116,12 @@ public class CatalogTestClient {
         switch (type) {
           case distributions -> List.of("Stores", "Tamashii Web Shop", "Tamashii Nations");
           case groups ->
-              List.of("Bronze Saint V2", "Bronze Saint V3", "Gold Saint", "Gold Inheritor");
+              List.of(
+                  "Bronze Saint V2",
+                  "Bronze Saint V3",
+                  "Bronze Saint V4",
+                  "Gold Saint",
+                  "Gold Inheritor");
           case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
           case lineups -> List.of("Myth Cloth EX", "Myth Cloth", "Appendix");
         };

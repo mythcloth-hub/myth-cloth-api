@@ -1,0 +1,22 @@
+{
+  "name": "Phoenix Ikki",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY"
+    }
+  ],
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": true,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true
+}
