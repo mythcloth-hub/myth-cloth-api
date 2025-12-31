@@ -63,6 +63,9 @@ public class CatalogTestClient {
   /** Base endpoint path for anniversary-related operations. */
   protected static final String ANNIVERSARY = "/anniversaries";
 
+  /** Endpoint path for deleting an anniversary by ID. */
+  protected static final String ANNIVERSARY_DELETE = ANNIVERSARY + "/{id}";
+
   /**
    * Creates a new {@code CatalogTestClient}.
    *
@@ -147,6 +150,15 @@ public class CatalogTestClient {
             new AnniversaryReq("20th Anniversary", 20))
         .map(req -> postAndAssertCreated(ANNIVERSARY, req, AnniversaryResp.class))
         .toList();
+  }
+
+  /**
+   * Deletes an anniversary by ID and asserts a {@code 204 NO_CONTENT} response.
+   *
+   * @param id the anniversary identifier
+   */
+  public void deleteAnniversary(long id) {
+    deleteAndAssertNoContent(ANNIVERSARY_DELETE, id);
   }
 
   /**

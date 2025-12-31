@@ -18,4 +18,6 @@ public @interface CatalogSelector {
   String series();
 
   String group();
+
+  int anniversary() default 0;
 }

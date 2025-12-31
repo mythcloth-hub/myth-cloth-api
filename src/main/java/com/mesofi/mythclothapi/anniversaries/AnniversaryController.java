@@ -64,6 +64,6 @@ public class AnniversaryController {
   @DeleteMapping("/{id}")
   public ResponseEntity<?> removeAnniversary(@PathVariable Long id) {
     service.removeAnniversary(id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }

@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
@@ -79,6 +80,7 @@ public class CatalogScenarioExtension
   private List<CatalogResp> lineUps;
   private List<CatalogResp> series;
   private List<CatalogResp> groups;
+  private List<AnniversaryResp> anniversaries;
 
   private String scenarioName;
   private JsonPayload jsonPayload;
@@ -152,6 +154,7 @@ public class CatalogScenarioExtension
     lineUps = client.createCatalogs(CatalogType.lineups);
     series = client.createCatalogs(CatalogType.series);
     groups = client.createCatalogs(CatalogType.groups);
+    anniversaries = selector.anniversary() != 0 ? client.createAnniversaries() : List.of();
 
     DistributorResp distributor = findJapaneseDistributor(distributors, JP);
     DistributorResp distributorMXN = findJapaneseDistributor(distributors, MX);
@@ -174,6 +177,17 @@ public class CatalogScenarioExtension
     CatalogResp catalogGroup =
         findByDescription(groups, selector.group(), CatalogResp::description, "Group not found");
 
+    AnniversaryResp catalogAnniversary =
+        anniversaries.isEmpty()
+            ? null
+            : anniversaries.stream()
+                .filter(a -> a.year() == selector.anniversary())
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Anniversary not found: " + selector.anniversary()));
+
     // 4️⃣ Hydrate placeholders
     Map<String, Object> placeholders =
         Map.of(
@@ -188,7 +202,9 @@ public class CatalogScenarioExtension
             "seriesId",
             catalogSeries.id(),
             "groupId",
-            catalogGroup.id());
+            catalogGroup.id(),
+            "anniversaryId",
+            Objects.isNull(catalogAnniversary) ? "" : catalogAnniversary.id());
 
     this.jsonPayload = hydrate(this.jsonPayload, JsonPayload.class, placeholders);
   }
@@ -255,7 +271,7 @@ public class CatalogScenarioExtension
   // Lookup helpers
   // ---------------------------------------------------------------------------
 
-  private static DistributorResp findJapaneseDistributor(
+  private DistributorResp findJapaneseDistributor(
       List<DistributorResp> distributors, CountryCode countryCode) {
 
     if (countryCode == JP) {
@@ -271,7 +287,7 @@ public class CatalogScenarioExtension
         .orElse(null);
   }
 
-  private static <T> T findByDescription(
+  private <T> T findByDescription(
       List<T> list, String value, Function<T, String> extractor, String errorMessage) {
 
     return list.stream()
@@ -280,7 +296,7 @@ public class CatalogScenarioExtension
         .orElseThrow(() -> new IllegalStateException(errorMessage + ": " + value));
   }
 
-  private static void validateSelector(CatalogSelector selector) {
+  private void validateSelector(CatalogSelector selector) {
     if (selector.lineUp().isBlank() || selector.series().isBlank() || selector.group().isBlank()) {
       throw new IllegalStateException("CatalogSelector values must not be blank");
     }
@@ -330,6 +346,8 @@ public class CatalogScenarioExtension
         "Series", series, CatalogResp::id, id -> client.deleteCatalog(CatalogType.series, id));
     safeDelete(
         "Groups", groups, CatalogResp::id, id -> client.deleteCatalog(CatalogType.groups, id));
+
+    safeDelete("Anniversaries", anniversaries, AnniversaryResp::id, client::deleteAnniversary);
   }
 
   /** Deletes entities in a defensive manner and logs failures instead of failing tests. */
