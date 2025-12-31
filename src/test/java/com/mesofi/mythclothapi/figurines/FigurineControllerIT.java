@@ -126,6 +126,27 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   /**
+   * Verifies that creating a released HK figurine returns HTTP 201 and the expected response
+   * payload.
+   */
+  @Test
+  @FigurineScenario(
+      catalog =
+          @CatalogSelector(
+              distribution = "Other Limited Edition",
+              lineUp = "Myth Cloth EX",
+              series = "Saint Seiya",
+              group = "Gold Saint"),
+      data =
+          @ScenarioData(
+              name = "Create a release HK figurine",
+              request = "it_create_released_hk_figurine.json",
+              expectedResponse = "it_create_released_hk_figurine.json"))
+  void createReleasedHKFigurine_returnsCreated(ScenarioContext context) {
+    assertFigurineCreated(context);
+  }
+
+  /**
    * Executes the HTTP POST request to create a figurine and performs all common assertions shared
    * by creation scenarios.
    *

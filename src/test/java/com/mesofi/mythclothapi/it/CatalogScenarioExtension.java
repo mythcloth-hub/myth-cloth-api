@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.it;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.it.JsonFixtureType.REQUEST;
@@ -156,8 +157,9 @@ public class CatalogScenarioExtension
     groups = client.createCatalogs(CatalogType.groups);
     anniversaries = selector.anniversary() != 0 ? client.createAnniversaries() : List.of();
 
-    DistributorResp distributor = findJapaneseDistributor(distributors, JP);
-    DistributorResp distributorMXN = findJapaneseDistributor(distributors, MX);
+    DistributorResp distributor = findDistributor(distributors, JP);
+    DistributorResp distributorMXN = findDistributor(distributors, MX);
+    DistributorResp distributorHK = findDistributor(distributors, CN);
 
     CatalogResp catalogDistribution =
         distributions.isEmpty()
@@ -195,6 +197,8 @@ public class CatalogScenarioExtension
             distributor.id(),
             "supplierIdMXN",
             Objects.isNull(distributorMXN) ? "" : distributorMXN.id(),
+            "supplierIdHK",
+            Objects.isNull(distributorHK) ? "" : distributorHK.id(),
             "distributionId",
             Objects.isNull(catalogDistribution) ? "" : catalogDistribution.id(),
             "lineUpId",
@@ -271,7 +275,7 @@ public class CatalogScenarioExtension
   // Lookup helpers
   // ---------------------------------------------------------------------------
 
-  private DistributorResp findJapaneseDistributor(
+  private DistributorResp findDistributor(
       List<DistributorResp> distributors, CountryCode countryCode) {
 
     if (countryCode == JP) {
@@ -354,6 +358,9 @@ public class CatalogScenarioExtension
   private <T> void safeDelete(
       String label, List<T> items, Function<T, Long> extractor, Consumer<Long> deleter) {
 
+    if (Objects.isNull(items)) {
+      return;
+    }
     List<Long> ids =
         items.stream()
             .map(extractor)

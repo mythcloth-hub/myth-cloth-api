@@ -1,8 +1,10 @@
 package com.mesofi.mythclothapi.it;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI_CHINA;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.DAM;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.DTM;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -87,7 +89,8 @@ public class CatalogTestClient {
     return Stream.of(
             new DistributorReq(BANDAI, JP, "https://tamashii.jp/"),
             new DistributorReq(DAM, MX, "https://animexico-online.com/"),
-            new DistributorReq(DTM, MX, null))
+            new DistributorReq(DTM, MX, null),
+            new DistributorReq(BANDAI_CHINA, CN, null))
         .map(req -> postAndAssertCreated(DISTRIBUTORS, req, DistributorResp.class))
         .toList();
   }
@@ -114,7 +117,8 @@ public class CatalogTestClient {
 
     List<String> names =
         switch (type) {
-          case distributions -> List.of("Stores", "Tamashii Web Shop", "Tamashii Nations");
+          case distributions ->
+              List.of("Stores", "Tamashii Web Shop", "Tamashii Nations", "Other Limited Edition");
           case groups ->
               List.of(
                   "Bronze Saint V2",
