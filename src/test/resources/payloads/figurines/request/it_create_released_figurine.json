@@ -1,0 +1,35 @@
+{
+  "name": "Phoenix Ikki",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 3600,
+      "releaseDate": "2004-03-26",
+      "releaseDateConfirmed": true
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN"
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/276",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/4048/g4jhbg.jpg",
+    "https://imagizer.imageshack.com/img922/6460/jITPC9.jpg"
+  ]
+}

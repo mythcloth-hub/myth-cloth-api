@@ -3,8 +3,6 @@ package com.mesofi.mythclothapi.figurines;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpEntity;
@@ -13,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.it.AbstractIntegrationTest;
 import com.mesofi.mythclothapi.it.CatalogScenarioExtension;
@@ -21,6 +18,7 @@ import com.mesofi.mythclothapi.it.CatalogSelector;
 import com.mesofi.mythclothapi.it.FigurineScenario;
 import com.mesofi.mythclothapi.it.ScenarioContext;
 import com.mesofi.mythclothapi.it.ScenarioData;
+import com.mesofi.mythclothapi.utils.JsonTestUtils;
 
 @ExtendWith(CatalogScenarioExtension.class)
 public class FigurineControllerIT extends AbstractIntegrationTest {
@@ -31,10 +29,10 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
           @CatalogSelector(lineUp = "Myth Cloth EX", series = "Saintia Sho", group = "Gold Saint"),
       data =
           @ScenarioData(
-              name = "Prototype Figurine",
-              request = "it_create_figurine_prototype.json",
-              expectedResponse = "it_create_figurine_prototype.json"))
-  void createFigurine_givenValidScenario_shouldCreateFigurine(ScenarioContext context) {
+              name = "Create prototype figurine",
+              request = "it_create_prototype_figurine.json",
+              expectedResponse = "it_create_prototype_figurine.json"))
+  void createPrototypeFigurine_shouldReturnCreatedFigurine(ScenarioContext context) {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -46,18 +44,46 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
 
     // --- Assertions
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    JsonNode expectedJson = context.expected().json();
-    JsonNode actualJson = CatalogScenarioExtension.mapper.valueToTree(response.getBody());
+    JsonNode expected = context.expected().json();
+    JsonNode actual = CatalogScenarioExtension.mapper.valueToTree(response.getBody());
 
-    removeTimestamps(expectedJson);
-    removeTimestamps(actualJson);
+    JsonTestUtils.normalize(expected);
+    JsonTestUtils.normalize(actual);
 
-    assertThat(actualJson.toString()).isEqualTo(expectedJson.toString());
+    assertThat(actual.toString()).isEqualTo(expected.toString());
   }
 
-  private void removeTimestamps(JsonNode node) {
-    if (node.isObject()) {
-      ((ObjectNode) node).remove(List.of("createdAt", "updatedAt"));
-    }
+  @Test
+  @FigurineScenario(
+      catalog =
+          @CatalogSelector(
+              distribution = "Stores",
+              lineUp = "Myth Cloth",
+              series = "Saint Seiya",
+              group = "Bronze Saint V2"),
+      data =
+          @ScenarioData(
+              name = "Create released figurine",
+              request = "it_create_released_figurine.json",
+              expectedResponse = "it_create_released_figurine.json"))
+  void createReleasedFigurine_shouldReturnCreatedFigurine(ScenarioContext context) {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> request = new HttpEntity<>(context.request().raw(), headers);
+
+    // --- Execute request
+    ResponseEntity<FigurineResp> response =
+        rest.postForEntity(FIGURINES, request, FigurineResp.class);
+
+    // --- Assertions
+    assertThat(response.getStatusCode()).isEqualTo(CREATED);
+    JsonNode expected = context.expected().json();
+    JsonNode actual = CatalogScenarioExtension.mapper.valueToTree(response.getBody());
+
+    JsonTestUtils.normalize(expected);
+    JsonTestUtils.normalize(actual);
+
+    assertThat(actual.toString()).isEqualTo(expected.toString());
   }
 }

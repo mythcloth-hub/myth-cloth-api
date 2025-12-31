@@ -65,6 +65,6 @@ public class CatalogController {
   public ResponseEntity<?> removeCatalog(
       @NotNull @Valid @PathVariable CatalogType catalogType, @PathVariable Long id) {
     service.deleteCatalog(catalogType.name(), id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }

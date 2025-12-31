@@ -64,6 +64,6 @@ public class DistributorController {
   @DeleteMapping("/{id}")
   public ResponseEntity<?> removeDistributor(@PathVariable Long id) {
     service.removeDistributor(id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }
