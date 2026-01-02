@@ -3,6 +3,9 @@ package com.mesofi.mythclothapi.figurines;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
 
+import java.net.URI;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.http.HttpEntity;
@@ -147,21 +150,55 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   /**
-   * Executes the HTTP POST request to create a figurine and performs all common assertions shared
-   * by creation scenarios.
+   * Verifies that creating a regular figurine that can be updated later. Returns HTTP 201 and the
+   * expected response payload.
+   */
+  @Test
+  @FigurineScenario(
+      catalog =
+          @CatalogSelector(
+              distribution = "Stores",
+              lineUp = "DD Panoramation",
+              series = "Saint Seiya",
+              group = "Bronze Saint V1"),
+      data =
+          @ScenarioData(
+              name = "Create a released figurine to be updated",
+              request = "it_create_released_updated_figurine.json",
+              expectedResponse = "it_create_released_updated_figurine.json"))
+  void createReleasedToBeUpdatedFigurine_returnsUpdated(ScenarioContext context) {
+    long figurineIdCreated = assertFigurineCreated(context);
+  }
+
+  /**
+   * Executes the {@code POST /figurines} endpoint and asserts that a figurine is successfully
+   * created according to the current scenario.
    *
-   * <p>This method ensures:
+   * <p>This method performs the following steps:
    *
    * <ul>
-   *   <li>HTTP status is 201 (Created)
-   *   <li>Response body is present
-   *   <li>Response content type is JSON
-   *   <li>Response payload matches the expected JSON (after normalization)
+   *   <li>Builds an HTTP request using the raw JSON payload provided by the scenario context
+   *   <li>Sends the request to the {@code /figurines} endpoint
+   *   <li>Validates the basic HTTP contract:
+   *       <ul>
+   *         <li>HTTP status is {@code 201 CREATED}
+   *         <li>Response body is not {@code null}
+   *         <li>{@code Content-Type} is {@code application/json}
+   *         <li>{@code Location} header is present
+   *       </ul>
+   *   <li>Converts the response DTO into JSON
+   *   <li>Normalizes both expected and actual JSON structures to avoid ordering or formatting
+   *       differences
+   *   <li>Asserts that the actual response payload matches the expected scenario output
+   *   <li>Extracts and returns the created figurine ID from the {@code Location} header
    * </ul>
    *
-   * @param context scenario context provided by {@link CatalogScenarioExtension}
+   * @param context the scenario context containing the request payload and the expected response
+   *     JSON
+   * @return the identifier of the newly created figurine, extracted from the {@code Location}
+   *     response header
    */
-  private void assertFigurineCreated(ScenarioContext context) {
+  private long assertFigurineCreated(ScenarioContext context) {
     // Prepare request headers
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -174,9 +211,12 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
         rest.postForEntity(FIGURINES, request, FigurineResp.class);
 
     // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+    assertThat(httpHeaders.getLocation()).isNotNull();
 
     // Convert response DTO to JSON for structural comparison
     JsonNode expected = context.expected().json();
@@ -188,5 +228,10 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
 
     // Assert response payload matches expected scenario output
     assertThat(actual.toString()).isEqualTo(expected.toString());
+
+    URI uri = httpHeaders.getLocation();
+    Assertions.assertNotNull(uri);
+    String path = uri.getPath();
+    return Long.parseLong(path.substring(path.lastIndexOf('/') + 1));
   }
 }

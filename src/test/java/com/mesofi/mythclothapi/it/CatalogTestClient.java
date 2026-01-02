@@ -121,13 +121,14 @@ public class CatalogTestClient {
               List.of("Stores", "Tamashii Web Shop", "Tamashii Nations", "Other Limited Edition");
           case groups ->
               List.of(
+                  "Bronze Saint V1",
                   "Bronze Saint V2",
                   "Bronze Saint V3",
                   "Bronze Saint V4",
                   "Gold Saint",
                   "Gold Inheritor");
           case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
-          case lineups -> List.of("Myth Cloth EX", "Myth Cloth", "Appendix");
+          case lineups -> List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation");
         };
 
     return names.stream()
