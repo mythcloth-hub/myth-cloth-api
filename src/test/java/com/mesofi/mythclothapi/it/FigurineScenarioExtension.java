@@ -65,6 +65,15 @@ public class FigurineScenarioExtension
   private static final Pattern SUPPLIER_ID_PLACEHOLDER =
       Pattern.compile("\\{\\{supplierId([A-Z]+)?}}");
 
+  private static final String SUPPLIER_ID = "supplierId";
+  private static final String SUPPLIER_ID_MXN = "supplierIdMXN";
+  private static final String SUPPLIER_ID_HK = "supplierIdHK";
+  private static final String DIST_ID = "distributionId";
+  private static final String LINEUP_ID = "lineUpId";
+  private static final String SERIES_ID = "seriesId";
+  private static final String GROUP_ID = "groupId";
+  private static final String ANNIVERSARY_ID = "anniversaryId";
+
   List<DistributorResp> distributors;
   List<CatalogResp> distributions;
   List<CatalogResp> lineUps;
@@ -132,11 +141,11 @@ public class FigurineScenarioExtension
       CatalogSelector selector = payload.catalog();
 
       boolean hasSupplierId = hasSupplierIdPlaceholder(jsonNode.get());
-      boolean hasDistributionId = hasCatalogIdPlaceholder(jsonNode.get(), "distributionId");
-      boolean hasLineUpId = hasCatalogIdPlaceholder(jsonNode.get(), "lineUpId");
-      boolean hasSeriesId = hasCatalogIdPlaceholder(jsonNode.get(), "seriesId");
-      boolean hasGroupId = hasCatalogIdPlaceholder(jsonNode.get(), "groupId");
-      boolean hasAnniversaryId = hasCatalogIdPlaceholder(jsonNode.get(), "anniversaryId");
+      boolean hasDistributionId = hasCatalogIdPlaceholder(jsonNode.get(), DIST_ID);
+      boolean hasLineUpId = hasCatalogIdPlaceholder(jsonNode.get(), LINEUP_ID);
+      boolean hasSeriesId = hasCatalogIdPlaceholder(jsonNode.get(), SERIES_ID);
+      boolean hasGroupId = hasCatalogIdPlaceholder(jsonNode.get(), GROUP_ID);
+      boolean hasAnniversaryId = hasCatalogIdPlaceholder(jsonNode.get(), ANNIVERSARY_ID);
 
       if (hasSupplierId) {
         this.distributors =
@@ -146,9 +155,9 @@ public class FigurineScenarioExtension
         DistributorResp distributorMXN = findDistributor(this.distributors, MX);
         DistributorResp distributorHK = findDistributor(this.distributors, CN);
 
-        placeholders.put("supplierId", distributor.id());
-        placeholders.put("supplierIdMXN", distributorMXN.id());
-        placeholders.put("supplierIdHK", distributorHK.id());
+        placeholders.put(SUPPLIER_ID, distributor.id());
+        placeholders.put(SUPPLIER_ID_MXN, distributorMXN.id());
+        placeholders.put(SUPPLIER_ID_HK, distributorHK.id());
       }
       if (hasDistributionId) {
         this.distributions =
@@ -160,9 +169,9 @@ public class FigurineScenarioExtension
                 this.distributions,
                 selector.distribution(),
                 CatalogResp::description,
-                "Distribution not found");
+                "Distribution not found for a given value");
 
-        placeholders.put("distributionId", catalogDistribution.id());
+        placeholders.put(DIST_ID, catalogDistribution.id());
       }
       if (hasLineUpId) {
         this.lineUps =
@@ -171,9 +180,12 @@ public class FigurineScenarioExtension
 
         CatalogResp catalogLineUp =
             findByDescription(
-                this.lineUps, selector.lineUp(), CatalogResp::description, "LineUp not found");
+                this.lineUps,
+                selector.lineUp(),
+                CatalogResp::description,
+                "LineUp not found for a given value");
 
-        placeholders.put("lineUpId", catalogLineUp.id());
+        placeholders.put(LINEUP_ID, catalogLineUp.id());
       }
       if (hasSeriesId) {
         this.series =
@@ -182,9 +194,12 @@ public class FigurineScenarioExtension
 
         CatalogResp catalogSeries =
             findByDescription(
-                this.series, selector.series(), CatalogResp::description, "Series not found");
+                this.series,
+                selector.series(),
+                CatalogResp::description,
+                "Series not found for a given value");
 
-        placeholders.put("seriesId", catalogSeries.id());
+        placeholders.put(SERIES_ID, catalogSeries.id());
       }
       if (hasGroupId) {
         this.groups =
@@ -193,9 +208,12 @@ public class FigurineScenarioExtension
 
         CatalogResp catalogGroup =
             findByDescription(
-                this.groups, selector.group(), CatalogResp::description, "Group not found");
+                this.groups,
+                selector.group(),
+                CatalogResp::description,
+                "Group not found for a given value");
 
-        placeholders.put("groupId", catalogGroup.id());
+        placeholders.put(GROUP_ID, catalogGroup.id());
       }
       if (hasAnniversaryId) {
         this.anniversaries =
@@ -210,7 +228,7 @@ public class FigurineScenarioExtension
                         new IllegalStateException(
                             "Anniversary not found: " + selector.anniversary()));
 
-        placeholders.put("anniversaryId", catalogAnniversary.id());
+        placeholders.put(ANNIVERSARY_ID, catalogAnniversary.id());
       }
 
       if (hasSupplierId
@@ -222,8 +240,7 @@ public class FigurineScenarioExtension
         replacePlaceholders(jsonNode.get(), placeholders);
       }
 
-      ScenarioArtifact scenarioArtifact = new ScenarioArtifact(jsonNode.get(), payload.type());
-      this.payloads.add(scenarioArtifact);
+      this.payloads.add(new ScenarioArtifact(payload.id(), jsonNode.get(), payload.type()));
     }
   }
 
@@ -342,10 +359,12 @@ public class FigurineScenarioExtension
   }
 
   private DistributorResp findDistributor(List<DistributorResp> distributors, CountryCode code) {
+
     return distributors.stream()
         .filter(d -> d.countryCode().equals(code.name()))
         .findFirst()
-        .orElseThrow(() -> new IllegalStateException(code + " Distributor not found"));
+        .orElseThrow(
+            () -> new IllegalArgumentException(String.format("%s Distributor not found", code)));
   }
 
   private <T> T findByDescription(
@@ -354,14 +373,19 @@ public class FigurineScenarioExtension
     return list.stream()
         .filter(e -> extractor.apply(e).equals(value))
         .findFirst()
-        .orElseThrow(() -> new IllegalStateException(errorMessage + ": " + value));
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "%s: '%s'. Available values: %s",
+                        errorMessage, value, list.stream().map(extractor).toList())));
   }
 
   /**
    * Cleans up all entities created during scenario execution.
    *
-   * <p>Cleanup is best-effort: failures are logged but do not cause test failures, ensuring that
-   * cleanup issues do not mask real test results.
+   * <p>Cleanup is the best effort: failures are logged but do not cause test failures, ensuring
+   * that cleanup issues do not mask real test results.
    *
    * @param context JUnit extension context
    */

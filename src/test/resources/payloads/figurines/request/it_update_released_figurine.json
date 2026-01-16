@@ -1,0 +1,32 @@
+{
+  "name": "Andromeda Shun",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 9000.00,
+      "preorderOpensAt": "2020-04-03",
+      "releaseDate": "2021-08-10",
+      "releaseDateConfirmed": false
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN"
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/11789",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true
+}

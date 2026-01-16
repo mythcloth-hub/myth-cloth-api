@@ -29,6 +29,11 @@ import java.lang.annotation.Target;
 public @interface ScenarioRequest {
 
   /**
+   * Optional identifier to reference this request inside a scenario. Empty means "not specified".
+   */
+  String id() default "";
+
+  /**
    * Name of the JSON fixture file associated with this scenario request.
    *
    * @return fixture file name

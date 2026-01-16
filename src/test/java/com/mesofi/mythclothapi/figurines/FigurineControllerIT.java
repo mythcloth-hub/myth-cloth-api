@@ -9,6 +9,8 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -39,6 +41,8 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
  */
 @ExtendWith(FigurineScenarioExtension.class)
 public class FigurineControllerIT extends AbstractIntegrationTest {
+
+  private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
 
   /**
    * Verifies that a prototype figurine can be created successfully.
@@ -148,10 +152,29 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
                     group = "Bronze Saint V1")),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_updated_figurine.json")
+            resource = "it_create_released_updated_figurine.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id",
+            type = ScenarioRequest.Type.REQUEST,
+            resource = "it_update_released_figurine.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Stores",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V4"))
       })
   void createReleasedToBeUpdatedFigurine_returnsUpdated(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);
+    log.info("Figurine created with ID: {}", figurineIdCreated);
+
+    JsonNode jsonNode =
+        context.payloads().stream()
+            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id"))
+            .findFirst()
+            .map(ScenarioArtifact::json)
+            .orElseThrow();
+    log.info("Updating figurine with payload: {}", jsonNode);
   }
 
   /**

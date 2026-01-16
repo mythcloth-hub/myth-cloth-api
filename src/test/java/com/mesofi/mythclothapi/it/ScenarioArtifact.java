@@ -15,7 +15,8 @@ import com.fasterxml.jackson.databind.JsonNode;
  * <p>Instances of this record are created by the scenario extension during test setup and are later
  * consumed by test methods via {@link FigurineScenarioContext}.
  *
+ * @param id unique artifact identifier (it could be empty)
  * @param json resolved JSON payload
  * @param type payload classification within the scenario
  */
-public record ScenarioArtifact(JsonNode json, ScenarioRequest.Type type) {}
+public record ScenarioArtifact(String id, JsonNode json, ScenarioRequest.Type type) {}
