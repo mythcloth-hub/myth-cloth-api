@@ -4,10 +4,10 @@
     {
       "supplierId": "{{supplierId}}",
       "currency": "JPY",
-      "price": 9000.00,
-      "preorderOpensAt": "2020-04-03",
-      "releaseDate": "2021-08-10",
-      "releaseDateConfirmed": false
+      "price": 4000.00,
+      "preorderOpensAt": "2017-04-03",
+      "releaseDate": "2017-08-10",
+      "releaseDateConfirmed": true
     },
     {
       "supplierId": "{{supplierIdMXN}}",
@@ -28,5 +28,15 @@
   "isGold24kEdition": false,
   "isMangaVersion": false,
   "isMultiPack": false,
-  "isArticulable": true
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img924/7871/c5Myz1.jpg",
+    "https://imagizer.imageshack.com/img923/4779/thEYzu.jpg",
+    "https://imagizer.imageshack.com/img922/4483/yw49Ma.jpg",
+    "https://imagizer.imageshack.com/img922/9716/n3hgpG.jpg",
+    "https://imagizer.imageshack.com/img923/5121/TWIiaX.jpg",
+    "https://imagizer.imageshack.com/img924/3587/zq4mGP.jpg",
+    "https://imagizer.imageshack.com/img922/2349/F8nifW.jpg",
+    "https://imagizer.imageshack.com/img924/4420/0dQpnj.jpg"
+  ]
 }

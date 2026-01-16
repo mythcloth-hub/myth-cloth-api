@@ -4,10 +4,7 @@ import java.net.URI;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
@@ -38,5 +35,12 @@ public class FigurineController {
             .toUri();
 
     return ResponseEntity.created(location).body(response);
+  }
+
+  @PutMapping("/{id}")
+  public ResponseEntity<FigurineResp> updateFigurine(
+      @PathVariable Long id, @RequestBody @Valid FigurineReq figurineRequest) {
+    FigurineResp updated = service.updateFigurine(id, figurineRequest);
+    return ResponseEntity.ok(updated);
   }
 }

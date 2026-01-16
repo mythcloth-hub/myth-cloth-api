@@ -33,8 +33,8 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
  * <p>This extension is responsible for:
  *
  * <ul>
- *   <li>Loading JSON request and response fixtures from disk
- *   <li>Resolving dynamic placeholders (e.g. supplierId, catalog IDs, anniversaries)
+ *   <li>Loading JSON request and response fixtures from the disk
+ *   <li>Resolving dynamic placeholders (e.g., supplierId, catalog IDs, anniversaries)
  *   <li>Provisioning required catalog and distributor data before each test
  *   <li>Injecting a {@link FigurineScenarioContext} into test methods
  *   <li>Cleaning up all created data after test execution
@@ -106,7 +106,7 @@ public class FigurineScenarioExtension
    *
    * @param context JUnit extension context
    * @throws IllegalArgumentException if the scenario name is missing or invalid
-   * @throws IllegalStateException if required fixtures or catalog entities cannot be resolved
+   * @throws IllegalStateException if required, fixtures or catalog entities cannot be resolved
    */
   @Override
   public void beforeEach(ExtensionContext context) {
@@ -295,7 +295,7 @@ public class FigurineScenarioExtension
   }
 
   /**
-   * Loads a JSON fixture from disk based on its type (request or response).
+   * Loads a JSON fixture from the disk based on its type (request or response).
    *
    * @param filename fixture file name
    * @param fixtureType fixture category

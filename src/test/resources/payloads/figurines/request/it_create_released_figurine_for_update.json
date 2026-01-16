@@ -4,9 +4,8 @@
     {
       "supplierId": "{{supplierId}}",
       "currency": "JPY",
-      "price": 4000.00,
-      "preorderOpensAt": "2017-04-03",
-      "releaseDate": "2017-08-10",
+      "price": 3600.00,
+      "releaseDate": "2004-02-24",
       "releaseDateConfirmed": true
     },
     {
@@ -14,7 +13,7 @@
       "currency": "MXN"
     }
   ],
-  "tamashiiUrl": "https://tamashiiweb.com/item/11789",
+  "tamashiiUrl": "https://tamashiiweb.com/item/99999999",
   "distributionId": "{{distributionId}}",
   "lineUpId": "{{lineUpId}}",
   "seriesId": "{{seriesId}}",
@@ -30,13 +29,6 @@
   "isMultiPack": false,
   "isArticulable": true,
   "officialImageUrls": [
-    "https://imagizer.imageshack.com/img924/7871/c5Myz1.jpg",
-    "https://imagizer.imageshack.com/img923/4779/thEYzu.jpg",
-    "https://imagizer.imageshack.com/img922/4483/yw49Ma.jpg",
-    "https://imagizer.imageshack.com/img922/9716/n3hgpG.jpg",
-    "https://imagizer.imageshack.com/img923/5121/TWIiaX.jpg",
-    "https://imagizer.imageshack.com/img924/3587/zq4mGP.jpg",
-    "https://imagizer.imageshack.com/img922/2349/F8nifW.jpg",
-    "https://imagizer.imageshack.com/img924/4420/0dQpnj.jpg"
+    "https://imagizer.imageshack.com/img922/359/MbjtAX.jpg"
   ]
 }

@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.figurines;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.net.URI;
 import java.util.List;
@@ -11,10 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
@@ -139,42 +137,80 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   /** Verifies creation of a released figurine intended to be updated later. */
   @Test
   @FigurineScenario(
-      name = "Create a released figurine to be updated",
+      name = "Create a released figurine to be updated, tamashiiUrl is wrong",
       payloads = {
         @ScenarioRequest(
             type = ScenarioRequest.Type.REQUEST,
-            resource = "it_create_released_updated_figurine.json",
+            resource = "it_create_released_figurine_for_update.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Stores",
-                    lineUp = "DD Panoramation",
+                    lineUp = "Myth Cloth",
                     series = "Saint Seiya",
-                    group = "Bronze Saint V1")),
+                    group = "Bronze Saint V2")),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_updated_figurine.json"),
+            resource = "it_create_released_figurine_for_update.json"),
         @ScenarioRequest(
-            id = "updated-figurine-id",
+            id = "updated-figurine-id-req",
             type = ScenarioRequest.Type.REQUEST,
             resource = "it_update_released_figurine.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Stores",
-                    lineUp = "Myth Cloth EX",
+                    lineUp = "Myth Cloth",
                     series = "Saint Seiya",
-                    group = "Bronze Saint V4"))
+                    group = "Bronze Saint V2")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "it_update_released_figurine.json"),
       })
   void createReleasedToBeUpdatedFigurine_returnsUpdated(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);
     log.info("Figurine created with ID: {}", figurineIdCreated);
 
-    JsonNode jsonNode =
+    JsonNode jsonNodeReq =
         context.payloads().stream()
-            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id"))
+            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id-req"))
             .findFirst()
             .map(ScenarioArtifact::json)
             .orElseThrow();
-    log.info("Updating figurine with payload: {}", jsonNode);
+    JsonNode jsonNodeResp =
+        context.payloads().stream()
+            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id-resp"))
+            .findFirst()
+            .map(ScenarioArtifact::json)
+            .orElseThrow();
+    log.info("Updating figurine with new payload: {}", jsonNodeReq);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
+
+    // Execute PUT /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.exchange(
+            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
   }
 
   /**
@@ -193,21 +229,20 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    * <p>The response body is normalized before comparison to avoid failures due to JSON field
    * ordering or formatting differences.
    *
-   * @param context scenario context containing request and expected response payloads
+   * @param ctx scenario context containing request and expected response payloads
    * @return the ID of the created figurine, extracted from the {@code Location} header
    * @throws IllegalStateException if required scenario payloads are missing
    */
-  private long assertFigurineCreated(FigurineScenarioContext context) {
+  private long assertFigurineCreated(FigurineScenarioContext ctx) {
     // Prepare request headers
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     // Build HTTP request using raw JSON from a scenario
-    String requestPayload = getPayloadAsText(context.payloads(), ScenarioRequest.Type.REQUEST);
-    JsonNode responsePayload =
-        getPayloadAsJsonNode(context.payloads(), ScenarioRequest.Type.EXPECTED_RESPONSE);
+    String req = getPayloadAsText(ctx.payloads(), ScenarioRequest.Type.REQUEST);
+    JsonNode resp = getPayloadAsJsonNode(ctx.payloads(), ScenarioRequest.Type.EXPECTED_RESPONSE);
 
-    HttpEntity<String> request = new HttpEntity<>(requestPayload, headers);
+    HttpEntity<String> request = new HttpEntity<>(req, headers);
 
     // Execute POST /figurines
     ResponseEntity<FigurineResp> response =
@@ -225,11 +260,11 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
 
     // Normalize JSON to avoid ordering or formatting differences
-    JsonTestUtils.normalize(responsePayload);
+    JsonTestUtils.normalize(resp);
     JsonTestUtils.normalize(actual);
 
     // Assert response payload matches expected scenario output
-    assertThat(actual.toString()).isEqualTo(responsePayload.toString());
+    assertThat(actual.toString()).isEqualTo(resp.toString());
 
     URI uri = httpHeaders.getLocation();
     Assertions.assertNotNull(uri);

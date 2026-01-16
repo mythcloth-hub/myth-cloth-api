@@ -29,6 +29,7 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
@@ -164,7 +165,7 @@ public class FigurineService {
             })
         .orElseGet(
             () -> {
-              // Create new record
+              // Create a new record
               prepareForPersistence(incoming);
               return incoming;
             });
@@ -195,6 +196,22 @@ public class FigurineService {
 
     var saved = repository.save(figurine);
     return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
+  }
+
+  @Transactional
+  public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
+    log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
+    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+    CatalogContext catalogContext = loadCatalogs();
+    Figurine incoming = mapper.toFigurine(request, catalogContext);
+
+    // Ask MapStruct to update only the changed fields
+    mapper.updateFigurine(existing, incoming);
+    linkReferences(existing);
+
+    var updated = repository.save(existing);
+    return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
   }
 
   /**
