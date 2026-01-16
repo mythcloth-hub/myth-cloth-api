@@ -15,6 +15,7 @@ public class StartupRunner {
 
   @EventListener(ApplicationReadyEvent.class)
   public void init() {
-    figurineService.importFromPublicDrive("1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio");
+
+    // figurineService.importFromPublicDrive("1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio");
   }
 }
