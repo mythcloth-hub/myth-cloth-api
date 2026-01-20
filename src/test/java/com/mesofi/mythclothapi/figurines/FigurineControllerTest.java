@@ -93,7 +93,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenRequestIsEmpty(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
@@ -123,7 +123,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributorIsEmpty(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
@@ -153,7 +153,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributorSupplierIdIsNegative(String jsonRequest)
       throws Exception {
     mockMvc
@@ -184,7 +184,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributorPriceIsNegative(String jsonRequest)
       throws Exception {
     mockMvc
@@ -215,7 +215,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributorCurrencyIsInvalid(String jsonRequest)
       throws Exception {
     mockMvc
@@ -233,7 +233,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributorDateIsInvalid(String jsonRequest)
       throws Exception {
     mockMvc
@@ -251,7 +251,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenNameIsTooLong(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
@@ -279,7 +279,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenDistributionLineupGroupAndSeriesAreNull(
       String jsonRequest) throws Exception {
     mockMvc
@@ -306,7 +306,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenLineupGroupAndSeriesAreNull(String jsonRequest)
       throws Exception {
     mockMvc
@@ -331,7 +331,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenGroupAndSeriesIdAreNull(String jsonRequest)
       throws Exception {
     mockMvc
@@ -349,7 +349,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request")
+  @MethodFileSource(folder = "/figurines/request/unit-tests")
   void createFigurine_shouldReturn400_whenGroupIdIsNull(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
@@ -365,7 +365,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request", type = FigurineReq.class)
+  @MethodFileSource(folder = "/figurines/request/unit-tests", type = FigurineReq.class)
   void createFigurine_shouldReturn200_whenRequestIsValid(String jsonRequest, FigurineReq req)
       throws Exception {
     AnniversaryResp anniversaryResp =
