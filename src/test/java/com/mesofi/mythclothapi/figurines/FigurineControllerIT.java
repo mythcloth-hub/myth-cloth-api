@@ -169,18 +169,9 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     long figurineIdCreated = assertFigurineCreated(context);
     log.info("Figurine created with ID: {}", figurineIdCreated);
 
-    JsonNode jsonNodeReq =
-        context.payloads().stream()
-            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id-req"))
-            .findFirst()
-            .map(ScenarioArtifact::json)
-            .orElseThrow();
-    JsonNode jsonNodeResp =
-        context.payloads().stream()
-            .filter(scenarioArtifact -> scenarioArtifact.id().equals("updated-figurine-id-resp"))
-            .findFirst()
-            .map(ScenarioArtifact::json)
-            .orElseThrow();
+    JsonNode jsonNodeReq = findJsonNodeById(context, "updated-figurine-id-req");
+    JsonNode jsonNodeResp = findJsonNodeById(context, "updated-figurine-id-resp");
+
     log.info("Updating figurine with new payload: {}", jsonNodeReq);
 
     HttpHeaders headers = new HttpHeaders();
@@ -308,5 +299,13 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
         .map(ScenarioArtifact::json)
         .findFirst()
         .orElseThrow(() -> new IllegalStateException("No payload found for type: " + type));
+  }
+
+  private JsonNode findJsonNodeById(FigurineScenarioContext context, String id) {
+    return context.payloads().stream()
+        .filter(scenarioArtifact -> scenarioArtifact.id().equals(id))
+        .findFirst()
+        .map(ScenarioArtifact::json)
+        .orElseThrow(() -> new IllegalStateException("No payload found in context for id: " + id));
   }
 }
