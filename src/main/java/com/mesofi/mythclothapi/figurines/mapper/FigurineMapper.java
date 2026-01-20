@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Context;
@@ -32,6 +33,7 @@ import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
@@ -233,9 +235,12 @@ public interface FigurineMapper {
    */
   default List<FigurineEvent> toFigurineEvents(List<String> eventStrings) {
     if (eventStrings == null || eventStrings.isEmpty()) {
-      return List.of();
+      return new ArrayList<>();
     }
-    return eventStrings.stream().map(this::parseEventString).filter(Objects::nonNull).toList();
+    return eventStrings.stream()
+        .map(this::parseEventString)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 
   /* ============================
@@ -471,7 +476,7 @@ public interface FigurineMapper {
    *
    * @param raw raw string in {@code M/d/yyyy: description} format
    * @return parsed event or {@code null} if blank
-   * @throws IllegalArgumentException if date format is invalid
+   * @throws IllegalArgumentException if a date format is invalid
    */
   private FigurineEvent parseEventString(String raw) {
     if (raw == null || raw.isBlank()) {
@@ -491,8 +496,11 @@ public interface FigurineMapper {
     }
 
     FigurineEvent event = new FigurineEvent();
-    event.setEventDate(date);
     event.setDescription(descriptionPart);
+    event.setEventDate(date);
+    // FIXME The following properties are hardcoded, fix them
+    event.setType(FigurineEventType.ANNOUNCEMENT);
+    event.setRegion(CountryCode.JP);
     return event;
   }
 

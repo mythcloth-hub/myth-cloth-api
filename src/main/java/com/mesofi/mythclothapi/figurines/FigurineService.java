@@ -23,6 +23,7 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
@@ -88,6 +89,7 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
+  private final FigurineDistributorRepository figurineDistributorRepository;
 
   /**
    * Imports figurines from a publicly accessible Google Drive CSV file.
@@ -198,17 +200,41 @@ public class FigurineService {
     return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
   }
 
-  @Transactional
+  // @Transactional
   public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
-    CatalogContext catalogContext = loadCatalogs();
-    Figurine incoming = mapper.toFigurine(request, catalogContext);
+    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
+
+    existing.setLegacyName(incoming.getLegacyName());
+    existing.setNormalizedName(incoming.getNormalizedName());
+    existing.setTamashiiUrl(incoming.getTamashiiUrl());
+    existing.setDistribution(incoming.getDistribution());
+    existing.setLineup(incoming.getLineup());
+    existing.setSeries(incoming.getSeries());
+    existing.setGroup(incoming.getGroup());
+    existing.setAnniversary(incoming.getAnniversary());
+    existing.setMetalBody(incoming.getMetalBody());
+    existing.setOce(incoming.getOce());
+    existing.setRevival(incoming.getRevival());
+    existing.setPlainCloth(incoming.getPlainCloth());
+    existing.setBroken(incoming.getBroken());
+    existing.setGolden(incoming.getGolden());
+    existing.setGold(incoming.getGold());
+    existing.setManga(incoming.getManga());
+    existing.setSurplice(incoming.getSurplice());
+    existing.setSet(incoming.getSet());
+    existing.setArticulable(incoming.getArticulable());
+    existing.setRemarks(incoming.getRemarks());
+    existing.setUpdateDate(Instant.now());
+
+    // Figurine incoming = mapper.toFigurine(request, loadCatalogs());
+    // linkReferences(incoming);
+    // createDefaultEvents(incoming);
 
     // Ask MapStruct to update only the changed fields
-    mapper.updateFigurine(existing, incoming);
-    linkReferences(existing);
+    // mapper.updateFigurine(existing, incoming);
 
     var updated = repository.save(existing);
     return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
