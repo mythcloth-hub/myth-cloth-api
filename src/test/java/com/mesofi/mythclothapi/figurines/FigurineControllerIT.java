@@ -137,7 +137,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   /** Verifies creation of a released figurine intended to be updated later. */
   @Test
   @FigurineScenario(
-      name = "Create a released figurine to be updated, tamashiiUrl is wrong",
+      name =
+          "A released figurine is initially created with an invalid Tamashii URL and is later updated to store the correct value.",
       payloads = {
         @ScenarioRequest(
             type = ScenarioRequest.Type.REQUEST,
