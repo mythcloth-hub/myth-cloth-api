@@ -53,14 +53,14 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       name = "Create prototype figurine",
       payloads = {
         @ScenarioRequest(
-            resource = "it_create_prototype_figurine.json",
+            resource = "prototype_figurine_create.json",
             catalog =
                 @CatalogSelector(
                     lineUp = "Myth Cloth EX",
                     series = "Saintia Sho",
                     group = "Gold Saint")),
         @ScenarioRequest(
-            resource = "it_create_prototype_figurine.json",
+            resource = "prototype_figurine_create.json",
             type = ScenarioRequest.Type.EXPECTED_RESPONSE)
       })
   void createPrototypeFigurine_returnsCreated(FigurineScenarioContext context) {
@@ -74,7 +74,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       payloads = {
         @ScenarioRequest(
             type = ScenarioRequest.Type.REQUEST,
-            resource = "it_create_released_figurine.json",
+            resource = "released_figurine_create.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Stores",
@@ -83,7 +83,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
                     group = "Bronze Saint V2")),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_figurine.json")
+            resource = "released_figurine_create.json")
       })
   void createReleasedFigurine_returnsCreated(FigurineScenarioContext context) {
     assertFigurineCreated(context);
@@ -96,7 +96,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       payloads = {
         @ScenarioRequest(
             type = ScenarioRequest.Type.REQUEST,
-            resource = "it_create_released_anniversary_figurine.json",
+            resource = "released_anniversary_figurine_create.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Tamashii Web Shop",
@@ -106,7 +106,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
                     anniversary = 20)),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_anniversary_figurine.json")
+            resource = "released_anniversary_figurine_create.json")
       })
   void createReleasedAnniversaryFigurine_returnsCreated(FigurineScenarioContext context) {
     assertFigurineCreated(context);
@@ -119,7 +119,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       payloads = {
         @ScenarioRequest(
             type = ScenarioRequest.Type.REQUEST,
-            resource = "it_create_released_hk_figurine.json",
+            resource = "released_hk_figurine_create.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Other Limited Edition",
@@ -128,7 +128,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
                     group = "Gold Saint")),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_hk_figurine.json")
+            resource = "released_hk_figurine_create.json")
       })
   void createReleasedHKFigurine_returnsCreated(FigurineScenarioContext context) {
     assertFigurineCreated(context);
@@ -141,8 +141,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
           "A released figurine is initially created with an invalid Tamashii URL and is later updated to store the correct value.",
       payloads = {
         @ScenarioRequest(
-            type = ScenarioRequest.Type.REQUEST,
-            resource = "it_create_released_figurine_for_update.json",
+            resource = "released_invalid_tamashii_create.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Stores",
@@ -151,11 +150,10 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
                     group = "Bronze Saint V2")),
         @ScenarioRequest(
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_create_released_figurine_for_update.json"),
+            resource = "released_invalid_tamashii_create.json"),
         @ScenarioRequest(
             id = "updated-figurine-id-req",
-            type = ScenarioRequest.Type.REQUEST,
-            resource = "it_update_released_figurine.json",
+            resource = "released_invalid_tamashii_update.json",
             catalog =
                 @CatalogSelector(
                     distribution = "Stores",
@@ -165,7 +163,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
         @ScenarioRequest(
             id = "updated-figurine-id-resp",
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource = "it_update_released_figurine.json"),
+            resource = "released_invalid_tamashii_update.json"),
       })
   void createReleasedToBeUpdatedFigurine_returnsUpdated(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);

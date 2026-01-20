@@ -303,7 +303,8 @@ public class FigurineScenarioExtension
    * @throws IllegalStateException if the file does not exist or cannot be parsed
    */
   private JsonNode loadJsonFixture(String filename, JsonFixtureType fixtureType) {
-    Path filePath = BASE_PATH.resolve(fixtureType.folder()).resolve(filename);
+    Path filePath =
+        BASE_PATH.resolve(fixtureType.folder()).resolve("integration-tests").resolve(filename);
 
     if (!Files.exists(filePath)) {
       throw new IllegalStateException("JSON fixture not found: " + filePath);
