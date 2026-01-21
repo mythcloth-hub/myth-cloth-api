@@ -126,9 +126,12 @@ public class CatalogTestClient {
                   "Bronze Saint V3",
                   "Bronze Saint V4",
                   "Gold Saint",
-                  "Gold Inheritor");
+                  "Gold Inheritor",
+                  "Steel",
+                  "God");
           case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
-          case lineups -> List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation");
+          case lineups ->
+              List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation", "Figuarts");
         };
 
     return names.stream()

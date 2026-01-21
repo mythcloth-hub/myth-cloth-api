@@ -204,6 +204,38 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
+  /** Verifies creation of a unreleased figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "An unreleased figurine is initially created with incorrect references and later updated with the correct information.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "unreleased_invalid_references_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Other Limited Edition",
+                    lineUp = "Figuarts",
+                    series = "Saint Seiya",
+                    group = "Steel")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "unreleased_invalid_references_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "unreleased_invalid_references_update.json",
+            catalog =
+                @CatalogSelector(lineUp = "Myth Cloth EX", series = "Saint Seiya", group = "God")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "unreleased_invalid_references_update.json"),
+      })
+  void updateUnReleasedFigurine_updatesReferenceFields(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
   /**
    * Executes a {@code POST /figurines} request using scenario-provided payloads and asserts that
    * the figurine is successfully created.
