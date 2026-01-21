@@ -200,7 +200,7 @@ public class FigurineService {
     return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
   }
 
-  // @Transactional
+  @Transactional
   public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
