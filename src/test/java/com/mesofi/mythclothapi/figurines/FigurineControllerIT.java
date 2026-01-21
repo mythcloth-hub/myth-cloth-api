@@ -63,8 +63,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             resource = "prototype_figurine_create.json",
             type = ScenarioRequest.Type.EXPECTED_RESPONSE)
       })
-  void createPrototypeFigurine_returnsCreated(FigurineScenarioContext context) {
-    assertFigurineCreated(context);
+  void createPrototypeFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
   }
 
   /** Verifies creation of a released figurine with standard catalog distribution. */
@@ -85,8 +85,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "released_figurine_create.json")
       })
-  void createReleasedFigurine_returnsCreated(FigurineScenarioContext context) {
-    assertFigurineCreated(context);
+  void createReleasedFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
   }
 
   /** Verifies creation of a released anniversary figurine with anniversary metadata applied. */
@@ -108,8 +108,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "released_anniversary_figurine_create.json")
       })
-  void createReleasedAnniversaryFigurine_returnsCreated(FigurineScenarioContext context) {
-    assertFigurineCreated(context);
+  void createReleasedAnniversaryFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
   }
 
   /** Verifies creation of a Hong Kong (HK) limited release figurine. */
@@ -130,8 +130,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "released_hk_figurine_create.json")
       })
-  void createReleasedHKFigurine_returnsCreated(FigurineScenarioContext context) {
-    assertFigurineCreated(context);
+  void createReleasedHKFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
   }
 
   /** Verifies creation of a released figurine intended to be updated later. */
@@ -165,9 +165,9 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "released_invalid_tamashii_update.json"),
       })
-  void updateReleasedFigurine_updatesOnlyOneField(FigurineScenarioContext context) {
-    long figurineIdCreated = assertFigurineCreated(context);
-    assertFigurineUpdated(context, figurineIdCreated);
+  void updateReleasedFigurine_updatesOnlyOneField(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
   /** Verifies creation of a prototype figurine intended to be updated later. */
@@ -199,9 +199,9 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "prototype_invalid_info_update.json"),
       })
-  void updateReleasedFigurine_updatesMultipleFields(FigurineScenarioContext context) {
-    long figurineIdCreated = assertFigurineCreated(context);
-    assertFigurineUpdated(context, figurineIdCreated);
+  void updateReleasedFigurine_updatesMultipleFields(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
   /**
@@ -363,13 +363,13 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    * <p>This method is primarily used for scenarios containing multiple request or response payloads
    * where a specific artifact must be selected explicitly.
    *
-   * @param context scenario context containing all scenario artifacts
+   * @param ctx scenario context containing all scenario artifacts
    * @param id unique identifier of the scenario artifact
    * @return JSON payload associated with the given artifact ID
    * @throws IllegalStateException if no artifact with the given ID exists in the context
    */
-  private JsonNode findJsonNodeById(FigurineScenarioContext context, String id) {
-    return context.payloads().stream()
+  private JsonNode findJsonNodeById(FigurineScenarioContext ctx, String id) {
+    return ctx.payloads().stream()
         .filter(scenarioArtifact -> scenarioArtifact.id().equals(id))
         .findFirst()
         .map(ScenarioArtifact::json)
