@@ -227,11 +227,7 @@ public class FigurineService {
     existing.setSet(incoming.getSet());
     existing.setArticulable(incoming.getArticulable());
     existing.setRemarks(incoming.getRemarks());
-    // existing.setUpdateDate(Instant.now());
-
-    // Figurine incoming = mapper.toFigurine(request, loadCatalogs());
-    // linkReferences(incoming);
-    // createDefaultEvents(incoming);
+    existing.setUpdateDate(Instant.now());
 
     // Ask MapStruct to update only the changed fields
     // mapper.updateFigurine(existing, incoming);
