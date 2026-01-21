@@ -14,12 +14,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Context;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -468,7 +463,13 @@ public interface FigurineMapper {
    * @param target entity to update
    * @param source new values
    */
-  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "distributors", ignore = true)
+  @Mapping(target = "events", ignore = true)
+  @Mapping(target = "officialImages", ignore = true)
+  @Mapping(target = "nonOfficialImages", ignore = true)
+  @Mapping(target = "creationDate", ignore = true)
+  @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
   void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
   /**

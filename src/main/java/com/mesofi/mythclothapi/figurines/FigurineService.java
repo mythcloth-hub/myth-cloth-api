@@ -205,32 +205,8 @@ public class FigurineService {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
-    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
-
-    existing.setLegacyName(incoming.getLegacyName());
-    existing.setNormalizedName(incoming.getNormalizedName());
-    existing.setTamashiiUrl(incoming.getTamashiiUrl());
-    existing.setDistribution(incoming.getDistribution());
-    existing.setLineup(incoming.getLineup());
-    existing.setSeries(incoming.getSeries());
-    existing.setGroup(incoming.getGroup());
-    existing.setAnniversary(incoming.getAnniversary());
-    existing.setMetalBody(incoming.getMetalBody());
-    existing.setOce(incoming.getOce());
-    existing.setRevival(incoming.getRevival());
-    existing.setPlainCloth(incoming.getPlainCloth());
-    existing.setBroken(incoming.getBroken());
-    existing.setGolden(incoming.getGolden());
-    existing.setGold(incoming.getGold());
-    existing.setManga(incoming.getManga());
-    existing.setSurplice(incoming.getSurplice());
-    existing.setSet(incoming.getSet());
-    existing.setArticulable(incoming.getArticulable());
-    existing.setRemarks(incoming.getRemarks());
-    existing.setUpdateDate(Instant.now());
-
-    // Ask MapStruct to update only the changed fields
-    // mapper.updateFigurine(existing, incoming);
+    // Ask MapStruct to update fields
+    mapper.updateFigurine(existing, mapper.toFigurine(request, loadCatalogs()));
 
     var updated = repository.save(existing);
     return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
