@@ -165,7 +165,73 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
             resource = "released_invalid_tamashii_update.json"),
       })
-  void createReleasedToBeUpdatedFigurine_returnsUpdated(FigurineScenarioContext context) {
+  void updateReleasedFigurine_updatesOnlyOneField(FigurineScenarioContext context) {
+    long figurineIdCreated = assertFigurineCreated(context);
+    log.info("Figurine created with ID: {}", figurineIdCreated);
+
+    JsonNode jsonNodeReq = findJsonNodeById(context, "updated-figurine-id-req");
+    JsonNode jsonNodeResp = findJsonNodeById(context, "updated-figurine-id-resp");
+
+    log.info("Updating figurine with new payload: {}", jsonNodeReq);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
+
+    // Execute PUT /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.exchange(
+            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  @Test
+  @FigurineScenario(
+      name =
+          "A prototype figurine is initially created with incorrect field values and is later updated with the correct information.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "prototype_invalid_info_create.json",
+            catalog =
+                @CatalogSelector(
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "prototype_invalid_info_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "prototype_invalid_info_update.json",
+            catalog =
+                @CatalogSelector(
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "prototype_invalid_info_update.json"),
+      })
+  void updateReleasedFigurine_updatesMultipleFields(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);
     log.info("Figurine created with ID: {}", figurineIdCreated);
 

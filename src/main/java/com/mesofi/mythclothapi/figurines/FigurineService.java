@@ -227,7 +227,7 @@ public class FigurineService {
     existing.setSet(incoming.getSet());
     existing.setArticulable(incoming.getArticulable());
     existing.setRemarks(incoming.getRemarks());
-    existing.setUpdateDate(Instant.now());
+    // existing.setUpdateDate(Instant.now());
 
     // Figurine incoming = mapper.toFigurine(request, loadCatalogs());
     // linkReferences(incoming);

@@ -1,0 +1,29 @@
+{
+  "name": "Libra Shiryu",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "announcedAt": "2020-11-04",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": true,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": false,
+  "notes": "Shown for the first time in Tamashii 2020",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/8299/ak9ATX.jpg",
+    "https://imagizer.imageshack.com/img923/2603/SGYZxA.jpg"
+  ]
+}
