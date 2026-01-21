@@ -167,42 +167,10 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       })
   void updateReleasedFigurine_updatesOnlyOneField(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);
-    log.info("Figurine created with ID: {}", figurineIdCreated);
-
-    JsonNode jsonNodeReq = findJsonNodeById(context, "updated-figurine-id-req");
-    JsonNode jsonNodeResp = findJsonNodeById(context, "updated-figurine-id-resp");
-
-    log.info("Updating figurine with new payload: {}", jsonNodeReq);
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
-
-    // Execute PUT /figurines
-    ResponseEntity<FigurineResp> response =
-        rest.exchange(
-            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
-
-    // Basic HTTP contract assertions
-    HttpHeaders httpHeaders = response.getHeaders();
-
-    // Basic HTTP contract assertions
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
-
-    // Convert response DTO to JSON for structural comparison
-    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
-
-    // Normalize JSON to avoid ordering or formatting differences
-    JsonTestUtils.normalize(jsonNodeResp);
-    JsonTestUtils.normalize(actual);
-
-    // Assert response payload matches expected scenario output
-    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+    assertFigurineUpdated(context, figurineIdCreated);
   }
 
+  /** Verifies creation of a prototype figurine intended to be updated later. */
   @Test
   @FigurineScenario(
       name =
@@ -233,40 +201,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       })
   void updateReleasedFigurine_updatesMultipleFields(FigurineScenarioContext context) {
     long figurineIdCreated = assertFigurineCreated(context);
-    log.info("Figurine created with ID: {}", figurineIdCreated);
-
-    JsonNode jsonNodeReq = findJsonNodeById(context, "updated-figurine-id-req");
-    JsonNode jsonNodeResp = findJsonNodeById(context, "updated-figurine-id-resp");
-
-    log.info("Updating figurine with new payload: {}", jsonNodeReq);
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
-
-    // Execute PUT /figurines
-    ResponseEntity<FigurineResp> response =
-        rest.exchange(
-            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
-
-    // Basic HTTP contract assertions
-    HttpHeaders httpHeaders = response.getHeaders();
-
-    // Basic HTTP contract assertions
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
-
-    // Convert response DTO to JSON for structural comparison
-    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
-
-    // Normalize JSON to avoid ordering or formatting differences
-    JsonTestUtils.normalize(jsonNodeResp);
-    JsonTestUtils.normalize(actual);
-
-    // Assert response payload matches expected scenario output
-    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+    assertFigurineUpdated(context, figurineIdCreated);
   }
 
   /**
@@ -329,6 +264,61 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   /**
+   * Executes a {@code PUT /figurines/{id}} request using scenario-provided update payloads and
+   * asserts that the figurine is successfully updated.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Retrieves request and expected response payloads using scenario artifact IDs
+   *   <li>HTTP status is {@code 200 OK}
+   *   <li>Response headers include {@code Content-Type: application/json}
+   *   <li>Response body matches the expected JSON payload defined in the scenario
+   * </ul>
+   *
+   * <p>The response body is normalized before comparison to avoid failures due to JSON field
+   * ordering or formatting differences.
+   *
+   * @param ctx scenario context containing update request and expected response payloads
+   * @param figurineIdCreated ID of the figurine to be updated
+   * @throws IllegalStateException if required scenario payloads are missing
+   */
+  private void assertFigurineUpdated(FigurineScenarioContext ctx, long figurineIdCreated) {
+    JsonNode jsonNodeReq = findJsonNodeById(ctx, "updated-figurine-id-req");
+    JsonNode jsonNodeResp = findJsonNodeById(ctx, "updated-figurine-id-resp");
+
+    log.info("Updating figurine with new payload: {}", jsonNodeReq);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
+
+    // Execute PUT /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.exchange(
+            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  /**
    * Retrieves the scenario payload as a raw JSON string for the given request type.
    *
    * @param payloads scenario artifacts
@@ -367,6 +357,17 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
         .orElseThrow(() -> new IllegalStateException("No payload found for type: " + type));
   }
 
+  /**
+   * Locates a scenario artifact by its identifier and returns its JSON payload.
+   *
+   * <p>This method is primarily used for scenarios containing multiple request or response payloads
+   * where a specific artifact must be selected explicitly.
+   *
+   * @param context scenario context containing all scenario artifacts
+   * @param id unique identifier of the scenario artifact
+   * @return JSON payload associated with the given artifact ID
+   * @throws IllegalStateException if no artifact with the given ID exists in the context
+   */
   private JsonNode findJsonNodeById(FigurineScenarioContext context, String id) {
     return context.payloads().stream()
         .filter(scenarioArtifact -> scenarioArtifact.id().equals(id))
