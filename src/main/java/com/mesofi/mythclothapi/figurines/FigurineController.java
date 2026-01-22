@@ -9,11 +9,27 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * REST controller exposing CRUD operations for {@link Figurine} resources.
+ *
+ * <p>This controller is responsible for:
+ *
+ * <ul>
+ *   <li>Handling HTTP requests related to figurine creation and updates
+ *   <li>Validating incoming request payloads
+ *   <li>Delegating business logic to {@link FigurineService}
+ *   <li>Building appropriate HTTP responses and location headers
+ * </ul>
+ *
+ * <p>All request payloads are validated using Jakarta Bean Validation before being processed by the
+ * service layer.
+ */
 @Slf4j
 @Validated
 @RestController
@@ -23,6 +39,21 @@ public class FigurineController {
 
   private final FigurineService service;
 
+  /**
+   * Creates a new {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Validates the incoming request payload
+   *   <li>Delegates figurine creation to the service layer
+   *   <li>Returns the created resource representation
+   *   <li>Includes a {@code Location} header pointing to the newly created resource
+   * </ul>
+   *
+   * @param figurineRequest validated figurine creation request
+   * @return {@link ResponseEntity} containing the created figurine and location header
+   */
   @PostMapping
   public ResponseEntity<FigurineResp> createFigurine(
       @RequestBody @Valid FigurineReq figurineRequest) {
@@ -37,6 +68,22 @@ public class FigurineController {
     return ResponseEntity.created(location).body(response);
   }
 
+  /**
+   * Updates an existing {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Validates the incoming request payload
+   *   <li>Identifies the target figurine using the path variable
+   *   <li>Delegates the update operation to the service layer
+   *   <li>Returns the updated resource representation
+   * </ul>
+   *
+   * @param id identifier of the figurine to update
+   * @param figurineRequest validated figurine update request
+   * @return {@link ResponseEntity} containing the updated figurine
+   */
   @PutMapping("/{id}")
   public ResponseEntity<FigurineResp> updateFigurine(
       @PathVariable Long id, @RequestBody @Valid FigurineReq figurineRequest) {

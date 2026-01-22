@@ -200,6 +200,25 @@ public class FigurineService {
     return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
   }
 
+  /**
+   * Updates an existing {@link Figurine} with new data provided via an API request.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves the existing figurine by its identifier
+   *   <li>Maps mutable fields from the request onto the existing entity
+   *   <li>Resolves and re-links catalog references as needed
+   *   <li>Persists the updated entity within a transactional boundary
+   * </ul>
+   *
+   * <p>Fields not present in the request are preserved according to the mapper configuration.
+   *
+   * @param id identifier of the figurine to update
+   * @param request validated figurine update request
+   * @return API response DTO representing the updated figurine
+   * @throws FigurineNotFoundException if no figurine exists with the given id
+   */
   @Transactional
   public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
