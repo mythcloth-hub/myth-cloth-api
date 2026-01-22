@@ -86,6 +86,8 @@ public interface FigurineMapper {
   @Mapping(target = "series", source = "seriesString")
   @Mapping(target = "group", source = "groupString")
   @Mapping(target = "anniversary", source = "anniversaryNumber")
+  @Mapping(target = "creationDate", ignore = true)
+  @Mapping(target = "updateDate", ignore = true)
   Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
   /**
@@ -274,6 +276,8 @@ public interface FigurineMapper {
   @Mapping(target = "events", ignore = true) // it's ok, here it is not required to have events.
   @Mapping(target = "officialImages", source = "officialImageUrls")
   @Mapping(target = "nonOfficialImages", source = "unofficialImageUrls")
+  @Mapping(target = "creationDate", ignore = true)
+  @Mapping(target = "updateDate", ignore = true)
   Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
   /**
@@ -466,8 +470,6 @@ public interface FigurineMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "distributors", ignore = true)
   @Mapping(target = "events", ignore = true)
-  @Mapping(target = "officialImages", ignore = true)
-  @Mapping(target = "nonOfficialImages", ignore = true)
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
   void updateFigurine(@MappingTarget Figurine target, Figurine source);

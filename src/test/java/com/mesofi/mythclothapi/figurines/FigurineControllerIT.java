@@ -236,6 +236,42 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
+  /** Verifies creation of a released figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "An released figurine is initially created with invalid images and later updated with the correct url's.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_figurine_invalid_images_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Judge")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_invalid_images_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "released_figurine_invalid_images_update.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Judge")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_invalid_images_update.json"),
+      })
+  void updateReleasedFigurine_updatesImagesUrls(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
   /**
    * Executes a {@code POST /figurines} request using scenario-provided payloads and asserts that
    * the figurine is successfully created.

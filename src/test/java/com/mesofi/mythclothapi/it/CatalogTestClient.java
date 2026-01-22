@@ -128,7 +128,8 @@ public class CatalogTestClient {
                   "Gold Saint",
                   "Gold Inheritor",
                   "Steel",
-                  "God");
+                  "God",
+                  "Judge");
           case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
           case lineups ->
               List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation", "Figuarts");

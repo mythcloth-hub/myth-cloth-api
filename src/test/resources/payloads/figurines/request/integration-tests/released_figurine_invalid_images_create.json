@@ -1,0 +1,39 @@
+{
+  "name": "Wyvern Rhadamanthys",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 12500,
+      "preorderOpensAt": "2020-09-04",
+      "releaseDate": "2021-02-22",
+      "releaseDateConfirmed": true
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN",
+      "price": 3280.00,
+      "preorderOpensAt": "2021-02-22"
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/13404",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": true,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/5941/EJH0sH.jpg",
+    "https://imagizer.imageshack.com/img922/4048/g4jhbg.jpg",
+    "https://imagizer.imageshack.com/img922/6460/jITPC9.jpg"
+  ]
+}
