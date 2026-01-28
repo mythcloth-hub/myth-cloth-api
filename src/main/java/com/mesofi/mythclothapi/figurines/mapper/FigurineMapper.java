@@ -468,8 +468,12 @@ public interface FigurineMapper {
    * @param source new values
    */
   @Mapping(target = "id", ignore = true)
-  @Mapping(target = "distributors", ignore = true)
-  @Mapping(target = "events", ignore = true)
+  @Mapping(
+      target = "distributors",
+      ignore = true) // it is OK, distributors can be managed manually.
+  @Mapping(
+      target = "events",
+      ignore = true) // it is OK, events can be managed separately in their own resource.
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
   void updateFigurine(@MappingTarget Figurine target, Figurine source);
