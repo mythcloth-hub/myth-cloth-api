@@ -225,10 +225,52 @@ public class FigurineService {
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
     // Ask MapStruct to update fields
-    mapper.updateFigurine(existing, mapper.toFigurine(request, loadCatalogs()));
+    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
+    mapper.updateFigurine(existing, incoming);
+
+    // update the distributors' info.
+    updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
 
     var updated = repository.save(existing);
     return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
+  }
+
+  /**
+   * Synchronizes distributor entries of a figurine using incoming distributor data.
+   *
+   * <p>This method performs a currency-based merge between existing and incoming {@link
+   * FigurineDistributor} entries:
+   *
+   * <ul>
+   *   <li>If a distributor with the same {@link CurrencyCode} already exists, its mutable fields
+   *       are updated
+   *   <li>If no matching distributor exists, the incoming entry is linked to the figurine and added
+   *       to the collection
+   * </ul>
+   *
+   * <p>Distributor identity is determined exclusively by currency. This method * does not handle
+   * removal of existing distributors.
+   *
+   * @param current the owning figurine
+   * @param existing current distributor entries associated with the figurine
+   * @param incoming distributor entries provided by the update request
+   */
+  private void updateDistributors(
+      Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
+
+    for (FigurineDistributor incomingFigurineDist : incoming) {
+      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+
+      existing.stream()
+          .filter(fd -> fd.getCurrency().equals(incomingCurrency))
+          .findFirst()
+          .ifPresentOrElse(
+              fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
+              () -> {
+                incomingFigurineDist.setFigurine(current);
+                existing.add(incomingFigurineDist);
+              });
+    }
   }
 
   /**

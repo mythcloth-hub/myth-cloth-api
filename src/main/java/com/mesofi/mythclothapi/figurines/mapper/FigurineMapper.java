@@ -479,6 +479,28 @@ public interface FigurineMapper {
   void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
   /**
+   * Updates a {@link FigurineDistributor} entity using values from another instance.
+   *
+   * <p>This method is intended for partial updates where the existing distributor entry already
+   * belongs to a figurine. Identity and relationship fields are preserved.
+   *
+   * <ul>
+   *   <li>{@code id} is ignored and must not be modified
+   *   <li>{@code figurine} association is preserved and managed externally
+   * </ul>
+   *
+   * <p>All mappable fields present in {@code source} will overwrite the corresponding values in
+   * {@code target}.
+   *
+   * @param target distributor entity to update
+   * @param source new distributor values
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "figurine", ignore = true)
+  void updateFigurineDistributor(
+      @MappingTarget FigurineDistributor target, FigurineDistributor source);
+
+  /**
    * Parses a raw event string into a {@link FigurineEvent}.
    *
    * @param raw raw string in {@code M/d/yyyy: description} format
