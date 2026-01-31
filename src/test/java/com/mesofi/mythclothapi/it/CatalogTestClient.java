@@ -125,6 +125,7 @@ public class CatalogTestClient {
                   "Bronze Saint V2",
                   "Bronze Saint V3",
                   "Bronze Saint V4",
+                  "Silver Saint",
                   "Gold Saint",
                   "Gold Inheritor",
                   "Steel",

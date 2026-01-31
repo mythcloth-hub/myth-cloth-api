@@ -309,6 +309,29 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
+  /** Verifies creation of a released figurine intended to be deleted later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "A released figurine is initially created with the available information and is later deleted",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_classic_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Silver Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_classic_figurine_create.json")
+      })
+  void deleteExistingFigurine_returnsNoContent(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineDeleted(figurineIdCreated);
+  }
+
   /**
    * Executes a {@code POST /figurines} request using scenario-provided payloads and asserts that
    * the figurine is successfully created.
@@ -421,6 +444,29 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
 
     // Assert response payload matches expected scenario output
     assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  /**
+   * Executes a {@code DELETE /figurines/{id}} request and asserts that the figurine
+   * is successfully deleted.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Invokes the delete endpoint for the given figurine ID
+   *   <li>Ensures the request completes without errors
+   * </ul>
+   *
+   * <p>Any failure during deletion will result in the test failing due to an
+   * unexpected exception or HTTP error response.
+   *
+   * @param figurineIdCreated ID of the figurine to be deleted
+   */
+  private void assertFigurineDeleted(long figurineIdCreated) {
+    log.info("Deleting figurine with id: {}", figurineIdCreated);
+
+    // Execute DELETE /figurines
+    rest.delete(FIGURINES + "/{id}", figurineIdCreated);
   }
 
   /**

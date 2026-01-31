@@ -90,4 +90,27 @@ public class FigurineController {
     FigurineResp updated = service.updateFigurine(id, figurineRequest);
     return ResponseEntity.ok(updated);
   }
+
+  /**
+   * Deletes an existing {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Identifies the target figurine using the path variable
+   *   <li>Delegates the deletion operation to the service layer
+   *   <li>Returns an empty response with {@code 204 No Content} status
+   * </ul>
+   *
+   * <p>If the figurine does not exist, an exception is propagated from the service layer and
+   * translated into the appropriate HTTP error response.
+   *
+   * @param id identifier of the figurine to delete
+   * @return {@link ResponseEntity} with no content
+   */
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
+    service.deleteFigurine(id);
+    return ResponseEntity.noContent().build();
+  }
 }

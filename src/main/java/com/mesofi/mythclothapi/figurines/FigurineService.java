@@ -236,6 +236,31 @@ public class FigurineService {
   }
 
   /**
+   * Deletes an existing {@link Figurine} by its identifier.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves the figurine by its id
+   *   <li>Ensures the figurine exists before deletion
+   *   <li>Removes the figurine from persistence
+   * </ul>
+   *
+   * <p>The operation is logged for traceability. Any associated relationships are handled according
+   * to the configured JPA cascade rules.
+   *
+   * @param id identifier of the figurine to delete
+   * @throws FigurineNotFoundException if no figurine exists with the given id
+   */
+  @Transactional
+  public void deleteFigurine(Long id) {
+    log.info("Deleting figurine with id '{}'", id);
+    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+    repository.delete(existing);
+  }
+
+  /**
    * Synchronizes distributor entries of a figurine using incoming distributor data.
    *
    * <p>This method performs a currency-based merge between existing and incoming {@link
