@@ -69,6 +69,28 @@ public class FigurineController {
   }
 
   /**
+   * Retrieves an existing {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Identifies the target figurine using the path variable
+   *   <li>Delegates the read operation to the service layer
+   *   <li>Returns the resource representation
+   * </ul>
+   *
+   * <p>If the figurine does not exist, an exception is propagated from the service layer and
+   * translated into the appropriate HTTP error response.
+   *
+   * @param id identifier of the figurine to retrieve
+   * @return API response DTO representing the requested figurine
+   */
+  @GetMapping("/{id}")
+  public FigurineResp retrieveFigurine(@PathVariable Long id) {
+    return service.readFigurine(id);
+  }
+
+  /**
    * Updates an existing {@link Figurine} resource.
    *
    * <p>This endpoint:

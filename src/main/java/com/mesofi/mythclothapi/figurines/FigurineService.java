@@ -201,6 +201,33 @@ public class FigurineService {
   }
 
   /**
+   * Retrieves an existing {@link Figurine} by its identifier.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves the figurine by its id
+   *   <li>Ensures the figurine exists before mapping
+   *   <li>Maps the entity to an API response DTO
+   * </ul>
+   *
+   * <p>The operation is executed in a read-only transactional context and includes derived fields
+   * such as display name and region-aware pricing.
+   *
+   * @param id identifier of the figurine to retrieve
+   * @return API response DTO representing the requested figurine
+   * @throws FigurineNotFoundException if no figurine exists with the given id
+   */
+  @Transactional(readOnly = true)
+  public FigurineResp readFigurine(Long id) {
+    log.info("Reading figurine with id '{}'", id);
+
+    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+    return mapper.toFigurineResp(
+        existing, this::createDisplayableName, this::calculatePriceWithTax);
+  }
+
+  /**
    * Updates an existing {@link Figurine} with new data provided via an API request.
    *
    * <p>This method:

@@ -134,6 +134,33 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     assertFigurineCreated(ctx);
   }
 
+  /** Verifies creation of a released figurine intended to be read later. */
+  @Test
+  @FigurineScenario(
+      name = "A released figurine is initially created and later will be queried",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_revival_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Store",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_revival_figurine_create.json"),
+        @ScenarioRequest(
+            id = "queried-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource =
+                "released_revival_figurine_create.json") // it is OK to expect the same response.
+      })
+  void retrieveReleasedFigurine_queryExistingFigurine(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineQueried(ctx, figurineIdCreated);
+  }
+
   /** Verifies creation of a released figurine intended to be updated later. */
   @Test
   @FigurineScenario(
@@ -204,7 +231,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
     assertFigurineUpdated(ctx, figurineIdCreated);
   }
 
-  /** Verifies creation of a unreleased figurine intended to be updated later. */
+  /** Verifies creation of an unreleased figurine intended to be updated later. */
   @Test
   @FigurineScenario(
       name =
@@ -447,8 +474,54 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   /**
-   * Executes a {@code DELETE /figurines/{id}} request and asserts that the figurine
-   * is successfully deleted.
+   * Executes a {@code GET /figurines/{id}} request and asserts that the figurine can be
+   * successfully retrieved.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Retrieves the expected response payload using a scenario artifact ID
+   *   <li>HTTP status is {@code 200 OK}
+   *   <li>Response headers include {@code Content-Type: application/json}
+   *   <li>Response body matches the expected JSON payload defined in the scenario
+   * </ul>
+   *
+   * <p>The response body is normalized before comparison to avoid failures due to JSON field
+   * ordering or formatting differences.
+   *
+   * @param ctx scenario context containing the expected response payload
+   * @param figurineIdCreated ID of the figurine to be queried
+   * @throws IllegalStateException if the expected scenario payload is missing
+   */
+  private void assertFigurineQueried(FigurineScenarioContext ctx, long figurineIdCreated) {
+    JsonNode jsonNodeResp = findJsonNodeById(ctx, "queried-figurine-id-resp");
+
+    // Execute GET /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.getForEntity(FIGURINES + "/{id}", FigurineResp.class, figurineIdCreated);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  /**
+   * Executes a {@code DELETE /figurines/{id}} request and asserts that the figurine is successfully
+   * deleted.
    *
    * <p>This method performs the following validations:
    *
@@ -457,8 +530,8 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    *   <li>Ensures the request completes without errors
    * </ul>
    *
-   * <p>Any failure during deletion will result in the test failing due to an
-   * unexpected exception or HTTP error response.
+   * <p>Any failure during deletion will result in the test failing due to an unexpected exception
+   * or HTTP error response.
    *
    * @param figurineIdCreated ID of the figurine to be deleted
    */
