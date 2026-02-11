@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.figurines;
 
 import java.net.URI;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -9,9 +10,12 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,14 +25,14 @@ import lombok.extern.slf4j.Slf4j;
  * <p>This controller is responsible for:
  *
  * <ul>
- *   <li>Handling HTTP requests related to figurine creation and updates
- *   <li>Validating incoming request payloads
- *   <li>Delegating business logic to {@link FigurineService}
- *   <li>Building appropriate HTTP responses and location headers
+ *   <li>Handling HTTP requests related to figurine creation, retrieval, updates, and deletion
+ *   <li>Triggering Jakarta Bean Validation for incoming request payloads
+ *   <li>Delegating all business logic to {@link FigurineService}
+ *   <li>Building appropriate HTTP responses, including {@code Location} headers where applicable
  * </ul>
  *
- * <p>All request payloads are validated using Jakarta Bean Validation before being processed by the
- * service layer.
+ * <p>All request payloads annotated with {@code @Valid} are validated before reaching the service
+ * layer.
  */
 @Slf4j
 @Validated
@@ -52,7 +56,8 @@ public class FigurineController {
    * </ul>
    *
    * @param figurineRequest validated figurine creation request
-   * @return {@link ResponseEntity} containing the created figurine and location header
+   * @return {@link ResponseEntity} with status {@code 201 Created}, the created figurine in the
+   *     body, and a {@code Location} header referencing the new resource
    */
   @PostMapping
   public ResponseEntity<FigurineResp> createFigurine(
@@ -69,7 +74,7 @@ public class FigurineController {
   }
 
   /**
-   * Retrieves an existing {@link Figurine} resource.
+   * Retrieves an existing {@link Figurine} resource by its identifier.
    *
    * <p>This endpoint:
    *
@@ -79,8 +84,8 @@ public class FigurineController {
    *   <li>Returns the resource representation
    * </ul>
    *
-   * <p>If the figurine does not exist, an exception is propagated from the service layer and
-   * translated into the appropriate HTTP error response.
+   * <p>If the figurine does not exist, an exception from the service layer is expected to be
+   * translated into an appropriate HTTP error response (e.g., {@code 404 Not Found}).
    *
    * @param id identifier of the figurine to retrieve
    * @return API response DTO representing the requested figurine
@@ -88,6 +93,41 @@ public class FigurineController {
   @GetMapping("/{id}")
   public FigurineResp retrieveFigurine(@PathVariable Long id) {
     return service.readFigurine(id);
+  }
+
+  /**
+   * Retrieves a paginated list of figurines.
+   *
+   * <p>This endpoint supports pagination through {@code page} and {@code size} request parameters.
+   * The results from Spring Data {@link Page} are mapped into a {@link PaginatedResponse} to
+   * provide a stable and predictable JSON structure containing both content and pagination
+   * metadata.
+   *
+   * @param page zero-based page index (must be 0 or greater)
+   * @param size number of elements per page (must be between 1 and 100)
+   * @return a {@link ResponseEntity} containing a {@link PaginatedResponse} with:
+   *     <ul>
+   *       <li>the current page content
+   *       <li>current page number
+   *       <li>page size
+   *       <li>total elements
+   *       <li>total pages
+   *     </ul>
+   */
+  @GetMapping
+  public ResponseEntity<PaginatedResponse> retrieveFigurines(
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+
+    Page<FigurineResp> result = service.readFigurines(page, size);
+
+    return ResponseEntity.ok(
+        new PaginatedResponse(
+            result.getContent(),
+            result.getNumber(),
+            result.getSize(),
+            result.getTotalElements(),
+            result.getTotalPages()));
   }
 
   /**
@@ -104,7 +144,7 @@ public class FigurineController {
    *
    * @param id identifier of the figurine to update
    * @param figurineRequest validated figurine update request
-   * @return {@link ResponseEntity} containing the updated figurine
+   * @return {@link ResponseEntity} containing the updated figurine with status {@code 200 OK}
    */
   @PutMapping("/{id}")
   public ResponseEntity<FigurineResp> updateFigurine(
@@ -124,8 +164,8 @@ public class FigurineController {
    *   <li>Returns an empty response with {@code 204 No Content} status
    * </ul>
    *
-   * <p>If the figurine does not exist, an exception is propagated from the service layer and
-   * translated into the appropriate HTTP error response.
+   * <p>If the figurine does not exist, an exception from the service layer is expected to be
+   * translated into an appropriate HTTP error response (e.g., {@code 404 Not Found}).
    *
    * @param id identifier of the figurine to delete
    * @return {@link ResponseEntity} with no content

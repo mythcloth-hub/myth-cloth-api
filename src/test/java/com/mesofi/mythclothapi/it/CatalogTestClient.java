@@ -118,7 +118,12 @@ public class CatalogTestClient {
     List<String> names =
         switch (type) {
           case distributions ->
-              List.of("Stores", "Tamashii Web Shop", "Tamashii Nations", "Other Limited Edition");
+              List.of(
+                  "Stores",
+                  "Tamashii Web Shop",
+                  "Tamashii Nations",
+                  "Other Limited Edition",
+                  "Tamashii Store");
           case groups ->
               List.of(
                   "Bronze Saint V1",

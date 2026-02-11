@@ -1,0 +1,65 @@
+{
+  "id": 1,
+  "name": "Pegasus Seiya",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "price": 5500.0,
+      "priceWithTax": 5775.0,
+      "releaseDate": "2009-10-02",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "distribution": {
+    "id": 3,
+    "description": "Tamashii Nations"
+  },
+  "lineUp": {
+    "id": 2,
+    "description": "Myth Cloth"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 3,
+    "description": "Bronze Saint V3"
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "TN Autumn 2009",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img924/701/vBBtOe.jpg",
+    "https://imagizer.imageshack.com/img923/3910/SM2IUF.jpg",
+    "https://imagizer.imageshack.com/img923/649/A59MGf.jpg",
+    "https://imagizer.imageshack.com/img924/2325/uVn0fu.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2009-10-02",
+      "type": "RELEASE",
+      "region": "JP",
+      "description": "The global release date has been officially announced."
+    }
+  ],
+  "createdAt": "2026-02-03T00:30:08.476487Z",
+  "updatedAt": "2026-02-03T00:30:08.476487Z"
+}

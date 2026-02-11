@@ -1,7 +1,5 @@
 package com.mesofi.mythclothapi.utils;
 
-import java.util.List;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -15,8 +13,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * <p>The normalization process:
  *
  * <ul>
- *   <li>Removes root-level timestamp fields ({@code createdAt}, {@code updatedAt})
- *   <li>Recursively removes all {@code id} fields at any depth
+ *   <li>Removes root-level and nested {@code id} fields
+ *   <li>Removes root-level and nested timestamp fields ({@code createdAt}, {@code updatedAt})
+ *   <li>Performs a recursive traversal of objects and arrays
  * </ul>
  *
  * <p>The resulting JSON structure preserves semantic content while eliminating values that cannot
@@ -30,43 +29,42 @@ public final class JsonTestUtils {
   /**
    * Normalizes a JSON tree for deterministic comparison in tests.
    *
-   * <p>If the provided node is not an object, the method returns immediately. Otherwise, it removes
-   * known volatile fields and recursively strips all {@code id} fields from nested objects and
-   * arrays.
+   * <p>If the provided node is not an object, the method returns immediately. Otherwise, it
+   * recursively removes known volatile fields ({@code id}, {@code createdAt}, {@code updatedAt})
+   * from all levels of the JSON structure.
    *
    * <p>This method mutates the provided {@link JsonNode} in place.
    *
    * @param node the root JSON node to normalize; may be {@code null}
    */
   public static void normalize(JsonNode node) {
-    if (!node.isObject()) {
+    if (node == null || !node.isObject()) {
       return;
     }
 
     ObjectNode root = (ObjectNode) node;
 
-    // Remove root-level timestamps (non-deterministic)
-    root.remove(List.of("createdAt", "updatedAt"));
-
-    // Remove all id fields recursively
-    removeAllIds(root);
+    removeAllOccurrencesOf(root, "id");
+    removeAllOccurrencesOf(root, "createdAt");
+    removeAllOccurrencesOf(root, "updatedAt");
   }
 
   /**
-   * Recursively removes all {@code id} fields from a JSON tree.
+   * Recursively removes all occurrences of a given property from a JSON tree.
    *
    * <p>This method traverses:
    *
    * <ul>
-   *   <li>{@link ObjectNode} instances, removing the {@code id} field if present
-   *   <li>arrays, recursively processing each element
+   *   <li>{@link ObjectNode} instances, removing the target field if present
+   *   <li>Arrays, recursively processing each element
    * </ul>
    *
    * <p>Primitive nodes are ignored.
    *
    * @param node the current JSON node being traversed
+   * @param propertyName the field name to remove at any depth
    */
-  private static void removeAllIds(JsonNode node) {
+  private static void removeAllOccurrencesOf(JsonNode node, String propertyName) {
     if (node == null) {
       return;
     }
@@ -75,13 +73,13 @@ public final class JsonTestUtils {
       ObjectNode objectNode = (ObjectNode) node;
 
       // Remove id at the current level
-      objectNode.remove("id");
+      objectNode.remove(propertyName);
 
       // Recurse into nested values
-      objectNode.elements().forEachRemaining(JsonTestUtils::removeAllIds);
+      objectNode.elements().forEachRemaining(child -> removeAllOccurrencesOf(child, propertyName));
 
     } else if (node.isArray()) {
-      node.forEach(JsonTestUtils::removeAllIds);
+      node.forEach(child -> removeAllOccurrencesOf(child, propertyName));
     }
   }
 }

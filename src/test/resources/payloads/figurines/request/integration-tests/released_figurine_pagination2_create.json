@@ -1,0 +1,30 @@
+{
+  "name": "Phoenix Ikki",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 4500.00,
+      "releaseDate": "2010-08-07",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "Tamashii Festival 2010",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/7109/cgB66J.jpg"
+  ]
+}

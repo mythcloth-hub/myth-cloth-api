@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -225,6 +227,34 @@ public class FigurineService {
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
     return mapper.toFigurineResp(
         existing, this::createDisplayableName, this::calculatePriceWithTax);
+  }
+
+  /**
+   * Retrieves a paginated list of figurines.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves figurines using Spring Data pagination
+   *   <li>Executes in a read-only transactional context
+   *   <li>Maps domain entities to API response DTOs
+   *   <li>Includes derived fields such as display name and region-aware pricing
+   * </ul>
+   *
+   * @param page zero-based page index
+   * @param size number of records per page
+   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
+   */
+  @Transactional(readOnly = true)
+  public Page<FigurineResp> readFigurines(int page, int size) {
+    log.info("Reading figurines with page '{}' and size '{}'", page, size);
+
+    return repository
+        .findAll(PageRequest.of(page, size))
+        .map(
+            figurine ->
+                mapper.toFigurineResp(
+                    figurine, this::createDisplayableName, this::calculatePriceWithTax));
   }
 
   /**
