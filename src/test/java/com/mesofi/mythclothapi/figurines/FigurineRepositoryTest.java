@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurines;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -19,9 +20,33 @@ public class FigurineRepositoryTest {
   @Autowired FigurineRepository repository;
 
   @Test
+  void save_shouldThrowException_whenCreationDateIsNull() {
+    // Arrange
+    Figurine figurine = createFigurine(null, null, null, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining(
+            "NULL not allowed for column \"CREATION_DATE\""); // depends on DB dialect
+  }
+
+  @Test
+  void save_shouldThrowException_whenUpdateDateIsNull() {
+    // Arrange
+    Figurine figurine = createFigurine(Instant.now(), null, null, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
+        .isInstanceOf(DataIntegrityViolationException.class)
+        .hasMessageContaining(
+            "NULL not allowed for column \"UPDATE_DATE\""); // depends on DB dialect
+  }
+
+  @Test
   void save_shouldThrowException_whenNormalizedNameIsNull() {
     // Arrange
-    Figurine figurine = createFigurine(null, null, null);
+    Figurine figurine = createFigurine(Instant.now(), Instant.now(), null, null, null);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(figurine))
@@ -33,7 +58,7 @@ public class FigurineRepositoryTest {
   @Test
   void save_shouldCreateFigure_whenValidDataProvided() {
     // Arrange
-    Figurine figurine = createFigurine(null, "Pegasus Seiya", null);
+    Figurine figurine = createFigurine(Instant.now(), Instant.now(), "Pegasus Seiya", null, null);
 
     // Act
     Figurine saved = repository.save(figurine);
@@ -46,8 +71,11 @@ public class FigurineRepositoryTest {
   @Test
   void save_shouldThrowException_whenLegacyNameIsDuplicated() {
     // Arrange
-    Figurine figurine1 = createFigurine("Pegasus Seiya1", "Pegasus Seiya", null);
-    Figurine figurine2 = createFigurine("Pegasus Seiya1", "Pegasus Seiya", null); // duplicate
+    Figurine figurine1 =
+        createFigurine(Instant.now(), Instant.now(), "Pegasus Seiya1", "Pegasus Seiya", null);
+    Figurine figurine2 =
+        createFigurine(
+            Instant.now(), Instant.now(), "Pegasus Seiya1", "Pegasus Seiya", null); // duplicate
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAll(List.of(figurine1, figurine2)))
@@ -59,7 +87,9 @@ public class FigurineRepositoryTest {
   @Test
   void save_shouldThrowException_whenLengthIsExceeded() {
     // Arrange
-    Figurine figurine = createFigurine("Pegasus Seiya2", "Pegasus Seiya", "w".repeat(51));
+    Figurine figurine =
+        createFigurine(
+            Instant.now(), Instant.now(), "Pegasus Seiya2", "Pegasus Seiya", "w".repeat(51));
 
     // Act + Assert
     assertThatThrownBy(() -> repository.save(figurine))
@@ -71,7 +101,8 @@ public class FigurineRepositoryTest {
   @Test
   void findById_shouldFindFigurineById_whenExists() {
     // Arrange
-    Figurine figurine = createFigurine("Pegasus Seiya3", "Pegasus Seiya", null);
+    Figurine figurine =
+        createFigurine(Instant.now(), Instant.now(), "Pegasus Seiya3", "Pegasus Seiya", null);
     Figurine saved = repository.save(figurine);
 
     // Act
@@ -80,14 +111,15 @@ public class FigurineRepositoryTest {
     // Assert
     assertThat(found).isNotNull();
     assertThat(found.getId()).isNotNull();
-    assertThat(found.getLegacyName()).isEqualTo("Pegasus Seiya3");
-    assertThat(found.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(found.getNormalizedName()).isEqualTo("Pegasus Seiya3");
+    assertThat(found.getLegacyName()).isEqualTo("Pegasus Seiya");
   }
 
   @Test
   void update_shouldUpdateFigurine_whenValidChangesProvided() {
     // Arrange
-    Figurine figurine = createFigurine("Pegasus Seiya", "Pegasus Seiya", null);
+    Figurine figurine =
+        createFigurine(Instant.now(), Instant.now(), "Pegasus Seiya", "Pegasus Seiya", null);
     Figurine saved = repository.save(figurine);
 
     // Act
@@ -103,7 +135,8 @@ public class FigurineRepositoryTest {
   @Test
   void delete_shouldDeleteFigurine_whenValidChangesProvided() {
     // Arrange
-    Figurine figurine = createFigurine("Pegasus Seiya", "Pegasus Seiya", null);
+    Figurine figurine =
+        createFigurine(Instant.now(), Instant.now(), "Pegasus Seiya", "Pegasus Seiya", null);
     Figurine saved = repository.save(figurine);
 
     // Act
@@ -113,10 +146,17 @@ public class FigurineRepositoryTest {
     assertThat(repository.findById(saved.getId())).isEmpty();
   }
 
-  private Figurine createFigurine(String legacyName, String normalizedName, String tamashiiUrl) {
+  private Figurine createFigurine(
+      Instant creationDate,
+      Instant updateDate,
+      String normalizedName,
+      String legacyName,
+      String tamashiiUrl) {
     Figurine figurine = new Figurine();
-    figurine.setLegacyName(legacyName);
+    figurine.setCreationDate(creationDate);
+    figurine.setUpdateDate(updateDate);
     figurine.setNormalizedName(normalizedName);
+    figurine.setLegacyName(legacyName);
     figurine.setTamashiiUrl(tamashiiUrl);
     return figurine;
   }
