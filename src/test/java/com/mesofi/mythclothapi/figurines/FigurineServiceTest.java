@@ -49,7 +49,7 @@ import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
 import jakarta.validation.ConstraintViolationException;
 
 @SpringBootTest(
-    classes = {FigurineService.class, MethodValidationTestConfig.class, MapperTestConfig.class})
+    classes = {FigurineService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 public class FigurineServiceTest {
 
   @MockitoBean private DistributorRepository distributorRepository;
@@ -59,6 +59,7 @@ public class FigurineServiceTest {
   @MockitoBean private GroupRepository groupRepository;
   @MockitoBean private AnniversaryRepository anniversaryRepository;
   @MockitoBean private FigurineRepository repository;
+  @MockitoBean private CurrencyRegionResolver currencyRegionResolver;
 
   @Autowired private FigurineService service;
   @Autowired private FigurineMapper mapper;

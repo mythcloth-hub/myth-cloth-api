@@ -108,38 +108,6 @@ public class FigurineControllerTest {
         .andExpect(
             hasErrors(
                 Map.of(
-                    "distributionId",
-                    "must not be null",
-                    "lineUpId",
-                    "must not be null",
-                    "distributors",
-                    "At least one distributor must be provided",
-                    "groupId",
-                    "must not be null",
-                    "name",
-                    "must not be blank",
-                    "seriesId",
-                    "must not be null")));
-  }
-
-  @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
-  void createFigurine_shouldReturn400_whenDistributorIsEmpty(String jsonRequest) throws Exception {
-    mockMvc
-        .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
-        .andDo(print())
-        .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
-        .andExpect(hasTitle("Validation Failed"))
-        .andExpect(hasStatus(400))
-        .andExpect(hasDetail("Your request parameters didn't validate"))
-        .andExpect(hasInstance("/figurines"))
-        .andExpect(hasTimestamp())
-        .andExpect(
-            hasErrors(
-                Map.of(
-                    "distributionId",
-                    "must not be null",
                     "lineUpId",
                     "must not be null",
                     "distributors",
@@ -169,8 +137,6 @@ public class FigurineControllerTest {
         .andExpect(
             hasErrors(
                 Map.of(
-                    "distributionId",
-                    "must not be null",
                     "lineUpId",
                     "must not be null",
                     "groupId",
@@ -200,8 +166,6 @@ public class FigurineControllerTest {
         .andExpect(
             hasErrors(
                 Map.of(
-                    "distributionId",
-                    "must not be null",
                     "lineUpId",
                     "must not be null",
                     "groupId",
@@ -266,8 +230,6 @@ public class FigurineControllerTest {
         .andExpect(
             hasErrors(
                 Map.of(
-                    "distributionId",
-                    "must not be null",
                     "lineUpId",
                     "must not be null",
                     "groupId",
@@ -295,8 +257,6 @@ public class FigurineControllerTest {
         .andExpect(
             hasErrors(
                 Map.of(
-                    "distributionId",
-                    "must not be null",
                     "lineUpId",
                     "must not be null",
                     "groupId",

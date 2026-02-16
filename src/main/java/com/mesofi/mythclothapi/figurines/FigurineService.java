@@ -25,7 +25,6 @@ import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
-import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
@@ -91,7 +90,6 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
-  private final FigurineDistributorRepository figurineDistributorRepository;
 
   /**
    * Imports figurines from a publicly accessible Google Drive CSV file.

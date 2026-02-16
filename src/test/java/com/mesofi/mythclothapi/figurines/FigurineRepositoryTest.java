@@ -2,9 +2,11 @@ package com.mesofi.mythclothapi.figurines;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -113,6 +115,29 @@ public class FigurineRepositoryTest {
     assertThat(found.getId()).isNotNull();
     assertThat(found.getNormalizedName()).isEqualTo("Pegasus Seiya3");
     assertThat(found.getLegacyName()).isEqualTo("Pegasus Seiya");
+  }
+
+  @Test
+  void findByLegacyName_shouldFindFigurineByLegacyName_whenExists() {
+    // Arrange
+    Figurine figurine =
+        createFigurine(
+            Instant.now(),
+            Instant.now(),
+            "Virgo Shun",
+            "Virgo Shun ~Inheritor of the Gold Cloth~ EX",
+            "https://tamashiiweb.com/item/15071");
+    Figurine saved = repository.save(figurine);
+
+    // Act
+    Optional<Figurine> found = repository.findByLegacyName(saved.getLegacyName());
+
+    // Assert
+    assertTrue(found.isPresent());
+    assertThat(found.get().getId()).isNotNull();
+    assertThat(found.get().getNormalizedName()).isEqualTo("Virgo Shun");
+    assertThat(found.get().getLegacyName())
+        .isEqualTo("Virgo Shun ~Inheritor of the Gold Cloth~ EX");
   }
 
   @Test
