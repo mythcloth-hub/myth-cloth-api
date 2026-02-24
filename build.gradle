@@ -70,6 +70,7 @@ dependencies {
 
     integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
     integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    integrationTestImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

@@ -9,12 +9,12 @@ import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
-
-import tools.jackson.databind.ObjectMapper;
-import tools.jackson.databind.SerializationFeature;
 
 public class FigurineScenarioExtension
     implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
@@ -73,5 +73,7 @@ public class FigurineScenarioExtension
   @Override
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
-      throws ParameterResolutionException {}
+      throws ParameterResolutionException {
+    return null;
+  }
 }
