@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,4 +55,23 @@ public class FigurineScenarioExtension
       new ObjectMapper()
           .registerModule(new JavaTimeModule())
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+  @Override
+  public void beforeEach(ExtensionContext context) {}
+
+  @Override
+  public void afterEach(ExtensionContext context) {}
+
+  @Override
+  public boolean supportsParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
+      throws ParameterResolutionException {
+
+    return false;
+  }
+
+  @Override
+  public Object resolveParameter(
+      ParameterContext parameterContext, ExtensionContext extensionContext)
+      throws ParameterResolutionException {}
 }
