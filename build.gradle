@@ -1,10 +1,7 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.5.7'
-    id 'io.spring.dependency-management' version '1.1.7'
-    id 'com.diffplug.spotless' version '6.25.0'
-    id 'jacoco'
-    id 'info.solidsoft.pitest' version '1.19.0-rc.2'
+	id 'java'
+	id 'org.springframework.boot' version '4.0.3'
+	id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.mesofi'
@@ -12,129 +9,21 @@ version = '0.0.1-SNAPSHOT'
 description = 'Myth Cloth API'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-}
-
-spotless {
-    java {
-        googleJavaFormat()   // or eclipse() if you prefer
-        removeUnusedImports()    // removes unused imports
-        importOrder 'java', 'javax', 'org', 'com' // sort imports in this order
-        target 'src/**/*.java'
-    }
-
-    // Optional: format Gradle files too
-    format 'gradle', {
-        target '*.gradle'
-        indentWithSpaces(4)
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-}
-
-jacoco {
-    toolVersion = "0.8.11"
-}
-
-pitest {
-    pitestVersion = '1.22.0'   // core PIT version
-    junit5PluginVersion = '1.2.1'
-    targetClasses = ['com.mesofi.*']     // classes to mutate
-    targetTests = ['com.mesofi.*']       // tests that cover them
-    threads = 4
-    mutationThreshold = 85     // fail if under 85%
-    excludedClasses = [
-            'com.mesofi.mythclothapi.Application',
-            'com.mesofi.mythclothapi.StartupRunner'
-      //      'com.mesofi.mythclothapi.figurines.*',
-      //      'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
-      //      'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
-    ]
-    excludedTestClasses = [
-            'com.mesofi.*IntegrationTest*',
-            'com.mesofi.*IT*'
-    ]
-}
-
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true   // for CI tools
-        html.required = true  // human-readable report
-    }
-
-    classDirectories.setFrom(
-        files(classDirectories.files.collect { dir ->
-            fileTree(dir: dir, exclude: [
-                '**/*Application.class',
-                '**/*DistributorMapperImpl.class',
-                '**/*IT.class',
-                '**/*ITCase.class',
-                '**/*IntegrationTest.class'
-            ])
-        })
-    )
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-
-    // --- Spring Boot ---
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // --- CSV ---
-    implementation 'com.opencsv:opencsv:5.12.0' // Use the latest stable version
-
-    // --- Lombok ---
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    // --- MapStruct ---
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-
-    // --- Spring Boot config processor ---
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
-    // --- Database ---
-    runtimeOnly 'org.postgresql:postgresql'
-
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
-    // --- Test ---
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'com.h2database:h2'
+	implementation 'org.springframework.boot:spring-boot-starter'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
-
 
 tasks.named('test') {
-    useJUnitPlatform()
-}
-
-tasks.named('compileJava') {
-    dependsOn 'spotlessApply'
-}
-
-tasks.named('bootRun') {
-    dependsOn 'spotlessApply'
+	useJUnitPlatform()
 }
