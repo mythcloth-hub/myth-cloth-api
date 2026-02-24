@@ -18,10 +18,46 @@ repositories {
 	mavenCentral()
 }
 
+sourceSets {
+	integrationTest {
+		java {
+			srcDir 'src/integrationTest/java'
+		}
+		resources {
+			srcDir 'src/integrationTest/resources'
+		}
+		compileClasspath = sourceSets.main.output + configurations.integrationTestCompileClasspath
+		runtimeClasspath = output + compileClasspath + configurations.integrationTestRuntimeClasspath
+	}
+}
+
+configurations {
+	integrationTestImplementation.extendsFrom testImplementation
+	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+	integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.register('integrationTest', Test) {
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	shouldRunAfter tasks.named('test')
+	useJUnitPlatform()
+}
+
+tasks.named('processIntegrationTestResources') {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('integrationTest')
 }
 
 tasks.named('test') {
