@@ -1,5 +1,9 @@
 package com.mesofi.mythclothapi.it;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -25,10 +30,12 @@ import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
 
 public class FigurineScenarioExtension
     implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
@@ -94,7 +101,57 @@ public class FigurineScenarioExtension
               .map(ScenarioRequest::resource)
               .filter(StringUtils::hasText)
               .map(filename -> loadJsonFixture(filename, getJsonType(payload.type())));
+
+      if (jsonNode.isEmpty()) {
+        continue;
+      }
+
+      CatalogSelector selector = payload.catalog();
+
+      boolean hasSupplierId = hasSupplierIdPlaceholder(jsonNode.get());
+      boolean hasDistributionId = hasCatalogIdPlaceholder(jsonNode.get(), DIST_ID);
+      boolean hasLineUpId = hasCatalogIdPlaceholder(jsonNode.get(), LINEUP_ID);
+      boolean hasSeriesId = hasCatalogIdPlaceholder(jsonNode.get(), SERIES_ID);
+      boolean hasGroupId = hasCatalogIdPlaceholder(jsonNode.get(), GROUP_ID);
+      boolean hasAnniversaryId = hasCatalogIdPlaceholder(jsonNode.get(), ANNIVERSARY_ID);
+
+      if (hasSupplierId) {
+        this.distributors =
+            Optional.ofNullable(this.distributors).orElseGet(client::createDistributors);
+
+        DistributorResp distributor = findDistributor(this.distributors, JP);
+        DistributorResp distributorMXN = findDistributor(this.distributors, MX);
+        DistributorResp distributorHK = findDistributor(this.distributors, CN);
+
+        placeholders.put(SUPPLIER_ID, distributor.id());
+        placeholders.put(SUPPLIER_ID_MXN, distributorMXN.id());
+        placeholders.put(SUPPLIER_ID_HK, distributorHK.id());
+      }
     }
+  }
+
+  private boolean hasSupplierIdPlaceholder(JsonNode node) {
+    return hasPlaceholder(node, SUPPLIER_ID_PLACEHOLDER);
+  }
+
+  private boolean hasCatalogIdPlaceholder(JsonNode node, String catalogId) {
+    Pattern pattern = Pattern.compile("\\{\\{" + Pattern.quote(catalogId) + "}}");
+    return hasPlaceholder(node, pattern);
+  }
+
+  private boolean hasPlaceholder(JsonNode node, Pattern pattern) {
+    if (node.isTextual()) {
+      return pattern.matcher(node.asText()).matches();
+    }
+
+    if (node.isContainerNode()) {
+      for (JsonNode child : node) {
+        if (hasPlaceholder(child, pattern)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private JsonFixtureType getJsonType(ScenarioRequest.Type type) {
@@ -116,6 +173,62 @@ public class FigurineScenarioExtension
     } catch (IOException e) {
       throw new IllegalStateException("Unable to parse JSON file", e);
     }
+  }
+
+  private void replacePlaceholders(JsonNode node, Map<String, Object> values) {
+    if (node.isObject()) {
+      ObjectNode objectNode = (ObjectNode) node;
+
+      objectNode
+          .properties()
+          .forEach(
+              entry -> {
+                String fieldName = entry.getKey();
+                JsonNode child = entry.getValue();
+
+                if (child.isTextual()) {
+                  String text = child.asText();
+
+                  if (text.startsWith("{{") && text.endsWith("}}")) {
+                    String key = text.substring(2, text.length() - 2);
+                    Object replacement = values.get(key);
+                    JsonNode replacementJsonNode = mapper.valueToTree(replacement);
+                    if (replacement != null) {
+                      objectNode.set(fieldName, replacementJsonNode);
+                    }
+                  }
+                } else {
+                  replacePlaceholders(child, values);
+                }
+              });
+    }
+
+    if (node.isArray()) {
+      node.forEach(item -> replacePlaceholders(item, values));
+    }
+  }
+
+  private DistributorResp findDistributor(List<DistributorResp> distributors, CountryCode code) {
+
+    return distributors.stream()
+        .filter(d -> d.countryCode().equals(code.name()))
+        .findFirst()
+        .orElseThrow(
+            () -> new IllegalArgumentException(String.format("%s Distributor not found", code)));
+  }
+
+  private <T> T findByDescription(
+      List<T> list, String value, Function<T, String> extractor, String errorMessage) {
+
+    return list.stream()
+        .filter(e -> extractor.apply(e).equals(value))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "%s: '%s'. Available values: %s",
+                        errorMessage, value, list.stream().map(extractor).toList())));
   }
 
   @Override
