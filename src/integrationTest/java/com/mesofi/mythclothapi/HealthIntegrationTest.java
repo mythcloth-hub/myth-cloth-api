@@ -15,7 +15,6 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("integration")
 class HealthIntegrationTest {
-
   @LocalServerPort private int port;
 
   @Test

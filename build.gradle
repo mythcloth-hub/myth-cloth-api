@@ -17,9 +17,9 @@ java {
 
 spotless {
     java {
-        googleJavaFormat()   // or eclipse() if you prefer
-        removeUnusedImports()    // removes unused imports
-        importOrder 'java', 'javax', 'org', 'com' // sort imports in this order
+        googleJavaFormat()
+        removeUnusedImports()
+        importOrder 'java', 'javax', 'jakarta', 'org', 'com'
         target 'src/**/*.java'
     }
 

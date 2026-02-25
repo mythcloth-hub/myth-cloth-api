@@ -50,12 +50,9 @@ public class CatalogTestClient {
       String url, Object request, Class<T> responseType, Object... uriVars) {
     /*
            ResponseEntity<T> response = rest.postForEntity(url, request, responseType, uriVars);
-
            assertThat(response.getStatusCode()).isEqualTo(CREATED);
            assertThat(response.getBody()).isNotNull();
-
            return response.getBody();
-
     */
     return null;
   }

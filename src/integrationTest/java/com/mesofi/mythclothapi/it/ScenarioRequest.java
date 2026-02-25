@@ -27,7 +27,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ScenarioRequest {
-
   /**
    * Optional identifier to reference this request inside a scenario. Empty means "not specified".
    */

@@ -1,10 +1,18 @@
 package com.mesofi.mythclothapi.it;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -18,7 +26,6 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
 public class FigurineScenarioExtension
     implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
-
   private static final Logger log = LoggerFactory.getLogger(FigurineScenarioExtension.class);
 
   /**
@@ -30,7 +37,6 @@ public class FigurineScenarioExtension
 
   private static final Pattern SUPPLIER_ID_PLACEHOLDER =
       Pattern.compile("\\{\\{supplierId([A-Z]+)?}}");
-
   private static final String SUPPLIER_ID = "supplierId";
   private static final String SUPPLIER_ID_MXN = "supplierIdMXN";
   private static final String SUPPLIER_ID_HK = "supplierIdHK";
@@ -39,15 +45,15 @@ public class FigurineScenarioExtension
   private static final String SERIES_ID = "seriesId";
   private static final String GROUP_ID = "groupId";
   private static final String ANNIVERSARY_ID = "anniversaryId";
-
   List<DistributorResp> distributors;
   List<CatalogResp> distributions;
+
   List<CatalogResp> lineUps;
   List<CatalogResp> series;
   List<CatalogResp> groups;
   List<AnniversaryResp> anniversaries;
-
   private String scenarioName;
+
   private final List<ScenarioArtifact> payloads = new ArrayList<>();
 
   /** Shared ObjectMapper configured for test consistency. */
@@ -62,16 +68,13 @@ public class FigurineScenarioExtension
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
             "@FigurineScenario is required");
-
     String name =
         Optional.of(scenario)
             .filter(s -> StringUtils.hasText(s.name()))
             .map(FigurineScenario::name)
             .orElseThrow(() -> new IllegalArgumentException("Provide a valid scenario name"));
-
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
-
     CatalogTestClient client = null;
   }
 
@@ -82,7 +85,6 @@ public class FigurineScenarioExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-
     return false;
   }
 

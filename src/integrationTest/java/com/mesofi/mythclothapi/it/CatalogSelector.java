@@ -24,7 +24,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface CatalogSelector {
-
   /**
    * Distribution channel associated with the scenario (e.g. "Stores", "Tamashii Web Shop").
    *
