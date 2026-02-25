@@ -1,7 +1,12 @@
 package com.mesofi.mythclothapi.it;
 
-import static com.mesofi.mythclothapi.distributors.model.CountryCode.*;
-import static com.mesofi.mythclothapi.distributors.model.DistributorName.*;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI_CHINA;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.DAM;
+import static com.mesofi.mythclothapi.distributors.model.DistributorName.DTM;
 
 import java.util.List;
 import java.util.stream.Stream;

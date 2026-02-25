@@ -21,6 +21,17 @@ spotless {
         removeUnusedImports()
         importOrder 'java', 'javax', 'jakarta', 'org', 'com'
         target 'src/**/*.java'
+
+        // Enforce no wildcard imports
+        custom 'No wildcard imports', { String source ->
+            if (source.contains('import static') && source.contains('.*')) {
+                throw new RuntimeException('Wildcard static imports are not allowed')
+            }
+            if (source.contains('import ') && !source.contains('import static') && source.contains('.*')) {
+                throw new RuntimeException('Wildcard imports are not allowed')
+            }
+            return source
+        }
     }
 
     // Optional: format Gradle files too
