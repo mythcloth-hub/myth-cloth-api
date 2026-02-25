@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 
@@ -232,20 +234,76 @@ public class FigurineScenarioExtension
   }
 
   @Override
-  public void afterEach(ExtensionContext context) {}
+  public void afterEach(ExtensionContext context) {
+    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+
+    safeDelete("Distributors", this.distributors, DistributorResp::id, client::deleteDistributor);
+    safeDelete(
+        "Distribution",
+        this.distributions,
+        CatalogResp::id,
+        id -> client.deleteCatalog(CatalogType.distributions, id));
+    safeDelete(
+        "Lineups",
+        this.lineUps,
+        CatalogResp::id,
+        id -> client.deleteCatalog(CatalogType.lineups, id));
+    safeDelete(
+        "Series", this.series, CatalogResp::id, id -> client.deleteCatalog(CatalogType.series, id));
+    safeDelete(
+        "Groups", this.groups, CatalogResp::id, id -> client.deleteCatalog(CatalogType.groups, id));
+
+    safeDelete("Anniversaries", this.anniversaries, AnniversaryResp::id, client::deleteAnniversary);
+
+    // initialize the catalogs.
+    this.distributors = null;
+    this.distributions = null;
+    this.lineUps = null;
+    this.series = null;
+    this.groups = null;
+    this.anniversaries = null;
+
+    // removes the payloads too.
+    this.payloads.clear();
+
+    log.info("Finished scenario '{}'", this.scenarioName);
+  }
 
   @Override
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return false;
+    return parameterContext.getParameter().getType().equals(FigurineScenarioContext.class);
   }
 
   @Override
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return null;
+
+    return new FigurineScenarioContext(this.scenarioName, this.payloads);
+  }
+
+  private <T> void safeDelete(
+      String label, List<T> items, Function<T, Long> extractor, Consumer<Long> deleter) {
+
+    if (Objects.isNull(items)) {
+      return;
+    }
+    List<Long> ids =
+        items.stream()
+            .map(extractor)
+            .peek(
+                id -> {
+                  try {
+                    deleter.accept(id);
+                  } catch (Exception ex) {
+                    log.warn("Failed to delete {} with id {}", label, id, ex);
+                  }
+                })
+            .toList();
+
+    log.info("Removed {}: {}", label, ids);
   }
 
   private CatalogTestClient retrieveCatalogTestClientFromContext(ExtensionContext context) {

@@ -9,6 +9,7 @@ import static com.mesofi.mythclothapi.distributors.model.DistributorName.DAM;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.DTM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -17,6 +18,11 @@ import org.springframework.boot.test.context.TestComponent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
 
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
@@ -56,6 +62,62 @@ public class CatalogTestClient {
         .toList();
   }
 
+  public void deleteDistributor(long id) {
+    deleteAndAssertNoContent(DISTRIBUTORS_DELETE, id);
+  }
+
+  public List<CatalogResp> createCatalogs(CatalogType type) {
+
+    List<String> names =
+        switch (type) {
+          case distributions ->
+              List.of(
+                  "Stores",
+                  "Tamashii Web Shop",
+                  "Tamashii Nations",
+                  "Other Limited Edition",
+                  "Tamashii Store");
+          case groups ->
+              List.of(
+                  "Bronze Saint V1",
+                  "Bronze Saint V2",
+                  "Bronze Saint V3",
+                  "Bronze Saint V4",
+                  "Silver Saint",
+                  "Gold Saint",
+                  "Gold Inheritor",
+                  "Steel",
+                  "God",
+                  "Judge");
+          case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
+          case lineups ->
+              List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation", "Figuarts");
+        };
+
+    return names.stream()
+        .map(
+            description ->
+                postAndAssertCreated(
+                    CATALOGS, new CatalogReq(description), CatalogResp.class, type.name()))
+        .toList();
+  }
+
+  public void deleteCatalog(CatalogType catalogType, long id) {
+    deleteAndAssertNoContent(CATALOGS_DELETE, catalogType, id);
+  }
+
+  public List<AnniversaryResp> createAnniversaries() {
+    return Stream.of(
+            new AnniversaryReq("Masami Kurumada 40th Anniversary", 40),
+            new AnniversaryReq("20th Anniversary", 20))
+        .map(req -> postAndAssertCreated(ANNIVERSARY, req, AnniversaryResp.class))
+        .toList();
+  }
+
+  public void deleteAnniversary(long id) {
+    deleteAndAssertNoContent(ANNIVERSARY_DELETE, id);
+  }
+
   private <T> T postAndAssertCreated(
       String url, Object request, Class<T> responseType, Object... uriVars) {
 
@@ -66,5 +128,11 @@ public class CatalogTestClient {
     assertThat(response.getBody()).isNotNull();
 
     return response.getBody();
+  }
+
+  private void deleteAndAssertNoContent(String url, Object... uriVars) {
+    ResponseEntity<Void> response = rest.delete().uri(url, uriVars).retrieve().toEntity(Void.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
   }
 }
