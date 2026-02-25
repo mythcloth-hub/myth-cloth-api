@@ -1,8 +1,12 @@
 package com.mesofi.mythclothapi.it;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -18,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -54,6 +59,7 @@ public class FigurineScenarioExtension
   List<CatalogResp> groups;
   List<AnniversaryResp> anniversaries;
   private String scenarioName;
+  private CatalogTestClient catalogTestClient;
 
   private final List<ScenarioArtifact> payloads = new ArrayList<>();
 
@@ -80,6 +86,36 @@ public class FigurineScenarioExtension
     this.scenarioName = scenario.name();
 
     CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+
+    Map<String, Object> placeholders = new HashMap<>();
+    for (ScenarioRequest payload : scenario.payloads()) {
+      Optional<JsonNode> jsonNode =
+          Optional.of(payload)
+              .map(ScenarioRequest::resource)
+              .filter(StringUtils::hasText)
+              .map(filename -> loadJsonFixture(filename, getJsonType(payload.type())));
+    }
+  }
+
+  private JsonFixtureType getJsonType(ScenarioRequest.Type type) {
+    return type == ScenarioRequest.Type.EXPECTED_RESPONSE
+        ? JsonFixtureType.RESPONSE
+        : JsonFixtureType.REQUEST;
+  }
+
+  private JsonNode loadJsonFixture(String filename, JsonFixtureType fixtureType) {
+    Path filePath =
+        BASE_PATH.resolve(fixtureType.folder()).resolve("integration-tests").resolve(filename);
+
+    if (!Files.exists(filePath)) {
+      throw new IllegalStateException("JSON fixture not found: " + filePath);
+    }
+
+    try {
+      return mapper.readTree(Files.readString(filePath));
+    } catch (IOException e) {
+      throw new IllegalStateException("Unable to parse JSON file", e);
+    }
   }
 
   @Override

@@ -13,12 +13,14 @@ import static org.springframework.http.HttpStatus.CREATED;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.boot.test.context.TestComponent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
+@TestComponent
 public class CatalogTestClient {
   /** Base endpoint path for catalog-related operations. */
   protected static final String CATALOGS = "/catalogs/{type}";
