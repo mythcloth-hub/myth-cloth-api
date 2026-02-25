@@ -1,13 +1,13 @@
 package com.mesofi.mythclothapi.it;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.extension.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -57,7 +57,23 @@ public class FigurineScenarioExtension
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Override
-  public void beforeEach(ExtensionContext context) {}
+  public void beforeEach(ExtensionContext context) {
+    FigurineScenario scenario =
+        Objects.requireNonNull(
+            context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
+            "@FigurineScenario is required");
+
+    String name =
+        Optional.of(scenario)
+            .filter(s -> StringUtils.hasText(s.name()))
+            .map(FigurineScenario::name)
+            .orElseThrow(() -> new IllegalArgumentException("Provide a valid scenario name"));
+
+    log.info("Executing scenario '{}' ...", name);
+    this.scenarioName = scenario.name();
+
+    CatalogTestClient client = null;
+  }
 
   @Override
   public void afterEach(ExtensionContext context) {}
