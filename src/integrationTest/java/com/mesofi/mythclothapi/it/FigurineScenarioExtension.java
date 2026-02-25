@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,14 +69,17 @@ public class FigurineScenarioExtension
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
             "@FigurineScenario is required");
+
     String name =
         Optional.of(scenario)
             .filter(s -> StringUtils.hasText(s.name()))
             .map(FigurineScenario::name)
             .orElseThrow(() -> new IllegalArgumentException("Provide a valid scenario name"));
+
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
-    CatalogTestClient client = null;
+
+    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
   }
 
   @Override
@@ -93,5 +97,9 @@ public class FigurineScenarioExtension
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
     return null;
+  }
+
+  private CatalogTestClient retrieveCatalogTestClientFromContext(ExtensionContext context) {
+    return SpringExtension.getApplicationContext(context).getBean(CatalogTestClient.class);
   }
 }

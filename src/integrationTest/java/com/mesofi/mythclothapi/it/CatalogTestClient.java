@@ -7,10 +7,13 @@ import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI_CHINA;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.DAM;
 import static com.mesofi.mythclothapi.distributors.model.DistributorName.DTM;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.http.HttpStatus.CREATED;
 
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
@@ -53,12 +56,13 @@ public class CatalogTestClient {
 
   private <T> T postAndAssertCreated(
       String url, Object request, Class<T> responseType, Object... uriVars) {
-    /*
-           ResponseEntity<T> response = rest.postForEntity(url, request, responseType, uriVars);
-           assertThat(response.getStatusCode()).isEqualTo(CREATED);
-           assertThat(response.getBody()).isNotNull();
-           return response.getBody();
-    */
-    return null;
+
+    ResponseEntity<T> response =
+        rest.post().uri(url, uriVars).body(request).retrieve().toEntity(responseType);
+
+    assertThat(response.getStatusCode()).isEqualTo(CREATED);
+    assertThat(response.getBody()).isNotNull();
+
+    return response.getBody();
   }
 }
