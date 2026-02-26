@@ -1,7 +1,10 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import com.mesofi.mythclothapi.it.CatalogSelector;
 import com.mesofi.mythclothapi.it.FigurineScenario;
@@ -10,6 +13,7 @@ import com.mesofi.mythclothapi.it.FigurineScenarioExtension;
 import com.mesofi.mythclothapi.it.ScenarioRequest;
 
 @ExtendWith(FigurineScenarioExtension.class)
+@SpringBootTest(webEnvironment = RANDOM_PORT)
 public class FigurineControllerIT {
 
   @Test

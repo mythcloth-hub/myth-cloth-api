@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,6 +81,7 @@ public class FigurineScenarioExtension
 
   @Override
   public void beforeEach(ExtensionContext context) {
+
     FigurineScenario scenario =
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
@@ -94,7 +96,7 @@ public class FigurineScenarioExtension
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
 
-    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+    CatalogTestClient client = new CatalogTestClient(retrieveRestClient(context));
 
     Map<String, Object> placeholders = new HashMap<>();
     for (ScenarioRequest payload : scenario.payloads()) {
@@ -130,6 +132,22 @@ public class FigurineScenarioExtension
         placeholders.put(SUPPLIER_ID_HK, distributorHK.id());
       }
     }
+  }
+
+  private RestClient retrieveRestClient(ExtensionContext context) {
+    // Get Spring context
+    var applicationContext = SpringExtension.getApplicationContext(context);
+
+    // Get random port
+    Integer port =
+        applicationContext.getEnvironment().getProperty("local.server.port", Integer.class);
+
+    if (port == null) {
+      throw new IllegalStateException("local.server.port not available");
+    }
+
+    // Build RestClient
+    return RestClient.builder().baseUrl("http://localhost:" + port).build();
   }
 
   private boolean hasSupplierIdPlaceholder(JsonNode node) {
@@ -235,7 +253,7 @@ public class FigurineScenarioExtension
 
   @Override
   public void afterEach(ExtensionContext context) {
-    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+    CatalogTestClient client = new CatalogTestClient(retrieveRestClient(context));
 
     safeDelete("Distributors", this.distributors, DistributorResp::id, client::deleteDistributor);
     safeDelete(
@@ -304,9 +322,5 @@ public class FigurineScenarioExtension
             .toList();
 
     log.info("Removed {}: {}", label, ids);
-  }
-
-  private CatalogTestClient retrieveCatalogTestClientFromContext(ExtensionContext context) {
-    return SpringExtension.getApplicationContext(context).getBean(CatalogTestClient.class);
   }
 }
