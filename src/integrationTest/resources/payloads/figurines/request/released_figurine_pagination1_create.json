@@ -1,0 +1,33 @@
+{
+  "name": "Pegasus Seiya",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 5500.00,
+      "releaseDate": "2009-10-02",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "TN Autumn 2009",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img924/701/vBBtOe.jpg",
+    "https://imagizer.imageshack.com/img923/3910/SM2IUF.jpg",
+    "https://imagizer.imageshack.com/img923/649/A59MGf.jpg",
+    "https://imagizer.imageshack.com/img924/2325/uVn0fu.jpg"
+  ]
+}

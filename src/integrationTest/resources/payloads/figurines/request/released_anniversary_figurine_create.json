@@ -1,0 +1,51 @@
+{
+  "name": "Virgo Shaka",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 16000.00,
+      "announcedAt": "2023-09-15",
+      "preorderOpensAt": "2023-11-17",
+      "releaseDate": "2024-06-17",
+      "releaseDateConfirmed": true
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN",
+      "price": 2999.00,
+      "preorderOpensAt": "2024-06-27",
+      "releaseDate": "2024-08-02",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/14712",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "anniversaryId": "{{anniversaryId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": true,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "20th anniversary",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/402/fMqkkO.jpg",
+    "https://imagizer.imageshack.com/img924/979/tFMUbc.jpg",
+    "https://imagizer.imageshack.com/img923/7885/cPlNzW.jpg",
+    "https://imagizer.imageshack.com/img922/1077/v4OuCx.jpg",
+    "https://imagizer.imageshack.com/img924/5007/4Nm3w2.jpg",
+    "https://imagizer.imageshack.com/img923/4969/3ymk5o.jpg",
+    "https://imagizer.imageshack.com/img923/4830/j5gnGG.jpg",
+    "https://imagizer.imageshack.com/img924/9950/7r4AbC.jpg",
+    "https://imagizer.imageshack.com/img922/5337/JAorgJ.jpg",
+    "https://imagizer.imageshack.com/img922/7549/ugWS1h.jpg"
+  ]
+}

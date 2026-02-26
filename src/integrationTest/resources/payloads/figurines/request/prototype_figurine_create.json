@@ -1,0 +1,30 @@
+{
+  "name": "Leo Aiolia",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "announcedAt": "2018-10-27",
+      "releaseDateConfirmed": false
+    }
+  ],
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "Shown for the first time in Tamashii 2018",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img924/8470/UgxQru.jpg",
+    "https://imagizer.imageshack.com/img923/562/rE8qou.jpg",
+    "https://imagizer.imageshack.com/img922/2381/HOoH0L.jpg"
+  ]
+}

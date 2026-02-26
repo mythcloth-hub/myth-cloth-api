@@ -49,7 +49,9 @@ public class FigurineScenarioExtension
    * test.fixtures.base}.
    */
   private static final Path BASE_PATH =
-      Path.of(System.getProperty("test.fixtures.base", "src/test/resources/payloads/figurines"));
+      Path.of(
+          System.getProperty(
+              "test.fixtures.base", "src/integrationTest/resources/payloads/figurines"));
 
   private static final Pattern SUPPLIER_ID_PLACEHOLDER =
       Pattern.compile("\\{\\{supplierId([A-Z]+)?}}");
@@ -181,8 +183,7 @@ public class FigurineScenarioExtension
   }
 
   private JsonNode loadJsonFixture(String filename, JsonFixtureType fixtureType) {
-    Path filePath =
-        BASE_PATH.resolve(fixtureType.folder()).resolve("integration-tests").resolve(filename);
+    Path filePath = BASE_PATH.resolve(fixtureType.folder()).resolve(filename);
 
     if (!Files.exists(filePath)) {
       throw new IllegalStateException("JSON fixture not found: " + filePath);

@@ -1,0 +1,48 @@
+{
+  "name": "Wyvern Rhadamanthys",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 12500,
+      "preorderOpensAt": "2020-09-04",
+      "releaseDate": "2021-02-22",
+      "releaseDateConfirmed": true
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN",
+      "price": 3280.00,
+      "preorderOpensAt": "2021-02-22"
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/13404",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": true,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img924/4780/UEhPXi.jpg",
+    "https://imagizer.imageshack.com/img923/5941/EJH0sH.jpg",
+    "https://imagizer.imageshack.com/img922/6766/rB3Yhj.jpg",
+    "https://imagizer.imageshack.com/img923/6786/71biOa.jpg",
+    "https://imagizer.imageshack.com/img924/5776/fHEzvb.jpg",
+    "https://imagizer.imageshack.com/img922/2729/Q7lHla.jpg",
+    "https://imagizer.imageshack.com/img923/657/Fn3oZB.jpg",
+    "https://imagizer.imageshack.com/img922/7265/cAO8Eg.jpg",
+    "https://imagizer.imageshack.com/img923/781/xKalsO.jpg"
+  ],
+  "unofficialImageUrls": [
+    "https://imagizer.imageshack.com/img922/5273/9ZUPz6.jpg"
+  ]
+}
