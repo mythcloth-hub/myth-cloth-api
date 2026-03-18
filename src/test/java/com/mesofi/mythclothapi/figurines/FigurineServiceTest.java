@@ -1,0 +1,310 @@
+package com.mesofi.mythclothapi.figurines;
+
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Stream;
+
+import jakarta.validation.ConstraintViolationException;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.catalogs.model.Distribution;
+import com.mesofi.mythclothapi.catalogs.model.Group;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.Series;
+import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
+import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
+import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
+import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
+import com.mesofi.mythclothapi.distributors.model.DistributorName;
+import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
+import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
+import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.utils.MapperTestConfig;
+import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
+
+@SpringBootTest(
+    classes = {FigurineService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
+public class FigurineServiceTest {
+
+  @MockitoBean private DistributorRepository distributorRepository;
+  @MockitoBean private DistributionRepository distributionRepository;
+  @MockitoBean private LineUpRepository lineUpRepository;
+  @MockitoBean private SeriesRepository seriesRepository;
+  @MockitoBean private GroupRepository groupRepository;
+  @MockitoBean private AnniversaryRepository anniversaryRepository;
+  @MockitoBean private FigurineRepository repository;
+  @MockitoBean private CurrencyRegionResolver currencyRegionResolver;
+
+  @Autowired private FigurineService service;
+  @Autowired private FigurineMapper mapper;
+
+  @Test
+  void createFigurine_shouldThrowException_whenFigurineIsNull() {
+    // Act + Assert
+    assertThatThrownBy(() -> service.createFigurine(null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("createFigurine.request")
+        .hasMessageContaining("must not be null");
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenAllFieldsAreNull() {
+    // Arrange
+    FigurineReq req = createFigurine(null, null, 0, 0, 0, 0, 0);
+
+    // Act + Assert
+    assertThatThrownBy(() -> service.createFigurine(req))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("createFigurine.request.name")
+        .hasMessageContaining("must not be blank")
+        .hasMessageContaining("createFigurine.request.distributors")
+        .hasMessageContaining("At least one distributor must be provided");
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideInvalidDistributors")
+  void createFigurine_shouldThrowException_whenDistributorsAreNullOrEmpty(
+      List<DistributorReq> list) {
+    // Arrange
+    FigurineReq req = createFigurine("Pegasus Seiya", list, 0, 0, 0, 0, 0);
+
+    // Act + Assert
+    assertThatThrownBy(() -> service.createFigurine(req))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("createFigurine.request.distributors")
+        .hasMessageContaining("At least one distributor must be provided");
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenDistributorsIdIsNotPositive() {
+    // Arrange
+    DistributorReq info = new DistributorReq(0L, null, null, null, null, null, false);
+    FigurineReq req = createFigurine("Pegasus Seiya", List.of(info), 0, 0, 0, 0, 0);
+
+    // Act + Assert
+    assertThatThrownBy(() -> service.createFigurine(req))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("createFigurine.request.distributors[0].supplierId")
+        .hasMessageContaining("must be greater than 0");
+  }
+
+  @Test
+  void createFigurine_shouldCreateNewFigurine_whenInputProvided() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    DistributorReq distributorReq =
+        new DistributorReq(
+            1L,
+            JPY,
+            3500d,
+            LocalDate.of(2025, 1, 1),
+            LocalDate.of(2025, 6, 6),
+            LocalDate.of(2025, 9, 9),
+            true);
+    FigurineReq req = createFigurine("Pegasus Seiya", List.of(distributorReq), 1, 1, 1, 1, 1);
+
+    Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
+    figurineMapped.setId(1L);
+
+    when(repository.save(any(Figurine.class))).thenReturn(figurineMapped);
+
+    // Act
+    FigurineResp figurineResp = service.createFigurine(req);
+
+    // Assert
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            List.of(
+                new FigurineDistributorResp(
+                    new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
+                    JPY,
+                    3500d,
+                    3850.0000000000005d,
+                    LocalDate.of(2025, 1, 1),
+                    LocalDate.of(2025, 6, 6),
+                    LocalDate.of(2025, 9, 9),
+                    true)),
+            null,
+            new CatalogResp(1, "Tamashii Web Shop"),
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            new CatalogResp(1, "Bronze Saint V3"),
+            new AnniversaryResp(1, "Masami Kurumada 40th Anniversar", 40),
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true,
+            "Test notes",
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    verify(distributorRepository).findAll();
+    verify(distributionRepository).findAll();
+    verify(lineUpRepository).findAll();
+    verify(seriesRepository).findAll();
+    verify(groupRepository).findAll();
+    verify(anniversaryRepository).findAll();
+    verify(repository).save(any(Figurine.class));
+  }
+
+  private List<Distributor> loadDistributors() {
+    Distributor distributor1 = new Distributor();
+    distributor1.setId(1L);
+    distributor1.setName(DistributorName.BANDAI);
+    distributor1.setCountry(JP);
+    return List.of(distributor1);
+  }
+
+  private List<Distribution> loadDistributions() {
+    Distribution distribution1 = new Distribution();
+    distribution1.setId(1L);
+    distribution1.setDescription("Tamashii Web Shop");
+    return List.of(distribution1);
+  }
+
+  private List<LineUp> loadLineups() {
+    LineUp lineUp1 = new LineUp();
+    lineUp1.setId(1L);
+    lineUp1.setDescription("Myth Cloth EX");
+    return List.of(lineUp1);
+  }
+
+  private List<Series> loadSeries() {
+    Series series1 = new Series();
+    series1.setId(1L);
+    series1.setDescription("Saint Seiya");
+    return List.of(series1);
+  }
+
+  private List<Group> loadGroups() {
+    Group group1 = new Group();
+    group1.setId(1L);
+    group1.setDescription("Bronze Saint V3");
+    return List.of(group1);
+  }
+
+  private List<Anniversary> loadAnniversaries() {
+    Anniversary anniversary1 = new Anniversary();
+    anniversary1.setId(1L);
+    anniversary1.setDescription("Masami Kurumada 40th Anniversar");
+    anniversary1.setYear(40);
+    return List.of(anniversary1);
+  }
+
+  private static Stream<Arguments> provideInvalidDistributors() {
+    return Stream.of(Arguments.of((List<DistributorReq>) null), Arguments.of(List.of()));
+  }
+
+  private FigurineReq createFigurine(
+      String name,
+      List<DistributorReq> distributors,
+      long distributionId,
+      long lineupId,
+      long seriesId,
+      long groupId,
+      long anniversaryId) {
+    return new FigurineReq(
+        name,
+        distributors,
+        null,
+        distributionId,
+        lineupId,
+        seriesId,
+        groupId,
+        anniversaryId,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        "Test notes",
+        null,
+        null);
+  }
+}
