@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurines;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import java.net.URI;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
 import com.mesofi.mythclothapi.it.CatalogSelector;
 import com.mesofi.mythclothapi.it.FigurineScenario;
 import com.mesofi.mythclothapi.it.FigurineScenarioContext;
@@ -107,6 +109,161 @@ public class FigurineControllerIT {
     assertFigurineCreated(ctx);
   }
 
+  /** Verifies creation of a released anniversary figurine with anniversary metadata applied. */
+  @Test
+  @FigurineScenario(
+      name = "Create released with anniversary figurine",
+      payloads = {
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.REQUEST,
+            resource = "released_anniversary_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint",
+                    anniversary = 20)),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_anniversary_figurine_create.json")
+      })
+  void createReleasedAnniversaryFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
+  }
+
+  /** Verifies creation of a Hong Kong (HK) limited release figurine. */
+  @Test
+  @FigurineScenario(
+      name = "Create a release HK figurine",
+      payloads = {
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.REQUEST,
+            resource = "released_hk_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Other Limited Edition",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_hk_figurine_create.json")
+      })
+  void createReleasedHKFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
+  }
+
+  /** Verifies creation of a released figurine intended to be read later. */
+  @Test
+  @FigurineScenario(
+      name = "A released figurine is initially created and later will be queried",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_revival_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Store",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_revival_figurine_create.json"),
+        @ScenarioRequest(
+            id = "queried-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource =
+                "released_revival_figurine_create.json") // it is OK to expect the same response.
+      })
+  void retrieveReleasedFigurine_queryExistingFigurine(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineQueriedById(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of multiple figurines intended to be read later via pagination. */
+  @Test
+  @FigurineScenario(
+      name =
+          "Multiple figurines are initially created and can later be retrieved through pagination.",
+      payloads = {
+        @ScenarioRequest(
+            id = "p1-req",
+            resource = "released_figurine_pagination1_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Nations",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V3")),
+        @ScenarioRequest(
+            id = "p1-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination1_create.json"),
+        @ScenarioRequest(
+            id = "p2-req",
+            resource = "released_figurine_pagination2_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Nations",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V3")),
+        @ScenarioRequest(
+            id = "p2-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination2_create.json"),
+        @ScenarioRequest(
+            id = "p3-req",
+            resource = "released_figurine_pagination3_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Nations",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V3")),
+        @ScenarioRequest(
+            id = "p3-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination3_create.json"),
+        @ScenarioRequest(
+            id = "p4-req",
+            resource = "released_figurine_pagination4_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Nations",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V3")),
+        @ScenarioRequest(
+            id = "p4-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination4_create.json"),
+        @ScenarioRequest(
+            id = "p5-req",
+            resource = "released_figurine_pagination5_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Nations",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V3")),
+        @ScenarioRequest(
+            id = "p5-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination5_create.json"),
+        @ScenarioRequest(
+            id = "p-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_pagination_create.json"),
+      })
+  void retrieveAllFigurinesByPagination_queryExistingFigurines(FigurineScenarioContext ctx) {
+    for (int i = 1; i <= 5; i++) {
+      assertFigurineCreated(ctx, "p" + i + "-req", "p" + i + "-resp");
+    }
+    assertFigurineQueriedByPagination(ctx);
+  }
+
   /**
    * Executes a {@code POST /figurines} request using scenario-provided payloads and asserts that
    * the figurine is successfully created.
@@ -164,7 +321,6 @@ public class FigurineControllerIT {
    */
   private long assertFigurineCreated(
       FigurineScenarioContext ctx, String reqFigurineId, String respFigurineId) {
-
     RestClient rest = ctx.restClient();
 
     // Build HTTP request using raw JSON from a scenario
@@ -178,16 +334,6 @@ public class FigurineControllerIT {
             : getPayloadAsJsonNode(ctx.payloads(), ScenarioRequest.Type.EXPECTED_RESPONSE);
 
     // Execute POST /figurines
-
-    ResponseEntity<String> responseString =
-        rest.post()
-            .uri(FIGURINES)
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(reqJsonNode.toString())
-            .retrieve()
-            .toEntity(String.class);
-    System.out.println(responseString);
-
     ResponseEntity<FigurineResp> response =
         rest.post()
             .uri(FIGURINES)
@@ -218,6 +364,85 @@ public class FigurineControllerIT {
     Assertions.assertNotNull(uri);
     String path = uri.getPath();
     return Long.parseLong(path.substring(path.lastIndexOf('/') + 1));
+  }
+
+  /**
+   * Executes a {@code GET /figurines/{id}} request and asserts that the figurine can be
+   * successfully retrieved.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Retrieves the expected response payload using a scenario artifact ID
+   *   <li>HTTP status is {@code 200 OK}
+   *   <li>Response headers include {@code Content-Type: application/json}
+   *   <li>Response body matches the expected JSON payload defined in the scenario
+   * </ul>
+   *
+   * <p>The response body is normalized before comparison to avoid failures due to JSON field
+   * ordering or formatting differences.
+   *
+   * @param ctx scenario context containing the expected response payload
+   * @param figurineIdCreated ID of the figurine to be queried
+   * @throws IllegalStateException if the expected scenario payload is missing
+   */
+  private void assertFigurineQueriedById(FigurineScenarioContext ctx, long figurineIdCreated) {
+    RestClient rest = ctx.restClient();
+
+    JsonNode jsonNodeResp = findJsonNodeById(ctx, "queried-figurine-id-resp");
+
+    // Execute GET /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.get()
+            .uri(FIGURINES + "/{id}", figurineIdCreated)
+            .retrieve()
+            .toEntity(FigurineResp.class);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  private void assertFigurineQueriedByPagination(FigurineScenarioContext ctx) {
+    RestClient rest = ctx.restClient();
+
+    JsonNode jsonNodeResp = findJsonNodeById(ctx, "p-resp");
+
+    // Execute GET /figurines
+    ResponseEntity<PaginatedResponse> response =
+        rest.get().uri(FIGURINES).retrieve().toEntity(PaginatedResponse.class);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
   }
 
   /**
