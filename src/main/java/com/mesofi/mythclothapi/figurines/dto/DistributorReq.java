@@ -13,4 +13,10 @@ public record DistributorReq(
     LocalDate announcedAt,
     LocalDate preorderOpensAt,
     LocalDate releaseDate,
-    boolean releaseDateConfirmed) {}
+    Boolean releaseDateConfirmed) {
+  public DistributorReq {
+    if (releaseDateConfirmed == null) {
+      releaseDateConfirmed = false;
+    }
+  }
+}

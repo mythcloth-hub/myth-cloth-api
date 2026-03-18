@@ -10,6 +10,8 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,9 +29,29 @@ import com.mesofi.mythclothapi.it.ScenarioArtifact;
 import com.mesofi.mythclothapi.it.ScenarioRequest;
 import com.mesofi.mythclothapi.utils.JsonTestUtils;
 
+/**
+ * Integration tests for {@code FigurineController} covering figurine creation scenarios.
+ *
+ * <p>These tests validate the {@code POST /figurines} endpoint using scenario-driven inputs and
+ * expected outputs defined as JSON artifacts.
+ *
+ * <p>Each test is executed with {@link FigurineScenarioExtension}, which injects a {@link
+ * FigurineScenarioContext} containing request and expected response payloads, as well as catalog
+ * metadata resolved through {@link CatalogSelector}.
+ *
+ * <p>The tests assert:
+ *
+ * <ul>
+ *   <li>HTTP contract (status, headers, location)
+ *   <li>Response body structure and content
+ *   <li>Correct creation of figurines across different catalog configurations
+ * </ul>
+ */
 @ExtendWith(FigurineScenarioExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 public class FigurineControllerIT {
+
+  private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
 
   /**
    * Base endpoint path for figurine-related operations.
@@ -60,6 +82,28 @@ public class FigurineControllerIT {
             type = ScenarioRequest.Type.EXPECTED_RESPONSE)
       })
   void createPrototypeFigurine_returnsCreated(FigurineScenarioContext ctx) {
+    assertFigurineCreated(ctx);
+  }
+
+  /** Verifies creation of a released figurine with standard catalog distribution. */
+  @Test
+  @FigurineScenario(
+      name = "Create released figurine",
+      payloads = {
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.REQUEST,
+            resource = "released_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Stores",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V2")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_create.json")
+      })
+  void createReleasedFigurine_returnsCreated(FigurineScenarioContext ctx) {
     assertFigurineCreated(ctx);
   }
 
@@ -123,10 +167,6 @@ public class FigurineControllerIT {
 
     RestClient rest = ctx.restClient();
 
-    // Prepare request headers
-    // HttpHeaders headers = new HttpHeaders();
-    // headers.setContentType(MediaType.APPLICATION_JSON);
-
     // Build HTTP request using raw JSON from a scenario
     JsonNode reqJsonNode =
         StringUtils.hasText(reqFigurineId)
@@ -137,9 +177,17 @@ public class FigurineControllerIT {
             ? findJsonNodeById(ctx, respFigurineId)
             : getPayloadAsJsonNode(ctx.payloads(), ScenarioRequest.Type.EXPECTED_RESPONSE);
 
-    // HttpEntity<String> request = new HttpEntity<>(reqJsonNode.toString(), headers);
-
     // Execute POST /figurines
+
+    ResponseEntity<String> responseString =
+        rest.post()
+            .uri(FIGURINES)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(reqJsonNode.toString())
+            .retrieve()
+            .toEntity(String.class);
+    System.out.println(responseString);
+
     ResponseEntity<FigurineResp> response =
         rest.post()
             .uri(FIGURINES)
