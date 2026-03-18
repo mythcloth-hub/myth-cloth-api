@@ -72,6 +72,7 @@ public class FigurineScenarioExtension
   List<AnniversaryResp> anniversaries;
   private String scenarioName;
   private CatalogTestClient catalogTestClient;
+  private RestClient restClient;
 
   private final List<ScenarioArtifact> payloads = new ArrayList<>();
 
@@ -83,6 +84,9 @@ public class FigurineScenarioExtension
 
   @Override
   public void beforeEach(ExtensionContext context) {
+    this.restClient = retrieveRestClient(context);
+    this.catalogTestClient = new CatalogTestClient(restClient);
+
     FigurineScenario scenario =
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
@@ -97,7 +101,7 @@ public class FigurineScenarioExtension
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
 
-    CatalogTestClient client = new CatalogTestClient(retrieveRestClient(context));
+    CatalogTestClient client = this.catalogTestClient;
 
     Map<String, Object> placeholders = new HashMap<>();
     for (ScenarioRequest payload : scenario.payloads()) {
@@ -160,6 +164,60 @@ public class FigurineScenarioExtension
 
         placeholders.put(LINEUP_ID, catalogLineUp.id());
       }
+      if (hasSeriesId) {
+        this.series =
+            Optional.ofNullable(this.series)
+                .orElseGet(() -> client.createCatalogs(CatalogType.series));
+
+        CatalogResp catalogSeries =
+            findByDescription(
+                this.series,
+                selector.series(),
+                CatalogResp::description,
+                "Series not found for a given value");
+
+        placeholders.put(SERIES_ID, catalogSeries.id());
+      }
+      if (hasGroupId) {
+        this.groups =
+            Optional.ofNullable(this.groups)
+                .orElseGet(() -> client.createCatalogs(CatalogType.groups));
+
+        CatalogResp catalogGroup =
+            findByDescription(
+                this.groups,
+                selector.group(),
+                CatalogResp::description,
+                "Group not found for a given value");
+
+        placeholders.put(GROUP_ID, catalogGroup.id());
+      }
+      if (hasAnniversaryId) {
+        this.anniversaries =
+            Optional.ofNullable(this.anniversaries).orElseGet(client::createAnniversaries);
+
+        AnniversaryResp catalogAnniversary =
+            this.anniversaries.stream()
+                .filter(a -> a.year() == selector.anniversary())
+                .findFirst()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Anniversary not found: " + selector.anniversary()));
+
+        placeholders.put(ANNIVERSARY_ID, catalogAnniversary.id());
+      }
+
+      if (hasSupplierId
+          || hasDistributionId
+          || hasLineUpId
+          || hasSeriesId
+          || hasGroupId
+          || hasAnniversaryId) {
+        replacePlaceholders(jsonNode.get(), placeholders);
+      }
+
+      this.payloads.add(new ScenarioArtifact(payload.id(), jsonNode.get(), payload.type()));
     }
   }
 
@@ -281,7 +339,7 @@ public class FigurineScenarioExtension
 
   @Override
   public void afterEach(ExtensionContext context) {
-    CatalogTestClient client = new CatalogTestClient(retrieveRestClient(context));
+    CatalogTestClient client = this.catalogTestClient;
 
     safeDelete("Distributors", this.distributors, DistributorResp::id, client::deleteDistributor);
     safeDelete(
@@ -327,7 +385,7 @@ public class FigurineScenarioExtension
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
 
-    return new FigurineScenarioContext(this.scenarioName, this.payloads);
+    return new FigurineScenarioContext(this.scenarioName, this.payloads, this.restClient);
   }
 
   private <T> void safeDelete(
