@@ -1,0 +1,57 @@
+{
+  "id": 1,
+  "name": "Libras",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "announcedAt": "2020-11-04",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "tamashiiUrl": "https://google.com",
+  "lineUp": {
+    "id": 1,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 5,
+    "description": "Gold Saint"
+  },
+  "isMetalBody": true,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": true,
+  "isBattleDamaged": false,
+  "isGoldenArmor": true,
+  "isGold24kEdition": false,
+  "isMangaVersion": true,
+  "isMultiPack": true,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/8299/ak9ATX.jpg",
+    "https://imagizer.imageshack.com/img923/2603/SGYZxA.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2020-11-04",
+      "type": "ANNOUNCEMENT",
+      "region": "JP",
+      "description": "First announced as a possible future release."
+    }
+  ],
+  "createdAt": "2026-01-21T03:50:10.923549Z",
+  "updatedAt": "2026-01-21T03:50:10.923549Z"
+}

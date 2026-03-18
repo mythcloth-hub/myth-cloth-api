@@ -1,0 +1,63 @@
+{
+  "id": 4,
+  "name": "Andromeda Shun",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "price": 4500.0,
+      "priceWithTax": 4725.0,
+      "releaseDate": "2011-02-11",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "distribution": {
+    "id": 3,
+    "description": "Tamashii Nations"
+  },
+  "lineUp": {
+    "id": 2,
+    "description": "Myth Cloth"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 3,
+    "description": "Bronze Saint V3"
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "Tamashii Features 2011",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/7793/H8LsXs.jpg",
+    "https://imagizer.imageshack.com/img924/6880/4mGydP.jpg"
+  ],
+  "events": [
+    {
+      "id": 4,
+      "date": "2011-02-11",
+      "type": "RELEASE",
+      "region": "JP",
+      "description": "The global release date has been officially announced."
+    }
+  ],
+  "createdAt": "2026-02-10T12:28:40.043800Z",
+  "updatedAt": "2026-02-10T12:28:40.043800Z"
+}

@@ -1,0 +1,81 @@
+{
+  "id" : 1,
+  "name" : "Scorpio Milo",
+  "displayableName" : "FIXME",
+  "distributors" : [ {
+    "distributor" : {
+      "id" : 1,
+      "name" : "BANDAI",
+      "description" : "Tamashii Nations",
+      "countryCode" : "JP",
+      "website" : "https://tamashii.jp/"
+    },
+    "currency" : "JPY",
+    "price" : 15000.0,
+    "priceWithTax" : 16500.0,
+    "announcedAt" : "2024-02-16",
+    "preorderOpensAt" : "2025-02-14",
+    "releaseDate" : "2025-02-14",
+    "releaseDateConfirmed" : true
+  }, {
+    "distributor" : {
+      "id" : 2,
+      "name" : "DAM",
+      "description" : "Distribuidora Animéxico",
+      "countryCode" : "MX",
+      "website" : "https://animexico-online.com/"
+    },
+    "currency" : "MXN",
+    "price" : 2900.0,
+    "priceWithTax" : 3363.9999999999995,
+    "preorderOpensAt" : "2025-02-17",
+    "releaseDate" : "2025-04-07",
+    "releaseDateConfirmed" : true
+  } ],
+  "tamashiiUrl" : "https://tamashiiweb.com/item/14387",
+  "lineUp" : {
+    "id" : 1,
+    "description" : "Myth Cloth EX"
+  },
+  "series" : {
+    "id" : 1,
+    "description" : "Saint Seiya"
+  },
+  "group" : {
+    "id" : 6,
+    "description" : "Gold Saint"
+  },
+  "isMetalBody" : false,
+  "isOriginalColorEdition" : false,
+  "isRevival" : true,
+  "isPlainCloth" : false,
+  "isBattleDamaged" : false,
+  "isGoldenArmor" : false,
+  "isGold24kEdition" : false,
+  "isMangaVersion" : false,
+  "isMultiPack" : false,
+  "isArticulable" : true,
+  "notes" : "For MXN, special sale via www.tamashii.mx",
+  "officialImageUrls" : [ "https://imagizer.imageshack.com/img923/5779/vMiqIK.jpg", "https://imagizer.imageshack.com/img924/7706/mqXD5s.jpg", "https://imagizer.imageshack.com/img922/1623/DNjFPX.jpg", "https://imagizer.imageshack.com/img923/5361/orWkJa.jpg", "https://imagizer.imageshack.com/img923/4391/mcd6Rk.jpg", "https://imagizer.imageshack.com/img924/3251/sI4pVS.jpg", "https://imagizer.imageshack.com/img922/2758/qLYAPw.jpg", "https://imagizer.imageshack.com/img924/8753/wS8ZrL.jpg", "https://imagizer.imageshack.com/img922/3027/USaIyG.jpg", "https://imagizer.imageshack.com/img924/5685/PnjnlR.jpg", "https://imagizer.imageshack.com/img924/9986/JfFAI9.jpg" ],
+  "events" : [ {
+    "id" : 1,
+    "date" : "2024-02-16",
+    "type" : "ANNOUNCEMENT",
+    "region" : "JP",
+    "description" : "First announced as a possible future release."
+  }, {
+    "id" : 2,
+    "date" : "2025-02-14",
+    "type" : "PREORDER_OPEN",
+    "region" : "JP",
+    "description" : "Pre-orders are officially open."
+  }, {
+    "id" : 3,
+    "date" : "2025-02-14",
+    "type" : "RELEASE",
+    "region" : "JP",
+    "description" : "The global release date has been officially announced."
+  } ],
+  "createdAt" : "2026-02-02T12:56:30.637738Z",
+  "updatedAt" : "2026-02-02T12:56:30.637738Z"
+}
