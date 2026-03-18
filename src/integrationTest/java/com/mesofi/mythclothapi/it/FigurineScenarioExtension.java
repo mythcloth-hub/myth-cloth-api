@@ -83,7 +83,6 @@ public class FigurineScenarioExtension
 
   @Override
   public void beforeEach(ExtensionContext context) {
-
     FigurineScenario scenario =
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
@@ -132,6 +131,34 @@ public class FigurineScenarioExtension
         placeholders.put(SUPPLIER_ID, distributor.id());
         placeholders.put(SUPPLIER_ID_MXN, distributorMXN.id());
         placeholders.put(SUPPLIER_ID_HK, distributorHK.id());
+      }
+      if (hasDistributionId) {
+        this.distributions =
+            Optional.ofNullable(this.distributions)
+                .orElseGet(() -> client.createCatalogs(CatalogType.distributions));
+
+        CatalogResp catalogDistribution =
+            findByDescription(
+                this.distributions,
+                selector.distribution(),
+                CatalogResp::description,
+                "Distribution not found for a given value");
+
+        placeholders.put(DIST_ID, catalogDistribution.id());
+      }
+      if (hasLineUpId) {
+        this.lineUps =
+            Optional.ofNullable(this.lineUps)
+                .orElseGet(() -> client.createCatalogs(CatalogType.lineups));
+
+        CatalogResp catalogLineUp =
+            findByDescription(
+                this.lineUps,
+                selector.lineUp(),
+                CatalogResp::description,
+                "LineUp not found for a given value");
+
+        placeholders.put(LINEUP_ID, catalogLineUp.id());
       }
     }
   }
