@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurines;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.net.URI;
@@ -264,6 +265,204 @@ public class FigurineControllerIT {
     assertFigurineQueriedByPagination(ctx);
   }
 
+  /** Verifies creation of a released figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "A released figurine is initially created with an invalid Tamashii URL and is later updated to store the correct value.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_invalid_tamashii_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Stores",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V2")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_invalid_tamashii_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "released_invalid_tamashii_update.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Stores",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Bronze Saint V2")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_invalid_tamashii_update.json"),
+      })
+  void updateReleasedFigurine_updatesOnlyOneField(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of a prototype figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "A prototype figurine is initially created with incorrect field values and is later updated with the correct information.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "prototype_invalid_info_create.json",
+            catalog =
+                @CatalogSelector(
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "prototype_invalid_info_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "prototype_invalid_info_update.json",
+            catalog =
+                @CatalogSelector(
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Saint")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "prototype_invalid_info_update.json"),
+      })
+  void updateReleasedFigurine_updatesMultipleFields(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of an unreleased figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "An unreleased figurine is initially created with incorrect references and later updated with the correct information.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "unreleased_invalid_references_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Other Limited Edition",
+                    lineUp = "Figuarts",
+                    series = "Saint Seiya",
+                    group = "Steel")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "unreleased_invalid_references_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "unreleased_invalid_references_update.json",
+            catalog =
+                @CatalogSelector(lineUp = "Myth Cloth EX", series = "Saint Seiya", group = "God")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "unreleased_invalid_references_update.json"),
+      })
+  void updateUnReleasedFigurine_updatesReferenceFields(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of a released figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "An released figurine is initially created with invalid images and later updated with the correct url's.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_figurine_invalid_images_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Judge")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_invalid_images_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "released_figurine_invalid_images_update.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Judge")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_invalid_images_update.json"),
+      })
+  void updateReleasedFigurine_updatesImagesUrls(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of a released figurine intended to be updated later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "A released figurine is initially created with the available information and is later updated to "
+              + "include the release date and an additional distributor.",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_figurine_available_data_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Inheritor")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_available_data_create.json"),
+        @ScenarioRequest(
+            id = "updated-figurine-id-req",
+            resource = "released_figurine_available_data_update.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth EX",
+                    series = "Saint Seiya",
+                    group = "Gold Inheritor")),
+        @ScenarioRequest(
+            id = "updated-figurine-id-resp",
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_figurine_available_data_update.json"),
+      })
+  void updateReleasedFigurine_updatesReleaseDateAndDistributor(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineUpdated(ctx, figurineIdCreated);
+  }
+
+  /** Verifies creation of a released figurine intended to be deleted later. */
+  @Test
+  @FigurineScenario(
+      name =
+          "A released figurine is initially created with the available information and is later deleted",
+      payloads = {
+        @ScenarioRequest(
+            resource = "released_classic_figurine_create.json",
+            catalog =
+                @CatalogSelector(
+                    distribution = "Tamashii Web Shop",
+                    lineUp = "Myth Cloth",
+                    series = "Saint Seiya",
+                    group = "Silver Saint")),
+        @ScenarioRequest(
+            type = ScenarioRequest.Type.EXPECTED_RESPONSE,
+            resource = "released_classic_figurine_create.json")
+      })
+  void deleteExistingFigurine_returnsNoContent(FigurineScenarioContext ctx) {
+    long figurineIdCreated = assertFigurineCreated(ctx);
+    assertFigurineDeleted(figurineIdCreated, ctx.restClient());
+  }
+
   /**
    * Executes a {@code POST /figurines} request using scenario-provided payloads and asserts that
    * the figurine is successfully created.
@@ -367,6 +566,62 @@ public class FigurineControllerIT {
   }
 
   /**
+   * Executes a {@code PUT /figurines/{id}} request using scenario-provided update payloads and
+   * asserts that the figurine is successfully updated.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Retrieves request and expected response payloads using scenario artifact IDs
+   *   <li>HTTP status is {@code 200 OK}
+   *   <li>Response headers include {@code Content-Type: application/json}
+   *   <li>Response body matches the expected JSON payload defined in the scenario
+   * </ul>
+   *
+   * <p>The response body is normalized before comparison to avoid failures due to JSON field
+   * ordering or formatting differences.
+   *
+   * @param ctx scenario context containing update request and expected response payloads
+   * @param figurineIdCreated ID of the figurine to be updated
+   * @throws IllegalStateException if required scenario payloads are missing
+   */
+  private void assertFigurineUpdated(FigurineScenarioContext ctx, long figurineIdCreated) {
+    RestClient rest = ctx.restClient();
+
+    JsonNode jsonNodeReq = findJsonNodeById(ctx, "updated-figurine-id-req");
+    JsonNode jsonNodeResp = findJsonNodeById(ctx, "updated-figurine-id-resp");
+
+    log.info("Updating figurine with new payload: {}", jsonNodeReq);
+
+    // Execute PUT /figurines
+    ResponseEntity<FigurineResp> response =
+        rest.put()
+            .uri(FIGURINES + "/{id}", figurineIdCreated)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(jsonNodeReq.toString())
+            .retrieve()
+            .toEntity(FigurineResp.class);
+
+    // Basic HTTP contract assertions
+    HttpHeaders httpHeaders = response.getHeaders();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(OK);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(httpHeaders.getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+
+    // Convert response DTO to JSON for structural comparison
+    JsonNode actual = FigurineScenarioExtension.mapper.valueToTree(response.getBody());
+
+    // Normalize JSON to avoid ordering or formatting differences
+    JsonTestUtils.normalize(jsonNodeResp);
+    JsonTestUtils.normalize(actual);
+
+    // Assert response payload matches expected scenario output
+    assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  /**
    * Executes a {@code GET /figurines/{id}} request and asserts that the figurine can be
    * successfully retrieved.
    *
@@ -443,6 +698,33 @@ public class FigurineControllerIT {
 
     // Assert response payload matches expected scenario output
     assertThat(actual.toString()).isEqualTo(jsonNodeResp.toString());
+  }
+
+  /**
+   * Executes a {@code DELETE /figurines/{id}} request and asserts that the figurine is successfully
+   * deleted.
+   *
+   * <p>This method performs the following validations:
+   *
+   * <ul>
+   *   <li>Invokes the delete endpoint for the given figurine ID
+   *   <li>Ensures the request completes without errors
+   * </ul>
+   *
+   * <p>Any failure during deletion will result in the test failing due to an unexpected exception
+   * or HTTP error response.
+   *
+   * @param figurineIdCreated ID of the figurine to be deleted
+   */
+  private void assertFigurineDeleted(long figurineIdCreated, RestClient rest) {
+    log.info("Deleting figurine with id: {}", figurineIdCreated);
+
+    // Execute DELETE /figurines/{id}
+    ResponseEntity<Void> response =
+        rest.delete().uri(FIGURINES + "/{id}", figurineIdCreated).retrieve().toBodilessEntity();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
   }
 
   /**
