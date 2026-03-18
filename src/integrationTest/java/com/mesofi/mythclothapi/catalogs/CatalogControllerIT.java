@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.catalogs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +52,12 @@ public class CatalogControllerIT {
     assertThat(readCatalog(GROUP, idGroup)).isEqualTo(idGroup);
     assertThat(readCatalog(DISTRIBUTION, idDistribution)).isEqualTo(idDistribution);
     assertThat(readCatalog(LINE_UP, idLineUp)).isEqualTo(idLineUp);
+
+    // DELETE
+    deleteCatalog(SERIES, idSeries);
+    deleteCatalog(GROUP, idGroup);
+    deleteCatalog(DISTRIBUTION, idDistribution);
+    deleteCatalog(LINE_UP, idLineUp);
   }
 
   private Long createReferences(String resource, CatalogReq request) {
@@ -74,5 +81,13 @@ public class CatalogControllerIT {
     assertThat(response.getBody().id()).isEqualTo(id);
 
     return response.getBody().id();
+  }
+
+  private void deleteCatalog(String resource, Long id) {
+
+    ResponseEntity<Void> response =
+        rest.delete().uri(CATALOG + resource + "/" + id).retrieve().toEntity(Void.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
   }
 }
