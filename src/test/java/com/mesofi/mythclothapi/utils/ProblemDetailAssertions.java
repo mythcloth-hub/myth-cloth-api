@@ -37,10 +37,6 @@ public class ProblemDetailAssertions {
     return jsonPath("$.timestamp").exists();
   }
 
-  public static ResultMatcher defaultType() {
-    return jsonPath("$.type").value("about:blank");
-  }
-
   public static ResultMatcher hasErrors(Map<String, String> errors) {
     return result -> {
       MockHttpServletResponse response = result.getResponse();
