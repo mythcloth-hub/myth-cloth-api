@@ -1,0 +1,118 @@
+{
+  "id": 3,
+  "name": "Pegasus Seiya",
+  "displayableName": "Pegasus Seiya [Final Bronze Cloth] ~Original Color Edition~",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 23,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "price": 16000.00,
+      "priceWithTax": 17600.00,
+      "announcedAt": "2025-11-13",
+      "preorderOpensAt": "2025-05-12",
+      "releaseDate": "2026-05-01",
+      "releaseDateConfirmed": false
+    },
+    {
+      "distributor": {
+        "id": 32,
+        "name": "DAM",
+        "description": "Distribuidora Animéxico",
+        "countryCode": "MX",
+        "website": "https://animexico-online.com/"
+      },
+      "currency": "MXN",
+      "price": 5200.00,
+      "announcedAt": "2025-12-13",
+      "preorderOpensAt": "2025-12-14",
+      "releaseDate": "2026-01-01",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/15695",
+  "distribution": {
+    "id": 6,
+    "description": "Tamashii Web Shop"
+  },
+  "lineUp": {
+    "id": 3,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 7,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 12,
+    "description": "Bronze Saint V3"
+  },
+  "anniversary": {
+    "id": 5,
+    "description": "Masami Kurumada 40th Anniversary",
+    "year": 40
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "Shown for the first time in Tamashii 2025",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/5373/mM9Vnw.jpg",
+    "https://imagizer.imageshack.com/img923/5718/9ekW8o.jpg",
+    "https://imagizer.imageshack.com/img922/8738/4a9Xam.jpg"
+  ],
+  "unofficialImageUrls": [
+    "https://imagizer.imageshack.com/img922/5273/9ZUPz6.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2025-11-13",
+      "type": "ANNOUNCEMENT",
+      "region": "JP",
+      "description": "Revealed at Tamashii Nations 2025."
+    },
+    {
+      "id": 2,
+      "date": "2025-05-12",
+      "type": "PREORDER_OPEN",
+      "region": "JP",
+      "description": "Preorders open."
+    },
+    {
+      "id": 3,
+      "date": "2026-05-01",
+      "type": "RELEASE",
+      "region": "JP",
+      "description": "Official release in Japan."
+    },
+    {
+      "id": 4,
+      "date": "2026-04-15",
+      "type": "RESTOCK",
+      "region": "JP",
+      "description": "Small restock confirmed for Japan."
+    },
+    {
+      "id": 5,
+      "date": "2026-05-15",
+      "type": "LOCAL_RELEASE",
+      "region": "MX",
+      "description": "Mexico is releasing the figurine."
+    }
+  ],
+  "createdAt": "2025-01-10T15:22:01Z",
+  "updatedAt": "2025-01-10T15:22:01Z"
+}
