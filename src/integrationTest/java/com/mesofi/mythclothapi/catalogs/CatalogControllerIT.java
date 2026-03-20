@@ -11,11 +11,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 
+@ActiveProfiles("integration")
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 public class CatalogControllerIT {
 
