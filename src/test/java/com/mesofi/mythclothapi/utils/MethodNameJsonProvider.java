@@ -7,22 +7,20 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.support.ParameterDeclarations;
 import org.springframework.util.StringUtils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 
 public class MethodNameJsonProvider implements ArgumentsProvider {
 
   private static final Path BASE_PATH = Path.of("src/test/resources/payloads");
-  final ObjectMapper mapper =
-      new ObjectMapper()
-          .registerModule(new JavaTimeModule())
-          .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // optional but recommended
+
+  final ObjectMapper mapper = new ObjectMapper();
 
   @Override
-  public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+  public Stream<? extends Arguments> provideArguments(
+      ParameterDeclarations parameters, ExtensionContext context) throws Exception {
 
     MethodFileSource annotation =
         context.getRequiredTestMethod().getAnnotation(MethodFileSource.class);

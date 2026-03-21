@@ -12,6 +12,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Stream;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -45,8 +47,6 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.utils.MapperTestConfig;
 import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
-
-import jakarta.validation.ConstraintViolationException;
 
 @SpringBootTest(
     classes = {FigurineService.class, MapperTestConfig.class, MethodValidationTestConfig.class})

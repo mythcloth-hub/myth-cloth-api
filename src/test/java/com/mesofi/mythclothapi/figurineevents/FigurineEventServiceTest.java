@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.Optional;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,8 +24,6 @@ import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.utils.MapperTestConfig;
 import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
-
-import jakarta.validation.ConstraintViolationException;
 
 @SpringBootTest(
     classes = {

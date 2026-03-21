@@ -2,6 +2,9 @@ package com.mesofi.mythclothapi.figurineimages;
 
 import java.net.URI;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -17,8 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageResp;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

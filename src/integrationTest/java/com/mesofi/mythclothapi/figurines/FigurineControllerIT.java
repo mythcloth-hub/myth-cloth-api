@@ -1,7 +1,9 @@
 package com.mesofi.mythclothapi.figurines;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.net.URI;
@@ -12,13 +14,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.*;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
-import com.mesofi.mythclothapi.it.*;
+import com.mesofi.mythclothapi.it.CatalogSelector;
+import com.mesofi.mythclothapi.it.FigurineScenario;
+import com.mesofi.mythclothapi.it.FigurineScenarioContext;
+import com.mesofi.mythclothapi.it.FigurineScenarioExtension;
+import com.mesofi.mythclothapi.it.ScenarioArtifact;
+import com.mesofi.mythclothapi.it.ScenarioRequest;
 import com.mesofi.mythclothapi.utils.JsonTestUtils;
 
 /**
@@ -39,10 +51,19 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
  *   <li>Correct creation of figurines across different catalog configurations
  * </ul>
  */
+@ActiveProfiles("integration")
 @ExtendWith(FigurineScenarioExtension.class)
-public class FigurineControllerIT extends AbstractIntegrationTest {
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+public class FigurineControllerIT {
 
   private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
+
+  /**
+   * Base endpoint path for figurine-related operations.
+   *
+   * <p>Exposed as a constant to avoid hard-coded URL strings across test classes.
+   */
+  protected static final String FIGURINES = "/figurines";
 
   /**
    * Verifies that a prototype figurine can be created successfully.
@@ -441,7 +462,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
       })
   void deleteExistingFigurine_returnsNoContent(FigurineScenarioContext ctx) {
     long figurineIdCreated = assertFigurineCreated(ctx);
-    assertFigurineDeleted(figurineIdCreated);
+    assertFigurineDeleted(figurineIdCreated, ctx.restClient());
   }
 
   /**
@@ -501,9 +522,7 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    */
   private long assertFigurineCreated(
       FigurineScenarioContext ctx, String reqFigurineId, String respFigurineId) {
-    // Prepare request headers
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+    RestClient rest = ctx.restClient();
 
     // Build HTTP request using raw JSON from a scenario
     JsonNode reqJsonNode =
@@ -515,11 +534,14 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
             ? findJsonNodeById(ctx, respFigurineId)
             : getPayloadAsJsonNode(ctx.payloads(), ScenarioRequest.Type.EXPECTED_RESPONSE);
 
-    HttpEntity<String> request = new HttpEntity<>(reqJsonNode.toString(), headers);
-
     // Execute POST /figurines
     ResponseEntity<FigurineResp> response =
-        rest.postForEntity(FIGURINES, request, FigurineResp.class);
+        rest.post()
+            .uri(FIGURINES)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(reqJsonNode.toString())
+            .retrieve()
+            .toEntity(FigurineResp.class);
 
     // Basic HTTP contract assertions
     HttpHeaders httpHeaders = response.getHeaders();
@@ -566,20 +588,21 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    * @throws IllegalStateException if required scenario payloads are missing
    */
   private void assertFigurineUpdated(FigurineScenarioContext ctx, long figurineIdCreated) {
+    RestClient rest = ctx.restClient();
+
     JsonNode jsonNodeReq = findJsonNodeById(ctx, "updated-figurine-id-req");
     JsonNode jsonNodeResp = findJsonNodeById(ctx, "updated-figurine-id-resp");
 
     log.info("Updating figurine with new payload: {}", jsonNodeReq);
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<String> request = new HttpEntity<>(jsonNodeReq.toString(), headers);
-
     // Execute PUT /figurines
     ResponseEntity<FigurineResp> response =
-        rest.exchange(
-            FIGURINES + "/{id}", HttpMethod.PUT, request, FigurineResp.class, figurineIdCreated);
+        rest.put()
+            .uri(FIGURINES + "/{id}", figurineIdCreated)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(jsonNodeReq.toString())
+            .retrieve()
+            .toEntity(FigurineResp.class);
 
     // Basic HTTP contract assertions
     HttpHeaders httpHeaders = response.getHeaders();
@@ -621,11 +644,16 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    * @throws IllegalStateException if the expected scenario payload is missing
    */
   private void assertFigurineQueriedById(FigurineScenarioContext ctx, long figurineIdCreated) {
+    RestClient rest = ctx.restClient();
+
     JsonNode jsonNodeResp = findJsonNodeById(ctx, "queried-figurine-id-resp");
 
     // Execute GET /figurines
     ResponseEntity<FigurineResp> response =
-        rest.getForEntity(FIGURINES + "/{id}", FigurineResp.class, figurineIdCreated);
+        rest.get()
+            .uri(FIGURINES + "/{id}", figurineIdCreated)
+            .retrieve()
+            .toEntity(FigurineResp.class);
 
     // Basic HTTP contract assertions
     HttpHeaders httpHeaders = response.getHeaders();
@@ -647,11 +675,13 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
   }
 
   private void assertFigurineQueriedByPagination(FigurineScenarioContext ctx) {
+    RestClient rest = ctx.restClient();
+
     JsonNode jsonNodeResp = findJsonNodeById(ctx, "p-resp");
 
     // Execute GET /figurines
     ResponseEntity<PaginatedResponse> response =
-        rest.getForEntity(FIGURINES, PaginatedResponse.class);
+        rest.get().uri(FIGURINES).retrieve().toEntity(PaginatedResponse.class);
 
     // Basic HTTP contract assertions
     HttpHeaders httpHeaders = response.getHeaders();
@@ -688,11 +718,15 @@ public class FigurineControllerIT extends AbstractIntegrationTest {
    *
    * @param figurineIdCreated ID of the figurine to be deleted
    */
-  private void assertFigurineDeleted(long figurineIdCreated) {
+  private void assertFigurineDeleted(long figurineIdCreated, RestClient rest) {
     log.info("Deleting figurine with id: {}", figurineIdCreated);
 
-    // Execute DELETE /figurines
-    rest.delete(FIGURINES + "/{id}", figurineIdCreated);
+    // Execute DELETE /figurines/{id}
+    ResponseEntity<Void> response =
+        rest.delete().uri(FIGURINES + "/{id}", figurineIdCreated).retrieve().toBodilessEntity();
+
+    // Basic HTTP contract assertions
+    assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
   }
 
   /**

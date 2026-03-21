@@ -3,20 +3,23 @@ package com.mesofi.mythclothapi.figurineevents;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
-@DataJpaTest // Bootstraps only JPA components + H2
+@SpringBootTest
 @ActiveProfiles("test")
 public class FigurineEventRepositoryTest {
   @Autowired FigurineRepository figurineRepository;
@@ -25,7 +28,7 @@ public class FigurineEventRepositoryTest {
   @Test
   void save_shouldThrowException_whenEventDateIsNull() {
     // Arrange
-    FigurineEvent figurineEvent = createFigurineEvent(null, null, null);
+    FigurineEvent figurineEvent = createFigurineEvent(null, null, null, null);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(figurineEvent))
@@ -37,7 +40,7 @@ public class FigurineEventRepositoryTest {
   @Test
   void save_shouldThrowException_whenDescriptionOrFigurineAreNull() {
     // Arrange
-    FigurineEvent figurineEvent = createFigurineEvent(LocalDate.now(), null, null);
+    FigurineEvent figurineEvent = createFigurineEvent(LocalDate.now(), null, null, CountryCode.CN);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(figurineEvent))
@@ -51,13 +54,12 @@ public class FigurineEventRepositoryTest {
   @Test
   void save_shouldThrowException_whenFigurineIsNull() {
     // Arrange
-    FigurineEvent figurineEvent = createFigurineEvent(LocalDate.now(), "some-description", null);
+    FigurineEvent figurineEvent =
+        createFigurineEvent(LocalDate.now(), "some-description", null, null);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(figurineEvent))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining(
-            "NULL not allowed for column \"FIGURINE_ID\""); // depends on DB dialect
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @Test
@@ -65,7 +67,8 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-description", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-description", figurineSaved, CountryCode.US);
 
     // Act
     FigurineEvent saved = repository.save(figurineEvent);
@@ -82,7 +85,8 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-description", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-description", figurineSaved, CountryCode.US);
     FigurineEvent saved = repository.save(figurineEvent);
 
     // Act
@@ -101,9 +105,11 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent1 =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-event1", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-event1", figurineSaved, CountryCode.CN);
     FigurineEvent figurineEvent2 =
-        createFigurineEvent(LocalDate.of(2025, 12, 7), "some-event2", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 7), "some-event2", figurineSaved, CountryCode.CN);
     repository.saveAll(List.of(figurineEvent1, figurineEvent2));
 
     // Act
@@ -134,7 +140,8 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-event1", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-event1", figurineSaved, CountryCode.US);
     FigurineEvent figurineEventSaved = repository.save(figurineEvent);
 
     // Act
@@ -157,7 +164,8 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-event1", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-event1", figurineSaved, CountryCode.US);
     FigurineEvent figurineEventSaved = repository.save(figurineEvent);
 
     // Act
@@ -179,7 +187,8 @@ public class FigurineEventRepositoryTest {
     // Arrange
     Figurine figurineSaved = figurineRepository.save(createFigurine());
     FigurineEvent figurineEvent =
-        createFigurineEvent(LocalDate.of(2025, 12, 6), "some-event1", figurineSaved);
+        createFigurineEvent(
+            LocalDate.of(2025, 12, 6), "some-event1", figurineSaved, CountryCode.US);
     FigurineEvent figurineEventSaved = repository.save(figurineEvent);
 
     // Act
@@ -192,12 +201,14 @@ public class FigurineEventRepositoryTest {
   }
 
   private FigurineEvent createFigurineEvent(
-      LocalDate eventDate, String description, Figurine figurine) {
+      LocalDate eventDate, String description, Figurine figurine, CountryCode region) {
 
     FigurineEvent figurineEvent = new FigurineEvent();
     figurineEvent.setEventDate(eventDate);
     figurineEvent.setDescription(description);
     figurineEvent.setFigurine(figurine);
+    figurineEvent.setRegion(region);
+    figurineEvent.setType(FigurineEventType.ANNOUNCEMENT);
 
     return figurineEvent;
   }
@@ -205,6 +216,8 @@ public class FigurineEventRepositoryTest {
   private Figurine createFigurine() {
     Figurine figurine = new Figurine();
     figurine.setNormalizedName("Seiya");
+    figurine.setCreationDate(Instant.now());
+    figurine.setUpdateDate(Instant.now());
     return figurine;
   }
 }

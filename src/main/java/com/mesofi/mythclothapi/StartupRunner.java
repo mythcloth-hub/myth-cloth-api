@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 
 @Component
-@Profile("!test")
+@Profile("!test & !integration")
 public class StartupRunner {
   @Autowired private FigurineService figurineService;
 

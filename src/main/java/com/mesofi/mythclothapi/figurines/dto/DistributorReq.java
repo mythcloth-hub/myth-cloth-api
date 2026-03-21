@@ -2,9 +2,9 @@ package com.mesofi.mythclothapi.figurines.dto;
 
 import java.time.LocalDate;
 
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
-
 import jakarta.validation.constraints.Positive;
+
+import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 public record DistributorReq(
     @Positive Long supplierId,
@@ -13,4 +13,10 @@ public record DistributorReq(
     LocalDate announcedAt,
     LocalDate preorderOpensAt,
     LocalDate releaseDate,
-    boolean releaseDateConfirmed) {}
+    Boolean releaseDateConfirmed) {
+  public DistributorReq {
+    if (releaseDateConfirmed == null) {
+      releaseDateConfirmed = false;
+    }
+  }
+}

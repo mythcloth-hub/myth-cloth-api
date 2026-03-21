@@ -4,15 +4,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mesofi.mythclothapi.anniversaries.Anniversary;
-import com.mesofi.mythclothapi.catalogs.model.Distribution;
-import com.mesofi.mythclothapi.catalogs.model.Group;
-import com.mesofi.mythclothapi.catalogs.model.LineUp;
-import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
-import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -24,6 +15,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.catalogs.model.Distribution;
+import com.mesofi.mythclothapi.catalogs.model.Group;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.Series;
+import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

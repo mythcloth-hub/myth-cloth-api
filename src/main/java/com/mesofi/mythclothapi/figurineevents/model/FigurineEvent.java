@@ -2,16 +2,17 @@ package com.mesofi.mythclothapi.figurineevents.model;
 
 import java.time.LocalDate;
 
-import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.distributors.model.CountryCode;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.figurines.model.Figurine;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

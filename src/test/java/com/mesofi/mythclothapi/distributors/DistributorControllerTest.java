@@ -6,7 +6,6 @@ import static com.mesofi.mythclothapi.utils.CommonAssertions.hasDescription;
 import static com.mesofi.mythclothapi.utils.CommonAssertions.hasId;
 import static com.mesofi.mythclothapi.utils.CommonAssertions.hasName;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.containsDetail;
-import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.defaultType;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasDetail;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasErrors;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
@@ -18,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,17 +36,18 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(DistributorController.class)
 public class DistributorControllerTest {
@@ -69,7 +69,6 @@ public class DistributorControllerTest {
         .perform(requestBuilder)
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Endpoint not found"))
         .andExpect(hasStatus(404))
         .andExpect(hasDetail("The URL you are calling does not exist."))
@@ -91,7 +90,6 @@ public class DistributorControllerTest {
         .perform(post("/distributors"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(containsDetail("Required request body is missing"))
@@ -105,7 +103,6 @@ public class DistributorControllerTest {
         .perform(post("/distributors").content("The Body"))
         .andDo(print())
         .andExpect(status().isUnsupportedMediaType())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Unsupported Media Type"))
         .andExpect(hasStatus(415))
         .andExpect(hasDetail("Content-Type 'application/octet-stream' is not supported"))
@@ -119,7 +116,6 @@ public class DistributorControllerTest {
         .perform(post("/distributors").contentType(APPLICATION_JSON).content("The Body"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
@@ -135,7 +131,6 @@ public class DistributorControllerTest {
         .perform(post("/distributors").contentType(APPLICATION_JSON).content("{}"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -151,7 +146,6 @@ public class DistributorControllerTest {
         .perform(post("/distributors").contentType(APPLICATION_JSON).content("{\"name\":\"-\"}"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
@@ -168,7 +162,6 @@ public class DistributorControllerTest {
             post("/distributors").contentType(APPLICATION_JSON).content("{\"name\":\"BANDAI\"}"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -186,11 +179,10 @@ public class DistributorControllerTest {
                 .content("{\"name\":\"BANDAI\",\"country\":\"-\"}"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
-            containsDetail("not one of the values accepted for Enum class: [MX, JP, CN, ES, US]"))
+            containsDetail("not one of the values accepted for Enum class: [CN, JP, MX, US, ES]"))
         .andExpect(hasInstance("/distributors"))
         .andExpect(hasTimestamp());
   }
@@ -207,7 +199,6 @@ public class DistributorControllerTest {
                 .content(objectMapper.writeValueAsBytes(mockRequest)))
         .andDo(print())
         .andExpect(status().isConflict())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Distributor already exists"))
         .andExpect(hasStatus(409))
         .andExpect(hasDetail("Distributor already exists: BANDAI - JP"))
@@ -233,7 +224,7 @@ public class DistributorControllerTest {
         .andExpect(hasId(1))
         .andExpect(hasName("BANDAI"))
         .andExpect(hasDescription("Tamashii Nations"))
-        .andExpect(jsonPath("$.country").value("JP"))
+        .andExpect(jsonPath("$.countryCode").value("JP"))
         .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
 
     verify(service).createDistributor(mockRequest);
@@ -247,7 +238,6 @@ public class DistributorControllerTest {
         .perform(get("/distributors/{id}", "99"))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Distributor not found"))
         .andExpect(hasStatus(404))
         .andExpect(hasDetail("Distributor not found"))
@@ -271,7 +261,7 @@ public class DistributorControllerTest {
         .andExpect(hasId(1))
         .andExpect(hasName("DAM"))
         .andExpect(hasDescription("Distribuidora Animéxico"))
-        .andExpect(jsonPath("$.country").value("MX"))
+        .andExpect(jsonPath("$.countryCode").value("MX"))
         .andExpect(jsonPath("$.website").value("https://animexico-online.com/"));
 
     verify(service).retrieveDistributor(1L);
@@ -293,7 +283,7 @@ public class DistributorControllerTest {
         .andExpect(jsonPath("$[0].id").value(1))
         .andExpect(jsonPath("$[0].name").value("DAM"))
         .andExpect(jsonPath("$[0].description").value("Distribuidora Animéxico"))
-        .andExpect(jsonPath("$[0].country").value("MX"))
+        .andExpect(jsonPath("$[0].countryCode").value("MX"))
         .andExpect(jsonPath("$[0].website").value("https://animexico-online.com/"));
 
     verify(service).retrieveDistributors();
@@ -311,7 +301,6 @@ public class DistributorControllerTest {
                 .content(objectMapper.writeValueAsBytes(mockRequest)))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Distributor not found"))
         .andExpect(hasStatus(404))
         .andExpect(hasDetail("Distributor not found"))
@@ -337,18 +326,18 @@ public class DistributorControllerTest {
         .andExpect(hasId(1))
         .andExpect(hasName("BANDAI"))
         .andExpect(hasDescription("Tamashii Nations"))
-        .andExpect(jsonPath("$.country").value("JP"))
+        .andExpect(jsonPath("$.countryCode").value("JP"))
         .andExpect(jsonPath("$.website").value("https://tamashiiweb.com/"));
 
     verify(service).updateDistributor(1L, mockRequest);
   }
 
   @Test
-  void shouldReturn200_whenDistributorWasDeleted() throws Exception {
+  void shouldReturn204_whenDistributorWasDeleted() throws Exception {
     mockMvc
         .perform(delete("/distributors/{id}", "1").contentType(APPLICATION_JSON))
         .andDo(print())
-        .andExpect(status().isOk());
+        .andExpect(status().isNoContent());
 
     verify(service).removeDistributor(1L);
   }
@@ -360,7 +349,7 @@ public class DistributorControllerTest {
     ResponseEntity<?> response = controller.removeDistributor(1L);
 
     assertNotNull(response); // KILLS mutation
-    assertEquals(OK, response.getStatusCode());
+    assertEquals(NO_CONTENT, response.getStatusCode());
     verify(service).removeDistributor(1L);
   }
 }

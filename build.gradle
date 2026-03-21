@@ -1,8 +1,10 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.7'
+    id 'org.springframework.boot' version '4.0.4'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '6.25.0'
+
+    // --- Coverage & Mutation Testing ---
     id 'jacoco'
     id 'info.solidsoft.pitest' version '1.19.0-rc.2'
 }
@@ -19,10 +21,21 @@ java {
 
 spotless {
     java {
-        googleJavaFormat()   // or eclipse() if you prefer
-        removeUnusedImports()    // removes unused imports
-        importOrder 'java', 'javax', 'org', 'com' // sort imports in this order
+        googleJavaFormat()
+        removeUnusedImports()
+        importOrder 'java', 'javax', 'jakarta', 'org', 'com'
         target 'src/**/*.java'
+
+        // Enforce no wildcard imports
+        custom 'No wildcard imports', { String source ->
+            if (source.contains('import static') && source.contains('.*')) {
+                throw new RuntimeException('Wildcard static imports are not allowed')
+            }
+            if (source.contains('import ') && !source.contains('import static') && source.contains('.*')) {
+                throw new RuntimeException('Wildcard imports are not allowed')
+            }
+            return source
+        }
     }
 
     // Optional: format Gradle files too
@@ -34,101 +47,131 @@ spotless {
     }
 }
 
-jacoco {
-    toolVersion = "0.8.11"
-}
-
-pitest {
-    pitestVersion = '1.22.0'   // core PIT version
-    junit5PluginVersion = '1.2.1'
-    targetClasses = ['com.mesofi.*']     // classes to mutate
-    targetTests = ['com.mesofi.*']       // tests that cover them
-    threads = 4
-    mutationThreshold = 85     // fail if under 85%
-    excludedClasses = [
-            'com.mesofi.mythclothapi.Application',
-            'com.mesofi.mythclothapi.StartupRunner'
-      //      'com.mesofi.mythclothapi.figurines.*',
-      //      'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
-      //      'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
-    ]
-    excludedTestClasses = [
-            'com.mesofi.*IntegrationTest*',
-            'com.mesofi.*IT*'
-    ]
-}
-
-test {
-    useJUnitPlatform()
-    finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.required = true   // for CI tools
-        html.required = true  // human-readable report
-    }
-
-    classDirectories.setFrom(
-        files(classDirectories.files.collect { dir ->
-            fileTree(dir: dir, exclude: [
-                '**/*Application.class',
-                '**/*DistributorMapperImpl.class',
-                '**/*IT.class',
-                '**/*ITCase.class',
-                '**/*IntegrationTest.class'
-            ])
-        })
-    )
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
-    }
-}
-
 repositories {
     mavenCentral()
 }
 
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/integrationTest/java'
+        }
+        resources {
+            srcDir 'src/integrationTest/resources'
+        }
+        compileClasspath = sourceSets.main.output + configurations.integrationTestCompileClasspath
+        runtimeClasspath = output + compileClasspath + configurations.integrationTestRuntimeClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
 dependencies {
-
     // --- Spring Boot ---
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    // --- CSV ---
+    // --- Utilities ---
     implementation 'com.opencsv:opencsv:5.12.0' // Use the latest stable version
 
     // --- Lombok ---
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
-    // --- MapStruct ---
+    // --- Mapping ---
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 
-    // --- Spring Boot config processor ---
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-
-    // --- Database ---
+    // --- Runtime ---
     runtimeOnly 'org.postgresql:postgresql'
-
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     // --- Test ---
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'com.h2database:h2'
+    testRuntimeOnly 'com.h2database:h2'
+
+    // --- Integration Test ---
+    integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+    integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    integrationTestImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    integrationTestRuntimeOnly 'com.h2database:h2'
+
+    // --- Annotation Processors ---
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }
 
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+pitest {
+    pitestVersion = '1.15.0'
+    targetClasses = ['com.mesofi.mythclothapi.*']
+    targetTests = ['com.mesofi.mythclothapi.*']
+    junit5PluginVersion = '1.2.1'
+
+    threads = 4
+    outputFormats = ['HTML']
+    timestampedReports = false
+    mutators = ['DEFAULTS']
+
+    excludedClasses = [
+            '*.config.*',
+            '*.dto.*',
+            '*.entity.*'
+    ]
+
+    mutationThreshold = 95
+}
+
+tasks.register('integrationTest', Test) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    shouldRunAfter tasks.named('test')
+    useJUnitPlatform()
+}
+
+tasks.named('processIntegrationTestResources') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport', JacocoReport) {
+    dependsOn tasks.named('test')
+
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                        '**/config/**',
+                        '**/dto/**',
+                        '**/entity/**'
+                ])
+            })
+    )
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('integrationTest')
+    dependsOn tasks.named('jacocoTestReport')
+    dependsOn tasks.named('pitest')
 }
 
 tasks.named('compileJava') {

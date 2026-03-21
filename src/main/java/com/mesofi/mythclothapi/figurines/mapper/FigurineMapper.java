@@ -14,7 +14,10 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.mapstruct.*;
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;

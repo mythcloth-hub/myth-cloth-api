@@ -2,6 +2,8 @@ package com.mesofi.mythclothapi.it;
 
 import java.util.List;
 
+import org.springframework.web.client.RestClient;
+
 /**
  * Context object provided to scenario-driven integration tests.
  *
@@ -20,4 +22,5 @@ import java.util.List;
  * @param name scenario name
  * @param payloads resolved scenario payloads
  */
-public record FigurineScenarioContext(String name, List<ScenarioArtifact> payloads) {}
+public record FigurineScenarioContext(
+    String name, List<ScenarioArtifact> payloads, RestClient restClient) {}

@@ -14,11 +14,8 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.context.annotation.Profile;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
@@ -28,28 +25,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
-/**
- * Test-only client used for creating and cleaning up catalog-related data through real HTTP calls.
- *
- * <p>This component is active only under the {@code test} Spring profile and is intended to support
- * integration tests by:
- *
- * <ul>
- *   <li>Creating predefined distributors, catalogs, and anniversaries
- *   <li>Asserting expected HTTP response statuses
- *   <li>Encapsulating repetitive REST interaction logic
- * </ul>
- *
- * <p>This class deliberately fails fast using assertions to ensure tests stop immediately when the
- * system under test behaves unexpectedly.
- */
-@Component
-@Profile("test")
 public class CatalogTestClient {
-
-  /** Spring REST client configured for integration testing. */
-  private final TestRestTemplate rest;
-
   /** Base endpoint path for catalog-related operations. */
   protected static final String CATALOGS = "/catalogs/{type}";
 
@@ -68,23 +44,12 @@ public class CatalogTestClient {
   /** Endpoint path for deleting an anniversary by ID. */
   protected static final String ANNIVERSARY_DELETE = ANNIVERSARY + "/{id}";
 
-  /**
-   * Creates a new {@code CatalogTestClient}.
-   *
-   * @param rest configured {@link TestRestTemplate} used to execute HTTP calls
-   */
-  public CatalogTestClient(TestRestTemplate rest) {
+  private final RestClient rest;
+
+  public CatalogTestClient(RestClient rest) {
     this.rest = rest;
   }
 
-  /**
-   * Creates a predefined set of distributors by invoking the distributors API.
-   *
-   * <p>Each distributor is persisted via a real HTTP POST request and validated to return {@link
-   * org.springframework.http.HttpStatus#CREATED}.
-   *
-   * @return a list of created {@link DistributorResp} objects
-   */
   public List<DistributorResp> createDistributors() {
     return Stream.of(
             new DistributorReq(BANDAI, JP, "https://tamashii.jp/"),
@@ -95,24 +60,10 @@ public class CatalogTestClient {
         .toList();
   }
 
-  /**
-   * Deletes a distributor by ID and asserts a {@code 204 NO_CONTENT} response.
-   *
-   * @param id the distributor identifier
-   */
   public void deleteDistributor(long id) {
     deleteAndAssertNoContent(DISTRIBUTORS_DELETE, id);
   }
 
-  /**
-   * Creates catalogs for the given {@link CatalogType}.
-   *
-   * <p>The catalog descriptions are predefined per catalog type and are created using real HTTP
-   * POST requests.
-   *
-   * @param type the catalog type to create
-   * @return a list of created {@link CatalogResp} objects
-   */
   public List<CatalogResp> createCatalogs(CatalogType type) {
 
     List<String> names =
@@ -149,21 +100,10 @@ public class CatalogTestClient {
         .toList();
   }
 
-  /**
-   * Deletes a catalog entry by type and ID and asserts a {@code 204 NO_CONTENT} response.
-   *
-   * @param catalogType the catalog type
-   * @param id the catalog identifier
-   */
   public void deleteCatalog(CatalogType catalogType, long id) {
     deleteAndAssertNoContent(CATALOGS_DELETE, catalogType, id);
   }
 
-  /**
-   * Creates a predefined set of anniversaries by invoking the anniversaries API.
-   *
-   * @return a list of created {@link AnniversaryResp} objects
-   */
   public List<AnniversaryResp> createAnniversaries() {
     return Stream.of(
             new AnniversaryReq("Masami Kurumada 40th Anniversary", 40),
@@ -172,31 +112,15 @@ public class CatalogTestClient {
         .toList();
   }
 
-  /**
-   * Deletes an anniversary by ID and asserts a {@code 204 NO_CONTENT} response.
-   *
-   * @param id the anniversary identifier
-   */
   public void deleteAnniversary(long id) {
     deleteAndAssertNoContent(ANNIVERSARY_DELETE, id);
   }
 
-  /**
-   * Executes an HTTP POST request and asserts that the response status is {@code 201 CREATED}.
-   *
-   * <p>This helper centralizes creation assertions for test readability and consistency.
-   *
-   * @param url the endpoint URL
-   * @param request the request payload
-   * @param responseType the expected response type
-   * @param uriVars optional URI variables
-   * @param <T> the response body type
-   * @return the non-null response body
-   */
   private <T> T postAndAssertCreated(
       String url, Object request, Class<T> responseType, Object... uriVars) {
 
-    ResponseEntity<T> response = rest.postForEntity(url, request, responseType, uriVars);
+    ResponseEntity<T> response =
+        rest.post().uri(url, uriVars).body(request).retrieve().toEntity(responseType);
 
     assertThat(response.getStatusCode()).isEqualTo(CREATED);
     assertThat(response.getBody()).isNotNull();
@@ -204,15 +128,8 @@ public class CatalogTestClient {
     return response.getBody();
   }
 
-  /**
-   * Executes an HTTP DELETE request and asserts that the response status is {@code 204 NO_CONTENT}.
-   *
-   * @param url the endpoint URL
-   * @param uriVars optional URI variables
-   */
   private void deleteAndAssertNoContent(String url, Object... uriVars) {
-    ResponseEntity<Void> response =
-        rest.exchange(url, HttpMethod.DELETE, null, Void.class, uriVars);
+    ResponseEntity<Void> response = rest.delete().uri(url, uriVars).retrieve().toEntity(Void.class);
 
     assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
   }

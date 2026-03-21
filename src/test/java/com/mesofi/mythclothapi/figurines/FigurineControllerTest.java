@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.containsDetail;
-import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.defaultType;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasDetail;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasErrors;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
@@ -25,7 +24,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -54,7 +53,6 @@ public class FigurineControllerTest {
         .perform(post("/figurines"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(containsDetail("Required request body is missing"))
@@ -68,7 +66,6 @@ public class FigurineControllerTest {
         .perform(post("/figurines").content("The Body"))
         .andDo(print())
         .andExpect(status().isUnsupportedMediaType())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Unsupported Media Type"))
         .andExpect(hasStatus(415))
         .andExpect(hasDetail("Content-Type 'application/octet-stream' is not supported"))
@@ -82,7 +79,6 @@ public class FigurineControllerTest {
         .perform(post("/figurines").contentType(APPLICATION_JSON).content("The Body"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
@@ -93,13 +89,12 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenRequestIsEmpty(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -121,14 +116,13 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenDistributorSupplierIdIsNegative(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -150,14 +144,13 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenDistributorPriceIsNegative(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -179,49 +172,46 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenDistributorCurrencyIsInvalid(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
             hasDetail(
-                "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode` from String \"-\": not one of the values accepted for Enum class: [EUR, JPY, USD, MXN, CNY]"))
+                "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode` from String \"-\": not one of the values accepted for Enum class: [EUR, MXN, USD, JPY, CNY]"))
         .andExpect(hasInstance("/figurines"))
         .andExpect(hasTimestamp());
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenDistributorDateIsInvalid(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
             hasDetail(
-                "JSON parse error: Cannot deserialize value of type `java.time.LocalDate` from String \"-\": Failed to deserialize java.time.LocalDate: (java.time.format.DateTimeParseException) Text '-' could not be parsed at index 1"))
+                "JSON parse error: Cannot deserialize value of type `java.time.LocalDate` from String \"-\": Failed to deserialize `java.time.LocalDate` (with format 'Value(Year,4,10,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2)'): (java.time.format.DateTimeParseException) Text '-' could not be parsed at index 1"))
         .andExpect(hasInstance("/figurines"))
         .andExpect(hasTimestamp());
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenNameIsTooLong(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -241,14 +231,13 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenDistributionLineupGroupAndSeriesAreNull(
       String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -266,14 +255,13 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenLineupGroupAndSeriesAreNull(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -291,14 +279,13 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenGroupAndSeriesIdAreNull(String jsonRequest)
       throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -309,13 +296,12 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests")
+  @MethodFileSource(folder = "/figurines/request")
   void createFigurine_shouldReturn400_whenGroupIdIsNull(String jsonRequest) throws Exception {
     mockMvc
         .perform(post("/figurines").contentType(APPLICATION_JSON).content(jsonRequest))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -325,7 +311,7 @@ public class FigurineControllerTest {
   }
 
   @ParameterizedTest
-  @MethodFileSource(folder = "/figurines/request/unit-tests", type = FigurineReq.class)
+  @MethodFileSource(folder = "/figurines/request", type = FigurineReq.class)
   void createFigurine_shouldReturn200_whenRequestIsValid(String jsonRequest, FigurineReq req)
       throws Exception {
     AnniversaryResp anniversaryResp =

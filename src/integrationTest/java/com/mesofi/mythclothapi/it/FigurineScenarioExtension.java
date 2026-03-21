@@ -1,20 +1,34 @@
 package com.mesofi.mythclothapi.it;
 
-import static com.mesofi.mythclothapi.distributors.model.CountryCode.*;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,32 +41,8 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 
-/**
- * JUnit 5 extension that drives scenario-based integration tests for figurines.
- *
- * <p>This extension is responsible for:
- *
- * <ul>
- *   <li>Loading JSON request and response fixtures from the disk
- *   <li>Resolving dynamic placeholders (e.g., supplierId, catalog IDs, anniversaries)
- *   <li>Provisioning required catalog and distributor data before each test
- *   <li>Injecting a {@link FigurineScenarioContext} into test methods
- *   <li>Cleaning up all created data after test execution
- * </ul>
- *
- * <p>Scenarios are defined using {@link FigurineScenario} and {@link ScenarioRequest} annotations.
- * Each scenario may declare catalog selectors that determine which entities are created and
- * substituted into the JSON payloads.
- *
- * <p>JSON fixtures may contain placeholders of the form {@code {{placeholderName}}}, which are
- * replaced at runtime with IDs of dynamically created entities.
- *
- * <p>This extension guarantees test isolation by creating and deleting all required data on a
- * per-test basis.
- */
 public class FigurineScenarioExtension
     implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
-
   private static final Logger log = LoggerFactory.getLogger(FigurineScenarioExtension.class);
 
   /**
@@ -60,11 +50,12 @@ public class FigurineScenarioExtension
    * test.fixtures.base}.
    */
   private static final Path BASE_PATH =
-      Path.of(System.getProperty("test.fixtures.base", "src/test/resources/payloads/figurines"));
+      Path.of(
+          System.getProperty(
+              "test.fixtures.base", "src/integrationTest/resources/payloads/figurines"));
 
   private static final Pattern SUPPLIER_ID_PLACEHOLDER =
       Pattern.compile("\\{\\{supplierId([A-Z]+)?}}");
-
   private static final String SUPPLIER_ID = "supplierId";
   private static final String SUPPLIER_ID_MXN = "supplierIdMXN";
   private static final String SUPPLIER_ID_HK = "supplierIdHK";
@@ -73,15 +64,17 @@ public class FigurineScenarioExtension
   private static final String SERIES_ID = "seriesId";
   private static final String GROUP_ID = "groupId";
   private static final String ANNIVERSARY_ID = "anniversaryId";
-
   List<DistributorResp> distributors;
   List<CatalogResp> distributions;
+
   List<CatalogResp> lineUps;
   List<CatalogResp> series;
   List<CatalogResp> groups;
   List<AnniversaryResp> anniversaries;
-
   private String scenarioName;
+  private CatalogTestClient catalogTestClient;
+  private RestClient restClient;
+
   private final List<ScenarioArtifact> payloads = new ArrayList<>();
 
   /** Shared ObjectMapper configured for test consistency. */
@@ -90,26 +83,11 @@ public class FigurineScenarioExtension
           .registerModule(new JavaTimeModule())
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-  /**
-   * Initializes a test scenario before execution.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Validates the presence of {@link FigurineScenario}
-   *   <li>Loads JSON fixtures for each {@link ScenarioRequest}
-   *   <li>Detects placeholders in payloads
-   *   <li>Creates required catalog, distributor, and anniversary data
-   *   <li>Replaces placeholders with real entity IDs
-   *   <li>Stores resolved payloads as {@link ScenarioArtifact}s
-   * </ul>
-   *
-   * @param context JUnit extension context
-   * @throws IllegalArgumentException if the scenario name is missing or invalid
-   * @throws IllegalStateException if required, fixtures or catalog entities cannot be resolved
-   */
   @Override
   public void beforeEach(ExtensionContext context) {
+    this.restClient = retrieveRestClient(context);
+    this.catalogTestClient = new CatalogTestClient(restClient);
+
     FigurineScenario scenario =
         Objects.requireNonNull(
             context.getRequiredTestMethod().getAnnotation(FigurineScenario.class),
@@ -124,7 +102,7 @@ public class FigurineScenarioExtension
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
 
-    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+    CatalogTestClient client = this.catalogTestClient;
 
     Map<String, Object> placeholders = new HashMap<>();
     for (ScenarioRequest payload : scenario.payloads()) {
@@ -244,35 +222,31 @@ public class FigurineScenarioExtension
     }
   }
 
-  /**
-   * Checks whether the given JSON node contains a supplier ID placeholder.
-   *
-   * @param node JSON node to inspect
-   * @return {@code true} if a supplierId placeholder is present
-   */
+  private RestClient retrieveRestClient(ExtensionContext context) {
+    // Get Spring context
+    Environment environment = SpringExtension.getApplicationContext(context).getEnvironment();
+
+    // Get random port
+    Integer port = environment.getProperty("local.server.port", Integer.class);
+    String contextPath = environment.getProperty("server.servlet.context-path", String.class);
+
+    if (port == null) {
+      throw new IllegalStateException("local.server.port not available");
+    }
+
+    // Build RestClient
+    return RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
+  }
+
   private boolean hasSupplierIdPlaceholder(JsonNode node) {
     return hasPlaceholder(node, SUPPLIER_ID_PLACEHOLDER);
   }
 
-  /**
-   * Checks whether the given JSON node contains a catalog ID placeholder with the specified name.
-   *
-   * @param node JSON node to inspect
-   * @param catalogId placeholder name (e.g. {@code distributionId})
-   * @return {@code true} if the placeholder is present
-   */
   private boolean hasCatalogIdPlaceholder(JsonNode node, String catalogId) {
     Pattern pattern = Pattern.compile("\\{\\{" + Pattern.quote(catalogId) + "}}");
     return hasPlaceholder(node, pattern);
   }
 
-  /**
-   * Recursively searches a JSON tree for text nodes matching the given pattern.
-   *
-   * @param node JSON node to inspect
-   * @param pattern placeholder pattern
-   * @return {@code true} if any matching placeholder is found
-   */
   private boolean hasPlaceholder(JsonNode node, Pattern pattern) {
     if (node.isTextual()) {
       return pattern.matcher(node.asText()).matches();
@@ -294,17 +268,8 @@ public class FigurineScenarioExtension
         : JsonFixtureType.REQUEST;
   }
 
-  /**
-   * Loads a JSON fixture from the disk based on its type (request or response).
-   *
-   * @param filename fixture file name
-   * @param fixtureType fixture category
-   * @return parsed JSON content
-   * @throws IllegalStateException if the file does not exist or cannot be parsed
-   */
   private JsonNode loadJsonFixture(String filename, JsonFixtureType fixtureType) {
-    Path filePath =
-        BASE_PATH.resolve(fixtureType.folder()).resolve("integration-tests").resolve(filename);
+    Path filePath = BASE_PATH.resolve(fixtureType.folder()).resolve(filename);
 
     if (!Files.exists(filePath)) {
       throw new IllegalStateException("JSON fixture not found: " + filePath);
@@ -317,15 +282,6 @@ public class FigurineScenarioExtension
     }
   }
 
-  /**
-   * Recursively replaces placeholder values in a JSON tree with resolved values.
-   *
-   * <p>Placeholders must be expressed as {@code {{key}}}. If a matching key exists in the provided
-   * values map, the node is replaced with the corresponding JSON value.
-   *
-   * @param node JSON node to process
-   * @param values resolved placeholder values
-   */
   private void replacePlaceholders(JsonNode node, Map<String, Object> values) {
     if (node.isObject()) {
       ObjectNode objectNode = (ObjectNode) node;
@@ -382,17 +338,9 @@ public class FigurineScenarioExtension
                         errorMessage, value, list.stream().map(extractor).toList())));
   }
 
-  /**
-   * Cleans up all entities created during scenario execution.
-   *
-   * <p>Cleanup is the best effort: failures are logged but do not cause test failures, ensuring
-   * that cleanup issues do not mask real test results.
-   *
-   * @param context JUnit extension context
-   */
   @Override
   public void afterEach(ExtensionContext context) {
-    CatalogTestClient client = retrieveCatalogTestClientFromContext(context);
+    CatalogTestClient client = this.catalogTestClient;
 
     safeDelete("Distributors", this.distributors, DistributorResp::id, client::deleteDistributor);
     safeDelete(
@@ -426,13 +374,6 @@ public class FigurineScenarioExtension
     log.info("Finished scenario '{}'", this.scenarioName);
   }
 
-  /**
-   * Determines whether this extension can supply the requested parameter.
-   *
-   * @param parameterContext parameter metadata
-   * @param extensionContext extension context
-   * @return {@code true} if the parameter type is {@link FigurineScenarioContext}
-   */
   @Override
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
@@ -440,22 +381,14 @@ public class FigurineScenarioExtension
     return parameterContext.getParameter().getType().equals(FigurineScenarioContext.class);
   }
 
-  /**
-   * Resolves and injects the {@link FigurineScenarioContext} into the test method.
-   *
-   * @param parameterContext parameter metadata
-   * @param extensionContext extension context
-   * @return scenario context containing resolved payloads
-   */
   @Override
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
 
-    return new FigurineScenarioContext(this.scenarioName, this.payloads);
+    return new FigurineScenarioContext(this.scenarioName, this.payloads, this.restClient);
   }
 
-  /** Deletes entities defensively and logs failures instead of failing tests. */
   private <T> void safeDelete(
       String label, List<T> items, Function<T, Long> extractor, Consumer<Long> deleter) {
 
@@ -476,9 +409,5 @@ public class FigurineScenarioExtension
             .toList();
 
     log.info("Removed {}: {}", label, ids);
-  }
-
-  private CatalogTestClient retrieveCatalogTestClientFromContext(ExtensionContext context) {
-    return SpringExtension.getApplicationContext(context).getBean(CatalogTestClient.class);
   }
 }
