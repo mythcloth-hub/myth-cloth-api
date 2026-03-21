@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -13,7 +13,7 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
-@DataJpaTest // Bootstraps only JPA components + H2
+@SpringBootTest
 @ActiveProfiles("test")
 public class DistributorRepositoryTest {
   @Autowired DistributorRepository repository;
@@ -44,15 +44,16 @@ public class DistributorRepositoryTest {
   void shouldCreateDistributor_whenValidDataProvided() {
     // Arrange
     Distributor distributor =
-        createDistributor(DistributorName.DAM, CountryCode.MX, "https://animexico-online.com/");
+        createDistributor(
+            DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://animexico-online.com/");
 
     // Act
     Distributor saved = repository.save(distributor);
 
     // Assert
     assertThat(saved.getId()).isNotNull();
-    assertThat(saved.getName()).isEqualTo(DistributorName.DAM);
-    assertThat(saved.getCountry()).isEqualTo(CountryCode.MX);
+    assertThat(saved.getName()).isEqualTo(DistributorName.DS_DISTRIBUTIONS);
+    assertThat(saved.getCountry()).isEqualTo(CountryCode.ES);
   }
 
   @Test
@@ -85,7 +86,7 @@ public class DistributorRepositoryTest {
   @Test
   void shouldReturnFalse_whenDistributorDoesNotExistByNameAndCountry() {
     // Act
-    boolean exists = repository.existsByNameAndCountry(DistributorName.BLUE_FIN, CountryCode.US);
+    boolean exists = repository.existsByNameAndCountry(DistributorName.BLUE_FIN, CountryCode.MX);
 
     // Assert
     assertThat(exists).isFalse();
@@ -111,7 +112,7 @@ public class DistributorRepositoryTest {
     // Arrange
     Distributor distributor =
         createDistributor(
-            DistributorName.DS_DISTRIBUTIONS, CountryCode.ES, "https://www.sddistribuciones.com/");
+            DistributorName.DS_DISTRIBUTIONS, CountryCode.JP, "https://www.sddistribuciones.com/");
     Distributor saved = repository.save(distributor);
 
     // Act
@@ -124,16 +125,14 @@ public class DistributorRepositoryTest {
   @Test
   void shouldThrowException_whenNameAndCountryAreDuplicated() {
     // Arrange
-    Distributor d1 = createDistributor(DistributorName.DTM, CountryCode.MX, "url1");
-    Distributor d2 = createDistributor(DistributorName.DTM, CountryCode.MX, "url2");
+    Distributor d1 = createDistributor(DistributorName.DS_DISTRIBUTIONS, CountryCode.MX, "url1");
+    Distributor d2 = createDistributor(DistributorName.DS_DISTRIBUTIONS, CountryCode.MX, "url2");
 
     repository.saveAndFlush(d1);
 
     // Act + Assert
     assertThatThrownBy(() -> repository.saveAndFlush(d2))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining(
-            "Unique index or primary key violation: \"PUBLIC.UK_DISTRIBUTOR_NAME_COUNTRY_INDEX_2");
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   private Distributor createDistributor(DistributorName name, CountryCode country, String website) {

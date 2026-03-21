@@ -4,9 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.mesofi.mythclothapi.figurines.mapper.converters.AmountConverter;
-import com.mesofi.mythclothapi.figurines.mapper.converters.ListStringConverter;
+import com.mesofi.mythclothapi.figurines.mapper.converters.CommaListStringConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.LocalDateConfirmedConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.LocalDateConverter;
+import com.mesofi.mythclothapi.figurines.mapper.converters.PipeListStringConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.TrueFalseConverter;
 import com.opencsv.bean.CsvBindByName;
 import com.opencsv.bean.CsvCustomBindByName;
@@ -102,9 +103,12 @@ public class FigurineCsv {
   @CsvBindByName(column = "Remarks")
   private String remarks;
 
-  @CsvCustomBindByName(column = "Official Images", converter = ListStringConverter.class)
+  @CsvCustomBindByName(column = "Events", converter = PipeListStringConverter.class)
+  private List<String> events;
+
+  @CsvCustomBindByName(column = "Official Images", converter = CommaListStringConverter.class)
   private List<String> officialImages;
 
-  @CsvCustomBindByName(column = "Other Images", converter = ListStringConverter.class)
+  @CsvCustomBindByName(column = "Other Images", converter = CommaListStringConverter.class)
   private List<String> nonOfficialImages;
 }

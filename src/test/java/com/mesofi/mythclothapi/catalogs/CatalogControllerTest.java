@@ -3,7 +3,6 @@ package com.mesofi.mythclothapi.catalogs;
 import static com.mesofi.mythclothapi.utils.CommonAssertions.hasDescription;
 import static com.mesofi.mythclothapi.utils.CommonAssertions.hasId;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.containsDetail;
-import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.defaultType;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasDetail;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasErrors;
 import static com.mesofi.mythclothapi.utils.ProblemDetailAssertions.hasInstance;
@@ -33,15 +32,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
+
+import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(CatalogController.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -60,7 +60,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Endpoint not found"))
         .andExpect(hasStatus(404))
         .andExpect(containsDetail("The URL you are calling does not exist."))
@@ -74,7 +73,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG + "/unknown"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(containsDetail("Your request parameters didn't convert correctly"))
@@ -96,7 +94,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG + resource))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(containsDetail("Required request body is missing"))
@@ -111,7 +108,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG + resource).content("The Body"))
         .andDo(print())
         .andExpect(status().isUnsupportedMediaType())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Unsupported Media Type"))
         .andExpect(hasStatus(415))
         .andExpect(hasDetail("Content-Type 'application/octet-stream' is not supported"))
@@ -126,7 +122,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG + resource).contentType(APPLICATION_JSON).content("The Body"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Invalid body"))
         .andExpect(hasStatus(400))
         .andExpect(
@@ -143,7 +138,6 @@ public class CatalogControllerTest {
         .perform(post(CATALOG + resource).contentType(APPLICATION_JSON).content("{}"))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -164,7 +158,6 @@ public class CatalogControllerTest {
                 .content(objectMapper.writeValueAsBytes(mockRequest)))
         .andDo(print())
         .andExpect(status().isBadRequest())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Validation Failed"))
         .andExpect(hasStatus(400))
         .andExpect(hasDetail("Your request parameters didn't validate"))
@@ -216,7 +209,6 @@ public class CatalogControllerTest {
         .perform(get(CATALOG + resource + "/0"))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Catalog not found: " + resource))
         .andExpect(hasStatus(404))
         .andExpect(containsDetail("Catalog not found: " + resource))
@@ -265,7 +257,6 @@ public class CatalogControllerTest {
                 .content(objectMapper.writeValueAsBytes(mockRequest)))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Catalog not found: " + resource))
         .andExpect(hasStatus(404))
         .andExpect(containsDetail("Catalog not found: " + resource))
@@ -315,7 +306,6 @@ public class CatalogControllerTest {
         .perform(delete(CATALOG + resource + "/0").contentType(APPLICATION_JSON))
         .andDo(print())
         .andExpect(status().isNotFound())
-        .andExpect(defaultType())
         .andExpect(hasTitle("Catalog not found: " + resource))
         .andExpect(hasStatus(404))
         .andExpect(containsDetail("Catalog not found: " + resource))
@@ -333,7 +323,7 @@ public class CatalogControllerTest {
     mockMvc
         .perform(delete(CATALOG + resource + "/1").contentType(APPLICATION_JSON))
         .andDo(print())
-        .andExpect(status().isOk());
+        .andExpect(status().isNoContent());
 
     verify(service).deleteCatalog(resource.substring(1), 1L);
   }

@@ -3,6 +3,8 @@ package com.mesofi.mythclothapi.catalogs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,8 +15,6 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.common.Descriptive;
-
-import jakarta.validation.ConstraintViolationException;
 
 @SpringBootTest
 @ActiveProfiles("test")

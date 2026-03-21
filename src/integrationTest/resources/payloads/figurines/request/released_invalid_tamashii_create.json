@@ -1,0 +1,34 @@
+{
+  "name": "Andromeda Shun",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 3600.00,
+      "releaseDate": "2004-02-24",
+      "releaseDateConfirmed": true
+    },
+    {
+      "supplierId": "{{supplierIdMXN}}",
+      "currency": "MXN"
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/99999999",
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/359/MbjtAX.jpg"
+  ]
+}

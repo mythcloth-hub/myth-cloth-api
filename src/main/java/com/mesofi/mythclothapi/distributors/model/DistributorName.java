@@ -12,6 +12,5 @@ public enum DistributorName {
   BANDAI_CHINA("Tamashii Nations China"),
   DS_DISTRIBUTIONS("DS Distribuciones"),
   BLUE_FIN("Bluefin");
-
   private final String description;
 }

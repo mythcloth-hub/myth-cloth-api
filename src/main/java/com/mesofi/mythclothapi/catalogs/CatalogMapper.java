@@ -5,7 +5,6 @@ import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -74,19 +73,6 @@ public interface CatalogMapper {
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "figurines", ignore = true)
   Distribution toDistribution(CatalogReq request);
-
-  /**
-   * Converts a {@link CatalogReq} into a {@link Anniversary}.
-   *
-   * <p>The {@code id} and {@code figurines} collections are ignored so that only catalog attributes
-   * from the request are mapped.
-   *
-   * @param request the request DTO containing the anniversary data
-   * @return a new {@link Anniversary}
-   */
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "figurines", ignore = true)
-  Anniversary toAnniversary(CatalogReq request);
 
   /**
    * Converts a {@link Descriptive} into a {@link CatalogResp}.

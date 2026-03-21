@@ -1,15 +1,8 @@
 package com.mesofi.mythclothapi.figurines.model;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
-import com.mesofi.mythclothapi.catalogs.model.Distribution;
-import com.mesofi.mythclothapi.catalogs.model.Group;
-import com.mesofi.mythclothapi.catalogs.model.LineUp;
-import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -22,6 +15,16 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.catalogs.model.Distribution;
+import com.mesofi.mythclothapi.catalogs.model.Group;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.Series;
+import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -101,6 +104,9 @@ public class Figurine extends BaseId {
   @Column(length = 800)
   private String remarks;
 
+  @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<FigurineEvent> events = new ArrayList<>();
+
   @ElementCollection
   @CollectionTable(name = "official_images", joinColumns = @JoinColumn(name = "figurine_id"))
   private List<String> officialImages;
@@ -108,4 +114,10 @@ public class Figurine extends BaseId {
   @ElementCollection
   @CollectionTable(name = "non_official_images", joinColumns = @JoinColumn(name = "figurine_id"))
   private List<String> nonOfficialImages;
+
+  @Column(nullable = false)
+  private Instant creationDate;
+
+  @Column(nullable = false)
+  private Instant updateDate;
 }

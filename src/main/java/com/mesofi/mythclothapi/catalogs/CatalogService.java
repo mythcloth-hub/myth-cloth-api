@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -16,8 +19,6 @@ import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.common.Descriptive;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,7 +38,6 @@ public class CatalogService {
   void init() {
     entityFactories =
         Map.of(
-            CatalogType.anniversaries, mapper::toAnniversary,
             CatalogType.groups, mapper::toGroup,
             CatalogType.series, mapper::toSeries,
             CatalogType.lineups, mapper::toLineUp,

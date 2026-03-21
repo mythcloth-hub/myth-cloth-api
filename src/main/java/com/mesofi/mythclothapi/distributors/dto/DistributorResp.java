@@ -2,6 +2,6 @@ package com.mesofi.mythclothapi.distributors.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record DistributorResp(
-    long id, String name, String description, String country, String website) {}
+    long id, String name, String description, String countryCode, String website) {}

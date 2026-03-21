@@ -1,0 +1,108 @@
+{
+  "id": 1,
+  "name": "Virgo Shaka",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "price": 16000.0,
+      "priceWithTax": 17600.0,
+      "announcedAt": "2023-09-15",
+      "preorderOpensAt": "2023-11-17",
+      "releaseDate": "2024-06-17",
+      "releaseDateConfirmed": true
+    },
+    {
+      "distributor": {
+        "id": 2,
+        "name": "DAM",
+        "description": "Distribuidora Animéxico",
+        "countryCode": "MX",
+        "website": "https://animexico-online.com/"
+      },
+      "currency": "MXN",
+      "price": 2999.0,
+      "priceWithTax": 3478.8399999999997,
+      "preorderOpensAt": "2024-06-27",
+      "releaseDate": "2024-08-02",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/14712",
+  "distribution": {
+    "id": 2,
+    "description": "Tamashii Web Shop"
+  },
+  "lineUp": {
+    "id": 1,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 3,
+    "description": "Gold Saint"
+  },
+  "anniversary": {
+    "id": 2,
+    "description": "20th Anniversary",
+    "year": 20
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": true,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "20th anniversary",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/402/fMqkkO.jpg",
+    "https://imagizer.imageshack.com/img924/979/tFMUbc.jpg",
+    "https://imagizer.imageshack.com/img923/7885/cPlNzW.jpg",
+    "https://imagizer.imageshack.com/img922/1077/v4OuCx.jpg",
+    "https://imagizer.imageshack.com/img924/5007/4Nm3w2.jpg",
+    "https://imagizer.imageshack.com/img923/4969/3ymk5o.jpg",
+    "https://imagizer.imageshack.com/img923/4830/j5gnGG.jpg",
+    "https://imagizer.imageshack.com/img924/9950/7r4AbC.jpg",
+    "https://imagizer.imageshack.com/img922/5337/JAorgJ.jpg",
+    "https://imagizer.imageshack.com/img922/7549/ugWS1h.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2023-09-15",
+      "type": "ANNOUNCEMENT",
+      "region": "JP",
+      "description": "First announced as a possible future release."
+    },
+    {
+      "id": 2,
+      "date": "2023-11-17",
+      "type": "PREORDER_OPEN",
+      "region": "JP",
+      "description": "Pre-orders are officially open."
+    },
+    {
+      "id": 3,
+      "date": "2024-06-17",
+      "type": "RELEASE",
+      "region": "JP",
+      "description": "The global release date has been officially announced."
+    }
+  ],
+  "createdAt": "2025-12-31T21:33:44.671217Z",
+  "updatedAt": "2025-12-31T21:33:44.671217Z"
+}

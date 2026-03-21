@@ -1,16 +1,17 @@
-package com.mesofi.mythclothapi.catalogs.model;
+package com.mesofi.mythclothapi.anniversaries;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.figurines.model.Figurine;
+
 import lombok.Getter;
 import lombok.Setter;
 

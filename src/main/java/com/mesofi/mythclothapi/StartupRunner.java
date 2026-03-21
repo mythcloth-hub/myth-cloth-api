@@ -9,12 +9,13 @@ import org.springframework.stereotype.Component;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 
 @Component
-@Profile("!test")
+@Profile("!test & !integration")
 public class StartupRunner {
   @Autowired private FigurineService figurineService;
 
   @EventListener(ApplicationReadyEvent.class)
   public void init() {
+
     figurineService.importFromPublicDrive("1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio");
   }
 }

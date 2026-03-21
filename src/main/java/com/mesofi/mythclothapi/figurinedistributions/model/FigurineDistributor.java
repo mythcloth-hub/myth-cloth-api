@@ -2,13 +2,14 @@ package com.mesofi.mythclothapi.figurinedistributions.model;
 
 import java.time.LocalDate;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
 

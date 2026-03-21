@@ -11,11 +11,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.mesofi.mythclothapi.catalogs.model.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -23,14 +23,11 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.common.Descriptive;
 
-import jakarta.persistence.EntityManager;
-
-@DataJpaTest // Bootstraps only JPA components + H2
+@SpringBootTest
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CatalogRepositoryTest {
   @Autowired Map<String, IdDescRepository<?, Long>> repositories;
-  @Autowired EntityManager entityManager;
 
   /**
    * Matches catalog name to an empty **new instance** of its entity, so no casting and no
@@ -155,7 +152,6 @@ public class CatalogRepositoryTest {
 
     // Act
     Descriptive updated = save(repo, found);
-    entityManager.flush();
 
     // Assert
     assertThat(updated.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
@@ -179,7 +175,6 @@ public class CatalogRepositoryTest {
 
     // Act
     delete(repo, found);
-    entityManager.flush();
 
     // Assert
     assertThatThrownBy(() -> findById(repo, saved.getId()))

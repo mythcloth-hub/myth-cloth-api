@@ -2,6 +2,9 @@ package com.mesofi.mythclothapi.catalogs;
 
 import java.net.URI;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,8 +21,6 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +66,6 @@ public class CatalogController {
   public ResponseEntity<?> removeCatalog(
       @NotNull @Valid @PathVariable CatalogType catalogType, @PathVariable Long id) {
     service.deleteCatalog(catalogType.name(), id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }

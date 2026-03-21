@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.common;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+
 import lombok.Getter;
 import lombok.Setter;
 

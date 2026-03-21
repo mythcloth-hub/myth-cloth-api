@@ -1,0 +1,73 @@
+{
+  "id": 1,
+  "name": "Andromeda Shun",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "price": 3600.0,
+      "priceWithTax": 3780.0,
+      "releaseDate": "2004-02-24",
+      "releaseDateConfirmed": true
+    },
+    {
+      "distributor": {
+        "id": 2,
+        "name": "DAM",
+        "description": "Distribuidora Animéxico",
+        "countryCode": "MX",
+        "website": "https://animexico-online.com/"
+      },
+      "currency": "MXN",
+      "releaseDateConfirmed": false
+    }
+  ],
+  "tamashiiUrl": "https://tamashiiweb.com/item/99999999",
+  "distribution": {
+    "id": 1,
+    "description": "Stores"
+  },
+  "lineUp": {
+    "id": 2,
+    "description": "Myth Cloth"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 2,
+    "description": "Bronze Saint V2"
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/359/MbjtAX.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2004-02-24",
+      "type": "RELEASE",
+      "region": "JP",
+      "description": "The global release date has been officially announced."
+    }
+  ],
+  "createdAt": "2026-01-16T13:25:58.908048Z",
+  "updatedAt": "2026-01-16T13:25:58.908048Z"
+}

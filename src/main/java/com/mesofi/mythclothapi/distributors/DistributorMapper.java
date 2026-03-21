@@ -45,6 +45,7 @@ public interface DistributorMapper {
   @Mapping(
       target = "description",
       expression = "java(distributorEntity.getName().getDescription())")
+  @Mapping(target = "countryCode", source = "country")
   DistributorResp toDistributorResp(Distributor distributorEntity);
 
   /**

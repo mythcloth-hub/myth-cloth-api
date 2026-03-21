@@ -1,0 +1,32 @@
+{
+  "name": "Dragon Shiryu",
+  "distributors": [
+    {
+      "supplierId": "{{supplierId}}",
+      "currency": "JPY",
+      "price": 4500.00,
+      "releaseDate": "2011-11-25",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "distributionId": "{{distributionId}}",
+  "lineUpId": "{{lineUpId}}",
+  "seriesId": "{{seriesId}}",
+  "groupId": "{{groupId}}",
+  "isMetalBody": false,
+  "isOriginalColorEdition": true,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": false,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": true,
+  "notes": "TN 2011",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img923/8382/o0DhC1.jpg",
+    "https://imagizer.imageshack.com/img924/8182/7inEj7.jpg",
+    "https://imagizer.imageshack.com/img922/3953/vnnFkT.jpg"
+  ]
+}

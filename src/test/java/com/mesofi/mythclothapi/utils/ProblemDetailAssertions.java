@@ -9,8 +9,8 @@ import java.util.Map;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.ResultMatcher;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 public class ProblemDetailAssertions {
   public static ResultMatcher hasTitle(String title) {
@@ -37,10 +37,6 @@ public class ProblemDetailAssertions {
     return jsonPath("$.timestamp").exists();
   }
 
-  public static ResultMatcher defaultType() {
-    return jsonPath("$.type").value("about:blank");
-  }
-
   public static ResultMatcher hasErrors(Map<String, String> errors) {
     return result -> {
       MockHttpServletResponse response = result.getResponse();
@@ -59,7 +55,7 @@ public class ProblemDetailAssertions {
             .as("Expected error key: " + entry.getKey())
             .isTrue();
 
-        assertThat(errorsNode.get(entry.getKey()).asText())
+        assertThat(errorsNode.get(entry.getKey()).asString())
             .as("Expected error message for key " + entry.getKey())
             .isEqualTo(entry.getValue());
       }

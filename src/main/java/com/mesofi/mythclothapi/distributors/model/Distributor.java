@@ -3,9 +3,6 @@ package com.mesofi.mythclothapi.distributors.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
-
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +11,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+
+import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

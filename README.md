@@ -50,19 +50,13 @@ docker ps
 ## ▶️ Running the Application
 
 ``` sh
-./mvnw spring-boot:run
-```
-
-or:
-
-``` sh
-mvn spring-boot:run
+./gradlew bootRun
 ```
 
 ## 🧪 Running Tests
 
 ``` sh
-mvn test
+./gradlew test
 ```
 
 ## 📄 API Documentation

@@ -1,0 +1,57 @@
+{
+  "id": 1,
+  "name": "Libra Shiryu",
+  "displayableName": "FIXME",
+  "distributors": [
+    {
+      "distributor": {
+        "id": 1,
+        "name": "BANDAI",
+        "description": "Tamashii Nations",
+        "countryCode": "JP",
+        "website": "https://tamashii.jp/"
+      },
+      "currency": "JPY",
+      "announcedAt": "2020-11-04",
+      "releaseDateConfirmed": true
+    }
+  ],
+  "lineUp": {
+    "id": 1,
+    "description": "Myth Cloth EX"
+  },
+  "series": {
+    "id": 1,
+    "description": "Saint Seiya"
+  },
+  "group": {
+    "id": 5,
+    "description": "Gold Saint"
+  },
+  "isMetalBody": false,
+  "isOriginalColorEdition": false,
+  "isRevival": false,
+  "isPlainCloth": false,
+  "isBattleDamaged": false,
+  "isGoldenArmor": false,
+  "isGold24kEdition": true,
+  "isMangaVersion": false,
+  "isMultiPack": false,
+  "isArticulable": false,
+  "notes": "Shown for the first time in Tamashii 2020",
+  "officialImageUrls": [
+    "https://imagizer.imageshack.com/img922/8299/ak9ATX.jpg",
+    "https://imagizer.imageshack.com/img923/2603/SGYZxA.jpg"
+  ],
+  "events": [
+    {
+      "id": 1,
+      "date": "2020-11-04",
+      "type": "ANNOUNCEMENT",
+      "region": "JP",
+      "description": "First announced as a possible future release."
+    }
+  ],
+  "createdAt": "2026-01-21T10:08:38.564349Z",
+  "updatedAt": "2026-01-21T10:08:38.564349Z"
+}

@@ -3,6 +3,8 @@ package com.mesofi.mythclothapi.distributors;
 import java.net.URI;
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,7 +20,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,6 +65,6 @@ public class DistributorController {
   @DeleteMapping("/{id}")
   public ResponseEntity<?> removeDistributor(@PathVariable Long id) {
     service.removeDistributor(id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }
