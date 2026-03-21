@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -223,18 +224,18 @@ public class FigurineScenarioExtension
 
   private RestClient retrieveRestClient(ExtensionContext context) {
     // Get Spring context
-    var applicationContext = SpringExtension.getApplicationContext(context);
+    Environment environment = SpringExtension.getApplicationContext(context).getEnvironment();
 
     // Get random port
-    Integer port =
-        applicationContext.getEnvironment().getProperty("local.server.port", Integer.class);
+    Integer port = environment.getProperty("local.server.port", Integer.class);
+    String contextPath = environment.getProperty("server.servlet.context-path", String.class);
 
     if (port == null) {
       throw new IllegalStateException("local.server.port not available");
     }
 
     // Build RestClient
-    return RestClient.builder().baseUrl("http://localhost:" + port).build();
+    return RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
   }
 
   private boolean hasSupplierIdPlaceholder(JsonNode node) {

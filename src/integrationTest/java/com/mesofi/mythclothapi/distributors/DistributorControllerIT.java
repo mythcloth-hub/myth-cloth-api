@@ -28,8 +28,11 @@ public class DistributorControllerIT {
 
   private final RestClient rest;
 
-  public DistributorControllerIT(@Value("${local.server.port}") int port) {
-    this.rest = RestClient.builder().baseUrl("http://localhost:" + port).build();
+  public DistributorControllerIT(
+      @Value("${local.server.port}") int port,
+      @Value("${server.servlet.context-path}") String contextPath) {
+
+    this.rest = RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
   }
 
   @Test

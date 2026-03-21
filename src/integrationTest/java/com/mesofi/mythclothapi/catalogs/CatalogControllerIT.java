@@ -30,8 +30,11 @@ public class CatalogControllerIT {
   private final RestClient rest;
 
   // Inject random port and build RestClient once
-  public CatalogControllerIT(@Value("${local.server.port}") int port) {
-    this.rest = RestClient.builder().baseUrl("http://localhost:" + port).build();
+  public CatalogControllerIT(
+      @Value("${local.server.port}") int port,
+      @Value("${server.servlet.context-path}") String contextPath) {
+
+    this.rest = RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
   }
 
   @Test
