@@ -648,6 +648,230 @@ public class FigurineServiceTest {
   }
 
   @Test
+  void updateFigurine_shouldThrowException_whenFigurineDoesNotExist() {
+    // Arrange
+    when(figurineRepository.findById(99L)).thenReturn(Optional.empty());
+
+    DistributorReq distributorReq =
+        new DistributorReq(1L, CurrencyCode.JPY, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.updateFigurine(99L, req))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found")
+        .extracting(ex -> ((FigurineNotFoundException) ex).getId())
+        .isEqualTo(99L);
+
+    verify(figurineRepository).findById(99L);
+  }
+
+  @Test
+  void updateFigurine_shouldUpdateAndReturnFigurine_whenRequestIsValid() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    Distributor distributor = loadDistributors().getFirst();
+
+    FigurineDistributor existingDistributor = new FigurineDistributor();
+    existingDistributor.setDistributor(distributor);
+    existingDistributor.setCurrency(JPY);
+    existingDistributor.setPrice(16000d);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Pegasus Seiya");
+    existingFigurine.setDistributors(new java.util.ArrayList<>(List.of(existingDistributor)));
+    existingFigurine.setEvents(new java.util.ArrayList<>());
+    existingFigurine.setCreationDate(Instant.parse("2026-01-01T00:00:00Z"));
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(existingFigurine);
+
+    DistributorReq distributorReq =
+        new DistributorReq(1L, CurrencyCode.JPY, 18000d, null, null, null, null);
+    FigurineReq req = createFigurine("Dragon Shiryu", distributorReq, 1L, 1L, 1L);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(1L, req);
+
+    // Assert
+    assertThat(figurineResp).isNotNull();
+    assertThat(figurineResp.id()).isEqualTo(1L);
+    assertThat(figurineResp.name()).isEqualTo("Dragon Shiryu");
+    assertThat(figurineResp.distributors().size()).isEqualTo(1);
+    assertThat(figurineResp.distributors().getFirst().price()).isEqualTo(18000d);
+    assertThat(figurineResp.distributors().getFirst().priceWithTax()).isEqualTo(18000d);
+
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(figurineCaptor.capture());
+    assertThat(figurineCaptor.getValue().getCreationDate())
+        .isEqualTo(Instant.parse("2026-01-01T00:00:00Z"));
+
+    verify(figurineRepository).findById(1L);
+    verify(distributorRepository).findAll();
+    verify(distributionRepository).findAll();
+    verify(lineUpRepository).findAll();
+    verify(seriesRepository).findAll();
+    verify(groupRepository).findAll();
+    verify(anniversaryRepository).findAll();
+  }
+
+  @Test
+  void updateFigurine_shouldUpdateExistingDistributor_whenCurrencyCodeMatches() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    Distributor distributor = loadDistributors().getFirst();
+
+    FigurineDistributor existingDistributor = new FigurineDistributor();
+    existingDistributor.setDistributor(distributor);
+    existingDistributor.setCurrency(JPY);
+    existingDistributor.setPrice(16000d);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Pegasus Seiya");
+    existingFigurine.setDistributors(new java.util.ArrayList<>(List.of(existingDistributor)));
+    existingFigurine.setEvents(new java.util.ArrayList<>());
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(existingFigurine);
+
+    DistributorReq distributorReq =
+        new DistributorReq(1L, CurrencyCode.JPY, 20000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+
+    // Act
+    figurineService.updateFigurine(1L, req);
+
+    // Assert
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(figurineCaptor.capture());
+
+    Figurine savedFigurine = figurineCaptor.getValue();
+    assertThat(savedFigurine.getDistributors().size()).isEqualTo(1);
+    assertThat(savedFigurine.getDistributors().getFirst().getCurrency()).isEqualTo(JPY);
+    assertThat(savedFigurine.getDistributors().getFirst().getPrice()).isEqualTo(20000d);
+  }
+
+  @Test
+  void updateFigurine_shouldAddNewDistributor_whenCurrencyCodeIsNew() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    Distributor distributor = loadDistributors().getFirst();
+
+    FigurineDistributor existingDistributor = new FigurineDistributor();
+    existingDistributor.setDistributor(distributor);
+    existingDistributor.setCurrency(JPY);
+    existingDistributor.setPrice(16000d);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Pegasus Seiya");
+    existingFigurine.setDistributors(new java.util.ArrayList<>(List.of(existingDistributor)));
+    existingFigurine.setEvents(new java.util.ArrayList<>());
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(existingFigurine);
+
+    DistributorReq distributorReq =
+        new DistributorReq(1L, CurrencyCode.USD, 150d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+
+    // Act
+    figurineService.updateFigurine(1L, req);
+
+    // Assert
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(figurineCaptor.capture());
+
+    Figurine savedFigurine = figurineCaptor.getValue();
+    assertThat(savedFigurine.getDistributors().size()).isEqualTo(2);
+    assertThat(savedFigurine.getDistributors().get(1).getCurrency()).isEqualTo(USD);
+    assertThat(savedFigurine.getDistributors().get(1).getPrice()).isEqualTo(150d);
+    assertThat(savedFigurine.getDistributors().get(1).getFigurine()).isNotNull();
+  }
+
+  @Test
+  void deleteFigurine_shouldThrowException_whenFigurineDoesNotExist() {
+    // Arrange
+    when(figurineRepository.findById(99L)).thenReturn(Optional.empty());
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.deleteFigurine(99L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found")
+        .extracting(ex -> ((FigurineNotFoundException) ex).getId())
+        .isEqualTo(99L);
+
+    verify(figurineRepository).findById(99L);
+    verify(figurineRepository, never()).delete(any(Figurine.class));
+  }
+
+  @Test
+  void deleteFigurine_shouldDeleteFigurine_whenFigurineExists() {
+    // Arrange
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Pegasus Seiya");
+    existingFigurine.setDistributors(List.of());
+    existingFigurine.setEvents(List.of());
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(existingFigurine));
+
+    // Act
+    figurineService.deleteFigurine(1L);
+
+    // Assert
+    verify(figurineRepository).findById(1L);
+    verify(figurineRepository).delete(existingFigurine);
+  }
+
+  @Test
   void calculatePriceWithTax_shouldReturnNull_whenDistributorIsNull() {
     // Act
     Double priceWithTax = figurineService.calculatePriceWithTax(null);
