@@ -8,6 +8,7 @@ import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.U
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,6 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
@@ -534,6 +538,113 @@ public class FigurineServiceTest {
     assertThat(figurineResp.updatedAt()).isEqualTo(Instant.parse("2026-01-02T00:00:00Z"));
 
     verify(figurineRepository).findById(1L);
+  }
+
+  @Test
+  void readFigurines_shouldReturnMappedPage_whenFigurinesExist() {
+    // Arrange
+    int page = 0;
+    int size = 2;
+    PageRequest pageRequest = PageRequest.of(page, size);
+
+    Distributor distributor = loadDistributors().getFirst();
+
+    FigurineDistributor figurineDistributor1 = new FigurineDistributor();
+    figurineDistributor1.setDistributor(distributor);
+    figurineDistributor1.setCurrency(JPY);
+    figurineDistributor1.setPrice(16000d);
+    figurineDistributor1.setReleaseDate(LocalDate.of(2026, 3, 3));
+
+    Figurine figurine1 = new Figurine();
+    figurine1.setId(1L);
+    figurine1.setNormalizedName("Pegasus Seiya");
+    figurine1.setDistributors(List.of(figurineDistributor1));
+    figurine1.setEvents(List.of());
+    figurine1.setCreationDate(Instant.parse("2026-01-01T00:00:00Z"));
+    figurine1.setUpdateDate(Instant.parse("2026-01-02T00:00:00Z"));
+
+    FigurineDistributor figurineDistributor2 = new FigurineDistributor();
+    figurineDistributor2.setDistributor(distributor);
+    figurineDistributor2.setCurrency(JPY);
+    figurineDistributor2.setPrice(20000d);
+    figurineDistributor2.setReleaseDate(LocalDate.of(2026, 3, 3));
+
+    Figurine figurine2 = new Figurine();
+    figurine2.setId(2L);
+    figurine2.setNormalizedName("Dragon Shiryu");
+    figurine2.setDistributors(List.of(figurineDistributor2));
+    figurine2.setEvents(List.of());
+    figurine2.setCreationDate(Instant.parse("2026-01-03T00:00:00Z"));
+    figurine2.setUpdateDate(Instant.parse("2026-01-04T00:00:00Z"));
+
+    Page<Figurine> figurinePage = new PageImpl<>(List.of(figurine1, figurine2), pageRequest, 5);
+    when(figurineRepository.findAll(pageRequest)).thenReturn(figurinePage);
+
+    // Act
+    Page<FigurineResp> responsePage = figurineService.readFigurines(page, size);
+
+    // Assert
+    assertThat(responsePage).isNotNull();
+    assertThat(responsePage.getNumber()).isEqualTo(0);
+    assertThat(responsePage.getSize()).isEqualTo(2);
+    assertThat(responsePage.getTotalElements()).isEqualTo(5);
+    assertThat(responsePage.getContent().size()).isEqualTo(2);
+
+    FigurineResp first = responsePage.getContent().getFirst();
+    assertThat(first)
+        .extracting(FigurineResp::id, FigurineResp::name, FigurineResp::displayableName)
+        .containsExactly(1L, "Pegasus Seiya", "FIXME");
+    assertThat(first.distributors().getFirst().priceWithTax()).isEqualTo(17600d);
+
+    FigurineResp second = responsePage.getContent().get(1);
+    assertThat(second)
+        .extracting(FigurineResp::id, FigurineResp::name, FigurineResp::displayableName)
+        .containsExactly(2L, "Dragon Shiryu", "FIXME");
+    assertThat(second.distributors().getFirst().priceWithTax()).isEqualTo(22000d);
+
+    verify(figurineRepository).findAll(pageRequest);
+  }
+
+  @Test
+  void readFigurines_shouldReturnEmptyPage_whenNoFigurinesExist() {
+    // Arrange
+    int page = 1;
+    int size = 10;
+    PageRequest pageRequest = PageRequest.of(page, size);
+
+    when(figurineRepository.findAll(pageRequest)).thenReturn(Page.empty(pageRequest));
+
+    // Act
+    Page<FigurineResp> responsePage = figurineService.readFigurines(page, size);
+
+    // Assert
+    assertThat(responsePage).isNotNull();
+    assertThat(responsePage.getNumber()).isEqualTo(1);
+    assertThat(responsePage.getSize()).isEqualTo(10);
+    assertThat(responsePage.getTotalElements()).isZero();
+    assertThat(responsePage.getContent().size()).isZero();
+
+    verify(figurineRepository).findAll(pageRequest);
+  }
+
+  @Test
+  void readFigurines_shouldThrowException_whenPageIsNegative() {
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.readFigurines(-1, 10))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Page index must not be less than zero");
+
+    verify(figurineRepository, never()).findAll(any(PageRequest.class));
+  }
+
+  @Test
+  void readFigurines_shouldThrowException_whenSizeIsZero() {
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.readFigurines(0, 0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Page size must not be less than one");
+
+    verify(figurineRepository, never()).findAll(any(PageRequest.class));
   }
 
   @Test
