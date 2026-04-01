@@ -8,23 +8,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 import jakarta.validation.ConstraintViolationException;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
-import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
@@ -38,6 +33,7 @@ import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
+import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
@@ -52,22 +48,23 @@ import com.mesofi.mythclothapi.utils.MethodValidationTestConfig;
     classes = {FigurineService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 public class FigurineServiceTest {
 
+  @Autowired private FigurineService figurineService;
+  @Autowired private FigurineMapper mapper;
+
   @MockitoBean private DistributorRepository distributorRepository;
   @MockitoBean private DistributionRepository distributionRepository;
   @MockitoBean private LineUpRepository lineUpRepository;
   @MockitoBean private SeriesRepository seriesRepository;
   @MockitoBean private GroupRepository groupRepository;
   @MockitoBean private AnniversaryRepository anniversaryRepository;
-  @MockitoBean private FigurineRepository repository;
+  @MockitoBean private FigurineRepository figurineRepository;
   @MockitoBean private CurrencyRegionResolver currencyRegionResolver;
-
-  @Autowired private FigurineService service;
-  @Autowired private FigurineMapper mapper;
 
   @Test
   void createFigurine_shouldThrowException_whenFigurineIsNull() {
+
     // Act + Assert
-    assertThatThrownBy(() -> service.createFigurine(null))
+    assertThatThrownBy(() -> figurineService.createFigurine(null))
         .isInstanceOf(ConstraintViolationException.class)
         .hasMessageContaining("createFigurine.request")
         .hasMessageContaining("must not be null");
@@ -76,46 +73,130 @@ public class FigurineServiceTest {
   @Test
   void createFigurine_shouldThrowException_whenAllFieldsAreNull() {
     // Arrange
-    FigurineReq req = createFigurine(null, null, 0, 0, 0, 0, 0);
+    FigurineReq req = createFigurine(null, null, null, null, null);
 
     // Act + Assert
-    assertThatThrownBy(() -> service.createFigurine(req))
-        .isInstanceOf(ConstraintViolationException.class)
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
         .hasMessageContaining("createFigurine.request.name")
         .hasMessageContaining("must not be blank")
         .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("At least one distributor must be provided");
+        .hasMessageContaining("At least one distributor must be provided")
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
   }
 
-  @ParameterizedTest
-  @MethodSource("provideInvalidDistributors")
-  void createFigurine_shouldThrowException_whenDistributorsAreNullOrEmpty(
-      List<DistributorReq> list) {
+  @Test
+  void createFigurine_shouldThrowException_whenNameIsTooLong() {
     // Arrange
-    FigurineReq req = createFigurine("Pegasus Seiya", list, 0, 0, 0, 0, 0);
+    FigurineReq req = createFigurine("o".repeat(101), null, null, null, null);
 
     // Act + Assert
-    assertThatThrownBy(() -> service.createFigurine(req))
-        .isInstanceOf(ConstraintViolationException.class)
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.name")
+        .hasMessageContaining("Name must not exceed 100 characters")
         .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("At least one distributor must be provided");
+        .hasMessageContaining("At least one distributor must be provided")
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
   }
 
   @Test
-  void createFigurine_shouldThrowException_whenDistributorsIdIsNotPositive() {
+  void createFigurine_shouldThrowException_whenDistributorsSupplierIdIsZero() {
     // Arrange
-    DistributorReq info = new DistributorReq(0L, null, null, null, null, null, false);
-    FigurineReq req = createFigurine("Pegasus Seiya", List.of(info), 0, 0, 0, 0, 0);
+    DistributorReq distributorReq = new DistributorReq(0L, null, -3d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, null, null, null);
 
     // Act + Assert
-    assertThatThrownBy(() -> service.createFigurine(req))
-        .isInstanceOf(ConstraintViolationException.class)
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
         .hasMessageContaining("createFigurine.request.distributors[0].supplierId")
-        .hasMessageContaining("must be greater than 0");
+        .hasMessageContaining("must be greater than 0")
+        .hasMessageContaining("createFigurine.request.distributors[0].price")
+        .hasMessageContaining("must be greater than 0")
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
   }
 
   @Test
-  void createFigurine_shouldCreateNewFigurine_whenInputProvided() {
+  void createFigurine_shouldThrowException_whenDistributorsPriceIsNegative() {
+    // Arrange
+    DistributorReq distributorReq = new DistributorReq(100L, null, -3d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, null, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.distributors[0].price")
+        .hasMessageContaining("must be greater than 0")
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenLineUpIdIsNull() {
+    // Arrange
+    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, null, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenSeriesIdIsNull() {
+    // Arrange
+    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 200L, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.seriesId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenGroupIdIsNull() {
+    // Arrange
+    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 200L, 300L, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("must not be null")
+        .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenGroupIdIsNull_() {
     // Arrange
     CatalogContext catalogContext =
         new CatalogContext(
@@ -134,23 +215,16 @@ public class FigurineServiceTest {
     when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
 
     DistributorReq distributorReq =
-        new DistributorReq(
-            1L,
-            JPY,
-            3500d,
-            LocalDate.of(2025, 1, 1),
-            LocalDate.of(2025, 6, 6),
-            LocalDate.of(2025, 9, 9),
-            true);
-    FigurineReq req = createFigurine("Pegasus Seiya", List.of(distributorReq), 1, 1, 1, 1, 1);
+        new DistributorReq(1L, CurrencyCode.JPY, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
 
     Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
     figurineMapped.setId(1L);
 
-    when(repository.save(any(Figurine.class))).thenReturn(figurineMapped);
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(figurineMapped);
 
     // Act
-    FigurineResp figurineResp = service.createFigurine(req);
+    FigurineResp figurineResp = figurineService.createFigurine(req);
 
     // Assert
     assertThat(figurineResp)
@@ -190,29 +264,29 @@ public class FigurineServiceTest {
                 new FigurineDistributorResp(
                     new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
                     JPY,
-                    3500d,
-                    3850.0000000000005d,
-                    LocalDate.of(2025, 1, 1),
-                    LocalDate.of(2025, 6, 6),
-                    LocalDate.of(2025, 9, 9),
-                    true)),
+                    16000.0d,
+                    16000.0d,
+                    null,
+                    null,
+                    null,
+                    false)),
             null,
-            new CatalogResp(1, "Tamashii Web Shop"),
+            null,
             new CatalogResp(1, "Myth Cloth EX"),
             new CatalogResp(1, "Saint Seiya"),
             new CatalogResp(1, "Bronze Saint V3"),
-            new AnniversaryResp(1, "Masami Kurumada 40th Anniversar", 40),
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            true,
-            "Test notes",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
             null,
             null,
             List.of(),
@@ -225,7 +299,7 @@ public class FigurineServiceTest {
     verify(seriesRepository).findAll();
     verify(groupRepository).findAll();
     verify(anniversaryRepository).findAll();
-    verify(repository).save(any(Figurine.class));
+    verify(figurineRepository).save(any(Figurine.class));
   }
 
   private List<Distributor> loadDistributors() {
@@ -272,38 +346,28 @@ public class FigurineServiceTest {
     return List.of(anniversary1);
   }
 
-  private static Stream<Arguments> provideInvalidDistributors() {
-    return Stream.of(Arguments.of((List<DistributorReq>) null), Arguments.of(List.of()));
-  }
-
   private FigurineReq createFigurine(
-      String name,
-      List<DistributorReq> distributors,
-      long distributionId,
-      long lineupId,
-      long seriesId,
-      long groupId,
-      long anniversaryId) {
+      String name, DistributorReq distributorReq, Long lineUpId, Long seriesId, Long groupId) {
     return new FigurineReq(
         name,
-        distributors,
+        Objects.isNull(distributorReq) ? null : List.of(distributorReq),
         null,
-        distributionId,
-        lineupId,
+        null,
+        lineUpId,
         seriesId,
         groupId,
-        anniversaryId,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        "Test notes",
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
         null,
         null);
   }
