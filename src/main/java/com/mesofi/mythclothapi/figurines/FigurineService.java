@@ -446,31 +446,29 @@ public class FigurineService {
    */
   private void createDefaultEvents(Figurine figurine) {
     // creates the default events ...
-    if (figurine.getDistributors() != null && !figurine.getDistributors().isEmpty()) {
-      FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
+    FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
 
-      Optional.ofNullable(figurineDistributor.getAnnouncementDate())
-          .ifPresent(
-              announcementDate ->
-                  addDefaultEvent(
-                      "First announced as a possible future release.",
-                      announcementDate,
-                      ANNOUNCEMENT,
-                      figurine));
-      Optional.ofNullable(figurineDistributor.getPreorderDate())
-          .ifPresent(
-              preorderDate ->
-                  addDefaultEvent(
-                      "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
-      Optional.ofNullable(figurineDistributor.getReleaseDate())
-          .ifPresent(
-              releaseDate ->
-                  addDefaultEvent(
-                      "The global release date has been officially announced.",
-                      releaseDate,
-                      RELEASE,
-                      figurine));
-    }
+    Optional.ofNullable(figurineDistributor.getAnnouncementDate())
+        .ifPresent(
+            announcementDate ->
+                addDefaultEvent(
+                    "First announced as a possible future release.",
+                    announcementDate,
+                    ANNOUNCEMENT,
+                    figurine));
+    Optional.ofNullable(figurineDistributor.getPreorderDate())
+        .ifPresent(
+            preorderDate ->
+                addDefaultEvent(
+                    "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
+    Optional.ofNullable(figurineDistributor.getReleaseDate())
+        .ifPresent(
+            releaseDate ->
+                addDefaultEvent(
+                    "The global release date has been officially announced.",
+                    releaseDate,
+                    RELEASE,
+                    figurine));
   }
 
   /**

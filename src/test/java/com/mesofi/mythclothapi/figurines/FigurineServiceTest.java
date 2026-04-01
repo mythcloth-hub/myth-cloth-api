@@ -8,12 +8,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
 import jakarta.validation.ConstraintViolationException;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -34,6 +36,7 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
@@ -299,7 +302,170 @@ public class FigurineServiceTest {
     verify(seriesRepository).findAll();
     verify(groupRepository).findAll();
     verify(anniversaryRepository).findAll();
-    verify(figurineRepository).save(any(Figurine.class));
+
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+
+    verify(figurineRepository).save(figurineCaptor.capture());
+
+    Figurine savedFigurine = figurineCaptor.getValue();
+
+    assertThat(savedFigurine.getUpdateDate()).isNotNull();
+    assertThat(savedFigurine.getCreationDate()).isNotNull();
+    assertThat(savedFigurine.getEvents()).isNotNull();
+  }
+
+  @Test
+  void
+      createFigurine_shouldCreateDistributorEventsAndSetBackReferences_whenDistributorDatesAreProvided() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+    when(currencyRegionResolver.resolveCountry(JPY)).thenReturn(JP);
+
+    DistributorReq distributorReq =
+        new DistributorReq(
+            1L,
+            CurrencyCode.JPY,
+            16000d,
+            LocalDate.of(2026, 1, 1),
+            LocalDate.of(2026, 2, 2),
+            LocalDate.of(2026, 3, 3),
+            null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+
+    Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
+    figurineMapped.setId(1L);
+
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(figurineMapped);
+
+    // Act
+    FigurineResp figurineResp = figurineService.createFigurine(req);
+
+    // Assert
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            List.of(
+                new FigurineDistributorResp(
+                    new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
+                    JPY,
+                    16000.0d,
+                    17600.0d,
+                    LocalDate.of(2026, 1, 1),
+                    LocalDate.of(2026, 2, 2),
+                    LocalDate.of(2026, 3, 3),
+                    false)),
+            null,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            new CatalogResp(1, "Bronze Saint V3"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    verify(distributorRepository).findAll();
+    verify(distributionRepository).findAll();
+    verify(lineUpRepository).findAll();
+    verify(seriesRepository).findAll();
+    verify(groupRepository).findAll();
+    verify(anniversaryRepository).findAll();
+
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+
+    verify(figurineRepository).save(figurineCaptor.capture());
+
+    Figurine figurineToBeSaved = figurineCaptor.getValue();
+
+    assertThat(figurineToBeSaved.getUpdateDate()).isNotNull();
+    assertThat(figurineToBeSaved.getCreationDate()).isNotNull();
+
+    assertThat(figurineToBeSaved.getEvents().size()).isEqualTo(3);
+    assertThat(figurineToBeSaved.getEvents().getFirst().getDescription())
+        .isEqualTo("First announced as a possible future release.");
+    assertThat(figurineToBeSaved.getEvents().getFirst().getEventDate())
+        .isEqualTo(LocalDate.of(2026, 1, 1));
+    assertThat(figurineToBeSaved.getEvents().getFirst().getType())
+        .isEqualTo(FigurineEventType.ANNOUNCEMENT);
+    assertThat(figurineToBeSaved.getEvents().getFirst().getRegion()).isEqualTo(JP);
+    assertThat(figurineToBeSaved.getEvents().get(1).getDescription())
+        .isEqualTo("Pre-orders are officially open.");
+    assertThat(figurineToBeSaved.getEvents().get(1).getEventDate())
+        .isEqualTo(LocalDate.of(2026, 2, 2));
+    assertThat(figurineToBeSaved.getEvents().get(1).getType())
+        .isEqualTo(FigurineEventType.PREORDER_OPEN);
+    assertThat(figurineToBeSaved.getEvents().get(1).getRegion()).isEqualTo(JP);
+    assertThat(figurineToBeSaved.getEvents().get(2).getDescription())
+        .isEqualTo("The global release date has been officially announced.");
+    assertThat(figurineToBeSaved.getEvents().get(2).getEventDate())
+        .isEqualTo(LocalDate.of(2026, 3, 3));
+    assertThat(figurineToBeSaved.getEvents().get(2).getType()).isEqualTo(FigurineEventType.RELEASE);
+    assertThat(figurineToBeSaved.getEvents().get(2).getRegion()).isEqualTo(JP);
+    figurineToBeSaved
+        .getEvents()
+        .forEach(figurineEvent -> assertThat(figurineEvent.getFigurine()).isNotNull());
+
+    assertThat(figurineToBeSaved.getDistributors().size()).isEqualTo(1);
+    figurineToBeSaved
+        .getDistributors()
+        .forEach(distributor -> assertThat(distributor.getFigurine()).isNotNull());
   }
 
   private List<Distributor> loadDistributors() {
