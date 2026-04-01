@@ -1,16 +1,21 @@
 package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.EUR;
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.USD;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -36,11 +41,13 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -466,6 +473,205 @@ public class FigurineServiceTest {
     figurineToBeSaved
         .getDistributors()
         .forEach(distributor -> assertThat(distributor.getFigurine()).isNotNull());
+  }
+
+  @Test
+  void readFigurine_shouldThrowException_whenFigurineDoesNotExist() {
+    // Arrange
+    when(figurineRepository.findById(0L)).thenReturn(Optional.empty());
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.readFigurine(0L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found")
+        .extracting(ex -> ((FigurineNotFoundException) ex).getId())
+        .isEqualTo(0L);
+
+    verify(figurineRepository).findById(0L);
+  }
+
+  @Test
+  void readFigurine_shouldReturnFigurine_whenFigurineExists() {
+    // Arrange
+    Distributor distributor = loadDistributors().getFirst();
+
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setDistributor(distributor);
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+    figurineDistributor.setReleaseDate(LocalDate.of(2026, 3, 3));
+
+    Figurine figurine = new Figurine();
+    figurine.setId(1L);
+    figurine.setNormalizedName("Pegasus Seiya");
+    figurine.setDistributors(List.of(figurineDistributor));
+    figurine.setEvents(List.of());
+    figurine.setCreationDate(Instant.parse("2026-01-01T00:00:00Z"));
+    figurine.setUpdateDate(Instant.parse("2026-01-02T00:00:00Z"));
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(figurine));
+
+    // Act
+    FigurineResp figurineResp = figurineService.readFigurine(1L);
+
+    // Assert
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(FigurineResp::id, FigurineResp::name, FigurineResp::displayableName)
+        .containsExactly(1L, "Pegasus Seiya", "FIXME");
+
+    assertThat(figurineResp.distributors().size()).isEqualTo(1);
+
+    FigurineDistributorResp distributorResp = figurineResp.distributors().getFirst();
+    assertThat(distributorResp)
+        .extracting(
+            FigurineDistributorResp::currency,
+            FigurineDistributorResp::price,
+            FigurineDistributorResp::priceWithTax)
+        .containsExactly(JPY, 16000d, 17600d);
+
+    assertThat(figurineResp.createdAt()).isEqualTo(Instant.parse("2026-01-01T00:00:00Z"));
+    assertThat(figurineResp.updatedAt()).isEqualTo(Instant.parse("2026-01-02T00:00:00Z"));
+
+    verify(figurineRepository).findById(1L);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnNull_whenDistributorIsNull() {
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(null);
+
+    // Assert
+    assertThat(priceWithTax).isNull();
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnNull_whenPriceIsNullOrNonPositive() {
+    // Assert all invalid price inputs in one test to keep behavior coverage concise.
+    for (Double price : java.util.Arrays.asList(null, -4d, 0d)) {
+      FigurineDistributor figurineDistributor = new FigurineDistributor();
+      figurineDistributor.setPrice(price);
+
+      Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+      assertThat(priceWithTax).isNull();
+    }
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPYAndReleaseDateIsNull() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(16000d);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPYAndReleaseDateBefore1997() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+    figurineDistributor.setReleaseDate(LocalDate.of(1995, 1, 1));
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(16480d);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPYAndReleaseDateBefore2014() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+    figurineDistributor.setReleaseDate(LocalDate.of(2014, 1, 1));
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(16800d);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPYAndReleaseDateBefore2019() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+    figurineDistributor.setReleaseDate(LocalDate.of(2019, 1, 1));
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(17280d);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPYAndReleaseDateAfter2019() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setPrice(16000d);
+    figurineDistributor.setReleaseDate(LocalDate.of(2026, 1, 1));
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(17600d);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsMXN() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(MXN);
+    figurineDistributor.setPrice(2500d);
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(2900);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsUSD() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(USD);
+    figurineDistributor.setPrice(150d);
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(150);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsEUR() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setCurrency(EUR);
+    figurineDistributor.setPrice(150d);
+
+    // Act
+    Double priceWithTax = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(150);
   }
 
   private List<Distributor> loadDistributors() {
