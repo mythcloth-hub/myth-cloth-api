@@ -196,7 +196,7 @@ public class FigurineServiceTest {
   }
 
   @Test
-  void createFigurine_shouldThrowException_whenGroupIdIsNull_() {
+  void createFigurine_shouldPersistAndReturnFigurine_whenRequestIsValid() {
     // Arrange
     CatalogContext catalogContext =
         new CatalogContext(
