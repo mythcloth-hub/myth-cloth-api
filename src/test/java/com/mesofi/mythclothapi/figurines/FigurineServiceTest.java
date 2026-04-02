@@ -9,6 +9,7 @@ import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.U
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +51,7 @@ import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
@@ -99,9 +101,103 @@ public class FigurineServiceTest {
     when(seriesRepository.findAll()).thenReturn(catalogContext.series());
     when(groupRepository.findAll()).thenReturn(catalogContext.groups());
     when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+    when(currencyRegionResolver.resolveCountry(JPY)).thenReturn(JP);
+    when(currencyRegionResolver.resolveCountry(MXN)).thenReturn(MX);
+    when(figurineRepository.findByLegacyName(anyString())).thenReturn(Optional.empty());
+    when(figurineRepository.saveAllAndFlush(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     // Act
     figurineService.importFromPublicDrive();
+
+    // Assert
+    verify(distributorRepository).findAll();
+    verify(distributionRepository).findAll();
+    verify(lineUpRepository).findAll();
+    verify(seriesRepository).findAll();
+    verify(groupRepository).findAll();
+    verify(anniversaryRepository).findAll();
+    verify(figurineRepository).findByLegacyName("Poseidon EX OCE");
+    verify(figurineRepository).findByLegacyName("Libra Shiryu ~Inheritor of the Gold Cloth~ EX");
+    verify(figurineRepository).findByLegacyName("Cygnus Hyoga (God Cloth) EX");
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<Figurine>> figurinesCaptor = ArgumentCaptor.forClass(List.class);
+
+    verify(figurineRepository).saveAllAndFlush(figurinesCaptor.capture());
+
+    List<Figurine> importedFigurines = figurinesCaptor.getValue();
+    assertThat(importedFigurines).isNotNull();
+    assertThat(importedFigurines.size()).isEqualTo(12);
+    importedFigurines.forEach(this::assertImportedFigurineIsReadyForPersistence);
+
+    Figurine poseidon = findImportedFigurine(importedFigurines, "Poseidon EX OCE");
+    assertThat(poseidon.getNormalizedName()).isEqualTo("Poseidon");
+    assertThat(poseidon.getTamashiiUrl()).isEqualTo("https://tamashiiweb.com/item/15543");
+    assertThat(poseidon.getDistribution().getDescription()).isEqualTo("Tamashii Nations");
+    assertThat(poseidon.getLineup().getDescription()).isEqualTo("Myth Cloth EX");
+    assertThat(poseidon.getSeries().getDescription()).isEqualTo("Saint Seiya");
+    assertThat(poseidon.getGroup().getDescription()).isEqualTo("Poseidon Scale");
+    assertThat(poseidon.getMetalBody()).isTrue();
+    assertThat(poseidon.getOce()).isTrue();
+    assertThat(poseidon.getOfficialImages().size()).isEqualTo(10);
+    assertThat(poseidon.getEvents().size()).isEqualTo(5);
+
+    FigurineDistributor poseidonJapan = findDistributor(poseidon, JPY);
+    assertThat(poseidonJapan.getDistributor().getCountry()).isEqualTo(JP);
+    assertThat(poseidonJapan.getPrice()).isEqualTo(25000d);
+    assertThat(poseidonJapan.getAnnouncementDate()).isEqualTo(LocalDate.of(2024, 11, 15));
+    assertThat(poseidonJapan.getPreorderDate()).isEqualTo(LocalDate.of(2025, 8, 19));
+    assertThat(poseidonJapan.getReleaseDate()).isEqualTo(LocalDate.of(2025, 11, 13));
+    assertThat(poseidonJapan.isReleaseDateConfirmed()).isTrue();
+
+    FigurineDistributor poseidonMexico = findDistributor(poseidon, MXN);
+    assertThat(poseidonMexico.getDistributor().getCountry()).isEqualTo(MX);
+    assertThat(poseidonMexico.getPrice()).isEqualTo(5000d);
+    assertThat(poseidonMexico.getPreorderDate()).isEqualTo(LocalDate.of(2025, 10, 27));
+    assertThat(poseidonMexico.getReleaseDate()).isNull();
+
+    FigurineEvent poseidonCustomEvent =
+        findEventWithDescription(poseidon, LocalDate.of(2025, 10, 27), "Special sale via");
+    assertThat(poseidonCustomEvent.getFigurine()).isSameAs(poseidon);
+
+    FigurineEvent poseidonAnnouncement =
+        findEvent(poseidon, LocalDate.of(2024, 11, 15), FigurineEventType.ANNOUNCEMENT);
+    assertThat(poseidonAnnouncement.getDescription())
+        .isEqualTo("First announced as a possible future release.");
+    assertThat(poseidonAnnouncement.getRegion()).isEqualTo(JP);
+
+    FigurineEvent poseidonPreorder =
+        findEvent(poseidon, LocalDate.of(2025, 8, 19), FigurineEventType.PREORDER_OPEN);
+    assertThat(poseidonPreorder.getDescription()).isEqualTo("Pre-orders are officially open.");
+    assertThat(poseidonPreorder.getRegion()).isEqualTo(JP);
+
+    FigurineEvent poseidonRelease =
+        findEvent(poseidon, LocalDate.of(2025, 11, 13), FigurineEventType.RELEASE);
+    assertThat(poseidonRelease.getDescription())
+        .isEqualTo("The global release date has been officially announced.");
+    assertThat(poseidonRelease.getRegion()).isEqualTo(JP);
+
+    Figurine libraShiryu =
+        findImportedFigurine(importedFigurines, "Libra Shiryu ~Inheritor of the Gold Cloth~ EX");
+    assertThat(libraShiryu.getDistribution().getDescription()).isEqualTo("Tamashii Web Shop");
+    assertThat(libraShiryu.getGroup().getDescription()).isEqualTo("Gold Inheritor");
+    assertThat(libraShiryu.getEvents().size()).isEqualTo(4);
+
+    FigurineDistributor libraJapan = findDistributor(libraShiryu, JPY);
+    assertThat(libraJapan.getPrice()).isEqualTo(24000d);
+    assertThat(libraJapan.getReleaseDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+    assertThat(libraJapan.isReleaseDateConfirmed()).isFalse();
+
+    FigurineEvent libraRelease =
+        findEvent(libraShiryu, LocalDate.of(2026, 8, 1), FigurineEventType.RELEASE);
+    assertThat(libraRelease.getRegion()).isEqualTo(JP);
+
+    Figurine cygnusHyoga = findImportedFigurine(importedFigurines, "Cygnus Hyoga (God Cloth) EX");
+    assertThat(cygnusHyoga.getDistribution()).isNull();
+    assertThat(cygnusHyoga.getGroup().getDescription()).isEqualTo("Bronze Saint V4");
+    assertThat(cygnusHyoga.getEvents().size()).isZero();
+    assertThat(cygnusHyoga.getOfficialImages().size()).isEqualTo(1);
   }
 
   @Test
@@ -1037,6 +1133,76 @@ public class FigurineServiceTest {
 
     // Assert
     assertThat(priceWithTax).isEqualTo(150);
+  }
+
+  private void assertImportedFigurineIsReadyForPersistence(Figurine figurine) {
+    assertThat(figurine.getCreationDate()).isNotNull();
+    assertThat(figurine.getUpdateDate()).isNotNull();
+    assertThat(figurine.getDistributors()).isNotNull();
+    assertThat(figurine.getDistributors().isEmpty()).isFalse();
+
+    figurine
+        .getDistributors()
+        .forEach(
+            distributor -> {
+              assertThat(distributor.getDistributor()).isNotNull();
+              assertThat(distributor.getFigurine()).isSameAs(figurine);
+            });
+
+    figurine
+        .getEvents()
+        .forEach(
+            event -> {
+              assertThat(event.getFigurine()).isSameAs(figurine);
+              assertThat(event.getRegion()).isNotNull();
+            });
+  }
+
+  private Figurine findImportedFigurine(List<Figurine> figurines, String legacyName) {
+    Figurine figurine =
+        figurines.stream()
+            .filter(item -> legacyName.equals(item.getLegacyName()))
+            .findFirst()
+            .orElse(null);
+
+    assertThat(figurine).isNotNull();
+    return figurine;
+  }
+
+  private FigurineDistributor findDistributor(Figurine figurine, CurrencyCode currencyCode) {
+    FigurineDistributor distributor =
+        figurine.getDistributors().stream()
+            .filter(item -> currencyCode == item.getCurrency())
+            .findFirst()
+            .orElse(null);
+
+    assertThat(distributor).isNotNull();
+    return distributor;
+  }
+
+  private FigurineEvent findEvent(Figurine figurine, LocalDate date, FigurineEventType type) {
+    FigurineEvent event =
+        figurine.getEvents().stream()
+            .filter(item -> date.equals(item.getEventDate()))
+            .filter(item -> type == item.getType())
+            .findFirst()
+            .orElse(null);
+
+    assertThat(event).isNotNull();
+    return event;
+  }
+
+  private FigurineEvent findEventWithDescription(
+      Figurine figurine, LocalDate date, String descriptionFragment) {
+    FigurineEvent event =
+        figurine.getEvents().stream()
+            .filter(item -> date.equals(item.getEventDate()))
+            .filter(item -> item.getDescription().contains(descriptionFragment))
+            .findFirst()
+            .orElse(null);
+
+    assertThat(event).isNotNull();
+    return event;
   }
 
   private List<Distributor> loadDistributors() {
