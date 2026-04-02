@@ -1,3 +1,8 @@
+myth-cloth:
+  import:
+    drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
+    file-id: 1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio
+
 spring:
   application:
     name: myth-cloth-api
