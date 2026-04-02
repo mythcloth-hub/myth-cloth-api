@@ -14,6 +14,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -26,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -58,6 +62,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
+import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -82,9 +87,11 @@ public class FigurineServiceTest {
   @MockitoBean private AnniversaryRepository anniversaryRepository;
   @MockitoBean private FigurineRepository figurineRepository;
   @MockitoBean private CurrencyRegionResolver currencyRegionResolver;
+  @MockitoBean private FigurineCsvSource figurineCsvSource;
 
   @Test
-  void importFromPublicDrive_shouldCompleteSuccessfully_whenAllCatalogDataIsAvailable() {
+  void importFromPublicDrive_shouldCompleteSuccessfully_whenAllCatalogDataIsAvailable()
+      throws IOException {
     // Arrange
     CatalogContext catalogContext =
         new CatalogContext(
@@ -104,6 +111,7 @@ public class FigurineServiceTest {
     when(currencyRegionResolver.resolveCountry(JPY)).thenReturn(JP);
     when(currencyRegionResolver.resolveCountry(MXN)).thenReturn(MX);
     when(figurineRepository.findByLegacyName(anyString())).thenReturn(Optional.empty());
+    when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture());
     when(figurineRepository.saveAllAndFlush(any()))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -198,6 +206,146 @@ public class FigurineServiceTest {
     assertThat(cygnusHyoga.getGroup().getDescription()).isEqualTo("Bronze Saint V4");
     assertThat(cygnusHyoga.getEvents().size()).isZero();
     assertThat(cygnusHyoga.getOfficialImages().size()).isEqualTo(1);
+  }
+
+  @Test
+  void importFromPublicDrive_shouldUpdateExistingFigurine_whenLegacyNameAlreadyExists()
+      throws IOException {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+    when(currencyRegionResolver.resolveCountry(JPY)).thenReturn(JP);
+    when(currencyRegionResolver.resolveCountry(MXN)).thenReturn(MX);
+
+    FigurineDistributor existingDistributor = new FigurineDistributor();
+    existingDistributor.setCurrency(USD);
+    existingDistributor.setPrice(100d);
+    existingDistributor.setDistributor(loadDistributors().getFirst());
+
+    FigurineEvent existingEvent = new FigurineEvent();
+    existingEvent.setDescription("Existing timeline event");
+    existingEvent.setEventDate(LocalDate.of(2024, 1, 1));
+    existingEvent.setType(FigurineEventType.RELEASE);
+    existingEvent.setRegion(MX);
+
+    Instant originalCreationDate = Instant.parse("2024-01-01T00:00:00Z");
+    Instant originalUpdateDate = Instant.parse("2024-01-02T00:00:00Z");
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(99L);
+    existingFigurine.setLegacyName("Poseidon EX OCE");
+    existingFigurine.setNormalizedName("Old Poseidon");
+    existingFigurine.setTamashiiUrl("https://example.com/old-poseidon");
+    existingFigurine.setDistribution(catalogContext.distributions().getFirst());
+    existingFigurine.setLineup(catalogContext.lineUps().get(1));
+    existingFigurine.setSeries(catalogContext.series().get(1));
+    existingFigurine.setGroup(catalogContext.groups().getFirst());
+    existingFigurine.setMetalBody(false);
+    existingFigurine.setOce(false);
+    existingFigurine.setRemarks("Old remarks");
+    existingFigurine.setOfficialImages(
+        new java.util.ArrayList<>(List.of("https://example.com/old-image.jpg")));
+    existingFigurine.setDistributors(new java.util.ArrayList<>(List.of(existingDistributor)));
+    existingFigurine.setEvents(new java.util.ArrayList<>(List.of(existingEvent)));
+    existingFigurine.setCreationDate(originalCreationDate);
+    existingFigurine.setUpdateDate(originalUpdateDate);
+
+    when(figurineRepository.findByLegacyName(anyString()))
+        .thenAnswer(
+            invocation -> {
+              String legacyName = invocation.getArgument(0);
+              return "Poseidon EX OCE".equals(legacyName)
+                  ? Optional.of(existingFigurine)
+                  : Optional.empty();
+            });
+    when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture());
+    when(figurineRepository.saveAllAndFlush(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    figurineService.importFromPublicDrive();
+
+    // Assert
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<Figurine>> figurinesCaptor = ArgumentCaptor.forClass(List.class);
+
+    verify(figurineRepository).saveAllAndFlush(figurinesCaptor.capture());
+
+    Figurine updatedPoseidon = findImportedFigurine(figurinesCaptor.getValue(), "Poseidon EX OCE");
+
+    assertThat(updatedPoseidon).isSameAs(existingFigurine);
+    assertThat(updatedPoseidon.getId()).isEqualTo(99L);
+    assertThat(updatedPoseidon.getCreationDate()).isEqualTo(originalCreationDate);
+    assertThat(updatedPoseidon.getUpdateDate()).isAfter(originalUpdateDate);
+
+    assertThat(updatedPoseidon.getNormalizedName()).isEqualTo("Poseidon");
+    assertThat(updatedPoseidon.getTamashiiUrl()).isEqualTo("https://tamashiiweb.com/item/15543");
+    assertThat(updatedPoseidon.getDistribution().getDescription()).isEqualTo("Tamashii Nations");
+    assertThat(updatedPoseidon.getLineup().getDescription()).isEqualTo("Myth Cloth EX");
+    assertThat(updatedPoseidon.getSeries().getDescription()).isEqualTo("Saint Seiya");
+    assertThat(updatedPoseidon.getGroup().getDescription()).isEqualTo("Poseidon Scale");
+    assertThat(updatedPoseidon.getMetalBody()).isTrue();
+    assertThat(updatedPoseidon.getOce()).isTrue();
+    assertThat(updatedPoseidon.getRemarks()).contains("Tamashii 2024");
+    assertThat(updatedPoseidon.getOfficialImages().size()).isEqualTo(10);
+
+    assertThat(updatedPoseidon.getDistributors().size()).isEqualTo(1);
+    assertThat(updatedPoseidon.getDistributors().getFirst()).isSameAs(existingDistributor);
+    assertThat(updatedPoseidon.getDistributors().getFirst().getCurrency()).isEqualTo(USD);
+    assertThat(updatedPoseidon.getDistributors().getFirst().getPrice()).isEqualTo(100d);
+    assertThat(updatedPoseidon.getDistributors().getFirst().getFigurine())
+        .isSameAs(updatedPoseidon);
+
+    assertThat(updatedPoseidon.getEvents().size()).isEqualTo(1);
+    assertThat(updatedPoseidon.getEvents().getFirst()).isSameAs(existingEvent);
+    assertThat(updatedPoseidon.getEvents().getFirst().getDescription())
+        .isEqualTo("Existing timeline event");
+    assertThat(updatedPoseidon.getEvents().getFirst().getFigurine()).isSameAs(updatedPoseidon);
+  }
+
+  @Test
+  void importFromPublicDrive_shouldThrowIllegalStateException_whenCsvSourceOpenFails()
+      throws IOException {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    IOException rootCause = new IOException("boom");
+    when(figurineCsvSource.openReader()).thenThrow(rootCause);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.importFromPublicDrive())
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Unable to read CSV from Google Drive")
+        .hasCause(rootCause);
+
+    verify(figurineRepository, never()).saveAllAndFlush(any());
   }
 
   @Test
@@ -1343,5 +1491,11 @@ public class FigurineServiceTest {
         null,
         null,
         null);
+  }
+
+  private Reader loadImportCsvFixture() throws IOException {
+    ClassPathResource resource =
+        new ClassPathResource("import/figurines/MythCloth Catalog - CatalogMyth.csv");
+    return new InputStreamReader(resource.getInputStream());
   }
 }
