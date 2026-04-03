@@ -129,7 +129,8 @@ pitest {
             '*.entity.*',
             'com.mesofi.mythclothapi.StartupRunner',
             'com.mesofi.mythclothapi.error.Problem',
-            'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl'
+            'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
+            'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl'
     ]
 
     mutationThreshold = 95
