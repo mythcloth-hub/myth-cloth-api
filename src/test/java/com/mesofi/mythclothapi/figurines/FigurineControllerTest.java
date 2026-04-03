@@ -44,6 +44,164 @@ class FigurineControllerTest {
   @Autowired private ObjectMapper objectMapper;
 
   @Test
+  void createFigurine_shouldReturn404_whenPostingToRootPath() throws Exception {
+
+    mockMvc
+        .perform(post("/"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.detail").value("The URL you are calling does not exist."))
+        .andExpect(jsonPath("$.instance").value("/"))
+        .andExpect(jsonPath("$.status").value("404"))
+        .andExpect(jsonPath("$.title").value("Endpoint not found"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenRequestBodyIsMissing() throws Exception {
+
+    mockMvc
+        .perform(post("/figurines"))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(
+                    "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.figurines.dto.FigurineResp> com.mesofi.mythclothapi.figurines.FigurineController.createFigurine(com.mesofi.mythclothapi.figurines.dto.FigurineReq)"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Invalid body"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void createFigurine_shouldReturn415_whenContentTypeIsMissing() throws Exception {
+
+    mockMvc
+        .perform(post("/figurines").content("{}"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(
+            jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("415"))
+        .andExpect(jsonPath("$.title").value("Unsupported Media Type"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
+
+    mockMvc
+        .perform(post("/figurines").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.name").value("must not be blank"))
+        .andExpect(
+            jsonPath("$.errors.distributors").value("At least one distributor must be provided"))
+        .andExpect(jsonPath("$.errors.lineUpId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.seriesId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.groupId").value("must not be null"));
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenRequestBodyHasOnlyPartialFields() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Seiya\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(
+            jsonPath("$.errors.distributors").value("At least one distributor must be provided"))
+        .andExpect(jsonPath("$.errors.lineUpId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.seriesId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.groupId").value("must not be null"));
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenDistributorsPayloadIsIncomplete() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Seiya\", \"distributors\":[{}]}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.lineUpId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.seriesId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.groupId").value("must not be null"));
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenDistributorEntryLacksRequiredFields() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.seriesId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.groupId").value("must not be null"));
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenRequestBodyMissingGroupId() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\",\"seriesId\":\"2\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.groupId").value("must not be null"));
+  }
+
+  @Test
+  void createFigurine_shouldReturn400_whenDistributorCurrencyHasUnknownValue() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"name\":\"Seiya\", \"distributors\":[{\"currency\":\"=\"}],\"lineUpId\":\"3\",\"seriesId\":\"2\", \"groupId\":\"5\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(
+                    "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode` from String \"=\": not one of the values accepted for Enum class: [EUR, MXN, CAD, CNY, JPY, USD]"))
+        .andExpect(jsonPath("$.instance").value("/figurines"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Invalid body"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
   void createFigurine_shouldReturn201AndLocationHeader() throws Exception {
     FigurineReq request = createFigurineRequest();
     FigurineResp response = createFigurineResponse(1L, "Pegasus Seiya");
@@ -61,40 +219,6 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.name").value("Pegasus Seiya"));
 
     verify(service).createFigurine(any());
-  }
-
-  @Test
-  void createFigurine_shouldReturnBadRequest_whenRequestIsInvalid() throws Exception {
-    FigurineReq invalidRequest =
-        new FigurineReq(
-            "",
-            List.of(new DistributorReq(1L, JPY, 16000d, null, null, null, null)),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-
-    mockMvc
-        .perform(
-            post("/figurines")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalidRequest)))
-        .andExpect(status().isBadRequest());
   }
 
   @Test
