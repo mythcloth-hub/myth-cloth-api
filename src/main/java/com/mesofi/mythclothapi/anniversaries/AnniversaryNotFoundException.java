@@ -14,7 +14,7 @@ public class AnniversaryNotFoundException extends ApiException {
   private final Long id;
 
   public AnniversaryNotFoundException(Long id) {
-    super("Distributor not found");
+    super("Anniversary not found");
     this.id = id;
   }
 
