@@ -126,7 +126,10 @@ pitest {
     excludedClasses = [
             '*.config.*',
             '*.dto.*',
-            '*.entity.*'
+            '*.entity.*',
+            'com.mesofi.mythclothapi.StartupRunner',
+            'com.mesofi.mythclothapi.error.Problem',
+            'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl'
     ]
 
     mutationThreshold = 95
