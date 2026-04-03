@@ -26,6 +26,11 @@ class ListStringConverterTest {
         .isEqualTo(List.of("alpha", "beta", "gamma"));
   }
 
+  @Test
+  void convert_shouldReturnEmptyList_whenValueContainsOnlyDelimiters() {
+    assertThat(converter.convert(" ; ; ; ")).isEmpty();
+  }
+
   private static final class SemicolonListStringConverter extends ListStringConverter {
     @Override
     String getDelimiter() {

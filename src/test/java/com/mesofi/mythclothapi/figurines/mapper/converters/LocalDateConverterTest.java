@@ -26,6 +26,11 @@ class LocalDateConverterTest {
   }
 
   @Test
+  void convert_shouldParseTrimmedFullDatePattern() {
+    assertThat(converter.convert(" 3/5/2025 ")).isEqualTo(LocalDate.of(2025, 3, 5));
+  }
+
+  @Test
   void convert_shouldParseYearMonthPatternWithDefaultDayOne() {
     assertThat(converter.convert("3/2025")).isEqualTo(LocalDate.of(2025, 3, 1));
   }
@@ -38,5 +43,10 @@ class LocalDateConverterTest {
   @Test
   void convert_shouldReturnNull_whenPatternDoesNotMatch() {
     assertThat(converter.convert("2025-03-05")).isNull();
+  }
+
+  @Test
+  void convert_shouldReturnNull_whenYearMonthIsIncomplete() {
+    assertThat(converter.convert("3/25")).isNull();
   }
 }

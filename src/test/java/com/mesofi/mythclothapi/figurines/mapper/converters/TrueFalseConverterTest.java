@@ -59,6 +59,18 @@ class TrueFalseConverterTest {
   }
 
   @Test
+  void convert_shouldReturnFalse_whenValueContainsWhitespaceForRegularField() {
+    // Arrange
+    ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+
+    // Act
+    Boolean converted = converter.convertValue(" TRUE ");
+
+    // Assert
+    assertThat(converted).isFalse();
+  }
+
+  @Test
   void convert_shouldInvertResult_whenFieldIsArticulableAndValueIsTrue() {
     // Arrange
     ExposedTrueFalseConverter converter = newConverterBoundTo("articulable");

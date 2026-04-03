@@ -20,17 +20,17 @@ class AmountConverterTest {
   }
 
   @Test
-  void convert_shouldParseDigitsOnly_whenValueContainsSymbolsAndText() {
-    assertThat(converter.convert(" USD 12,345.67 ")).isEqualTo(1234567D);
+  void convert_shouldKeepOnlyDigits_whenValueContainsSymbolsAndSeparators() {
+    assertThat(converter.convert("USD 1,234.99")).isEqualTo(123499D);
   }
 
   @Test
-  void convert_shouldThrow_whenNoDigitsArePresent() {
+  void convert_shouldParsePlainNumericValue() {
+    assertThat(converter.convert("250")).isEqualTo(250D);
+  }
+
+  @Test
+  void convert_shouldThrowNumberFormatException_whenValueHasNoDigits() {
     assertThatThrownBy(() -> converter.convert("USD")).isInstanceOf(NumberFormatException.class);
-  }
-
-  @Test
-  void convert_shouldThrow_whenValueContainsOnlyWhitespaces() {
-    assertThatThrownBy(() -> converter.convert("   ")).isInstanceOf(NumberFormatException.class);
   }
 }

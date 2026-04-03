@@ -23,17 +23,19 @@ class LocalDateConfirmedConverterTest {
   }
 
   @Test
-  void convert_shouldParseFullDateAndSetConfirmedTrue() {
+  void convert_shouldParseFullDateAndMarkAsConfirmed() {
     LocalDateConfirmed converted = converter.convert("3/5/2025");
 
+    assertThat(converted).isNotNull();
     assertThat(converted.getDate()).isEqualTo(LocalDate.of(2025, 3, 5));
     assertThat(converted.isConfirmed()).isTrue();
   }
 
   @Test
-  void convert_shouldParseYearMonthAndSetConfirmedFalse() {
+  void convert_shouldParseYearMonthWithDefaultDayAndMarkAsNotConfirmed() {
     LocalDateConfirmed converted = converter.convert("3/2025");
 
+    assertThat(converted).isNotNull();
     assertThat(converted.getDate()).isEqualTo(LocalDate.of(2025, 3, 1));
     assertThat(converted.isConfirmed()).isFalse();
   }
@@ -42,6 +44,7 @@ class LocalDateConfirmedConverterTest {
   void convert_shouldTrimValueBeforeParsing() {
     LocalDateConfirmed converted = converter.convert(" 3/2025 ");
 
+    assertThat(converted).isNotNull();
     assertThat(converted.getDate()).isEqualTo(LocalDate.of(2025, 3, 1));
     assertThat(converted.isConfirmed()).isFalse();
   }
