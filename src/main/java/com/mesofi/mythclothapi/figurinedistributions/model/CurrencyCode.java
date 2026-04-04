@@ -6,4 +6,5 @@ public enum CurrencyCode {
   EUR,
   USD,
   CNY,
+  CAD
 }

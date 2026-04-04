@@ -1,3 +1,8 @@
+myth-cloth:
+  import:
+    drive-url: http://localhost:8089/test.csv
+    file-id: ignored
+
 spring:
   application:
     name: myth-cloth-api

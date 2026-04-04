@@ -5,9 +5,7 @@ import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PRE
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -35,6 +33,7 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
+import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
@@ -74,15 +73,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
-  /**
-   * Public Google Drive CSV export URL template.
-   *
-   * <p>The {@code fileId} is injected at runtime.
-   */
-  private static final String DRIVE_URL =
-      "https://docs.google.com/spreadsheets/d/%s/export?format=csv";
-
   private final FigurineMapper mapper;
+  private final FigurineCsvSource csvSource;
+
   private final DistributorRepository distributorRepository;
   private final DistributionRepository distributionRepository;
   private final LineUpRepository lineUpRepository;
@@ -92,28 +85,11 @@ public class FigurineService {
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
 
-  /**
-   * Imports figurines from a publicly accessible Google Drive CSV file.
-   *
-   * <p>The import process:
-   *
-   * <ol>
-   *   <li>Loads all catalog data into a {@link CatalogContext}
-   *   <li>Parses the CSV file into {@link FigurineCsv} records
-   *   <li>Upserts figurines using {@code legacyName} as a unique key
-   *   <li>Persists all changes in a single transaction
-   * </ol>
-   *
-   * @param fileId Google Drive file identifier
-   * @throws IllegalStateException if the CSV cannot be read or parsed
-   */
   @Transactional
-  public void importFromPublicDrive(final String fileId) {
-    String fileUrl = DRIVE_URL.formatted(fileId);
+  public void importFromPublicDrive() {
     CatalogContext catalogContext = loadCatalogs();
 
-    try (Reader reader = new InputStreamReader(URI.create(fileUrl).toURL().openStream())) {
-
+    try (Reader reader = csvSource.openReader()) {
       List<FigurineCsv> csvRows =
           new CsvToBeanBuilder<FigurineCsv>(reader)
               .withType(FigurineCsv.class)
@@ -446,31 +422,29 @@ public class FigurineService {
    */
   private void createDefaultEvents(Figurine figurine) {
     // creates the default events ...
-    if (figurine.getDistributors() != null && !figurine.getDistributors().isEmpty()) {
-      FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
+    FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
 
-      Optional.ofNullable(figurineDistributor.getAnnouncementDate())
-          .ifPresent(
-              announcementDate ->
-                  addDefaultEvent(
-                      "First announced as a possible future release.",
-                      announcementDate,
-                      ANNOUNCEMENT,
-                      figurine));
-      Optional.ofNullable(figurineDistributor.getPreorderDate())
-          .ifPresent(
-              preorderDate ->
-                  addDefaultEvent(
-                      "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
-      Optional.ofNullable(figurineDistributor.getReleaseDate())
-          .ifPresent(
-              releaseDate ->
-                  addDefaultEvent(
-                      "The global release date has been officially announced.",
-                      releaseDate,
-                      RELEASE,
-                      figurine));
-    }
+    Optional.ofNullable(figurineDistributor.getAnnouncementDate())
+        .ifPresent(
+            announcementDate ->
+                addDefaultEvent(
+                    "First announced as a possible future release.",
+                    announcementDate,
+                    ANNOUNCEMENT,
+                    figurine));
+    Optional.ofNullable(figurineDistributor.getPreorderDate())
+        .ifPresent(
+            preorderDate ->
+                addDefaultEvent(
+                    "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
+    Optional.ofNullable(figurineDistributor.getReleaseDate())
+        .ifPresent(
+            releaseDate ->
+                addDefaultEvent(
+                    "The global release date has been officially announced.",
+                    releaseDate,
+                    RELEASE,
+                    figurine));
   }
 
   /**

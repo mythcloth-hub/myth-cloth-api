@@ -1,219 +1,268 @@
 package com.mesofi.mythclothapi.distributors;
 
-import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
-import static com.mesofi.mythclothapi.distributors.model.DistributorName.BANDAI;
-import static com.mesofi.mythclothapi.distributors.model.DistributorName.DTM;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doAnswer;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.mesofi.mythclothapi.config.MapperTestConfig;
+import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
+import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest(
+    classes = {DistributorService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 public class DistributorServiceTest {
 
-  @Mock private DistributorRepository repository;
+  @Autowired private DistributorService distributorService;
 
-  @Mock private DistributorMapper mapper;
-
-  @InjectMocks private DistributorService service;
-
-  private DistributorReq request;
-  private Distributor entity;
-  private DistributorResp response;
-
-  @BeforeEach
-  void setup() {
-    request = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
-    entity = new Distributor();
-    entity.setId(1L);
-    entity.setName(BANDAI);
-    entity.setCountry(JP);
-    entity.setWebsite("https://tamashiiweb.com/");
-
-    response =
-        new DistributorResp(1L, "BANDAI", "Tamashii Nations", "JP", "https://tamashiiweb.com/");
-  }
+  @MockitoBean private DistributorRepository distributorRepository;
 
   @Test
-  void createDistributor_shouldThrowException_whenDistributorExists() {
+  void createDistributor_shouldPersistAndReturnMappedResponse_whenRequestIsValid() {
     // Arrange
-    when(mapper.toDistributor(request)).thenReturn(entity);
-    when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(true);
+    DistributorReq request = request(DistributorName.BANDAI, CountryCode.JP, null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> service.createDistributor(request))
-        .isInstanceOf(DistributorAlreadyExistsException.class);
-
-    verify(mapper).toDistributor(request);
-    verify(repository).existsByNameAndCountry(BANDAI, JP);
-  }
-
-  @Test
-  void createDistributor_shouldCreateSuccessfully_whenUnique() {
-    // Arrange
-    when(mapper.toDistributor(request)).thenReturn(entity);
-    when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(false);
-    when(repository.save(entity)).thenReturn(entity);
-    when(mapper.toDistributorResp(entity)).thenReturn(response);
+    when(distributorRepository.existsByNameAndCountry(DistributorName.BANDAI, CountryCode.JP))
+        .thenReturn(false);
+    when(distributorRepository.save(any(Distributor.class)))
+        .thenAnswer(
+            invocation -> {
+              Distributor entity = invocation.getArgument(0);
+              entity.setId(1L);
+              return entity;
+            });
 
     // Act
-    DistributorResp result = service.createDistributor(request);
+    DistributorResp response = distributorService.createDistributor(request);
 
     // Assert
-    assertThat(result).isEqualTo(response);
-    verify(mapper).toDistributor(request);
-    verify(repository).existsByNameAndCountry(BANDAI, JP);
-    verify(repository).save(entity);
-    verify(mapper).toDistributorResp(entity);
+    assertThat(response.id()).isEqualTo(1L);
+    assertThat(response.name()).isEqualTo(DistributorName.BANDAI.toString());
+    assertThat(response.description()).isEqualTo(DistributorName.BANDAI.getDescription());
+    assertThat(response.countryCode()).isEqualTo(CountryCode.JP.toString());
+
+    ArgumentCaptor<Distributor> captor = ArgumentCaptor.forClass(Distributor.class);
+    verify(distributorRepository).save(captor.capture());
+
+    Distributor saved = captor.getValue();
+    assertThat(saved.getName()).isEqualTo(DistributorName.BANDAI);
+    assertThat(saved.getCountry()).isEqualTo(CountryCode.JP);
   }
 
   @Test
-  void retrieveDistributor_shouldThrowException_whenNotFound() {
+  void createDistributor_shouldThrowAlreadyExistsException_whenDuplicateNameAndCountry() {
     // Arrange
-    when(repository.findById(1L)).thenReturn(Optional.empty());
+    DistributorReq request = request(DistributorName.DAM, CountryCode.MX, null);
+
+    when(distributorRepository.existsByNameAndCountry(DistributorName.DAM, CountryCode.MX))
+        .thenReturn(true);
 
     // Act + Assert
-    assertThatThrownBy(() -> service.retrieveDistributor(1L))
-        .isInstanceOf(DistributorNotFoundException.class);
+    assertThatThrownBy(() -> distributorService.createDistributor(request))
+        .isInstanceOfSatisfying(
+            DistributorAlreadyExistsException.class,
+            ex -> {
+              assertThat(ex.getName()).isEqualTo(DistributorName.DAM.toString());
+              assertThat(ex.getCountry()).isEqualTo(CountryCode.MX.toString());
+            });
 
-    verify(repository).findById(1L);
+    verify(distributorRepository, never()).save(any(Distributor.class));
   }
 
   @Test
-  void retrieveDistributor_shouldReturnResponse_whenFound() {
+  void retrieveDistributor_shouldReturnMappedResponse_whenDistributorExists() {
     // Arrange
-    when(repository.findById(1L)).thenReturn(Optional.of(entity));
-    when(mapper.toDistributorResp(entity)).thenReturn(response);
+    Distributor entity = distributor(5L, DistributorName.BLUE_FIN, CountryCode.US, null);
+    when(distributorRepository.findById(5L)).thenReturn(Optional.of(entity));
 
     // Act
-    DistributorResp result = service.retrieveDistributor(1L);
+    DistributorResp response = distributorService.retrieveDistributor(5L);
 
     // Assert
-    assertThat(result).isEqualTo(response);
-
-    verify(repository).findById(1L);
-    verify(mapper).toDistributorResp(entity);
+    assertThat(response.id()).isEqualTo(5L);
+    assertThat(response.name()).isEqualTo(DistributorName.BLUE_FIN.toString());
+    assertThat(response.countryCode()).isEqualTo(CountryCode.US.toString());
+    verify(distributorRepository).findById(5L);
   }
 
   @Test
-  void retrieveDistributors_shouldReturnList() {
+  void retrieveDistributor_shouldThrowNotFoundException_whenDistributorDoesNotExist() {
     // Arrange
-    when(repository.findAll()).thenReturn(List.of(entity));
-    when(mapper.toDistributorResp(entity)).thenReturn(response);
-
-    // Act
-    List<DistributorResp> result = service.retrieveDistributors();
-
-    // Assert
-    assertThat(result).containsExactly(response);
-
-    verify(repository).findAll();
-    verify(mapper).toDistributorResp(entity);
-  }
-
-  @Test
-  void updateDistributor_shouldThrowException_whenDistributorNotFound() {
-    // Arrange
-    when(repository.findById(1L)).thenReturn(Optional.empty());
+    when(distributorRepository.findById(99L)).thenReturn(Optional.empty());
 
     // Act + Assert
-    assertThatThrownBy(() -> service.updateDistributor(1L, request))
-        .isInstanceOf(DistributorNotFoundException.class);
+    assertThatThrownBy(() -> distributorService.retrieveDistributor(99L))
+        .isInstanceOfSatisfying(
+            DistributorNotFoundException.class,
+            ex -> {
+              assertThat(ex.getMessage()).isEqualTo("Distributor not found");
+              assertThat(ex.getId()).isEqualTo(99L);
+            });
 
-    verify(repository).findById(1L);
+    verify(distributorRepository).findById(99L);
   }
 
   @Test
-  void updateDistributor_shouldThrowException_whenNewNameCountryExists() {
+  void retrieveDistributors_shouldReturnMappedResponses_whenRepositoryReturnsEntities() {
     // Arrange
-    when(repository.findById(1L)).thenReturn(Optional.of(entity));
-
-    Distributor incoming = new Distributor();
-    incoming.setName(BANDAI);
-    incoming.setCountry(JP);
-
-    when(mapper.toDistributor(request)).thenReturn(incoming);
-    when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(true);
-
-    // name+country mismatch triggers exception
-    entity.setName(DTM);
-
-    // Act + Assert
-    assertThatThrownBy(() -> service.updateDistributor(1L, request))
-        .isInstanceOf(DistributorAlreadyExistsException.class);
-
-    verify(repository).findById(1L);
-    verify(mapper).toDistributor(request);
-    verify(repository).existsByNameAndCountry(BANDAI, JP);
-  }
-
-  @Test
-  void updateDistributor_shouldUpdateSuccessfully_whenValid() {
-    // Arrange
-    when(repository.findById(1L)).thenReturn(Optional.of(entity));
-
-    Distributor mappedEntity = new Distributor();
-    mappedEntity.setName(BANDAI);
-    mappedEntity.setCountry(JP);
-
-    when(mapper.toDistributor(request)).thenReturn(mappedEntity);
-    when(repository.existsByNameAndCountry(BANDAI, JP)).thenReturn(false);
-
-    doAnswer(inv -> null).when(mapper).updateDistributor(request, entity);
-    when(repository.save(entity)).thenReturn(entity);
-    when(mapper.toDistributorResp(entity)).thenReturn(response);
+    when(distributorRepository.findAll())
+        .thenReturn(
+            List.of(
+                distributor(1L, DistributorName.BANDAI, CountryCode.JP, null),
+                distributor(2L, DistributorName.DAM, CountryCode.MX, "https://dam.com")));
 
     // Act
-    DistributorResp result = service.updateDistributor(1L, request);
+    List<DistributorResp> responses = distributorService.retrieveDistributors();
 
     // Assert
-    assertThat(result).isEqualTo(response);
+    assertThat(responses).hasSize(2);
+    assertThat(responses.get(0).id()).isEqualTo(1L);
+    assertThat(responses.get(0).name()).isEqualTo(DistributorName.BANDAI.toString());
+    assertThat(responses.get(1).id()).isEqualTo(2L);
+    assertThat(responses.get(1).website()).isEqualTo("https://dam.com");
 
-    verify(repository).findById(1L);
-    verify(mapper).toDistributor(request);
-    verify(repository).existsByNameAndCountry(BANDAI, JP);
-    verify(repository).save(entity);
-    verify(mapper).toDistributorResp(entity);
+    verify(distributorRepository).findAll();
   }
 
   @Test
-  void removeDistributor_shouldThrowException_whenNotFound() {
+  void retrieveDistributors_shouldReturnEmptyList_whenNoDistributorsExist() {
     // Arrange
-    when(repository.existsById(1L)).thenReturn(false);
-
-    // Act + Assert
-    assertThatThrownBy(() -> service.removeDistributor(1L))
-        .isInstanceOf(DistributorNotFoundException.class);
-
-    verify(repository).existsById(1L);
-  }
-
-  @Test
-  void removeDistributor_shouldDeleteSuccessfully_whenExists() {
-    // Arrange
-    when(repository.existsById(1L)).thenReturn(true);
+    when(distributorRepository.findAll()).thenReturn(List.of());
 
     // Act
-    service.removeDistributor(1L);
+    List<DistributorResp> responses = distributorService.retrieveDistributors();
 
     // Assert
-    verify(repository).deleteById(1L);
+    assertThat(responses).isEmpty();
+    verify(distributorRepository).findAll();
+  }
+
+  @Test
+  void updateDistributor_shouldUpdateAndReturnMappedResponse_whenRequestIsValid() {
+    // Arrange
+    Distributor existing = distributor(3L, DistributorName.BANDAI, CountryCode.JP, null);
+    DistributorReq request = request(DistributorName.BANDAI, CountryCode.JP, "https://bandai.com");
+
+    when(distributorRepository.findById(3L)).thenReturn(Optional.of(existing));
+    when(distributorRepository.existsByNameAndCountry(DistributorName.BANDAI, CountryCode.JP))
+        .thenReturn(true);
+    when(distributorRepository.save(any(Distributor.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    DistributorResp response = distributorService.updateDistributor(3L, request);
+
+    // Assert
+    assertThat(response.id()).isEqualTo(3L);
+    assertThat(response.website()).isEqualTo("https://bandai.com");
+
+    ArgumentCaptor<Distributor> captor = ArgumentCaptor.forClass(Distributor.class);
+    verify(distributorRepository).save(captor.capture());
+    assertThat(captor.getValue()).isSameAs(existing);
+
+    verify(distributorRepository).findById(3L);
+  }
+
+  @Test
+  void updateDistributor_shouldThrowNotFoundException_whenDistributorDoesNotExist() {
+    // Arrange
+    DistributorReq request = request(DistributorName.DTM, CountryCode.MX, null);
+    when(distributorRepository.findById(77L)).thenReturn(Optional.empty());
+
+    // Act + Assert
+    assertThatThrownBy(() -> distributorService.updateDistributor(77L, request))
+        .isInstanceOfSatisfying(
+            DistributorNotFoundException.class,
+            ex -> {
+              assertThat(ex.getMessage()).isEqualTo("Distributor not found");
+              assertThat(ex.getId()).isEqualTo(77L);
+            });
+
+    verify(distributorRepository).findById(77L);
+    verify(distributorRepository, never()).save(any(Distributor.class));
+  }
+
+  @Test
+  void updateDistributor_shouldThrowAlreadyExistsException_whenNewNameAndCountryConflict() {
+    // Arrange
+    Distributor existing = distributor(4L, DistributorName.BANDAI, CountryCode.JP, null);
+    DistributorReq request = request(DistributorName.DAM, CountryCode.MX, null);
+
+    when(distributorRepository.findById(4L)).thenReturn(Optional.of(existing));
+    when(distributorRepository.existsByNameAndCountry(DistributorName.DAM, CountryCode.MX))
+        .thenReturn(true);
+
+    // Act + Assert
+    assertThatThrownBy(() -> distributorService.updateDistributor(4L, request))
+        .isInstanceOfSatisfying(
+            DistributorAlreadyExistsException.class,
+            ex -> {
+              assertThat(ex.getName()).isEqualTo(DistributorName.DAM.toString());
+              assertThat(ex.getCountry()).isEqualTo(CountryCode.MX.toString());
+            });
+
+    verify(distributorRepository, never()).save(any(Distributor.class));
+  }
+
+  @Test
+  void removeDistributor_shouldDeleteById_whenDistributorExists() {
+    // Arrange
+    when(distributorRepository.existsById(5L)).thenReturn(true);
+
+    // Act
+    distributorService.removeDistributor(5L);
+
+    // Assert
+    verify(distributorRepository).existsById(5L);
+    verify(distributorRepository).deleteById(5L);
+  }
+
+  @Test
+  void removeDistributor_shouldThrowNotFoundException_whenDistributorDoesNotExist() {
+    // Arrange
+    when(distributorRepository.existsById(8L)).thenReturn(false);
+
+    // Act + Assert
+    assertThatThrownBy(() -> distributorService.removeDistributor(8L))
+        .isInstanceOfSatisfying(
+            DistributorNotFoundException.class,
+            ex -> {
+              assertThat(ex.getMessage()).isEqualTo("Distributor not found");
+              assertThat(ex.getId()).isEqualTo(8L);
+            });
+
+    verify(distributorRepository).existsById(8L);
+    verify(distributorRepository, never()).deleteById(8L);
+  }
+
+  private DistributorReq request(DistributorName name, CountryCode country, String website) {
+    return new DistributorReq(name, country, website);
+  }
+
+  private Distributor distributor(
+      Long id, DistributorName name, CountryCode country, String website) {
+    Distributor d = new Distributor();
+    d.setId(id);
+    d.setName(name);
+    d.setCountry(country);
+    d.setWebsite(website);
+    return d;
   }
 }

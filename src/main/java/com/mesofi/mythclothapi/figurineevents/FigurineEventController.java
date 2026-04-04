@@ -69,9 +69,9 @@ public class FigurineEventController {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<?> removeEvent(
+  public ResponseEntity<Void> removeEvent(
       @Positive @PathVariable Long figurineId, @PathVariable Long id) {
     service.removeFigurineEvent(figurineId, id);
-    return ResponseEntity.ok().build();
+    return ResponseEntity.noContent().build();
   }
 }

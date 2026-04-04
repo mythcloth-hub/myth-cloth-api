@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.stereotype.Service;
@@ -45,26 +46,26 @@ public class CatalogService {
   }
 
   @Transactional
-  public CatalogResp createCatalog(@NotNull String catalogName, @NotNull CatalogReq request) {
+  public CatalogResp createCatalog(@NotEmpty String catalogName, @NotNull CatalogReq request) {
     Descriptive saved = saveEntry(catalogName, mapToEntity(catalogName, request));
     return mapper.toCatalogResp(saved);
   }
 
   @Transactional(readOnly = true)
-  public CatalogResp retrieveCatalog(@NotNull String catalogName, @NotNull Long id) {
+  public CatalogResp retrieveCatalog(@NotEmpty String catalogName, @NotNull Long id) {
     Descriptive found = findByIdEntry(catalogName, id);
     return mapper.toCatalogResp(found);
   }
 
   @Transactional(readOnly = true)
   public Descriptive retrieveCatalogWithDescription(
-      @NotNull String catalogName, @NotNull String description) {
+      @NotEmpty String catalogName, @NotNull String description) {
     return findByDescription(catalogName, description);
   }
 
   @Transactional
   public CatalogResp updateCatalog(
-      @NotNull String catalogName, @NotNull Long id, @NotNull CatalogReq request) {
+      @NotEmpty String catalogName, @NotNull Long id, @NotNull CatalogReq request) {
     Descriptive existing = findByIdEntry(catalogName, id);
     // updates the description
     existing.setDescription(request.description());
@@ -73,7 +74,7 @@ public class CatalogService {
   }
 
   @Transactional
-  public void deleteCatalog(@NotNull String catalogName, @NotNull Long id) {
+  public void deleteCatalog(@NotEmpty String catalogName, @NotNull Long id) {
     Descriptive existing = findByIdEntry(catalogName, id);
     deleteEntry(catalogName, existing);
   }
