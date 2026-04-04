@@ -132,6 +132,7 @@ pitest {
             'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
             'com.mesofi.mythclothapi.error.Problem',
             'com.mesofi.mythclothapi.figurineevents.FigurineEventMapperImpl',
+            'com.mesofi.mythclothapi.figurines.mapper.FigurineMapper',
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
             'com.mesofi.mythclothapi.StartupRunner'
     ]
