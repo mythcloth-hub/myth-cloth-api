@@ -9,6 +9,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,11 +40,13 @@ public class FigurineEventControllerIT {
   private static final String SERIES_DEL = SERIES + "/{id}";
   private static final String GROUPS = "/catalogs/groups";
   private static final String GROUPS_DEL = GROUPS + "/{id}";
+
   private static final String DISTRIBUTORS = "/distributors";
   private static final String DISTRIBUTORS_DEL = DISTRIBUTORS + "/{id}";
 
   private static final String FIGURINES = "/figurines";
   private static final String FIGURINES_DEL = FIGURINES + "/{id}";
+
   private static final String EVENTS = "/figurines/{figurineId}/events";
   private static final String EVENTS_DEL = EVENTS + "/{id}";
 
@@ -74,28 +77,12 @@ public class FigurineEventControllerIT {
 
     Long eventId = createEvent(figurineId);
 
-    removeEvent(figurineId, eventId);
-    removeFigurine(figurineId);
-    removeDistributor(distributorId);
-    removeCatalog(GROUPS_DEL, groupId);
-    removeCatalog(SERIES_DEL, seriesId);
-    removeCatalog(LINE_UP_DEL, lineUpId);
-  }
-
-  private void removeCatalog(String url, Long id) {
-    rest.delete().uri(url, id).retrieve().toBodilessEntity();
-  }
-
-  private void removeDistributor(Long id) {
-    rest.delete().uri(DISTRIBUTORS_DEL, id).retrieve().toBodilessEntity();
-  }
-
-  private void removeFigurine(Long id) {
-    rest.delete().uri(FIGURINES_DEL, id).retrieve().toBodilessEntity();
-  }
-
-  private void removeEvent(Long figurineId, Long id) {
-    rest.delete().uri(EVENTS_DEL, figurineId, id).retrieve().toBodilessEntity();
+    removeResource(EVENTS_DEL, figurineId, eventId);
+    removeResource(FIGURINES_DEL, figurineId);
+    removeResource(DISTRIBUTORS_DEL, distributorId);
+    removeResource(GROUPS_DEL, groupId);
+    removeResource(SERIES_DEL, seriesId);
+    removeResource(LINE_UP_DEL, lineUpId);
   }
 
   private Long createEvent(Long figurineId) {
@@ -183,5 +170,9 @@ public class FigurineEventControllerIT {
         null,
         null,
         null);
+  }
+
+  private void removeResource(String uri, @Nullable Object... uriVariables) {
+    rest.delete().uri(uri, uriVariables).retrieve().toBodilessEntity();
   }
 }
