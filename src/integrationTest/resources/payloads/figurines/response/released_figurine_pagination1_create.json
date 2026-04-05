@@ -54,7 +54,7 @@
   "events": [
     {
       "id": 1,
-      "date": "2009-10-02",
+      "eventDate": "2009-10-02",
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

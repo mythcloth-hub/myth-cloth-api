@@ -17,4 +17,4 @@ public record FigurineEventResp(
     FigurineResp figurine) {}
 */
 public record FigurineEventResp(
-    long id, LocalDate date, FigurineEventType type, CountryCode region, String description) {}
+    long id, LocalDate eventDate, FigurineEventType type, CountryCode region, String description) {}

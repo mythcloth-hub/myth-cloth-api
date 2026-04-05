@@ -22,7 +22,7 @@ public class FigurineEventReq {
 
   @Past
   @NotNull(message = "event date must be provided")
-  private LocalDate date;
+  private LocalDate eventDate;
 
   @NotNull private CountryCode region;
 

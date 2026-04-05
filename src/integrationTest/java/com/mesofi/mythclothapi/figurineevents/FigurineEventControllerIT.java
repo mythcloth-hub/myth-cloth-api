@@ -34,12 +34,18 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 public class FigurineEventControllerIT {
 
   private static final String LINE_UP = "/catalogs/lineups";
+  private static final String LINE_UP_DEL = LINE_UP + "/{id}";
   private static final String SERIES = "/catalogs/series";
+  private static final String SERIES_DEL = SERIES + "/{id}";
   private static final String GROUPS = "/catalogs/groups";
+  private static final String GROUPS_DEL = GROUPS + "/{id}";
   private static final String DISTRIBUTORS = "/distributors";
+  private static final String DISTRIBUTORS_DEL = DISTRIBUTORS + "/{id}";
 
   private static final String FIGURINES = "/figurines";
+  private static final String FIGURINES_DEL = FIGURINES + "/{id}";
   private static final String EVENTS = "/figurines/{figurineId}/events";
+  private static final String EVENTS_DEL = EVENTS + "/{id}";
 
   private final RestClient rest;
 
@@ -67,12 +73,35 @@ public class FigurineEventControllerIT {
     Long figurineId = createFigurine(figurineReq);
 
     Long eventId = createEvent(figurineId);
+
+    removeEvent(figurineId, eventId);
+    removeFigurine(figurineId);
+    removeDistributor(distributorId);
+    removeCatalog(GROUPS_DEL, groupId);
+    removeCatalog(SERIES_DEL, seriesId);
+    removeCatalog(LINE_UP_DEL, lineUpId);
+  }
+
+  private void removeCatalog(String url, Long id) {
+    rest.delete().uri(url, id).retrieve().toBodilessEntity();
+  }
+
+  private void removeDistributor(Long id) {
+    rest.delete().uri(DISTRIBUTORS_DEL, id).retrieve().toBodilessEntity();
+  }
+
+  private void removeFigurine(Long id) {
+    rest.delete().uri(FIGURINES_DEL, id).retrieve().toBodilessEntity();
+  }
+
+  private void removeEvent(Long figurineId, Long id) {
+    rest.delete().uri(EVENTS_DEL, figurineId, id).retrieve().toBodilessEntity();
   }
 
   private Long createEvent(Long figurineId) {
     FigurineEventReq figurineEventReq = new FigurineEventReq();
     figurineEventReq.setDescription("Event description");
-    figurineEventReq.setDate(LocalDate.of(2024, 6, 1));
+    figurineEventReq.setEventDate(LocalDate.of(2024, 6, 1));
     figurineEventReq.setRegion(CountryCode.MX);
     figurineEventReq.setType(FigurineEventType.ANNOUNCEMENT);
     figurineEventReq.setFigurineId(figurineId);

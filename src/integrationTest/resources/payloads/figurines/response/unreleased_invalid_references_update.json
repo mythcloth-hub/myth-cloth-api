@@ -47,7 +47,7 @@
   "events": [
     {
       "id": 1,
-      "date": "2024-11-15",
+      "eventDate": "2024-11-15",
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "First announced as a possible future release."

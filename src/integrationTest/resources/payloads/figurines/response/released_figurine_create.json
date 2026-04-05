@@ -63,7 +63,7 @@
   "events": [
     {
       "id": 1,
-      "date": "2004-03-26",
+      "eventDate": "2004-03-26",
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

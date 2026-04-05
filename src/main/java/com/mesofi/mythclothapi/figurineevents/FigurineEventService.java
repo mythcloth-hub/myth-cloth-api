@@ -36,7 +36,7 @@ public class FigurineEventService {
     log.info(
         "Creating event for figurine {} - [{}]({})",
         request.getFigurineId(),
-        request.getDate(),
+        request.getEventDate(),
         request.getDescription());
 
     FigurineEvent figurineEvent = mapper.toFigurineEvent(request);
@@ -81,7 +81,7 @@ public class FigurineEventService {
         "Updating event '{}' for figurine {} to [{}]({}) - {}",
         eventId,
         figurineId,
-        newRequest.getDate(),
+        newRequest.getEventDate(),
         newRequest.getFigurineId(),
         newRequest.getDescription());
 
@@ -96,7 +96,7 @@ public class FigurineEventService {
             .flatMap(figurineRepository::findById)
             .orElseThrow(() -> new FigurineNotFoundException(newRequest.getFigurineId()));
 
-    figurineEvent.setEventDate(newRequest.getDate());
+    figurineEvent.setEventDate(newRequest.getEventDate());
     figurineEvent.setDescription(newRequest.getDescription());
     if (!Objects.equals(figurine.getId(), figurineId)) {
       // there was a change ... the new figureId is different from the existing one.

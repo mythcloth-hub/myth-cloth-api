@@ -13,7 +13,6 @@ import java.util.Optional;
 
 import jakarta.validation.ConstraintViolationException;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +25,11 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
-@Disabled
 @SpringBootTest(
     classes = {
       FigurineEventService.class,
@@ -275,7 +274,9 @@ public class FigurineEventServiceTest {
     FigurineEventReq request = new FigurineEventReq();
     request.setFigurineId(figurineId);
     request.setDescription(description);
-    request.setDate(eventDate);
+    request.setEventDate(eventDate);
+    request.setRegion(CountryCode.JP);
+    request.setType(FigurineEventType.ANNOUNCEMENT);
     return request;
   }
 

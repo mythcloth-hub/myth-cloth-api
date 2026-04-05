@@ -12,14 +12,17 @@ public interface FigurineEventMapper {
 
   @Mapping(target = "id", ignore = true) // populated by DB
   @Mapping(target = "description", source = "description")
-  @Mapping(target = "eventDate", source = "date")
+  @Mapping(target = "eventDate", source = "eventDate")
   @Mapping(target = "region", source = "region")
   @Mapping(target = "type", source = "type")
   @Mapping(target = "figurine", ignore = true) // populate later in the service
   FigurineEvent toFigurineEvent(FigurineEventReq request);
 
   @Mapping(target = "id", source = "id")
-  @Mapping(target = "date", source = "eventDate")
+  @Mapping(target = "eventDate", source = "eventDate")
+  @Mapping(target = "region", source = "region")
+  @Mapping(target = "type", source = "type")
+  // @Mapping(target = "figurine", source = "figurine")
   FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent);
 
   // @Mapping(target = "id", ignore = true)
