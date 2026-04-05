@@ -7,6 +7,9 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,7 +22,11 @@ public class FigurineEventReq {
 
   @Past
   @NotNull(message = "event date must be provided")
-  private LocalDate eventDate;
+  private LocalDate date;
+
+  @NotNull private CountryCode region;
+
+  @NotNull private FigurineEventType type;
 
   @Positive @NotNull private Long figurineId;
 }

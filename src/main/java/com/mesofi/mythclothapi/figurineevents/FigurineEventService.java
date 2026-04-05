@@ -36,18 +36,23 @@ public class FigurineEventService {
     log.info(
         "Creating event for figurine {} - [{}]({})",
         request.getFigurineId(),
-        request.getEventDate(),
+        request.getDate(),
         request.getDescription());
 
-    Figurine figurine =
-        Optional.of(request.getFigurineId())
-            .flatMap(figurineRepository::findById)
-            .orElseThrow(() -> new FigurineNotFoundException(request.getFigurineId()));
-
     FigurineEvent figurineEvent = mapper.toFigurineEvent(request);
-    figurineEvent.setFigurine(figurine);
+    linkReferences(figurineEvent, request.getFigurineId());
+
     var saved = repository.save(figurineEvent);
     return mapper.toFigurineEventResp(saved);
+  }
+
+  private void linkReferences(FigurineEvent figurineEvent, long figurineId) {
+    Figurine figurine =
+        Optional.of(figurineId)
+            .flatMap(figurineRepository::findById)
+            .orElseThrow(() -> new FigurineNotFoundException(figurineId));
+
+    figurineEvent.setFigurine(figurine);
   }
 
   @Transactional(readOnly = true)
@@ -76,7 +81,7 @@ public class FigurineEventService {
         "Updating event '{}' for figurine {} to [{}]({}) - {}",
         eventId,
         figurineId,
-        newRequest.getEventDate(),
+        newRequest.getDate(),
         newRequest.getFigurineId(),
         newRequest.getDescription());
 
@@ -91,7 +96,7 @@ public class FigurineEventService {
             .flatMap(figurineRepository::findById)
             .orElseThrow(() -> new FigurineNotFoundException(newRequest.getFigurineId()));
 
-    figurineEvent.setEventDate(newRequest.getEventDate());
+    figurineEvent.setEventDate(newRequest.getDate());
     figurineEvent.setDescription(newRequest.getDescription());
     if (!Objects.equals(figurine.getId(), figurineId)) {
       // there was a change ... the new figureId is different from the existing one.

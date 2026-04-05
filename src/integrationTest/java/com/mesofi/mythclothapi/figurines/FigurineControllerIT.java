@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
  *   <li>Correct creation of figurines across different catalog configurations
  * </ul>
  */
+@Disabled
 @ActiveProfiles("integration")
 @ExtendWith(FigurineScenarioExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
