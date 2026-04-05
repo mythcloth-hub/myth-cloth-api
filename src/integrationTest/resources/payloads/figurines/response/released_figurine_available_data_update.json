@@ -76,21 +76,21 @@
   "events": [
     {
       "id": 1,
-      "eventDate": "2025-08-06",
+      "date": "2025-08-06",
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "First announced as a possible future release."
     },
     {
       "id": 2,
-      "eventDate": "2025-08-08",
+      "date": "2025-08-08",
       "type": "PREORDER_OPEN",
       "region": "JP",
       "description": "Pre-orders are officially open."
     },
     {
       "id": 3,
-      "eventDate": "2026-01-01",
+      "date": "2026-01-01",
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

@@ -88,7 +88,7 @@ public class FigurineEventControllerIT {
   private Long createEvent(Long figurineId) {
     FigurineEventReq figurineEventReq = new FigurineEventReq();
     figurineEventReq.setDescription("Event description");
-    figurineEventReq.setEventDate(LocalDate.of(2024, 6, 1));
+    figurineEventReq.setDate(LocalDate.of(2024, 6, 1));
     figurineEventReq.setRegion(CountryCode.MX);
     figurineEventReq.setType(FigurineEventType.ANNOUNCEMENT);
     figurineEventReq.setFigurineId(figurineId);

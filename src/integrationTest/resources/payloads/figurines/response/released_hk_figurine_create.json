@@ -52,7 +52,7 @@
   "events": [
     {
       "id": 1,
-      "eventDate": "2016-08-08",
+      "date": "2016-08-08",
       "type": "RELEASE",
       "region": "CN",
       "description": "The global release date has been officially announced."

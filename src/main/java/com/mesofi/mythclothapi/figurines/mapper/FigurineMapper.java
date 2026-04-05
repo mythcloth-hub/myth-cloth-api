@@ -29,6 +29,7 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
@@ -454,12 +455,12 @@ public interface FigurineMapper {
    * @param calculatePriceWithTax function used for downstream pricing enrichment
    * @return API-facing {@link FigurineEventResp}
    */
-  // @Mapping(target = "date", source = "eventDate")
+  @Mapping(target = "date", source = "eventDate")
   // @Mapping(target = "figurine", ignore = true) // map this later
-  // FigurineEventResp toFigurineEventResp(
-  //    FigurineEvent figurineEvent,
-  //    @Context Function<Figurine, String> createDisplayableName,
-  //    @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+  FigurineEventResp toFigurineEventResp(
+      FigurineEvent figurineEvent,
+      @Context Function<Figurine, String> createDisplayableName,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
   /**
    * Updates a {@link Figurine} entity using non-null values from another instance.

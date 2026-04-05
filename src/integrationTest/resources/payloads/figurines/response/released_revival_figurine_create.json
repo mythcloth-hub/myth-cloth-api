@@ -59,19 +59,19 @@
   "officialImageUrls" : [ "https://imagizer.imageshack.com/img923/5779/vMiqIK.jpg", "https://imagizer.imageshack.com/img924/7706/mqXD5s.jpg", "https://imagizer.imageshack.com/img922/1623/DNjFPX.jpg", "https://imagizer.imageshack.com/img923/5361/orWkJa.jpg", "https://imagizer.imageshack.com/img923/4391/mcd6Rk.jpg", "https://imagizer.imageshack.com/img924/3251/sI4pVS.jpg", "https://imagizer.imageshack.com/img922/2758/qLYAPw.jpg", "https://imagizer.imageshack.com/img924/8753/wS8ZrL.jpg", "https://imagizer.imageshack.com/img922/3027/USaIyG.jpg", "https://imagizer.imageshack.com/img924/5685/PnjnlR.jpg", "https://imagizer.imageshack.com/img924/9986/JfFAI9.jpg" ],
   "events" : [ {
     "id" : 1,
-    "eventDate" : "2024-02-16",
+    "date" : "2024-02-16",
     "type" : "ANNOUNCEMENT",
     "region" : "JP",
     "description" : "First announced as a possible future release."
   }, {
     "id" : 2,
-    "eventDate" : "2025-02-14",
+    "date" : "2025-02-14",
     "type" : "PREORDER_OPEN",
     "region" : "JP",
     "description" : "Pre-orders are officially open."
   }, {
     "id" : 3,
-    "eventDate" : "2025-02-14",
+    "date" : "2025-02-14",
     "type" : "RELEASE",
     "region" : "JP",
     "description" : "The global release date has been officially announced."

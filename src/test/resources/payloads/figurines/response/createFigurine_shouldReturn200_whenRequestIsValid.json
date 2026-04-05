@@ -79,35 +79,35 @@
   "events": [
     {
       "id": 1,
-      "eventDate": "2025-11-13",
+      "date": "2025-11-13",
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "Revealed at Tamashii Nations 2025."
     },
     {
       "id": 2,
-      "eventDate": "2025-05-12",
+      "date": "2025-05-12",
       "type": "PREORDER_OPEN",
       "region": "JP",
       "description": "Preorders open."
     },
     {
       "id": 3,
-      "eventDate": "2026-05-01",
+      "date": "2026-05-01",
       "type": "RELEASE",
       "region": "JP",
       "description": "Official release in Japan."
     },
     {
       "id": 4,
-      "eventDate": "2026-04-15",
+      "date": "2026-04-15",
       "type": "RESTOCK",
       "region": "JP",
       "description": "Small restock confirmed for Japan."
     },
     {
       "id": 5,
-      "eventDate": "2026-05-15",
+      "date": "2026-05-15",
       "type": "LOCAL_RELEASE",
       "region": "MX",
       "description": "Mexico is releasing the figurine."

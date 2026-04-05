@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.figurineevents;
 
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,11 +23,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
-import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
-import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -85,11 +85,10 @@ public class FigurineEventServiceTest {
     FigurineEventResp response = figurineEventService.createFigurineEvent(request);
 
     // Assert
-    assertThat(response).isNotNull();
-    assertThat(response.id()).isEqualTo(99L);
-    assertThat(response.description()).isEqualTo("Tamashii event");
-    // assertThat(response.figurine()).isNotNull();
-    // assertThat(response.figurine().id()).isEqualTo(7L);
+    assertThat(response)
+        .isNotNull()
+        .extracting(FigurineEventResp::id, FigurineEventResp::description)
+        .containsExactly(99L, "Tamashii event");
 
     ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
     verify(figurineEventRepository).save(eventCaptor.capture());
@@ -123,10 +122,11 @@ public class FigurineEventServiceTest {
     FigurineEventResp response = figurineEventService.retrieveFigurineEvent(11L, 18L);
 
     // Assert
-    assertThat(response).isNotNull();
-    assertThat(response.id()).isEqualTo(18L);
-    assertThat(response.description()).isEqualTo("Found event");
-    assertThat(response.region()).isEqualTo(CountryCode.JP);
+    assertThat(response)
+        .isNotNull()
+        .extracting(
+            FigurineEventResp::id, FigurineEventResp::description, FigurineEventResp::region)
+        .containsExactly(18L, "Found event", JP);
   }
 
   @Test
@@ -204,8 +204,10 @@ public class FigurineEventServiceTest {
     FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
 
     // Assert
-    assertThat(response).isNotNull();
-    assertThat(response.description()).isEqualTo("Updated description");
+    assertThat(response)
+        .isNotNull()
+        .extracting(FigurineEventResp::description)
+        .isEqualTo("Updated description");
 
     ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
     verify(figurineEventRepository).save(eventCaptor.capture());
@@ -233,9 +235,10 @@ public class FigurineEventServiceTest {
     FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
 
     // Assert
-    assertThat(response).isNotNull();
-    assertThat(response.description()).isEqualTo("Moved event");
-    // assertThat(response.figurine().id()).isEqualTo(44L);
+    assertThat(response)
+        .isNotNull()
+        .extracting(FigurineEventResp::description)
+        .isEqualTo("Moved event");
 
     ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
     verify(figurineEventRepository).save(eventCaptor.capture());
@@ -274,9 +277,9 @@ public class FigurineEventServiceTest {
     FigurineEventReq request = new FigurineEventReq();
     request.setFigurineId(figurineId);
     request.setDescription(description);
-    request.setEventDate(eventDate);
-    request.setRegion(CountryCode.JP);
-    request.setType(FigurineEventType.ANNOUNCEMENT);
+    request.setDate(eventDate);
+    request.setRegion(JP);
+    request.setType(ANNOUNCEMENT);
     return request;
   }
 
@@ -293,7 +296,7 @@ public class FigurineEventServiceTest {
     event.setEventDate(date);
     event.setDescription(description);
     event.setFigurine(figurine);
-    event.setRegion(CountryCode.JP);
+    event.setRegion(JP);
     return event;
   }
 }
