@@ -456,7 +456,7 @@ public interface FigurineMapper {
    * @return API-facing {@link FigurineEventResp}
    */
   @Mapping(target = "date", source = "eventDate")
-  @Mapping(target = "figurine", ignore = true) // map this later
+  // @Mapping(target = "figurine", ignore = true) // map this later
   FigurineEventResp toFigurineEventResp(
       FigurineEvent figurineEvent,
       @Context Function<Figurine, String> createDisplayableName,

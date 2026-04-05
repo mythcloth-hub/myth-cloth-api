@@ -90,7 +90,7 @@ class FigurineEventControllerTest {
         .andExpect(jsonPath("$.title").value("Validation Failed"))
         .andExpect(jsonPath("$.timestamp").exists())
         .andExpect(jsonPath("$.errors.description").value("description must not be blank"))
-        .andExpect(jsonPath("$.errors.eventDate").value("event date must be provided"))
+        .andExpect(jsonPath("$.errors.date").value("event date must be provided"))
         .andExpect(jsonPath("$.errors.figurineId").value("must not be null"));
 
     verifyNoInteractions(service);
@@ -100,6 +100,7 @@ class FigurineEventControllerTest {
   void createEvent_shouldReturn201AndDelegateUsingPathFigurineId() throws Exception {
     FigurineEventReq request = createEventRequest();
     request.setFigurineId(999L);
+    request.setType(FigurineEventType.ANNOUNCEMENT);
     FigurineEventResp response = createEventResponse(77L);
 
     when(service.createFigurineEvent(any())).thenReturn(response);
@@ -121,7 +122,7 @@ class FigurineEventControllerTest {
                 payload ->
                     payload.getFigurineId() == 1L
                         && "Pre-order opened".equals(payload.getDescription())
-                        && LocalDate.of(2020, 1, 1).equals(payload.getEventDate())));
+                        && LocalDate.of(2020, 1, 1).equals(payload.getDate())));
   }
 
   @Test
@@ -185,7 +186,7 @@ class FigurineEventControllerTest {
                 payload ->
                     payload.getFigurineId() == 1L
                         && "Pre-order opened".equals(payload.getDescription())
-                        && LocalDate.of(2020, 1, 1).equals(payload.getEventDate())));
+                        && LocalDate.of(2020, 1, 1).equals(payload.getDate())));
   }
 
   @Test
@@ -200,7 +201,9 @@ class FigurineEventControllerTest {
   private FigurineEventReq createEventRequest() {
     FigurineEventReq request = new FigurineEventReq();
     request.setDescription("Pre-order opened");
-    request.setEventDate(LocalDate.of(2020, 1, 1));
+    request.setDate(LocalDate.of(2020, 1, 1));
+    request.setRegion(CountryCode.JP);
+    request.setType(FigurineEventType.ANNOUNCEMENT);
     request.setFigurineId(1L);
     return request;
   }
@@ -211,7 +214,6 @@ class FigurineEventControllerTest {
         LocalDate.of(2020, 1, 1),
         FigurineEventType.PREORDER_OPEN,
         CountryCode.JP,
-        "Pre-order opened",
-        null);
+        "Pre-order opened");
   }
 }

@@ -11,12 +11,11 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 public interface FigurineEventMapper {
 
   @Mapping(target = "id", ignore = true) // populated by DB
+  @Mapping(target = "eventDate", source = "date")
   @Mapping(target = "figurine", ignore = true) // populate later in the service
   FigurineEvent toFigurineEvent(FigurineEventReq request);
 
-  // @Mapping(
-  //      target = "description",
-  //    expression = "java(distributorEntity.getName().getDescription())")
+  @Mapping(target = "date", source = "eventDate")
   FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent);
 
   // @Mapping(target = "id", ignore = true)
