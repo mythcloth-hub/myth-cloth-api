@@ -91,6 +91,8 @@ class FigurineEventControllerTest {
         .andExpect(jsonPath("$.timestamp").exists())
         .andExpect(jsonPath("$.errors.description").value("description must not be blank"))
         .andExpect(jsonPath("$.errors.date").value("event date must be provided"))
+        .andExpect(jsonPath("$.errors.type").value("must not be null"))
+        .andExpect(jsonPath("$.errors.region").value("must not be null"))
         .andExpect(jsonPath("$.errors.figurineId").value("must not be null"));
 
     verifyNoInteractions(service);
@@ -135,6 +137,9 @@ class FigurineEventControllerTest {
         .perform(get("/figurines/{figurineId}/events/{id}", 1L, 15L))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(15L))
+        .andExpect(jsonPath("$.date").value("2020-01-01"))
+        .andExpect(jsonPath("$.type").value("PREORDER_OPEN"))
+        .andExpect(jsonPath("$.region").value("JP"))
         .andExpect(jsonPath("$.description").value("Pre-order opened"));
 
     verify(service).retrieveFigurineEvent(1L, 15L);
@@ -150,7 +155,15 @@ class FigurineEventControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].id").value(10L))
-        .andExpect(jsonPath("$[1].id").value(11L));
+        .andExpect(jsonPath("$[0].date").value("2020-01-01"))
+        .andExpect(jsonPath("$[0].type").value("PREORDER_OPEN"))
+        .andExpect(jsonPath("$[0].region").value("JP"))
+        .andExpect(jsonPath("$[0].description").value("Pre-order opened"))
+        .andExpect(jsonPath("$[1].id").value(11L))
+        .andExpect(jsonPath("$[1].date").value("2020-01-01"))
+        .andExpect(jsonPath("$[1].type").value("PREORDER_OPEN"))
+        .andExpect(jsonPath("$[1].region").value("JP"))
+        .andExpect(jsonPath("$[1].description").value("Pre-order opened"));
 
     verify(service).retrieveFigurineEvents(1L);
   }
