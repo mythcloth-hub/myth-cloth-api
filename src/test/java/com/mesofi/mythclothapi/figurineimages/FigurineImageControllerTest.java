@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.figurineimages;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -15,11 +16,10 @@ import java.net.URI;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -85,35 +85,52 @@ class FigurineImageControllerTest {
   }
 
   @Test
-  void createImage_shouldRaiseUnexpectedTypeException_whenRequestBodyValidationRuns() {
+  void createImage_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
 
-    assertThatThrownBy(
-            () ->
-                mockMvc.perform(
-                    post("/figurines/{figurineId}/images", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}")))
-        .hasRootCauseInstanceOf(jakarta.validation.UnexpectedTypeException.class);
+    mockMvc
+        .perform(
+            post("/figurines/{figurineId}/images", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/figurines/1/images"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.figurineId").value("must not be null"))
+        .andExpect(jsonPath("$.errors.imageUrl").value("imageUrl must not be blank"));
 
     verifyNoInteractions(service);
   }
 
   @Test
-  void createImage_shouldRaiseUnexpectedTypeException_whenPayloadLooksValid() {
+  void createImage_shouldReturn201AndUsePathFigurineId_whenRequestIsValid() throws Exception {
     FigurineImageReq request = new FigurineImageReq();
     request.setFigurineId(999L);
     request.setImageUrl(URI.create("https://images.example/pegasus.jpg"));
     request.setOfficialImage(true);
 
-    assertThatThrownBy(
-            () ->
-                mockMvc.perform(
-                    post("/figurines/{figurineId}/images", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))))
-        .hasRootCauseInstanceOf(jakarta.validation.UnexpectedTypeException.class);
+    FigurineImageResp response =
+        new FigurineImageResp(List.of("https://images.example/pegasus.jpg"));
+    when(service.createFigurineImage(any())).thenReturn(response);
 
-    verifyNoInteractions(service);
+    mockMvc
+        .perform(
+            post("/figurines/{figurineId}/images", 1L)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.officialImageUrls.length()").value(1))
+        .andExpect(jsonPath("$.officialImageUrls[0]").value("https://images.example/pegasus.jpg"));
+
+    ArgumentCaptor<FigurineImageReq> captor = ArgumentCaptor.forClass(FigurineImageReq.class);
+    verify(service).createFigurineImage(captor.capture());
+
+    assertThat(captor.getValue().getFigurineId()).isEqualTo(1L);
+    assertThat(captor.getValue().getImageUrl())
+        .isEqualTo(URI.create("https://images.example/pegasus.jpg"));
+    assertThat(captor.getValue().isOfficialImage()).isTrue();
   }
 
   @Test
@@ -129,10 +146,10 @@ class FigurineImageControllerTest {
         new FigurineImageResp(List.of("https://images.example/pegasus.jpg"));
     when(service.createFigurineImage(request)).thenReturn(response);
 
-    ResponseEntity<FigurineImageResp> result = controller.createImage(1L, request);
+    var result = controller.createImage(1L, request);
 
     assertThat(request.getFigurineId()).isEqualTo(1L);
-    assertThat(result.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    assertThat(result.getStatusCode().value()).isEqualTo(201);
     assertThat(result.getBody()).isEqualTo(response);
     verify(service).createFigurineImage(request);
   }

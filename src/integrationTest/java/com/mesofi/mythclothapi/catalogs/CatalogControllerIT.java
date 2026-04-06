@@ -1,41 +1,25 @@
 package com.mesofi.mythclothapi.catalogs;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.it.ControllerBaseIT;
 
-@ActiveProfiles("integration")
-@SpringBootTest(webEnvironment = RANDOM_PORT)
-public class CatalogControllerIT {
+public class CatalogControllerIT extends ControllerBaseIT {
 
   private final String CATALOG = "/catalogs";
   private final String SERIES = "/series";
   private final String GROUP = "/groups";
   private final String DISTRIBUTION = "/distributions";
   private final String LINE_UP = "/lineups";
-
-  private final RestClient rest;
-
-  // Inject random port and build RestClient once
-  public CatalogControllerIT(
-      @Value("${local.server.port}") int port,
-      @Value("${server.servlet.context-path}") String contextPath) {
-
-    this.rest = RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
-  }
 
   @Test
   @DisplayName("Test flow to create and process catalogs")

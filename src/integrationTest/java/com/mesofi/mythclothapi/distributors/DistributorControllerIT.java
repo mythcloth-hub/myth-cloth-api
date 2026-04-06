@@ -10,30 +10,16 @@ import static org.springframework.http.HttpStatus.OK;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
+import com.mesofi.mythclothapi.it.ControllerBaseIT;
 
-@ActiveProfiles("integration")
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class DistributorControllerIT {
+public class DistributorControllerIT extends ControllerBaseIT {
 
   private static final String DISTRIBUTORS = "/distributors";
-
-  private final RestClient rest;
-
-  public DistributorControllerIT(
-      @Value("${local.server.port}") int port,
-      @Value("${server.servlet.context-path}") String contextPath) {
-
-    this.rest = RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
-  }
 
   @Test
   @DisplayName("Test flow to create and process distributors")
