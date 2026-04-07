@@ -25,6 +25,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
+import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
@@ -48,16 +50,11 @@ class DistributorControllerTest {
         .andExpect(
             jsonPath("$.detail")
                 .value(
-                    "Required request body is missing: public org.springframework.http.ResponseEntity"
-                        + "<com.mesofi.mythclothapi.distributors.dto.DistributorResp>"
-                        + " com.mesofi.mythclothapi.distributors.DistributorController"
-                        + ".createDistributor(com.mesofi.mythclothapi.distributors.dto.DistributorReq)"))
+                    "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.distributors.dto.DistributorResp> com.mesofi.mythclothapi.distributors.DistributorController.createDistributor(com.mesofi.mythclothapi.distributors.dto.DistributorReq)"))
         .andExpect(jsonPath("$.instance").value("/distributors"))
         .andExpect(jsonPath("$.status").value("400"))
         .andExpect(jsonPath("$.title").value("Invalid body"))
         .andExpect(jsonPath("$.timestamp").exists());
-
-    verifyNoInteractions(service);
   }
 
   @Test
@@ -72,8 +69,6 @@ class DistributorControllerTest {
         .andExpect(jsonPath("$.status").value("415"))
         .andExpect(jsonPath("$.title").value("Unsupported Media Type"))
         .andExpect(jsonPath("$.timestamp").exists());
-
-    verifyNoInteractions(service);
   }
 
   @Test
@@ -87,18 +82,73 @@ class DistributorControllerTest {
         .andExpect(jsonPath("$.status").value("400"))
         .andExpect(jsonPath("$.title").value("Validation Failed"))
         .andExpect(jsonPath("$.timestamp").exists())
-        .andExpect(jsonPath("$.errors.name").value("name must not be blank"))
-        .andExpect(jsonPath("$.errors.country").value("country is required"));
-
-    verifyNoInteractions(service);
+        .andExpect(jsonPath("$.errors.country").value("country is required"))
+        .andExpect(jsonPath("$.errors.name").value("name must not be blank"));
   }
 
   @Test
-  void createDistributor_shouldReturn201AndLocationHeader_whenRequestIsValid() throws Exception {
-    DistributorReq request = new DistributorReq(DistributorName.BANDAI, CountryCode.JP, null);
-    DistributorResp response = createResponse(1L, DistributorName.BANDAI, CountryCode.JP, null);
+  void createDistributor_shouldReturn400_whenCountryValueIsInvalid() throws Exception {
 
-    when(service.createDistributor(any())).thenReturn(response);
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"country\":\"-\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(
+                    "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.CountryCode` from String \"-\": not one of the values accepted for Enum class: [CN, JP, MX, US, ES]"))
+        .andExpect(jsonPath("$.instance").value("/distributors"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Invalid body"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void createDistributor_shouldReturn400_whenNameIsBlank() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"country\":\"JP\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+        .andExpect(jsonPath("$.instance").value("/distributors"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Validation Failed"))
+        .andExpect(jsonPath("$.timestamp").exists())
+        .andExpect(jsonPath("$.errors.name").value("name must not be blank"));
+  }
+
+  @Test
+  void createDistributor_shouldReturn400_whenNameIsInvalid() throws Exception {
+
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"country\":\"JP\", \"name\": \"Test\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.detail")
+                .value(
+                    "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.DistributorName` from String \"Test\": not one of the values accepted for Enum class: [DAM, BANDAI_CHINA, BLUE_FIN, BANDAI, DS_DISTRIBUTIONS, DTM]"))
+        .andExpect(jsonPath("$.instance").value("/distributors"))
+        .andExpect(jsonPath("$.status").value("400"))
+        .andExpect(jsonPath("$.title").value("Invalid body"))
+        .andExpect(jsonPath("$.timestamp").exists());
+  }
+
+  @Test
+  void createDistributor_shouldReturn201AndLocationHeader() throws Exception {
+    DistributorReq request =
+        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
+    DistributorResp response =
+        new DistributorResp(1L, "BANDAI", "Tamashii Nations", "JP", "www.google.com");
+
+    when(service.createDistributor(request)).thenReturn(response);
 
     mockMvc
         .perform(
@@ -108,11 +158,54 @@ class DistributorControllerTest {
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", endsWith("/distributors/1")))
         .andExpect(jsonPath("$.id").value(1L))
-        .andExpect(jsonPath("$.name").value(DistributorName.BANDAI.toString()))
-        .andExpect(jsonPath("$.description").value(DistributorName.BANDAI.getDescription()))
-        .andExpect(jsonPath("$.countryCode").value(CountryCode.JP.toString()));
+        .andExpect(jsonPath("$.name").value("BANDAI"))
+        .andExpect(jsonPath("$.description").value("Tamashii Nations"))
+        .andExpect(jsonPath("$.countryCode").value("JP"))
+        .andExpect(jsonPath("$.website").value("www.google.com"));
 
-    verify(service).createDistributor(any());
+    verify(service).createDistributor(request);
+  }
+
+  @Test
+  void createDistributor_shouldReturn409WhenDistributorAlreadyExists() throws Exception {
+    DistributorReq request =
+        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
+
+    when(service.createDistributor(request))
+        .thenThrow(
+            new DistributorAlreadyExistsException(
+                request.name().toString(), request.country().toString()));
+
+    mockMvc
+        .perform(
+            post("/distributors")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.detail").value("Distributor already exists: BANDAI - JP"))
+        .andExpect(jsonPath("$.instance").value("/distributors"))
+        .andExpect(jsonPath("$.status").value("409"))
+        .andExpect(jsonPath("$.title").value("Distributor already exists"))
+        .andExpect(jsonPath("$.timestamp").exists());
+
+    verify(service).createDistributor(request);
+  }
+
+  @Test
+  void retrieveDistributor_shouldReturn404WhenDistributorDoesNotExist() throws Exception {
+
+    when(service.retrieveDistributor(0L)).thenThrow(new DistributorNotFoundException(-1L));
+
+    mockMvc
+        .perform(get("/distributors/{id}", 0L))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.detail").value("Distributor not found"))
+        .andExpect(jsonPath("$.instance").value("/distributors/0"))
+        .andExpect(jsonPath("$.status").value("404"))
+        .andExpect(jsonPath("$.title").value("Distributor not found"))
+        .andExpect(jsonPath("$.timestamp").exists());
+
+    verify(service).retrieveDistributor(0L);
   }
 
   @Test
