@@ -101,9 +101,8 @@ public class DistributorService {
 
     Distributor entity = mapper.toDistributor(request);
 
-    // Check unique name+country but allow the same record to stay unchanged
-    if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())
-        && !(existing.getName() == request.name() && existing.getCountry() == request.country())) {
+    // Check unique name+country
+    if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
       throw new DistributorAlreadyExistsException(
           request.name().toString(), request.country().toString());
     }
