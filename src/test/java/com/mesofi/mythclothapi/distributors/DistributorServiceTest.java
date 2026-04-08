@@ -266,6 +266,67 @@ class DistributorServiceTest {
   }
 
   @Test
+  void updateDistributor_shouldSkipDuplicateCheck_whenNameAndCountryAreUnchanged() {
+    // Arrange
+    DistributorReq request =
+        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "https://new-bandai.com");
+    Distributor existing =
+        createEntity(6L, DistributorName.BANDAI, CountryCode.JP, "https://old.com");
+
+    when(distributorRepository.findById(6L)).thenReturn(Optional.of(existing));
+    when(distributorRepository.save(existing)).thenReturn(existing);
+
+    // Act
+    DistributorResp response = distributorService.updateDistributor(6L, request);
+
+    // Assert
+    assertThat(response)
+        .isNotNull()
+        .extracting(
+            DistributorResp::id,
+            DistributorResp::name,
+            DistributorResp::description,
+            DistributorResp::countryCode,
+            DistributorResp::website)
+        .containsExactly(
+            6L,
+            DistributorName.BANDAI.toString(),
+            DistributorName.BANDAI.getDescription(),
+            CountryCode.JP.toString(),
+            "https://new-bandai.com");
+
+    verify(distributorRepository).findById(6L);
+    verify(distributorRepository, never())
+        .existsByNameAndCountry(DistributorName.BANDAI, CountryCode.JP);
+    verify(distributorRepository).save(existing);
+  }
+
+  @Test
+  void updateDistributor_shouldCheckDuplicates_whenOnlyCountryChanges() {
+    // Arrange
+    DistributorReq request =
+        new DistributorReq(DistributorName.BANDAI, CountryCode.MX, "https://new.example.com");
+    Distributor existing =
+        createEntity(7L, DistributorName.BANDAI, CountryCode.JP, "https://old.com");
+
+    when(distributorRepository.findById(7L)).thenReturn(Optional.of(existing));
+    when(distributorRepository.existsByNameAndCountry(DistributorName.BANDAI, CountryCode.MX))
+        .thenReturn(true);
+
+    // Act + Assert
+    assertThatThrownBy(() -> distributorService.updateDistributor(7L, request))
+        .isInstanceOf(DistributorAlreadyExistsException.class)
+        .hasMessage("Distributor already exists")
+        .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
+        .isEqualTo("Distributor already exists: BANDAI - MX");
+
+    verify(distributorRepository).findById(7L);
+    verify(distributorRepository).existsByNameAndCountry(DistributorName.BANDAI, CountryCode.MX);
+    verify(distributorRepository, never())
+        .save(org.mockito.ArgumentMatchers.any(Distributor.class));
+  }
+
+  @Test
   void removeDistributor_shouldThrowNotFoundException_whenDistributorDoesNotExist() {
     // Arrange
     when(distributorRepository.existsById(8L)).thenReturn(false);

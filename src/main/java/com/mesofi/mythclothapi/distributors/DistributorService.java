@@ -102,9 +102,12 @@ public class DistributorService {
     Distributor entity = mapper.toDistributor(request);
 
     // Check unique name+countryCode
-    if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
-      throw new DistributorAlreadyExistsException(
-          request.name().toString(), request.countryCode().toString());
+    if (!(existing.getName() == entity.getName()
+        && existing.getCountry().equals(entity.getCountry()))) {
+      if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
+        throw new DistributorAlreadyExistsException(
+            request.name().toString(), request.countryCode().toString());
+      }
     }
 
     // Ask MapStruct to update only the changed fields
