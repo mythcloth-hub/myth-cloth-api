@@ -7,5 +7,5 @@ import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
 public record DistributorReq(
     @NotNull(message = "name must not be blank") DistributorName name,
-    @NotNull(message = "country is required") CountryCode country,
+    @NotNull(message = "countryCode is required") CountryCode countryCode,
     String website) {}

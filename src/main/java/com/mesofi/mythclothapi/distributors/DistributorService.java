@@ -42,14 +42,14 @@ public class DistributorService {
    */
   @Transactional
   public DistributorResp createDistributor(DistributorReq request) {
-    log.info("Creating distributor: {} - {}", request.name(), request.country());
+    log.info("Creating distributor: {} - {}", request.name(), request.countryCode());
 
     Distributor entity = mapper.toDistributor(request);
 
     // Validate unique constraint manually before hitting DB
     if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
       throw new DistributorAlreadyExistsException(
-          request.name().toString(), request.country().toString());
+          request.name().toString(), request.countryCode().toString());
     }
 
     var saved = repository.save(entity);
@@ -96,15 +96,15 @@ public class DistributorService {
    */
   @Transactional
   public DistributorResp updateDistributor(Long id, DistributorReq request) {
-    log.info("Updating distributor {} to {} - {}", id, request.name(), request.country());
+    log.info("Updating distributor {} to {} - {}", id, request.name(), request.countryCode());
     var existing = repository.findById(id).orElseThrow(() -> new DistributorNotFoundException(id));
 
     Distributor entity = mapper.toDistributor(request);
 
-    // Check unique name+country
+    // Check unique name+countryCode
     if (repository.existsByNameAndCountry(entity.getName(), entity.getCountry())) {
       throw new DistributorAlreadyExistsException(
-          request.name().toString(), request.country().toString());
+          request.name().toString(), request.countryCode().toString());
     }
 
     // Ask MapStruct to update only the changed fields

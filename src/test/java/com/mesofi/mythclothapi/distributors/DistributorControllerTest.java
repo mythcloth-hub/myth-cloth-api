@@ -82,7 +82,7 @@ class DistributorControllerTest {
         .andExpect(jsonPath("$.status").value("400"))
         .andExpect(jsonPath("$.title").value("Validation Failed"))
         .andExpect(jsonPath("$.timestamp").exists())
-        .andExpect(jsonPath("$.errors.country").value("country is required"))
+        .andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"))
         .andExpect(jsonPath("$.errors.name").value("name must not be blank"));
   }
 
@@ -93,7 +93,7 @@ class DistributorControllerTest {
         .perform(
             post("/distributors")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"country\":\"-\"}"))
+                .content("{\"countryCode\":\"-\"}"))
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.detail")
@@ -174,7 +174,7 @@ class DistributorControllerTest {
     when(service.createDistributor(request))
         .thenThrow(
             new DistributorAlreadyExistsException(
-                request.name().toString(), request.country().toString()));
+                request.name().toString(), request.countryCode().toString()));
 
     mockMvc
         .perform(
@@ -289,7 +289,7 @@ class DistributorControllerTest {
         .andExpect(jsonPath("$.status").value("400"))
         .andExpect(jsonPath("$.title").value("Validation Failed"))
         .andExpect(jsonPath("$.errors.name").value("name must not be blank"))
-        .andExpect(jsonPath("$.errors.country").value("country is required"));
+        .andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"));
 
     verifyNoInteractions(service);
   }

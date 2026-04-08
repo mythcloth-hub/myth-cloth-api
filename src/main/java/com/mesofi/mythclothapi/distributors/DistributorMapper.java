@@ -31,6 +31,7 @@ public interface DistributorMapper {
    */
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "figurines", ignore = true)
+  @Mapping(target = "country", source = "countryCode")
   Distributor toDistributor(DistributorReq request);
 
   /**
@@ -60,6 +61,7 @@ public interface DistributorMapper {
    */
   @Mapping(target = "id", ignore = true)
   @Mapping(target = "figurines", ignore = true)
+  @Mapping(target = "country", source = "countryCode")
   @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
   void updateDistributor(DistributorReq request, @MappingTarget Distributor entity);
 }
