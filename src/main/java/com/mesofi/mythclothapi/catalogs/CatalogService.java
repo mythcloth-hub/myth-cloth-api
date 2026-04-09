@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.catalogs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -8,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -58,6 +60,12 @@ public class CatalogService {
   }
 
   @Transactional(readOnly = true)
+  public List<CatalogResp> retrieveCatalogs(@NotEmpty String catalogName) {
+    List<Descriptive> descriptiveList = findAll(catalogName);
+    return descriptiveList.stream().map(mapper::toCatalogResp).toList();
+  }
+
+  @Transactional(readOnly = true)
   public Descriptive retrieveCatalogWithDescription(
       @NotEmpty String catalogName, @NotNull String description) {
     return findByDescription(catalogName, description);
@@ -104,6 +112,14 @@ public class CatalogService {
                         () ->
                             new CatalogNotFoundException(
                                 "ID %d not found in catalog '%s'".formatted(id, catalogName))))
+        .orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+  }
+
+  @SuppressWarnings("unchecked")
+  private <T> List<T> findAll(String catalogName) {
+    return Optional.ofNullable(repositories.get(catalogName))
+        .map(repo -> (IdDescRepository<T, Long>) repo)
+        .map(ListCrudRepository::findAll)
         .orElseThrow(() -> new RepositoryNotFoundException(catalogName));
   }
 

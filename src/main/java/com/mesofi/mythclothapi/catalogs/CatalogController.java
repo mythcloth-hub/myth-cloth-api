@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.catalogs;
 
 import java.net.URI;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -97,6 +98,22 @@ public class CatalogController {
   @GetMapping("/{catalogType}/{id}")
   public CatalogResp retrieveCatalog(@PathVariable CatalogType catalogType, @PathVariable Long id) {
     return service.retrieveCatalog(catalogType.name(), id);
+  }
+
+  /**
+   * Retrieves all catalog entries for a given catalog type.
+   *
+   * <p>Returns the full list of descriptive entries in the requested catalog (for example, all
+   * {@code groups}, {@code series}, {@code lineups}, or {@code distributions}).
+   *
+   * @param catalogType the type of catalog to retrieve
+   * @return a list of {@link CatalogResp} entries for the requested catalog type
+   * @throws com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException if the catalog
+   *     type is not recognized by the service layer
+   */
+  @GetMapping("/{catalogType}")
+  public List<CatalogResp> retrieveCatalogs(@PathVariable CatalogType catalogType) {
+    return service.retrieveCatalogs(catalogType.name());
   }
 
   /**

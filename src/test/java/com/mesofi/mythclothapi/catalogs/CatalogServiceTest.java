@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -169,6 +170,65 @@ class CatalogServiceTest {
 
     // Assert
     assertThat(response).isEqualTo(new CatalogResp(7L, "Asgard"));
+  }
+
+  @Test
+  void retrieveCatalogs_shouldThrowConstraintViolation_whenCatalogNameIsNull() {
+    // Act
+    assertThatThrownBy(() -> catalogService.retrieveCatalogs(null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("retrieveCatalogs.catalogName: must not be empty");
+  }
+
+  @Test
+  void retrieveCatalogs_shouldThrowConstraintViolation_whenCatalogNameIsEmpty() {
+    // Act
+    assertThatThrownBy(() -> catalogService.retrieveCatalogs(""))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("retrieveCatalogs.catalogName: must not be empty");
+  }
+
+  @Test
+  void retrieveCatalogs_shouldThrowRepositoryNotFoundException_whenRepositoryIsMissing() {
+    // Act
+    assertThatThrownBy(() -> catalogService.retrieveCatalogs("groups"))
+        .isInstanceOf(RepositoryNotFoundException.class)
+        .hasMessageContaining("Repository not found: groups");
+  }
+
+  @Test
+  void retrieveCatalogs_shouldReturnMappedResponses_whenEntriesExist() {
+    // Arrange
+    IdDescRepository<Group, Long> repository = mockRepository();
+    Group bronze = group(1L, "Bronze Saints");
+    Group asgard = group(2L, "Asgard");
+
+    setRepository("groups", repository);
+    when(repository.findAll()).thenReturn(List.of(bronze, asgard));
+
+    // Act
+    List<CatalogResp> response = catalogService.retrieveCatalogs("groups");
+
+    // Assert
+    assertThat(response)
+        .isEqualTo(List.of(new CatalogResp(1L, "Bronze Saints"), new CatalogResp(2L, "Asgard")));
+    verify(repository).findAll();
+  }
+
+  @Test
+  void retrieveCatalogs_shouldReturnEmptyList_whenNoEntriesExist() {
+    // Arrange
+    IdDescRepository<Group, Long> repository = mockRepository();
+
+    setRepository("groups", repository);
+    when(repository.findAll()).thenReturn(List.of());
+
+    // Act
+    List<CatalogResp> response = catalogService.retrieveCatalogs("groups");
+
+    // Assert
+    assertThat(response).isEqualTo(List.of());
+    verify(repository).findAll();
   }
 
   @Test

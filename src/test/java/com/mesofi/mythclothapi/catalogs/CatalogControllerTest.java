@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -209,6 +211,35 @@ class CatalogControllerTest {
         .andExpect(jsonPath("$.timestamp").exists());
 
     verify(service).retrieveCatalog("groups", 7L);
+  }
+
+  @Test
+  void retrieveCatalogs_shouldReturn200_whenCatalogEntriesExist() throws Exception {
+    when(service.retrieveCatalogs("groups"))
+        .thenReturn(List.of(new CatalogResp(1L, "Bronze Saints"), new CatalogResp(2L, "Asgard")));
+
+    mockMvc
+        .perform(get("/catalogs/groups"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(2))
+        .andExpect(jsonPath("$[0].id").value(1L))
+        .andExpect(jsonPath("$[0].description").value("Bronze Saints"))
+        .andExpect(jsonPath("$[1].id").value(2L))
+        .andExpect(jsonPath("$[1].description").value("Asgard"));
+
+    verify(service).retrieveCatalogs("groups");
+  }
+
+  @Test
+  void retrieveCatalogs_shouldReturn200WithEmptyList_whenCatalogHasNoEntries() throws Exception {
+    when(service.retrieveCatalogs("groups")).thenReturn(List.of());
+
+    mockMvc
+        .perform(get("/catalogs/groups"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.length()").value(0));
+
+    verify(service).retrieveCatalogs("groups");
   }
 
   @Test
