@@ -61,6 +61,10 @@ docker ps
 
 ## 📄 API Documentation
 
-If enabled:
+After starting the app, open:
 
-    http://localhost:8080/swagger-ui.html
+- `http://localhost:8080/api/v1/swagger-ui.html`
+
+Raw OpenAPI file:
+
+- `http://localhost:8080/api/v1/swagger.yaml`
