@@ -12,7 +12,7 @@
     {
       "supplierId": "{{supplierIdMXN}}",
       "currency": "MXN",
-      "price": 3280.00,
+      "price": 3280.0,
       "preorderOpensAt": "2021-02-22"
     }
   ],

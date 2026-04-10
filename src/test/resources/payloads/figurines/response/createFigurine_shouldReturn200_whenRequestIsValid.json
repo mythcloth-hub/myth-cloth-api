@@ -12,8 +12,8 @@
         "website": "https://tamashii.jp/"
       },
       "currency": "JPY",
-      "price": 16000.00,
-      "priceWithTax": 17600.00,
+      "price": 16000.0,
+      "priceWithTax": 17600.0,
       "announcedAt": "2025-11-13",
       "preorderOpensAt": "2025-05-12",
       "releaseDate": "2026-05-01",
@@ -28,7 +28,7 @@
         "website": "https://animexico-online.com/"
       },
       "currency": "MXN",
-      "price": 5200.00,
+      "price": 5200.0,
       "announcedAt": "2025-12-13",
       "preorderOpensAt": "2025-12-14",
       "releaseDate": "2026-01-01",

@@ -4,7 +4,7 @@
     {
       "supplierId": "{{supplierIdHK}}",
       "currency": "CNY",
-      "price": 700.00,
+      "price": 700.0,
       "releaseDate": "2016-08-08",
       "releaseDateConfirmed": true
     }
