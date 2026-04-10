@@ -4,7 +4,7 @@
     {
       "supplierId": "{{supplierId}}",
       "currency": "JPY",
-      "price": 3600.00,
+      "price": 3600.0,
       "releaseDate": "2004-02-24",
       "releaseDateConfirmed": true
     },

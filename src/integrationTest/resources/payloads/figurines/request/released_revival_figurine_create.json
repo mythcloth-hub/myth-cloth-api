@@ -4,7 +4,7 @@
     {
       "supplierId": "{{supplierId}}",
       "currency": "JPY",
-      "price": 15000.00,
+      "price": 15000.0,
       "announcedAt": "2024-02-16",
       "preorderOpensAt": "2025-02-14",
       "releaseDate": "2025-02-14",
@@ -13,7 +13,7 @@
     {
       "supplierId": "{{supplierIdMXN}}",
       "currency": "MXN",
-      "price": 2900.00,
+      "price": 2900.0,
       "preorderOpensAt": "2025-02-17",
       "releaseDate": "2025-04-07",
       "releaseDateConfirmed": true
