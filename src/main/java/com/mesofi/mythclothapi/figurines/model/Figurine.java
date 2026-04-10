@@ -14,6 +14,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
@@ -105,6 +106,7 @@ public class Figurine extends BaseId {
   private String remarks;
 
   @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("eventDate DESC")
   private List<FigurineEvent> events = new ArrayList<>();
 
   @ElementCollection
