@@ -56,6 +56,14 @@ public class FigurineEventReq {
   @NotNull(message = "event date must be provided")
   private LocalDate date;
 
+  /**
+   * Indicates whether the event date is confirmed.
+   *
+   * <p>When {@code true}, the provided date is considered final. When {@code false}, the date is
+   * tentative and may change.
+   *
+   * <p>Defaults to {@code true}.
+   */
   private boolean dateConfirmed = true;
 
   /**
