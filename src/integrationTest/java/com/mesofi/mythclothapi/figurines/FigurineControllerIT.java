@@ -176,8 +176,7 @@ public class FigurineControllerIT {
         @ScenarioRequest(
             id = "queried-figurine-id-resp",
             type = ScenarioRequest.Type.EXPECTED_RESPONSE,
-            resource =
-                "released_revival_figurine_create.json") // it is OK to expect the same response.
+            resource = "released_revival_figurine_read.json")
       })
   void retrieveReleasedFigurine_queryExistingFigurine(FigurineScenarioContext ctx) {
     long figurineIdCreated = assertFigurineCreated(ctx);
