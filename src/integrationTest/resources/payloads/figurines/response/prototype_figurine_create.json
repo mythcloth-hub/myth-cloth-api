@@ -48,6 +48,7 @@
     {
       "id": 1,
       "date": "2018-10-27",
+      "dateConfirmed": true,
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "First announced as a possible future release."

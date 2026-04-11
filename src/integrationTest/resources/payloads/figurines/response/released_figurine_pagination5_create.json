@@ -54,6 +54,7 @@
     {
       "id": 5,
       "date": "2011-11-25",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

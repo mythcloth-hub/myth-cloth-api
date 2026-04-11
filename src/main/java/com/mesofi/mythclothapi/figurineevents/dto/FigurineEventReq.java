@@ -56,6 +56,8 @@ public class FigurineEventReq {
   @NotNull(message = "event date must be provided")
   private LocalDate date;
 
+  private boolean dateConfirmed = true;
+
   /**
    * The region (country) where this event is applicable.
    *

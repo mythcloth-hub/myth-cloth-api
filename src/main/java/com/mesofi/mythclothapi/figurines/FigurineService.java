@@ -430,19 +430,25 @@ public class FigurineService {
                 addDefaultEvent(
                     "First announced as a possible future release.",
                     announcementDate,
+                    true,
                     ANNOUNCEMENT,
                     figurine));
     Optional.ofNullable(figurineDistributor.getPreorderDate())
         .ifPresent(
             preorderDate ->
                 addDefaultEvent(
-                    "Pre-orders are officially open.", preorderDate, PREORDER_OPEN, figurine));
+                    "Pre-orders are officially open.",
+                    preorderDate,
+                    true,
+                    PREORDER_OPEN,
+                    figurine));
     Optional.ofNullable(figurineDistributor.getReleaseDate())
         .ifPresent(
             releaseDate ->
                 addDefaultEvent(
                     "The global release date has been officially announced.",
                     releaseDate,
+                    figurineDistributor.isReleaseDateConfirmed(),
                     RELEASE,
                     figurine));
   }
@@ -454,15 +460,21 @@ public class FigurineService {
    *
    * @param description event description
    * @param date event date
+   * @param dateConfirmed whether the event date is confirmed or tentative
    * @param type event type
    * @param figurine target figurine
    */
   private void addDefaultEvent(
-      String description, LocalDate date, FigurineEventType type, Figurine figurine) {
+      String description,
+      LocalDate date,
+      boolean dateConfirmed,
+      FigurineEventType type,
+      Figurine figurine) {
 
     FigurineEvent event = new FigurineEvent();
     event.setDescription(description);
     event.setEventDate(date);
+    event.setEventDateConfirmed(dateConfirmed);
     event.setType(type);
     FigurineDistributor figurineDistributor =
         figurine.getDistributors().stream().findFirst().orElseThrow();

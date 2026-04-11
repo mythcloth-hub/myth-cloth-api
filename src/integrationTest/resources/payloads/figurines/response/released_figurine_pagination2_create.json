@@ -52,6 +52,7 @@
     {
       "id": 2,
       "date": "2010-08-07",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

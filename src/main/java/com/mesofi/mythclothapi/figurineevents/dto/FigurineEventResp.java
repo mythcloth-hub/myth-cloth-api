@@ -23,4 +23,9 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record FigurineEventResp(
-    long id, LocalDate date, FigurineEventType type, CountryCode region, String description) {}
+    long id,
+    LocalDate date,
+    boolean dateConfirmed,
+    FigurineEventType type,
+    CountryCode region,
+    String description) {}

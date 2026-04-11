@@ -225,6 +225,7 @@ class FigurineEventControllerTest {
     return new FigurineEventResp(
         id,
         LocalDate.of(2020, 1, 1),
+        true,
         FigurineEventType.PREORDER_OPEN,
         CountryCode.JP,
         "Pre-order opened");

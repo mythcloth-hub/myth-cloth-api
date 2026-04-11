@@ -723,24 +723,30 @@ public class FigurineServiceTest {
     assertThat(figurineToBeSaved.getCreationDate()).isNotNull();
 
     assertThat(figurineToBeSaved.getEvents().size()).isEqualTo(3);
+
     assertThat(figurineToBeSaved.getEvents().getFirst().getDescription())
         .isEqualTo("First announced as a possible future release.");
     assertThat(figurineToBeSaved.getEvents().getFirst().getEventDate())
         .isEqualTo(LocalDate.of(2026, 1, 1));
+    assertThat(figurineToBeSaved.getEvents().getFirst().isEventDateConfirmed()).isTrue();
     assertThat(figurineToBeSaved.getEvents().getFirst().getType())
         .isEqualTo(FigurineEventType.ANNOUNCEMENT);
     assertThat(figurineToBeSaved.getEvents().getFirst().getRegion()).isEqualTo(JP);
+
     assertThat(figurineToBeSaved.getEvents().get(1).getDescription())
         .isEqualTo("Pre-orders are officially open.");
     assertThat(figurineToBeSaved.getEvents().get(1).getEventDate())
         .isEqualTo(LocalDate.of(2026, 2, 2));
+    assertThat(figurineToBeSaved.getEvents().get(1).isEventDateConfirmed()).isTrue();
     assertThat(figurineToBeSaved.getEvents().get(1).getType())
         .isEqualTo(FigurineEventType.PREORDER_OPEN);
     assertThat(figurineToBeSaved.getEvents().get(1).getRegion()).isEqualTo(JP);
+
     assertThat(figurineToBeSaved.getEvents().get(2).getDescription())
         .isEqualTo("The global release date has been officially announced.");
     assertThat(figurineToBeSaved.getEvents().get(2).getEventDate())
         .isEqualTo(LocalDate.of(2026, 3, 3));
+    assertThat(figurineToBeSaved.getEvents().get(2).isEventDateConfirmed()).isFalse();
     assertThat(figurineToBeSaved.getEvents().get(2).getType()).isEqualTo(FigurineEventType.RELEASE);
     assertThat(figurineToBeSaved.getEvents().get(2).getRegion()).isEqualTo(JP);
     figurineToBeSaved

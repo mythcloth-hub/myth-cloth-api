@@ -78,6 +78,7 @@
     {
       "id": 1,
       "date": "2021-02-22",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."
@@ -85,6 +86,7 @@
     {
       "id": 2,
       "date": "2020-09-04",
+      "dateConfirmed": true,
       "type": "PREORDER_OPEN",
       "region": "JP",
       "description": "Pre-orders are officially open."

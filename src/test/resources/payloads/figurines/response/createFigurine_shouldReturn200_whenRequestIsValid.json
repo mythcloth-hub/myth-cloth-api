@@ -80,6 +80,7 @@
     {
       "id": 1,
       "date": "2025-11-13",
+      "dateConfirmed": true,
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "Revealed at Tamashii Nations 2025."
