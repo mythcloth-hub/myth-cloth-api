@@ -76,10 +76,10 @@
   "events": [
     {
       "id": 1,
-      "date": "2025-08-06",
-      "type": "ANNOUNCEMENT",
+      "date": "2026-01-01",
+      "type": "RELEASE",
       "region": "JP",
-      "description": "First announced as a possible future release."
+      "description": "The global release date has been officially announced."
     },
     {
       "id": 2,
@@ -90,10 +90,10 @@
     },
     {
       "id": 3,
-      "date": "2026-01-01",
-      "type": "RELEASE",
+      "date": "2025-08-06",
+      "type": "ANNOUNCEMENT",
       "region": "JP",
-      "description": "The global release date has been officially announced."
+      "description": "First announced as a possible future release."
     }
   ],
   "createdAt": "2026-01-31T09:47:58.625600Z",

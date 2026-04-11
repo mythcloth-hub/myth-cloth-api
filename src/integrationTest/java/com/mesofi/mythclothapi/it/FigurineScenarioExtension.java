@@ -108,6 +108,15 @@ public class FigurineScenarioExtension
     for (ScenarioRequest payload : scenario.payloads()) {
       Optional<JsonNode> jsonNode =
           Optional.of(payload)
+              .map(
+                  scenarioRequest -> {
+                    log.info(
+                        "Loading JSON fixture from => [{}] id: {} - {}",
+                        getJsonType(scenarioRequest.type()).name(),
+                        scenarioRequest.id(),
+                        scenarioRequest.resource());
+                    return scenarioRequest;
+                  })
               .map(ScenarioRequest::resource)
               .filter(StringUtils::hasText)
               .map(filename -> loadJsonFixture(filename, getJsonType(payload.type())));
