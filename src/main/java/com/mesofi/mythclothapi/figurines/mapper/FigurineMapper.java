@@ -195,15 +195,16 @@ public interface FigurineMapper {
 
     List<FigurineDistributor> distributorList = new ArrayList<>();
     FigurineDistributor jp = new FigurineDistributor();
-    Optional<LocalDateConfirmed> opt = Optional.ofNullable(csv.getReleaseJPY());
+    Optional<LocalDateConfirmed> optJPY = Optional.ofNullable(csv.getReleaseJPY());
+    Optional<LocalDateConfirmed> optMXN = Optional.ofNullable(csv.getReleaseMXN());
 
     // In case the figurine has been released in China or Japan
     jp.setCurrency(csv.isHk() ? CNY : JPY);
     jp.setPrice(csv.getPriceJPY());
     jp.setAnnouncementDate(csv.getAnnouncementJPY());
     jp.setPreorderDate(csv.getPreorderJPY());
-    jp.setReleaseDate(opt.map(LocalDateConfirmed::getDate).orElse(null));
-    jp.setReleaseDateConfirmed(opt.map(LocalDateConfirmed::isConfirmed).orElse(false));
+    jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
+    jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
     jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
     distributorList.add(jp);
 
@@ -214,7 +215,8 @@ public interface FigurineMapper {
               mx.setCurrency(MXN);
               mx.setPrice(price);
               mx.setPreorderDate(csv.getPreorderMXN());
-              mx.setReleaseDate(csv.getReleaseMXN());
+              mx.setReleaseDate(optMXN.map(LocalDateConfirmed::getDate).orElse(null));
+              mx.setReleaseDateConfirmed(optMXN.map(LocalDateConfirmed::isConfirmed).orElse(false));
               mx.setDistributor(findDistributorByCountry(distributors, CountryCode.MX));
               distributorList.add(mx);
             });

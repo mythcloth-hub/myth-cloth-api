@@ -43,8 +43,8 @@ public class FigurineCsv {
   @CsvCustomBindByName(column = "Preorder (MXN)", converter = LocalDateConverter.class)
   private LocalDate preorderMXN;
 
-  @CsvCustomBindByName(column = "Release (MXN)", converter = LocalDateConverter.class)
-  private LocalDate releaseMXN;
+  @CsvCustomBindByName(column = "Release (MXN)", converter = LocalDateConfirmedConverter.class)
+  private LocalDateConfirmed releaseMXN;
 
   @CsvBindByName(column = "Link")
   private String tamashiiUrl;
