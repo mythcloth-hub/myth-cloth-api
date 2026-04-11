@@ -55,6 +55,7 @@
   "events": [
     {
       "date": "2004-02-24",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

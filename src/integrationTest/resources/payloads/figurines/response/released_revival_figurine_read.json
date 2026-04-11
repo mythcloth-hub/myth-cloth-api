@@ -76,6 +76,7 @@
     {
       "id": 1,
       "date": "2025-02-14",
+      "dateConfirmed": true,
       "type": "PREORDER_OPEN",
       "region": "JP",
       "description": "Pre-orders are officially open."
@@ -83,6 +84,7 @@
     {
       "id": 2,
       "date": "2025-02-14",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."
@@ -90,6 +92,7 @@
     {
       "id": 3,
       "date": "2024-02-16",
+      "dateConfirmed": true,
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "First announced as a possible future release."

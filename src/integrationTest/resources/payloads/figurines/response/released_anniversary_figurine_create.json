@@ -84,6 +84,7 @@
     {
       "id": 1,
       "date": "2023-09-15",
+      "dateConfirmed": true,
       "type": "ANNOUNCEMENT",
       "region": "JP",
       "description": "First announced as a possible future release."
@@ -91,6 +92,7 @@
     {
       "id": 2,
       "date": "2023-11-17",
+      "dateConfirmed": true,
       "type": "PREORDER_OPEN",
       "region": "JP",
       "description": "Pre-orders are officially open."
@@ -98,6 +100,7 @@
     {
       "id": 3,
       "date": "2024-06-17",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

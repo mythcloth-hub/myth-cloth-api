@@ -55,6 +55,18 @@ public class FigurineEvent extends Descriptive {
   private LocalDate eventDate;
 
   /**
+   * Indicates whether the {@link #eventDate} has been officially confirmed.
+   *
+   * <p>This flag distinguishes tentative or estimated dates from dates that have been formally
+   * announced by the manufacturer, distributor, or other authoritative source.
+   *
+   * <p>A value of {@code true} means the event date is confirmed, while {@code false} means it is
+   * still provisional.
+   */
+  @Column(nullable = false)
+  private boolean eventDateConfirmed;
+
+  /**
    * The region (country) associated with this event.
    *
    * <p>This typically represents the market or location where the event is applicable, such as the

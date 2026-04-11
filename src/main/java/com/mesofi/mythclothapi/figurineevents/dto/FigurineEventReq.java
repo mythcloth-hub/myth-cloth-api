@@ -57,6 +57,16 @@ public class FigurineEventReq {
   private LocalDate date;
 
   /**
+   * Indicates whether the event date is confirmed.
+   *
+   * <p>When {@code true}, the provided date is considered final. When {@code false}, the date is
+   * tentative and may change.
+   *
+   * <p>Defaults to {@code true}.
+   */
+  private boolean dateConfirmed = true;
+
+  /**
    * The region (country) where this event is applicable.
    *
    * <p>Represents the market or location associated with the event (e.g., {@code JP}, {@code MX}).
