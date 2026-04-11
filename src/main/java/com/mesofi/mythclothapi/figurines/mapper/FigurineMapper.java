@@ -18,6 +18,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -516,9 +517,22 @@ public interface FigurineMapper {
       return null;
     }
 
-    String[] parts = raw.split(":", 2);
-    String datePart = parts[0].trim();
-    String descriptionPart = parts.length > 1 ? parts[1].trim() : "";
+    String[] parts = raw.split(":", 3);
+
+    String datePart;
+    String descriptionPart = "";
+    String regionPart = "";
+
+    if (parts.length == 1) {
+      datePart = parts[0].trim();
+    } else if (parts.length == 2) {
+      datePart = parts[0].trim();
+      descriptionPart = parts[1].trim();
+    } else {
+      datePart = parts[0].trim();
+      regionPart = parts[1].trim();
+      descriptionPart = parts[2].trim();
+    }
 
     // Validate date
     LocalDate date;
@@ -531,9 +545,16 @@ public interface FigurineMapper {
     FigurineEvent event = new FigurineEvent();
     event.setDescription(descriptionPart);
     event.setEventDate(date);
+    event.setEventDateConfirmed(true);
+    CountryCode countryCode =
+        StringUtils.hasLength(regionPart)
+            ? CountryCode.valueOf(regionPart.toUpperCase())
+            : CountryCode.JP;
+    event.setRegion(countryCode);
+
     // FIXME The following properties are hardcoded, fix them
     event.setType(FigurineEventType.ANNOUNCEMENT);
-    event.setRegion(CountryCode.JP);
+
     return event;
   }
 
