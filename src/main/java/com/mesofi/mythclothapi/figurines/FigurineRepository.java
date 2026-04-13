@@ -2,7 +2,6 @@ package com.mesofi.mythclothapi.figurines;
 
 import java.util.Optional;
 
-import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,9 +10,9 @@ import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
-/**
- * Repository for {@link Figurine} persistence and read operations.
- */
+import lombok.NonNull;
+
+/** Repository for {@link Figurine} persistence and read operations. */
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long> {
 
@@ -43,7 +42,7 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
    *         END AS release_status,
    *         fd.release_date,
    *         fd.announcement_date,
-   *         f.*
+   *         f. *
    *     FROM
    *         figurines f
    *         JOIN figurine_distributor fd
