@@ -38,6 +38,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -391,6 +392,7 @@ public interface FigurineMapper {
    */
   @Mapping(target = "name", source = "normalizedName")
   @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
+  @Mapping(target = "releaseStatus", expression = "java(resolveReleaseStatus(figurine))")
   @Mapping(target = "lineUp", source = "lineup")
   @Mapping(target = "isMetalBody", source = "metalBody")
   @Mapping(target = "isOriginalColorEdition", source = "oce")
@@ -411,6 +413,36 @@ public interface FigurineMapper {
       Figurine figurine,
       @Context Function<Figurine, String> createDisplayableName,
       @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+
+  /**
+   * Computes API release status from the primary distributor timeline.
+   *
+   * <p>The JP/Asia distributor (id=1) is preferred when available to keep parity with list ordering
+   * rules. If not present, the first distributor is used as fallback.
+   */
+  default ReleaseStatus resolveReleaseStatus(Figurine figurine) {
+    FigurineDistributor primaryDistributor =
+        figurine.getDistributors().stream()
+            .filter(fd -> fd.getDistributor() != null)
+            .filter(fd -> Objects.equals(fd.getDistributor().getId(), 1L))
+            .findFirst()
+            .orElseGet(() -> figurine.getDistributors().stream().findFirst().orElse(null));
+
+    if (primaryDistributor == null) {
+      return ReleaseStatus.RUMORED;
+    }
+
+    LocalDate releaseDate = primaryDistributor.getReleaseDate();
+    if (releaseDate != null) {
+      return LocalDate.now().isAfter(releaseDate)
+          ? ReleaseStatus.RELEASED
+          : ReleaseStatus.ANNOUNCED;
+    }
+
+    return primaryDistributor.getAnnouncementDate() != null
+        ? ReleaseStatus.PROTOTYPE
+        : ReleaseStatus.RUMORED;
+  }
 
   /**
    * Maps a {@link FigurineDistributor} domain entity to its API response representation.

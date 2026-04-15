@@ -31,6 +31,7 @@ import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -332,6 +333,7 @@ class FigurineControllerTest {
                 null,
                 false)),
         "https://tamashiiweb.com/item/12345",
+        ReleaseStatus.ANNOUNCED,
         new CatalogResp(2L, "Tamashii Nations"),
         new CatalogResp(1L, "Myth Cloth EX"),
         new CatalogResp(1L, "Saint Seiya"),

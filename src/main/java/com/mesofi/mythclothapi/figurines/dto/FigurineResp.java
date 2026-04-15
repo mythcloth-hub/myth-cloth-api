@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record FigurineResp(
@@ -15,6 +16,7 @@ public record FigurineResp(
     String displayableName,
     List<FigurineDistributorResp> distributors,
     String tamashiiUrl,
+    ReleaseStatus releaseStatus,
     CatalogResp distribution,
     CatalogResp lineUp,
     CatalogResp series,
