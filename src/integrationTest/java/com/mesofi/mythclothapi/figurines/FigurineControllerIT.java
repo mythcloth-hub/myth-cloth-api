@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
@@ -54,6 +55,7 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
 @ActiveProfiles("integration")
 @ExtendWith(FigurineScenarioExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
+@Sql(scripts = "/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineControllerIT {
 
   private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
