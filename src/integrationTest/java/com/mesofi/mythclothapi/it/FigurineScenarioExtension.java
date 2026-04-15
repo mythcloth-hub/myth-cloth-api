@@ -18,6 +18,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -42,7 +43,7 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 
 public class FigurineScenarioExtension
-    implements BeforeEachCallback, AfterEachCallback, ParameterResolver {
+    implements BeforeAllCallback, AfterEachCallback, BeforeEachCallback, ParameterResolver {
   private static final Logger log = LoggerFactory.getLogger(FigurineScenarioExtension.class);
 
   /**
@@ -64,15 +65,9 @@ public class FigurineScenarioExtension
   private static final String SERIES_ID = "seriesId";
   private static final String GROUP_ID = "groupId";
   private static final String ANNIVERSARY_ID = "anniversaryId";
-  List<DistributorResp> distributors;
-  List<CatalogResp> distributions;
 
-  List<CatalogResp> lineUps;
-  List<CatalogResp> series;
-  List<CatalogResp> groups;
-  List<AnniversaryResp> anniversaries;
   private String scenarioName;
-  private CatalogTestClient catalogTestClient;
+
   private RestClient restClient;
 
   private final List<ScenarioArtifact> payloads = new ArrayList<>();
@@ -84,9 +79,19 @@ public class FigurineScenarioExtension
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Override
-  public void beforeEach(ExtensionContext context) {
+  public void beforeAll(ExtensionContext context) {
     this.restClient = retrieveRestClient(context);
-    this.catalogTestClient = new CatalogTestClient(restClient);
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext context) {
+    CatalogTestClient catalogTestClient = new CatalogTestClient(this.restClient);
+    List<DistributorResp> distributors = catalogTestClient.createDistributors();
+    List<CatalogResp> distributions = catalogTestClient.createCatalogs(CatalogType.distributions);
+    List<CatalogResp> lineUps = catalogTestClient.createCatalogs(CatalogType.lineups);
+    List<CatalogResp> series = catalogTestClient.createCatalogs(CatalogType.series);
+    List<CatalogResp> groups = catalogTestClient.createCatalogs(CatalogType.groups);
+    List<AnniversaryResp> anniversaries = catalogTestClient.createAnniversaries();
 
     FigurineScenario scenario =
         Objects.requireNonNull(
@@ -101,8 +106,6 @@ public class FigurineScenarioExtension
 
     log.info("Executing scenario '{}' ...", name);
     this.scenarioName = scenario.name();
-
-    CatalogTestClient client = this.catalogTestClient;
 
     Map<String, Object> placeholders = new HashMap<>();
     for (ScenarioRequest payload : scenario.payloads()) {
@@ -135,25 +138,18 @@ public class FigurineScenarioExtension
       boolean hasAnniversaryId = hasCatalogIdPlaceholder(jsonNode.get(), ANNIVERSARY_ID);
 
       if (hasSupplierId) {
-        this.distributors =
-            Optional.ofNullable(this.distributors).orElseGet(client::createDistributors);
-
-        DistributorResp distributor = findDistributor(this.distributors, JP);
-        DistributorResp distributorMXN = findDistributor(this.distributors, MX);
-        DistributorResp distributorHK = findDistributor(this.distributors, CN);
+        DistributorResp distributor = findDistributor(distributors, JP);
+        DistributorResp distributorMXN = findDistributor(distributors, MX);
+        DistributorResp distributorHK = findDistributor(distributors, CN);
 
         placeholders.put(SUPPLIER_ID, distributor.id());
         placeholders.put(SUPPLIER_ID_MXN, distributorMXN.id());
         placeholders.put(SUPPLIER_ID_HK, distributorHK.id());
       }
       if (hasDistributionId) {
-        this.distributions =
-            Optional.ofNullable(this.distributions)
-                .orElseGet(() -> client.createCatalogs(CatalogType.distributions));
-
         CatalogResp catalogDistribution =
             findByDescription(
-                this.distributions,
+                distributions,
                 selector.distribution(),
                 CatalogResp::description,
                 "Distribution not found for a given value");
@@ -161,13 +157,9 @@ public class FigurineScenarioExtension
         placeholders.put(DIST_ID, catalogDistribution.id());
       }
       if (hasLineUpId) {
-        this.lineUps =
-            Optional.ofNullable(this.lineUps)
-                .orElseGet(() -> client.createCatalogs(CatalogType.lineups));
-
         CatalogResp catalogLineUp =
             findByDescription(
-                this.lineUps,
+                lineUps,
                 selector.lineUp(),
                 CatalogResp::description,
                 "LineUp not found for a given value");
@@ -175,13 +167,9 @@ public class FigurineScenarioExtension
         placeholders.put(LINEUP_ID, catalogLineUp.id());
       }
       if (hasSeriesId) {
-        this.series =
-            Optional.ofNullable(this.series)
-                .orElseGet(() -> client.createCatalogs(CatalogType.series));
-
         CatalogResp catalogSeries =
             findByDescription(
-                this.series,
+                series,
                 selector.series(),
                 CatalogResp::description,
                 "Series not found for a given value");
@@ -189,13 +177,9 @@ public class FigurineScenarioExtension
         placeholders.put(SERIES_ID, catalogSeries.id());
       }
       if (hasGroupId) {
-        this.groups =
-            Optional.ofNullable(this.groups)
-                .orElseGet(() -> client.createCatalogs(CatalogType.groups));
-
         CatalogResp catalogGroup =
             findByDescription(
-                this.groups,
+                groups,
                 selector.group(),
                 CatalogResp::description,
                 "Group not found for a given value");
@@ -203,11 +187,8 @@ public class FigurineScenarioExtension
         placeholders.put(GROUP_ID, catalogGroup.id());
       }
       if (hasAnniversaryId) {
-        this.anniversaries =
-            Optional.ofNullable(this.anniversaries).orElseGet(client::createAnniversaries);
-
         AnniversaryResp catalogAnniversary =
-            this.anniversaries.stream()
+            anniversaries.stream()
                 .filter(a -> a.year() == selector.anniversary())
                 .findFirst()
                 .orElseThrow(
@@ -349,35 +330,25 @@ public class FigurineScenarioExtension
 
   @Override
   public void afterEach(ExtensionContext context) {
-    CatalogTestClient client = this.catalogTestClient;
-
+    /*
     safeDelete("Distributors", this.distributors, DistributorResp::id, client::deleteDistributor);
     safeDelete(
-        "Distribution",
-        this.distributions,
-        CatalogResp::id,
-        id -> client.deleteCatalog(CatalogType.distributions, id));
+            "Distribution",
+            this.distributions,
+            CatalogResp::id,
+            id -> client.deleteCatalog(CatalogType.distributions, id));
     safeDelete(
-        "Lineups",
-        this.lineUps,
-        CatalogResp::id,
-        id -> client.deleteCatalog(CatalogType.lineups, id));
+            "Lineups",
+            this.lineUps,
+            CatalogResp::id,
+            id -> client.deleteCatalog(CatalogType.lineups, id));
     safeDelete(
-        "Series", this.series, CatalogResp::id, id -> client.deleteCatalog(CatalogType.series, id));
+            "Series", this.series, CatalogResp::id, id -> client.deleteCatalog(CatalogType.series, id));
     safeDelete(
-        "Groups", this.groups, CatalogResp::id, id -> client.deleteCatalog(CatalogType.groups, id));
+            "Groups", this.groups, CatalogResp::id, id -> client.deleteCatalog(CatalogType.groups, id));
 
     safeDelete("Anniversaries", this.anniversaries, AnniversaryResp::id, client::deleteAnniversary);
-
-    // initialize the catalogs.
-    this.distributors = null;
-    this.distributions = null;
-    this.lineUps = null;
-    this.series = null;
-    this.groups = null;
-    this.anniversaries = null;
-
-    // removes the payloads too.
+    */
     this.payloads.clear();
 
     log.info("Finished scenario '{}'", this.scenarioName);

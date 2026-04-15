@@ -2,73 +2,7 @@
   "content": [
     {
       "id": 1,
-      "name": "Pegasus Seiya",
-      "displayableName": "FIXME",
-      "distributors": [
-        {
-          "distributor": {
-            "id": 1,
-            "name": "BANDAI",
-            "description": "Tamashii Nations",
-            "countryCode": "JP",
-            "website": "https://tamashii.jp/"
-          },
-          "currency": "JPY",
-          "price": 5500.0,
-          "priceWithTax": 5775.0,
-          "releaseDate": "2009-10-02",
-          "releaseDateConfirmed": true
-        }
-      ],
-      "distribution": {
-        "id": 3,
-        "description": "Tamashii Nations"
-      },
-      "lineUp": {
-        "id": 2,
-        "description": "Myth Cloth"
-      },
-      "series": {
-        "id": 1,
-        "description": "Saint Seiya"
-      },
-      "group": {
-        "id": 3,
-        "description": "Bronze Saint V3"
-      },
-      "isMetalBody": false,
-      "isOriginalColorEdition": true,
-      "isRevival": false,
-      "isPlainCloth": false,
-      "isBattleDamaged": false,
-      "isGoldenArmor": false,
-      "isGold24kEdition": false,
-      "isMangaVersion": false,
-      "isMultiPack": false,
-      "isArticulable": true,
-      "notes": "TN Autumn 2009",
-      "officialImageUrls": [
-        "https://imagizer.imageshack.com/img924/701/vBBtOe.jpg",
-        "https://imagizer.imageshack.com/img923/3910/SM2IUF.jpg",
-        "https://imagizer.imageshack.com/img923/649/A59MGf.jpg",
-        "https://imagizer.imageshack.com/img924/2325/uVn0fu.jpg"
-      ],
-      "events": [
-        {
-          "id": 1,
-          "date": "2009-10-02",
-          "dateConfirmed": true,
-          "type": "RELEASE",
-          "region": "JP",
-          "description": "The global release date has been officially announced."
-        }
-      ],
-      "createdAt": "2026-02-11T18:05:04.112473Z",
-      "updatedAt": "2026-02-11T18:05:04.112473Z"
-    },
-    {
-      "id": 2,
-      "name": "Phoenix Ikki",
+      "name": "Dragon Shiryu",
       "displayableName": "FIXME",
       "distributors": [
         {
@@ -82,7 +16,7 @@
           "currency": "JPY",
           "price": 4500.0,
           "priceWithTax": 4725.0,
-          "releaseDate": "2010-08-07",
+          "releaseDate": "2011-11-25",
           "releaseDateConfirmed": true
         }
       ],
@@ -112,14 +46,80 @@
       "isMangaVersion": false,
       "isMultiPack": false,
       "isArticulable": true,
-      "notes": "Tamashii Festival 2010",
+      "notes": "TN 2011",
       "officialImageUrls": [
-        "https://imagizer.imageshack.com/img922/7109/cgB66J.jpg"
+        "https://imagizer.imageshack.com/img923/8382/o0DhC1.jpg",
+        "https://imagizer.imageshack.com/img924/8182/7inEj7.jpg",
+        "https://imagizer.imageshack.com/img922/3953/vnnFkT.jpg"
+      ],
+      "events": [
+        {
+          "id": 1,
+          "date": "2011-11-25",
+          "dateConfirmed": true,
+          "type": "RELEASE",
+          "region": "JP",
+          "description": "The global release date has been officially announced."
+        }
+      ],
+      "createdAt": "2026-02-11T18:05:04.112473Z",
+      "updatedAt": "2026-02-11T18:05:04.112473Z"
+    },
+    {
+      "id": 2,
+      "name": "Andromeda Shun",
+      "displayableName": "FIXME",
+      "distributors": [
+        {
+          "distributor": {
+            "id": 1,
+            "name": "BANDAI",
+            "description": "Tamashii Nations",
+            "countryCode": "JP",
+            "website": "https://tamashii.jp/"
+          },
+          "currency": "JPY",
+          "price": 4500.0,
+          "priceWithTax": 4725.0,
+          "releaseDate": "2011-02-11",
+          "releaseDateConfirmed": true
+        }
+      ],
+      "distribution": {
+        "id": 3,
+        "description": "Tamashii Nations"
+      },
+      "lineUp": {
+        "id": 2,
+        "description": "Myth Cloth"
+      },
+      "series": {
+        "id": 1,
+        "description": "Saint Seiya"
+      },
+      "group": {
+        "id": 3,
+        "description": "Bronze Saint V3"
+      },
+      "isMetalBody": false,
+      "isOriginalColorEdition": true,
+      "isRevival": false,
+      "isPlainCloth": false,
+      "isBattleDamaged": false,
+      "isGoldenArmor": false,
+      "isGold24kEdition": false,
+      "isMangaVersion": false,
+      "isMultiPack": false,
+      "isArticulable": true,
+      "notes": "Tamashii Features 2011",
+      "officialImageUrls": [
+        "https://imagizer.imageshack.com/img923/7793/H8LsXs.jpg",
+        "https://imagizer.imageshack.com/img924/6880/4mGydP.jpg"
       ],
       "events": [
         {
           "id": 2,
-          "date": "2010-08-07",
+          "date": "2011-02-11",
           "dateConfirmed": true,
           "type": "RELEASE",
           "region": "JP",
@@ -195,7 +195,7 @@
     },
     {
       "id": 4,
-      "name": "Andromeda Shun",
+      "name": "Phoenix Ikki",
       "displayableName": "FIXME",
       "distributors": [
         {
@@ -209,7 +209,7 @@
           "currency": "JPY",
           "price": 4500.0,
           "priceWithTax": 4725.0,
-          "releaseDate": "2011-02-11",
+          "releaseDate": "2010-08-07",
           "releaseDateConfirmed": true
         }
       ],
@@ -239,15 +239,14 @@
       "isMangaVersion": false,
       "isMultiPack": false,
       "isArticulable": true,
-      "notes": "Tamashii Features 2011",
+      "notes": "Tamashii Festival 2010",
       "officialImageUrls": [
-        "https://imagizer.imageshack.com/img923/7793/H8LsXs.jpg",
-        "https://imagizer.imageshack.com/img924/6880/4mGydP.jpg"
+        "https://imagizer.imageshack.com/img922/7109/cgB66J.jpg"
       ],
       "events": [
         {
           "id": 4,
-          "date": "2011-02-11",
+          "date": "2010-08-07",
           "dateConfirmed": true,
           "type": "RELEASE",
           "region": "JP",
@@ -259,7 +258,7 @@
     },
     {
       "id": 5,
-      "name": "Dragon Shiryu",
+      "name": "Pegasus Seiya",
       "displayableName": "FIXME",
       "distributors": [
         {
@@ -271,9 +270,9 @@
             "website": "https://tamashii.jp/"
           },
           "currency": "JPY",
-          "price": 4500.0,
-          "priceWithTax": 4725.0,
-          "releaseDate": "2011-11-25",
+          "price": 5500.0,
+          "priceWithTax": 5775.0,
+          "releaseDate": "2009-10-02",
           "releaseDateConfirmed": true
         }
       ],
@@ -303,16 +302,17 @@
       "isMangaVersion": false,
       "isMultiPack": false,
       "isArticulable": true,
-      "notes": "TN 2011",
+      "notes": "TN Autumn 2009",
       "officialImageUrls": [
-        "https://imagizer.imageshack.com/img923/8382/o0DhC1.jpg",
-        "https://imagizer.imageshack.com/img924/8182/7inEj7.jpg",
-        "https://imagizer.imageshack.com/img922/3953/vnnFkT.jpg"
+        "https://imagizer.imageshack.com/img924/701/vBBtOe.jpg",
+        "https://imagizer.imageshack.com/img923/3910/SM2IUF.jpg",
+        "https://imagizer.imageshack.com/img923/649/A59MGf.jpg",
+        "https://imagizer.imageshack.com/img924/2325/uVn0fu.jpg"
       ],
       "events": [
         {
           "id": 5,
-          "date": "2011-11-25",
+          "date": "2009-10-02",
           "dateConfirmed": true,
           "type": "RELEASE",
           "region": "JP",
