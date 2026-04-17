@@ -10,9 +10,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -137,5 +139,51 @@ public class FigurineController {
             result.getSize(),
             result.getTotalElements(),
             result.getTotalPages()));
+  }
+
+  /**
+   * Updates an existing {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Validates the incoming request payload
+   *   <li>Identifies the target figurine using the path variable
+   *   <li>Delegates the update operation to the service layer
+   *   <li>Returns the updated resource representation
+   * </ul>
+   *
+   * @param id identifier of the figurine to update
+   * @param figurineRequest validated figurine update request
+   * @return {@link ResponseEntity} containing the updated figurine with status {@code 200 OK}
+   */
+  @PutMapping("/{id}")
+  public ResponseEntity<FigurineResp> updateFigurine(
+      @PathVariable Long id, @RequestBody @Valid FigurineReq figurineRequest) {
+    FigurineResp updated = service.updateFigurine(id, figurineRequest);
+    return ResponseEntity.ok(updated);
+  }
+
+  /**
+   * Deletes an existing {@link Figurine} resource.
+   *
+   * <p>This endpoint:
+   *
+   * <ul>
+   *   <li>Identifies the target figurine using the path variable
+   *   <li>Delegates the deletion operation to the service layer
+   *   <li>Returns an empty response with {@code 204 No Content} status
+   * </ul>
+   *
+   * <p>If the figurine does not exist, an exception from the service layer is expected to be
+   * translated into an appropriate HTTP error response (e.g., {@code 404 Not Found}).
+   *
+   * @param id identifier of the figurine to delete
+   * @return {@link ResponseEntity} with no content
+   */
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
+    service.deleteFigurine(id);
+    return ResponseEntity.noContent().build();
   }
 }

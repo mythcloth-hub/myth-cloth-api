@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
@@ -471,6 +472,47 @@ public interface FigurineMapper {
       FigurineEvent figurineEvent,
       @Context Function<Figurine, String> createDisplayableName,
       @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+
+  /**
+   * Updates a {@link Figurine} entity using non-null values from another instance.
+   *
+   * <p>Null fields in {@code source} are ignored.
+   *
+   * @param target entity to update
+   * @param source new values
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(
+      target = "distributors",
+      ignore = true) // it is OK, distributors can be managed manually.
+  @Mapping(
+      target = "events",
+      ignore = true) // it is OK, events can be managed separately in their own resource.
+  @Mapping(target = "creationDate", ignore = true)
+  @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
+  void updateFigurine(@MappingTarget Figurine target, Figurine source);
+
+  /**
+   * Updates a {@link FigurineDistributor} entity using values from another instance.
+   *
+   * <p>This method is intended for partial updates where the existing distributor entry already
+   * belongs to a figurine. Identity and relationship fields are preserved.
+   *
+   * <ul>
+   *   <li>{@code id} is ignored and must not be modified
+   *   <li>{@code figurine} association is preserved and managed externally
+   * </ul>
+   *
+   * <p>All mappable fields present in {@code source} will overwrite the corresponding values in
+   * {@code target}.
+   *
+   * @param target distributor entity to update
+   * @param source new distributor values
+   */
+  @Mapping(target = "id", ignore = true)
+  @Mapping(target = "figurine", ignore = true)
+  void updateFigurineDistributor(
+      @MappingTarget FigurineDistributor target, FigurineDistributor source);
 
   /**
    * Parses a raw event string into a {@link FigurineEvent}.

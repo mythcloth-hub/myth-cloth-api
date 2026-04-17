@@ -140,8 +140,22 @@ public class FigurineService {
     // Convert CSV → Incoming entity
     Figurine incoming = mapper.toFigurine(csv, context);
 
-    prepareForPersistence(incoming);
-    return incoming;
+    // Find existing by unique key (legacyName)
+    return repository
+        .findByLegacyName(incoming.getLegacyName())
+        .map(
+            existing -> {
+              // Update existing record
+              mapper.updateFigurine(existing, incoming);
+              linkReferences(existing);
+              return existing;
+            })
+        .orElseGet(
+            () -> {
+              // Create a new record
+              prepareForPersistence(incoming);
+              return incoming;
+            });
   }
 
   /**
@@ -237,6 +251,108 @@ public class FigurineService {
   }
 
   /**
+   * Updates an existing {@link Figurine} with new data provided via an API request.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves the existing figurine by its identifier
+   *   <li>Maps mutable fields from the request onto the existing entity
+   *   <li>Resolves and re-links catalog references as needed
+   *   <li>Persists the updated entity within a transactional boundary
+   * </ul>
+   *
+   * <p>Fields not present in the request are preserved according to the mapper configuration.
+   *
+   * @param id identifier of the figurine to update
+   * @param request validated figurine update request
+   * @return API response DTO representing the updated figurine
+   * @throws FigurineNotFoundException if no figurine exists with the given id
+   */
+  @Transactional
+  public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
+    log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
+    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+    // Ask MapStruct to update fields
+    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
+    mapper.updateFigurine(existing, incoming);
+
+    // update the distributors' info.
+    updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
+
+    var updated = repository.save(existing);
+    return mapper.toFigurineResp(
+        updated,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
+  }
+
+  /**
+   * Deletes an existing {@link Figurine} by its identifier.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves the figurine by its id
+   *   <li>Ensures the figurine exists before deletion
+   *   <li>Removes the figurine from persistence
+   * </ul>
+   *
+   * <p>The operation is logged for traceability. Any associated relationships are handled according
+   * to the configured JPA cascade rules.
+   *
+   * @param id identifier of the figurine to delete
+   * @throws FigurineNotFoundException if no figurine exists with the given id
+   */
+  @Transactional
+  public void deleteFigurine(Long id) {
+    log.info("Deleting figurine with id '{}'", id);
+    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+    repository.delete(existing);
+  }
+
+  /**
+   * Synchronizes distributor entries of a figurine using incoming distributor data.
+   *
+   * <p>This method performs a currency-based merge between existing and incoming {@link
+   * FigurineDistributor} entries:
+   *
+   * <ul>
+   *   <li>If a distributor with the same {@link CurrencyCode} already exists, its mutable fields
+   *       are updated
+   *   <li>If no matching distributor exists, the incoming entry is linked to the figurine and added
+   *       to the collection
+   * </ul>
+   *
+   * <p>Distributor identity is determined exclusively by currency. This method * does not handle
+   * removal of existing distributors.
+   *
+   * @param current the owning figurine
+   * @param existing current distributor entries associated with the figurine
+   * @param incoming distributor entries provided by the update request
+   */
+  private void updateDistributors(
+      Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
+
+    for (FigurineDistributor incomingFigurineDist : incoming) {
+      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+
+      existing.stream()
+          .filter(fd -> fd.getCurrency().equals(incomingCurrency))
+          .findFirst()
+          .ifPresentOrElse(
+              fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
+              () -> {
+                incomingFigurineDist.setFigurine(current);
+                existing.add(incomingFigurineDist);
+              });
+    }
+  }
+
+  /**
    * Builds a human-readable display name for a figurine.
    *
    * @param figurine figurine entity
@@ -271,6 +387,26 @@ public class FigurineService {
     };
   }
 
+  /**
+   * Determines the {@link ReleaseStatus} of a figurine based on its distributor data and dates.
+   *
+   * <p>The status is resolved using the following rules:
+   *
+   * <ul>
+   *   <li>{@link ReleaseStatus#RUMORED} – no Japanese distributor ({@code JPY}) is found
+   *   <li>{@link ReleaseStatus#PROTOTYPE} – announced but not yet released, and the announcement is
+   *       less than 5 years ago
+   *   <li>{@link ReleaseStatus#UNRELEASED} – announced but not yet released, and the announcement
+   *       is 5 or more years ago
+   *   <li>{@link ReleaseStatus#ANNOUNCED} – has a release date that is in the future (not yet
+   *       released)
+   *   <li>{@link ReleaseStatus#RELEASED} – has a release date that is today or in the past (already
+   *       released)
+   * </ul>
+   *
+   * @param figurine the figurine whose release status is to be determined
+   * @return the computed {@link ReleaseStatus}
+   */
   public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
     List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
     Optional<FigurineDistributor> jp =
@@ -286,8 +422,7 @@ public class FigurineService {
       if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
         return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
       } else {
-        System.out.println(figurine.getLegacyName());
-        return relDate.isAfter(LocalDate.now()) ? RELEASED : ANNOUNCED;
+        return relDate.isAfter(LocalDate.now()) ? ANNOUNCED : RELEASED;
       }
     }
   }
@@ -319,6 +454,19 @@ public class FigurineService {
     return price * (1 + taxRate);
   }
 
+  /**
+   * Prepares a figurine entity for persistence.
+   *
+   * <p>This includes:
+   *
+   * <ul>
+   *   <li>Creating default events
+   *   <li>Linking bidirectional relationships
+   *   <li>Initializing audit timestamps
+   * </ul>
+   *
+   * @param figurine figurine to prepare
+   */
   private void prepareForPersistence(Figurine figurine) {
     createDefaultEvents(figurine);
     linkReferences(figurine);
