@@ -14,8 +14,6 @@ import java.util.Optional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -132,22 +130,8 @@ public class FigurineService {
     // Convert CSV → Incoming entity
     Figurine incoming = mapper.toFigurine(csv, context);
 
-    // Find existing by unique key (legacyName)
-    return repository
-        .findByLegacyName(incoming.getLegacyName())
-        .map(
-            existing -> {
-              // Update existing record
-              mapper.updateFigurine(existing, incoming);
-              linkReferences(existing);
-              return existing;
-            })
-        .orElseGet(
-            () -> {
-              // Create a new record
-              prepareForPersistence(incoming);
-              return incoming;
-            });
+    prepareForPersistence(incoming);
+    return incoming;
   }
 
   /**
@@ -202,132 +186,6 @@ public class FigurineService {
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
     return mapper.toFigurineResp(
         existing, this::createDisplayableName, this::calculatePriceWithTax);
-  }
-
-  /**
-   * Retrieves a paginated list of figurines.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves figurines using Spring Data pagination
-   *   <li>Executes in a read-only transactional context
-   *   <li>Maps domain entities to API response DTOs
-   *   <li>Includes derived fields such as display name and region-aware pricing
-   * </ul>
-   *
-   * @param page zero-based page index
-   * @param size number of records per page
-   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
-   */
-  @Transactional(readOnly = true)
-  public Page<FigurineResp> readFigurines(int page, int size) {
-    log.info("Reading figurines with page '{}' and size '{}'", page, size);
-
-    return repository
-        .findAll(PageRequest.of(page, size))
-        .map(
-            figurine ->
-                mapper.toFigurineResp(
-                    figurine, this::createDisplayableName, this::calculatePriceWithTax));
-  }
-
-  /**
-   * Updates an existing {@link Figurine} with new data provided via an API request.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves the existing figurine by its identifier
-   *   <li>Maps mutable fields from the request onto the existing entity
-   *   <li>Resolves and re-links catalog references as needed
-   *   <li>Persists the updated entity within a transactional boundary
-   * </ul>
-   *
-   * <p>Fields not present in the request are preserved according to the mapper configuration.
-   *
-   * @param id identifier of the figurine to update
-   * @param request validated figurine update request
-   * @return API response DTO representing the updated figurine
-   * @throws FigurineNotFoundException if no figurine exists with the given id
-   */
-  @Transactional
-  public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
-    log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
-    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-
-    // Ask MapStruct to update fields
-    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
-    mapper.updateFigurine(existing, incoming);
-
-    // update the distributors' info.
-    updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
-
-    var updated = repository.save(existing);
-    return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
-  }
-
-  /**
-   * Deletes an existing {@link Figurine} by its identifier.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves the figurine by its id
-   *   <li>Ensures the figurine exists before deletion
-   *   <li>Removes the figurine from persistence
-   * </ul>
-   *
-   * <p>The operation is logged for traceability. Any associated relationships are handled according
-   * to the configured JPA cascade rules.
-   *
-   * @param id identifier of the figurine to delete
-   * @throws FigurineNotFoundException if no figurine exists with the given id
-   */
-  @Transactional
-  public void deleteFigurine(Long id) {
-    log.info("Deleting figurine with id '{}'", id);
-    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-
-    repository.delete(existing);
-  }
-
-  /**
-   * Synchronizes distributor entries of a figurine using incoming distributor data.
-   *
-   * <p>This method performs a currency-based merge between existing and incoming {@link
-   * FigurineDistributor} entries:
-   *
-   * <ul>
-   *   <li>If a distributor with the same {@link CurrencyCode} already exists, its mutable fields
-   *       are updated
-   *   <li>If no matching distributor exists, the incoming entry is linked to the figurine and added
-   *       to the collection
-   * </ul>
-   *
-   * <p>Distributor identity is determined exclusively by currency. This method * does not handle
-   * removal of existing distributors.
-   *
-   * @param current the owning figurine
-   * @param existing current distributor entries associated with the figurine
-   * @param incoming distributor entries provided by the update request
-   */
-  private void updateDistributors(
-      Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
-
-    for (FigurineDistributor incomingFigurineDist : incoming) {
-      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
-
-      existing.stream()
-          .filter(fd -> fd.getCurrency().equals(incomingCurrency))
-          .findFirst()
-          .ifPresentOrElse(
-              fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
-              () -> {
-                incomingFigurineDist.setFigurine(current);
-                existing.add(incomingFigurineDist);
-              });
-    }
   }
 
   /**
@@ -392,19 +250,6 @@ public class FigurineService {
     return price * (1 + taxRate);
   }
 
-  /**
-   * Prepares a figurine entity for persistence.
-   *
-   * <p>This includes:
-   *
-   * <ul>
-   *   <li>Creating default events
-   *   <li>Linking bidirectional relationships
-   *   <li>Initializing audit timestamps
-   * </ul>
-   *
-   * @param figurine figurine to prepare
-   */
   private void prepareForPersistence(Figurine figurine) {
     createDefaultEvents(figurine);
     linkReferences(figurine);
@@ -422,6 +267,13 @@ public class FigurineService {
    */
   private void createDefaultEvents(Figurine figurine) {
     // creates the default events ...
+    if (figurine.getDistributors().isEmpty()) {
+      log.warn(
+          "Figurine '{}' has no distributors, skipping default event creation",
+          figurine.getLegacyName());
+      return;
+    }
+
     FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
 
     Optional.ofNullable(figurineDistributor.getAnnouncementDate())

@@ -58,9 +58,11 @@ public class Figurine extends BaseId {
   private Distribution distribution;
 
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(nullable = false)
   private LineUp lineup;
 
   @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(nullable = false)
   private Series series;
 
   @ManyToOne(fetch = FetchType.LAZY)

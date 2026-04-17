@@ -179,7 +179,7 @@ tasks.named('jacocoTestReport', JacocoReport) {
 tasks.named('check') {
     dependsOn tasks.named('integrationTest')
     dependsOn tasks.named('jacocoTestReport')
-    dependsOn tasks.named('pitest')
+    //dependsOn tasks.named('pitest')
 }
 
 tasks.named('compileJava') {

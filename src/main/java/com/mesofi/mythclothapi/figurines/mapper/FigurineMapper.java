@@ -17,28 +17,24 @@ import java.util.stream.Collectors;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
-import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
-import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -195,32 +191,35 @@ public interface FigurineMapper {
       FigurineCsv csv, @Context List<Distributor> distributors) {
 
     List<FigurineDistributor> distributorList = new ArrayList<>();
-    FigurineDistributor jp = new FigurineDistributor();
     Optional<LocalDateConfirmed> optJPY = Optional.ofNullable(csv.getReleaseJPY());
     Optional<LocalDateConfirmed> optMXN = Optional.ofNullable(csv.getReleaseMXN());
 
-    // In case the figurine has been released in China or Japan
-    jp.setCurrency(csv.isHk() ? CNY : JPY);
-    jp.setPrice(csv.getPriceJPY());
-    jp.setAnnouncementDate(csv.getAnnouncementJPY());
-    jp.setPreorderDate(csv.getPreorderJPY());
-    jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
-    jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
-    jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
-    distributorList.add(jp);
+    if (Objects.nonNull(csv.getPriceJPY())
+        || Objects.nonNull(csv.getAnnouncementJPY())
+        || Objects.nonNull(csv.getReleaseJPY())) {
+      // it is either a JP or HK figurine for sure
+      FigurineDistributor jp = new FigurineDistributor();
+      jp.setCurrency(csv.isHk() ? CNY : JPY);
+      jp.setPrice(csv.getPriceJPY());
+      jp.setAnnouncementDate(csv.getAnnouncementJPY());
+      jp.setPreorderDate(csv.getPreorderJPY());
+      jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
+      jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
+      jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
+      distributorList.add(jp);
+    }
 
-    Optional.ofNullable(csv.getPriceMXN())
-        .ifPresent(
-            price -> {
-              FigurineDistributor mx = new FigurineDistributor();
-              mx.setCurrency(MXN);
-              mx.setPrice(price);
-              mx.setPreorderDate(csv.getPreorderMXN());
-              mx.setReleaseDate(optMXN.map(LocalDateConfirmed::getDate).orElse(null));
-              mx.setReleaseDateConfirmed(optMXN.map(LocalDateConfirmed::isConfirmed).orElse(false));
-              mx.setDistributor(findDistributorByCountry(distributors, CountryCode.MX));
-              distributorList.add(mx);
-            });
+    if (Objects.nonNull(csv.getPriceMXN())) {
+      // it is MXN distributor
+      FigurineDistributor mx = new FigurineDistributor();
+      mx.setCurrency(MXN);
+      mx.setPrice(csv.getPriceMXN());
+      mx.setPreorderDate(csv.getPreorderMXN());
+      mx.setReleaseDate(optMXN.map(LocalDateConfirmed::getDate).orElse(null));
+      mx.setReleaseDateConfirmed(optMXN.map(LocalDateConfirmed::isConfirmed).orElse(false));
+      mx.setDistributor(findDistributorByCountry(distributors, CountryCode.MX));
+      distributorList.add(mx);
+    }
 
     return distributorList;
   }
@@ -392,152 +391,10 @@ public interface FigurineMapper {
    */
   @Mapping(target = "name", source = "normalizedName")
   @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
-  @Mapping(target = "releaseStatus", expression = "java(resolveReleaseStatus(figurine))")
-  @Mapping(target = "lineUp", source = "lineup")
-  @Mapping(target = "isMetalBody", source = "metalBody")
-  @Mapping(target = "isOriginalColorEdition", source = "oce")
-  @Mapping(target = "isRevival", source = "revival")
-  @Mapping(target = "isPlainCloth", source = "plainCloth")
-  @Mapping(target = "isBattleDamaged", source = "broken")
-  @Mapping(target = "isGoldenArmor", source = "golden")
-  @Mapping(target = "isGold24kEdition", source = "gold")
-  @Mapping(target = "isMangaVersion", source = "manga")
-  @Mapping(target = "isMultiPack", source = "set")
-  @Mapping(target = "isArticulable", source = "articulable")
-  @Mapping(target = "notes", source = "remarks")
-  @Mapping(target = "officialImageUrls", source = "officialImages")
-  @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
-  @Mapping(target = "createdAt", source = "creationDate")
-  @Mapping(target = "updatedAt", source = "updateDate")
   FigurineResp toFigurineResp(
       Figurine figurine,
       @Context Function<Figurine, String> createDisplayableName,
       @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
-
-  /**
-   * Computes API release status from the primary distributor timeline.
-   *
-   * <p>The JP/Asia distributor (id=1) is preferred when available to keep parity with list ordering
-   * rules. If not present, the first distributor is used as fallback.
-   */
-  default ReleaseStatus resolveReleaseStatus(Figurine figurine) {
-    FigurineDistributor primaryDistributor =
-        figurine.getDistributors().stream()
-            .filter(fd -> fd.getDistributor() != null)
-            .filter(fd -> Objects.equals(fd.getDistributor().getId(), 1L))
-            .findFirst()
-            .orElseGet(() -> figurine.getDistributors().stream().findFirst().orElse(null));
-
-    if (primaryDistributor == null) {
-      return ReleaseStatus.RUMORED;
-    }
-
-    LocalDate releaseDate = primaryDistributor.getReleaseDate();
-    if (releaseDate != null) {
-      return LocalDate.now().isAfter(releaseDate)
-          ? ReleaseStatus.RELEASED
-          : ReleaseStatus.ANNOUNCED;
-    }
-
-    return primaryDistributor.getAnnouncementDate() != null
-        ? ReleaseStatus.PROTOTYPE
-        : ReleaseStatus.RUMORED;
-  }
-
-  /**
-   * Maps a {@link FigurineDistributor} domain entity to its API response representation.
-   *
-   * <p>The {@code priceWithTax} field is calculated dynamically using the provided pricing
-   * function, allowing tax logic to remain outside the mapper.
-   *
-   * @param figurineDistributor distributor-specific figurine data
-   * @param createDisplayableName function used to compute the figurine display name
-   * @param calculatePriceWithTax function used to compute the final price including tax
-   * @return API-facing {@link FigurineDistributorResp}
-   */
-  @Mapping(
-      target = "priceWithTax",
-      expression = "java(calculatePriceWithTax.apply(figurineDistributor))")
-  @Mapping(target = "announcedAt", source = "announcementDate")
-  @Mapping(target = "preorderOpensAt", source = "preorderDate")
-  FigurineDistributorResp toFigurineDistributorResp(
-      FigurineDistributor figurineDistributor,
-      @Context Function<Figurine, String> createDisplayableName,
-      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
-
-  /**
-   * Maps a {@link Distributor} domain entity to its API response representation.
-   *
-   * <p>The distributor description exposed by the API is derived from the {@code DistributorName}
-   * value object rather than a direct field on the entity. This ensures the response reflects the
-   * canonical, localized description defined in the catalog.
-   *
-   * @param distributor the domain distributor entity
-   * @return an API-facing {@link DistributorResp}
-   */
-  @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
-  @Mapping(target = "countryCode", source = "country")
-  DistributorResp toDistributorResp(Distributor distributor);
-
-  /**
-   * Maps a {@link FigurineEvent} domain entity to its API response representation.
-   *
-   * <p>Certain contextual fields such as event type, region, and figurine reference are
-   * intentionally ignored and populated later during response enrichment.
-   *
-   * @param figurineEvent domain event entity
-   * @param createDisplayableName function used to compute the figurine display name
-   * @param calculatePriceWithTax function used for downstream pricing enrichment
-   * @return API-facing {@link FigurineEventResp}
-   */
-  @Mapping(target = "date", source = "eventDate")
-  @Mapping(target = "dateConfirmed", source = "eventDateConfirmed")
-  // @Mapping(target = "figurine", ignore = true) // map this later
-  FigurineEventResp toFigurineEventResp(
-      FigurineEvent figurineEvent,
-      @Context Function<Figurine, String> createDisplayableName,
-      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
-
-  /**
-   * Updates a {@link Figurine} entity using non-null values from another instance.
-   *
-   * <p>Null fields in {@code source} are ignored.
-   *
-   * @param target entity to update
-   * @param source new values
-   */
-  @Mapping(target = "id", ignore = true)
-  @Mapping(
-      target = "distributors",
-      ignore = true) // it is OK, distributors can be managed manually.
-  @Mapping(
-      target = "events",
-      ignore = true) // it is OK, events can be managed separately in their own resource.
-  @Mapping(target = "creationDate", ignore = true)
-  @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
-  void updateFigurine(@MappingTarget Figurine target, Figurine source);
-
-  /**
-   * Updates a {@link FigurineDistributor} entity using values from another instance.
-   *
-   * <p>This method is intended for partial updates where the existing distributor entry already
-   * belongs to a figurine. Identity and relationship fields are preserved.
-   *
-   * <ul>
-   *   <li>{@code id} is ignored and must not be modified
-   *   <li>{@code figurine} association is preserved and managed externally
-   * </ul>
-   *
-   * <p>All mappable fields present in {@code source} will overwrite the corresponding values in
-   * {@code target}.
-   *
-   * @param target distributor entity to update
-   * @param source new distributor values
-   */
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "figurine", ignore = true)
-  void updateFigurineDistributor(
-      @MappingTarget FigurineDistributor target, FigurineDistributor source);
 
   /**
    * Parses a raw event string into a {@link FigurineEvent}.
@@ -624,6 +481,6 @@ public interface FigurineMapper {
     return list.stream()
         .filter(predicate)
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(errorMessage));
+        .orElseThrow(() -> new CatalogNotFoundException(errorMessage));
   }
 }
