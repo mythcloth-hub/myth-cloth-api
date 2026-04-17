@@ -26,15 +26,19 @@ import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -391,8 +395,80 @@ public interface FigurineMapper {
    */
   @Mapping(target = "name", source = "normalizedName")
   @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
+  @Mapping(target = "releaseStatus", expression = "java(calculateReleaseStatus.apply(figurine))")
+  @Mapping(target = "lineUp", source = "lineup")
+  @Mapping(target = "isMetalBody", source = "metalBody")
+  @Mapping(target = "isOriginalColorEdition", source = "oce")
+  @Mapping(target = "isRevival", source = "revival")
+  @Mapping(target = "isPlainCloth", source = "plainCloth")
+  @Mapping(target = "isBattleDamaged", source = "broken")
+  @Mapping(target = "isGoldenArmor", source = "golden")
+  @Mapping(target = "isGold24kEdition", source = "gold")
+  @Mapping(target = "isMangaVersion", source = "manga")
+  @Mapping(target = "isMultiPack", source = "set")
+  @Mapping(target = "isArticulable", source = "articulable")
+  @Mapping(target = "notes", source = "remarks")
+  @Mapping(target = "officialImageUrls", source = "officialImages")
+  @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
+  @Mapping(target = "createdAt", source = "creationDate")
+  @Mapping(target = "updatedAt", source = "updateDate")
   FigurineResp toFigurineResp(
       Figurine figurine,
+      @Context Function<Figurine, String> createDisplayableName,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
+      @Context Function<Figurine, ReleaseStatus> calculateReleaseStatus);
+
+  /**
+   * Maps a {@link FigurineDistributor} domain entity to its API response representation.
+   *
+   * <p>The {@code priceWithTax} field is calculated dynamically using the provided pricing
+   * function, allowing tax logic to remain outside the mapper.
+   *
+   * @param figurineDistributor distributor-specific figurine data
+   * @param createDisplayableName function used to compute the figurine display name
+   * @param calculatePriceWithTax function used to compute the final price including tax
+   * @return API-facing {@link FigurineDistributorResp}
+   */
+  @Mapping(
+      target = "priceWithTax",
+      expression = "java(calculatePriceWithTax.apply(figurineDistributor))")
+  @Mapping(target = "announcedAt", source = "announcementDate")
+  @Mapping(target = "preorderOpensAt", source = "preorderDate")
+  FigurineDistributorResp toFigurineDistributorResp(
+      FigurineDistributor figurineDistributor,
+      @Context Function<Figurine, String> createDisplayableName,
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+
+  /**
+   * Maps a {@link Distributor} domain entity to its API response representation.
+   *
+   * <p>The distributor description exposed by the API is derived from the {@code DistributorName}
+   * value object rather than a direct field on the entity. This ensures the response reflects the
+   * canonical, localized description defined in the catalog.
+   *
+   * @param distributor the domain distributor entity
+   * @return an API-facing {@link DistributorResp}
+   */
+  @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
+  @Mapping(target = "countryCode", source = "country")
+  DistributorResp toDistributorResp(Distributor distributor);
+
+  /**
+   * Maps a {@link FigurineEvent} domain entity to its API response representation.
+   *
+   * <p>Certain contextual fields such as event type, region, and figurine reference are
+   * intentionally ignored and populated later during response enrichment.
+   *
+   * @param figurineEvent domain event entity
+   * @param createDisplayableName function used to compute the figurine display name
+   * @param calculatePriceWithTax function used for downstream pricing enrichment
+   * @return API-facing {@link FigurineEventResp}
+   */
+  @Mapping(target = "date", source = "eventDate")
+  @Mapping(target = "dateConfirmed", source = "eventDateConfirmed")
+  // @Mapping(target = "figurine", ignore = true) // map this later
+  FigurineEventResp toFigurineEventResp(
+      FigurineEvent figurineEvent,
       @Context Function<Figurine, String> createDisplayableName,
       @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 

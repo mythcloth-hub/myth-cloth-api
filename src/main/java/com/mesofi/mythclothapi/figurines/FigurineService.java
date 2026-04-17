@@ -1,19 +1,28 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RUMORED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -36,6 +45,7 @@ import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import lombok.RequiredArgsConstructor;
@@ -158,7 +168,11 @@ public class FigurineService {
     prepareForPersistence(figurine);
 
     var saved = repository.save(figurine);
-    return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
+    return mapper.toFigurineResp(
+        saved,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
   }
 
   /**
@@ -185,7 +199,41 @@ public class FigurineService {
 
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
     return mapper.toFigurineResp(
-        existing, this::createDisplayableName, this::calculatePriceWithTax);
+        existing,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
+  }
+
+  /**
+   * Retrieves a paginated list of figurines.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Retrieves figurines using Spring Data pagination
+   *   <li>Executes in a read-only transactional context
+   *   <li>Maps domain entities to API response DTOs
+   *   <li>Includes derived fields such as display name and region-aware pricing
+   * </ul>
+   *
+   * @param page zero-based page index
+   * @param size number of records per page
+   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
+   */
+  @Transactional(readOnly = true)
+  public Page<FigurineResp> readFigurines(int page, int size) {
+    log.info("Reading figurines with page '{}' and size '{}'", page, size);
+
+    return repository
+        .findAll(PageRequest.of(page, size))
+        .map(
+            figurine ->
+                mapper.toFigurineResp(
+                    figurine,
+                    this::createDisplayableName,
+                    this::calculatePriceWithTax,
+                    this::calculateReleaseStatus));
   }
 
   /**
@@ -221,6 +269,27 @@ public class FigurineService {
       case USD -> figurineDistributor.getPrice(); // no VAT by default
       default -> figurineDistributor.getPrice();
     };
+  }
+
+  public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
+    List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
+    Optional<FigurineDistributor> jp =
+        figurineDistributors.stream().filter(fd -> fd.getCurrency() == JPY).findFirst();
+
+    if (jp.isEmpty()) {
+      return RUMORED;
+    } else {
+      FigurineDistributor fd = jp.get();
+      LocalDate relDate = fd.getReleaseDate();
+      LocalDate annDate = fd.getAnnouncementDate();
+
+      if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
+        return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
+      } else {
+        System.out.println(figurine.getLegacyName());
+        return relDate.isAfter(LocalDate.now()) ? RELEASED : ANNOUNCED;
+      }
+    }
   }
 
   /**
