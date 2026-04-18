@@ -409,8 +409,11 @@ public class FigurineService {
    */
   public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
     List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
+
     Optional<FigurineDistributor> jp =
-        figurineDistributors.stream().filter(fd -> fd.getCurrency() == JPY).findFirst();
+        Objects.isNull(figurineDistributors)
+            ? Optional.empty()
+            : figurineDistributors.stream().filter(fd -> fd.getCurrency() == JPY).findFirst();
 
     if (jp.isEmpty()) {
       return RUMORED;
@@ -418,6 +421,10 @@ public class FigurineService {
       FigurineDistributor fd = jp.get();
       LocalDate relDate = fd.getReleaseDate();
       LocalDate annDate = fd.getAnnouncementDate();
+
+      if (Objects.isNull(relDate) && Objects.isNull(annDate)) {
+        return RUMORED;
+      }
 
       if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
         return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
@@ -484,7 +491,7 @@ public class FigurineService {
    */
   private void createDefaultEvents(Figurine figurine) {
     // creates the default events ...
-    if (figurine.getDistributors().isEmpty()) {
+    if (Objects.isNull(figurine.getDistributors()) || figurine.getDistributors().isEmpty()) {
       log.warn(
           "Figurine '{}' has no distributors, skipping default event creation",
           figurine.getLegacyName());
@@ -560,7 +567,9 @@ public class FigurineService {
    * @param figurine target figurine
    */
   private void linkReferences(Figurine figurine) {
-    figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+    if (Objects.nonNull(figurine.getDistributors())) {
+      figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+    }
     figurine.getEvents().forEach(e -> e.setFigurine(figurine));
   }
 
