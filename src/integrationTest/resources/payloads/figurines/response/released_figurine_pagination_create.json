@@ -20,6 +20,7 @@
           "releaseDateConfirmed": true
         }
       ],
+      "releaseStatus": "RELEASED",
       "distribution": {
         "id": 3,
         "description": "Tamashii Nations"
@@ -85,6 +86,7 @@
           "releaseDateConfirmed": true
         }
       ],
+      "releaseStatus": "RELEASED",
       "distribution": {
         "id": 3,
         "description": "Tamashii Nations"
@@ -149,6 +151,7 @@
           "releaseDateConfirmed": true
         }
       ],
+      "releaseStatus": "RELEASED",
       "distribution": {
         "id": 3,
         "description": "Tamashii Nations"
@@ -213,6 +216,7 @@
           "releaseDateConfirmed": true
         }
       ],
+      "releaseStatus": "RELEASED",
       "distribution": {
         "id": 3,
         "description": "Tamashii Nations"
@@ -276,6 +280,7 @@
           "releaseDateConfirmed": true
         }
       ],
+      "releaseStatus": "RELEASED",
       "distribution": {
         "id": 3,
         "description": "Tamashii Nations"
