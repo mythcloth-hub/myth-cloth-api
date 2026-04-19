@@ -107,31 +107,27 @@ public class FigurineController {
   }
 
   /**
-   * Retrieves a paginated list of figurines.
+   * Retrieves a paginated list of figurines, optionally filtered by name.
    *
-   * <p>This endpoint supports pagination through {@code page} and {@code size} request parameters.
-   * The results from Spring Data {@link Page} are mapped into a {@link PaginatedResponse} to
-   * provide a stable and predictable JSON structure containing both content and pagination
-   * metadata.
+   * <p>If the 'name' parameter is provided and at least 3 characters, performs a paginated search
+   * by name. Otherwise, returns all figurines paginated.
    *
+   * @param name optional name filter (min 3 chars to trigger search)
    * @param page zero-based page index (must be 0 or greater)
    * @param size number of elements per page (must be between 1 and 100)
-   * @return a {@link ResponseEntity} containing a {@link PaginatedResponse} with:
-   *     <ul>
-   *       <li>the current page content
-   *       <li>current page number
-   *       <li>page size
-   *       <li>total elements
-   *       <li>total pages
-   *     </ul>
+   * @return a {@link ResponseEntity} containing a {@link PaginatedResponse}
    */
   @GetMapping
   public ResponseEntity<PaginatedResponse> retrieveFigurines(
+      @RequestParam(required = false) String name,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-
-    Page<FigurineResp> result = service.readFigurines(page, size);
-
+    Page<FigurineResp> result;
+    if (name != null && name.trim().length() >= 3) {
+      result = service.searchFigurinesByName(name, page, size);
+    } else {
+      result = service.readFigurines(page, size);
+    }
     return ResponseEntity.ok(
         new PaginatedResponse(
             result.getContent(),

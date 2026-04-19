@@ -21,6 +21,7 @@ import org.mapstruct.MappingTarget;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -195,32 +196,35 @@ public interface FigurineMapper {
       FigurineCsv csv, @Context List<Distributor> distributors) {
 
     List<FigurineDistributor> distributorList = new ArrayList<>();
-    FigurineDistributor jp = new FigurineDistributor();
     Optional<LocalDateConfirmed> optJPY = Optional.ofNullable(csv.getReleaseJPY());
     Optional<LocalDateConfirmed> optMXN = Optional.ofNullable(csv.getReleaseMXN());
 
-    // In case the figurine has been released in China or Japan
-    jp.setCurrency(csv.isHk() ? CNY : JPY);
-    jp.setPrice(csv.getPriceJPY());
-    jp.setAnnouncementDate(csv.getAnnouncementJPY());
-    jp.setPreorderDate(csv.getPreorderJPY());
-    jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
-    jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
-    jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
-    distributorList.add(jp);
+    if (Objects.nonNull(csv.getPriceJPY())
+        || Objects.nonNull(csv.getAnnouncementJPY())
+        || Objects.nonNull(csv.getReleaseJPY())) {
+      // it is either a JP or HK figurine for sure
+      FigurineDistributor jp = new FigurineDistributor();
+      jp.setCurrency(csv.isHk() ? CNY : JPY);
+      jp.setPrice(csv.getPriceJPY());
+      jp.setAnnouncementDate(csv.getAnnouncementJPY());
+      jp.setPreorderDate(csv.getPreorderJPY());
+      jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
+      jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
+      jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
+      distributorList.add(jp);
+    }
 
-    Optional.ofNullable(csv.getPriceMXN())
-        .ifPresent(
-            price -> {
-              FigurineDistributor mx = new FigurineDistributor();
-              mx.setCurrency(MXN);
-              mx.setPrice(price);
-              mx.setPreorderDate(csv.getPreorderMXN());
-              mx.setReleaseDate(optMXN.map(LocalDateConfirmed::getDate).orElse(null));
-              mx.setReleaseDateConfirmed(optMXN.map(LocalDateConfirmed::isConfirmed).orElse(false));
-              mx.setDistributor(findDistributorByCountry(distributors, CountryCode.MX));
-              distributorList.add(mx);
-            });
+    if (Objects.nonNull(csv.getPriceMXN())) {
+      // it is MXN distributor
+      FigurineDistributor mx = new FigurineDistributor();
+      mx.setCurrency(MXN);
+      mx.setPrice(csv.getPriceMXN());
+      mx.setPreorderDate(csv.getPreorderMXN());
+      mx.setReleaseDate(optMXN.map(LocalDateConfirmed::getDate).orElse(null));
+      mx.setReleaseDateConfirmed(optMXN.map(LocalDateConfirmed::isConfirmed).orElse(false));
+      mx.setDistributor(findDistributorByCountry(distributors, CountryCode.MX));
+      distributorList.add(mx);
+    }
 
     return distributorList;
   }
@@ -392,7 +396,7 @@ public interface FigurineMapper {
    */
   @Mapping(target = "name", source = "normalizedName")
   @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
-  @Mapping(target = "releaseStatus", expression = "java(resolveReleaseStatus(figurine))")
+  @Mapping(target = "releaseStatus", expression = "java(calculateReleaseStatus.apply(figurine))")
   @Mapping(target = "lineUp", source = "lineup")
   @Mapping(target = "isMetalBody", source = "metalBody")
   @Mapping(target = "isOriginalColorEdition", source = "oce")
@@ -412,37 +416,8 @@ public interface FigurineMapper {
   FigurineResp toFigurineResp(
       Figurine figurine,
       @Context Function<Figurine, String> createDisplayableName,
-      @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
-
-  /**
-   * Computes API release status from the primary distributor timeline.
-   *
-   * <p>The JP/Asia distributor (id=1) is preferred when available to keep parity with list ordering
-   * rules. If not present, the first distributor is used as fallback.
-   */
-  default ReleaseStatus resolveReleaseStatus(Figurine figurine) {
-    FigurineDistributor primaryDistributor =
-        figurine.getDistributors().stream()
-            .filter(fd -> fd.getDistributor() != null)
-            .filter(fd -> Objects.equals(fd.getDistributor().getId(), 1L))
-            .findFirst()
-            .orElseGet(() -> figurine.getDistributors().stream().findFirst().orElse(null));
-
-    if (primaryDistributor == null) {
-      return ReleaseStatus.RUMORED;
-    }
-
-    LocalDate releaseDate = primaryDistributor.getReleaseDate();
-    if (releaseDate != null) {
-      return LocalDate.now().isAfter(releaseDate)
-          ? ReleaseStatus.RELEASED
-          : ReleaseStatus.ANNOUNCED;
-    }
-
-    return primaryDistributor.getAnnouncementDate() != null
-        ? ReleaseStatus.PROTOTYPE
-        : ReleaseStatus.RUMORED;
-  }
+      @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
+      @Context Function<Figurine, ReleaseStatus> calculateReleaseStatus);
 
   /**
    * Maps a {@link FigurineDistributor} domain entity to its API response representation.
@@ -624,6 +599,6 @@ public interface FigurineMapper {
     return list.stream()
         .filter(predicate)
         .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(errorMessage));
+        .orElseThrow(() -> new CatalogNotFoundException(errorMessage));
   }
 }

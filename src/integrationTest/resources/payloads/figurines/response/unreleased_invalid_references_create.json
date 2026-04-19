@@ -16,6 +16,7 @@
       "releaseDateConfirmed": false
     }
   ],
+  "releaseStatus": "PROTOTYPE",
   "distribution": {
     "id": 4,
     "description": "Other Limited Edition"

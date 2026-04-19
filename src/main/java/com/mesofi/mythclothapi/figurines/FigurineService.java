@@ -1,14 +1,21 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RUMORED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.validation.Valid;
@@ -38,6 +45,7 @@ import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import lombok.RequiredArgsConstructor;
@@ -174,7 +182,11 @@ public class FigurineService {
     prepareForPersistence(figurine);
 
     var saved = repository.save(figurine);
-    return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax);
+    return mapper.toFigurineResp(
+        saved,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
   }
 
   /**
@@ -201,7 +213,10 @@ public class FigurineService {
 
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
     return mapper.toFigurineResp(
-        existing, this::createDisplayableName, this::calculatePriceWithTax);
+        existing,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
   }
 
   /**
@@ -229,7 +244,38 @@ public class FigurineService {
         .map(
             figurine ->
                 mapper.toFigurineResp(
-                    figurine, this::createDisplayableName, this::calculatePriceWithTax));
+                    figurine,
+                    this::createDisplayableName,
+                    this::calculatePriceWithTax,
+                    this::calculateReleaseStatus));
+  }
+
+  /**
+   * Retrieves a paginated list of figurines filtered by name (case-insensitive, contains).
+   *
+   * @param name name filter (must be at least 3 characters)
+   * @param page zero-based page index
+   * @param size number of records per page
+   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
+   */
+  @Transactional(readOnly = true)
+  public Page<FigurineResp> searchFigurinesByName(String name, int page, int size) {
+    log.info("Reading figurines with name '{}', page '{}' and size '{}'", name, page, size);
+
+    if (name == null || name.trim().length() < 3) {
+      throw new IllegalArgumentException("Name filter must be at least 3 characters");
+    }
+
+    Page<Figurine> figurines =
+        repository.findByNormalizedNameContainingIgnoreCase(name, PageRequest.of(page, size));
+
+    return figurines.map(
+        figurine ->
+            mapper.toFigurineResp(
+                figurine,
+                this::createDisplayableName,
+                this::calculatePriceWithTax,
+                this::calculateReleaseStatus));
   }
 
   /**
@@ -264,7 +310,11 @@ public class FigurineService {
     updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
 
     var updated = repository.save(existing);
-    return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax);
+    return mapper.toFigurineResp(
+        updated,
+        this::createDisplayableName,
+        this::calculatePriceWithTax,
+        this::calculateReleaseStatus);
   }
 
   /**
@@ -366,6 +416,53 @@ public class FigurineService {
   }
 
   /**
+   * Determines the {@link ReleaseStatus} of a figurine based on its distributor data and dates.
+   *
+   * <p>The status is resolved using the following rules:
+   *
+   * <ul>
+   *   <li>{@link ReleaseStatus#RUMORED} – no Japanese distributor ({@code JPY}) is found
+   *   <li>{@link ReleaseStatus#PROTOTYPE} – announced but not yet released, and the announcement is
+   *       less than 5 years ago
+   *   <li>{@link ReleaseStatus#UNRELEASED} – announced but not yet released, and the announcement
+   *       is 5 or more years ago
+   *   <li>{@link ReleaseStatus#ANNOUNCED} – has a release date that is in the future (not yet
+   *       released)
+   *   <li>{@link ReleaseStatus#RELEASED} – has a release date that is today or in the past (already
+   *       released)
+   * </ul>
+   *
+   * @param figurine the figurine whose release status is to be determined
+   * @return the computed {@link ReleaseStatus}
+   */
+  public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
+    List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
+
+    Optional<FigurineDistributor> jp =
+        Objects.isNull(figurineDistributors)
+            ? Optional.empty()
+            : figurineDistributors.stream().filter(fd -> fd.getCurrency() == JPY).findFirst();
+
+    if (jp.isEmpty()) {
+      return RUMORED;
+    } else {
+      FigurineDistributor fd = jp.get();
+      LocalDate relDate = fd.getReleaseDate();
+      LocalDate annDate = fd.getAnnouncementDate();
+
+      if (Objects.isNull(relDate) && Objects.isNull(annDate)) {
+        return RUMORED;
+      }
+
+      if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
+        return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
+      } else {
+        return relDate.isAfter(LocalDate.now()) ? ANNOUNCED : RELEASED;
+      }
+    }
+  }
+
+  /**
    * Calculates Japanese consumption tax based on historical tax rates.
    *
    * @param price base price
@@ -422,6 +519,13 @@ public class FigurineService {
    */
   private void createDefaultEvents(Figurine figurine) {
     // creates the default events ...
+    if (Objects.isNull(figurine.getDistributors()) || figurine.getDistributors().isEmpty()) {
+      log.warn(
+          "Figurine '{}' has no distributors, skipping default event creation",
+          figurine.getLegacyName());
+      return;
+    }
+
     FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
 
     Optional.ofNullable(figurineDistributor.getAnnouncementDate())
@@ -491,7 +595,9 @@ public class FigurineService {
    * @param figurine target figurine
    */
   private void linkReferences(Figurine figurine) {
-    figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+    if (Objects.nonNull(figurine.getDistributors())) {
+      figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+    }
     figurine.getEvents().forEach(e -> e.setFigurine(figurine));
   }
 

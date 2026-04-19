@@ -7,12 +7,19 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.Series;
+import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
+import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
@@ -21,9 +28,27 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class FigurineEventRepositoryTest {
+  @Autowired LineUpRepository lineUpRepository;
+  @Autowired SeriesRepository seriesRepository;
   @Autowired FigurineRepository figurineRepository;
   @Autowired FigurineEventRepository repository;
+
+  private LineUp savedLineUp;
+  private Series savedSeries;
+
+  @BeforeEach
+  void setUp() {
+    LineUp lineUp = new LineUp();
+    lineUp.setDescription("lineUp");
+    savedLineUp = lineUpRepository.saveAndFlush(lineUp);
+
+    Series series = new Series();
+    series.setDescription("series");
+    savedSeries = seriesRepository.saveAndFlush(series);
+  }
 
   @Test
   void save_shouldThrowException_whenEventDateIsNull() {
@@ -147,7 +172,7 @@ public class FigurineEventRepositoryTest {
     // Act
     FigurineEvent found =
         repository
-            .findByIdAndFigurineId(figurineSaved.getId(), figurineEventSaved.getId())
+            .findByIdAndFigurineId(figurineEventSaved.getId(), figurineSaved.getId())
             .orElse(null);
 
     // Assert
@@ -196,7 +221,7 @@ public class FigurineEventRepositoryTest {
 
     // Assert
     assertThat(repository.findById(figurineEventSaved.getId())).isEmpty();
-    assertThat(repository.findByIdAndFigurineId(figurineSaved.getId(), figurineEventSaved.getId()))
+    assertThat(repository.findByIdAndFigurineId(figurineEventSaved.getId(), figurineSaved.getId()))
         .isEmpty();
   }
 
@@ -216,6 +241,8 @@ public class FigurineEventRepositoryTest {
   private Figurine createFigurine() {
     Figurine figurine = new Figurine();
     figurine.setNormalizedName("Seiya");
+    figurine.setLineup(savedLineUp);
+    figurine.setSeries(savedSeries);
     figurine.setCreationDate(Instant.now());
     figurine.setUpdateDate(Instant.now());
     return figurine;

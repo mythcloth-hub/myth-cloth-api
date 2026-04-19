@@ -4,5 +4,6 @@ public enum ReleaseStatus {
   ANNOUNCED,
   RELEASED,
   RUMORED,
-  PROTOTYPE
+  PROTOTYPE,
+  UNRELEASED
 }

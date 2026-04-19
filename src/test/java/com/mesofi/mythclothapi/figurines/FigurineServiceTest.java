@@ -66,6 +66,7 @@ import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 @SpringBootTest(
     classes = {
@@ -367,13 +368,9 @@ public class FigurineServiceTest {
     assertThatThrownBy(() -> figurineService.createFigurine(req))
         .hasMessageContaining("createFigurine.request.name")
         .hasMessageContaining("must not be blank")
-        .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("At least one distributor must be provided")
         .hasMessageContaining("createFigurine.request.lineUpId")
         .hasMessageContaining("must not be null")
         .hasMessageContaining("createFigurine.request.seriesId")
-        .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
         .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
@@ -387,13 +384,9 @@ public class FigurineServiceTest {
     assertThatThrownBy(() -> figurineService.createFigurine(req))
         .hasMessageContaining("createFigurine.request.name")
         .hasMessageContaining("Name must not exceed 100 characters")
-        .hasMessageContaining("createFigurine.request.distributors")
-        .hasMessageContaining("At least one distributor must be provided")
         .hasMessageContaining("createFigurine.request.lineUpId")
         .hasMessageContaining("must not be null")
         .hasMessageContaining("createFigurine.request.seriesId")
-        .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
         .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
@@ -406,15 +399,15 @@ public class FigurineServiceTest {
 
     // Act + Assert
     assertThatThrownBy(() -> figurineService.createFigurine(req))
-        .hasMessageContaining("createFigurine.request.distributors[0].supplierId")
-        .hasMessageContaining("must be greater than 0")
-        .hasMessageContaining("createFigurine.request.distributors[0].price")
-        .hasMessageContaining("must be greater than 0")
         .hasMessageContaining("createFigurine.request.lineUpId")
         .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.distributors[0].supplierId")
+        .hasMessageContaining("must be greater than 0")
         .hasMessageContaining("createFigurine.request.seriesId")
         .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("createFigurine.request.distributors[0].price")
+        .hasMessageContaining("must be greater than 0")
+        .hasMessageContaining("createFigurine.request.distributors[0].currency")
         .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
@@ -427,13 +420,30 @@ public class FigurineServiceTest {
 
     // Act + Assert
     assertThatThrownBy(() -> figurineService.createFigurine(req))
-        .hasMessageContaining("createFigurine.request.distributors[0].price")
-        .hasMessageContaining("must be greater than 0")
+        .hasMessageContaining("createFigurine.request.distributors[0].currency")
+        .hasMessageContaining("must not be null")
         .hasMessageContaining("createFigurine.request.lineUpId")
         .hasMessageContaining("must not be null")
         .hasMessageContaining("createFigurine.request.seriesId")
         .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
+        .hasMessageContaining("createFigurine.request.distributors[0].price")
+        .hasMessageContaining("must be greater than 0")
+        .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldThrowException_whenDistributorsCurrencyIsNull() {
+    // Arrange
+    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, null, null, null);
+
+    // Act + Assert
+    assertThatThrownBy(() -> figurineService.createFigurine(req))
+        .hasMessageContaining("createFigurine.request.distributors[0].currency")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.lineUpId")
+        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.seriesId")
         .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
@@ -441,7 +451,7 @@ public class FigurineServiceTest {
   @Test
   void createFigurine_shouldThrowException_whenLineUpIdIsNull() {
     // Arrange
-    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    DistributorReq distributorReq = new DistributorReq(100L, JPY, 16000d, null, null, null, null);
     FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, null, null, null);
 
     // Act + Assert
@@ -450,37 +460,140 @@ public class FigurineServiceTest {
         .hasMessageContaining("must not be null")
         .hasMessageContaining("createFigurine.request.seriesId")
         .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
-        .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
 
   @Test
   void createFigurine_shouldThrowException_whenSeriesIdIsNull() {
     // Arrange
-    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
+    DistributorReq distributorReq = new DistributorReq(100L, JPY, 16000d, null, null, null, null);
     FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 200L, null, null);
 
     // Act + Assert
     assertThatThrownBy(() -> figurineService.createFigurine(req))
         .hasMessageContaining("createFigurine.request.seriesId")
         .hasMessageContaining("must not be null")
-        .hasMessageContaining("createFigurine.request.groupId")
-        .hasMessageContaining("must not be null")
         .isInstanceOf(ConstraintViolationException.class);
   }
 
   @Test
-  void createFigurine_shouldThrowException_whenGroupIdIsNull() {
+  void createFigurine_shouldThrowException_whenUrlIsLongerThanExpected() {
     // Arrange
-    DistributorReq distributorReq = new DistributorReq(100L, null, 16000d, null, null, null, null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 200L, 300L, null);
+    DistributorReq distributorReq = new DistributorReq(100L, JPY, 16000d, null, null, null, null);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 200L, 300L, "a".repeat(70));
 
     // Act + Assert
     assertThatThrownBy(() -> figurineService.createFigurine(req))
-        .hasMessageContaining("createFigurine.request.groupId")
-        .hasMessageContaining("must not be null")
+        .hasMessageContaining("createFigurine.request.tamashiiUrl")
+        .hasMessageContaining("Tamashii URL must not exceed 50 characters")
         .isInstanceOf(ConstraintViolationException.class);
+  }
+
+  @Test
+  void createFigurine_shouldPersistAndReturnFigurine_whenRequestIsBasicAndValid() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    FigurineReq req = createFigurine("Pegasus Seiya", null, 1L, 1L, null);
+
+    Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
+    figurineMapped.setId(1L);
+
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(figurineMapped);
+
+    // Act
+    FigurineResp figurineResp = figurineService.createFigurine(req);
+
+    // Assert
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            null,
+            null,
+            ReleaseStatus.RUMORED,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    verify(distributorRepository).findAll();
+    verify(distributionRepository).findAll();
+    verify(lineUpRepository).findAll();
+    verify(seriesRepository).findAll();
+    verify(groupRepository).findAll();
+    verify(anniversaryRepository).findAll();
+
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+
+    verify(figurineRepository).save(figurineCaptor.capture());
+
+    Figurine savedFigurine = figurineCaptor.getValue();
+
+    assertThat(savedFigurine.getUpdateDate()).isNotNull();
+    assertThat(savedFigurine.getCreationDate()).isNotNull();
+    assertThat(savedFigurine.getEvents()).isNotNull();
   }
 
   @Test
@@ -504,7 +617,7 @@ public class FigurineServiceTest {
 
     DistributorReq distributorReq =
         new DistributorReq(1L, CurrencyCode.JPY, 16000d, null, null, null, null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, null);
 
     Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
     figurineMapped.setId(1L);
@@ -523,6 +636,7 @@ public class FigurineServiceTest {
             FigurineResp::displayableName,
             FigurineResp::distributors,
             FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
             FigurineResp::distribution,
             FigurineResp::lineUp,
             FigurineResp::series,
@@ -559,10 +673,11 @@ public class FigurineServiceTest {
                     null,
                     false)),
             null,
+            ReleaseStatus.RUMORED,
             null,
             new CatalogResp(1, "Myth Cloth EX"),
             new CatalogResp(1, "Saint Seiya"),
-            new CatalogResp(1, "Bronze Saint V3"),
+            null,
             null,
             null,
             null,
@@ -629,7 +744,7 @@ public class FigurineServiceTest {
             LocalDate.of(2026, 2, 2),
             LocalDate.of(2026, 3, 3),
             null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, null);
 
     Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
     figurineMapped.setId(1L);
@@ -648,6 +763,7 @@ public class FigurineServiceTest {
             FigurineResp::displayableName,
             FigurineResp::distributors,
             FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
             FigurineResp::distribution,
             FigurineResp::lineUp,
             FigurineResp::series,
@@ -684,10 +800,11 @@ public class FigurineServiceTest {
                     LocalDate.of(2026, 3, 3),
                     false)),
             null,
+            ReleaseStatus.RELEASED,
             null,
             new CatalogResp(1, "Myth Cloth EX"),
             new CatalogResp(1, "Saint Seiya"),
-            new CatalogResp(1, "Bronze Saint V3"),
+            null,
             null,
             null,
             null,
@@ -928,13 +1045,68 @@ public class FigurineServiceTest {
   }
 
   @Test
+  void searchFigurinesByName_shouldReturnMatchingResults_caseInsensitive() {
+    int page = 0, size = 2;
+    PageRequest pageRequest = PageRequest.of(page, size);
+
+    Figurine figurine1 = new Figurine();
+    figurine1.setId(1L);
+    figurine1.setNormalizedName("Pegasus Seiya");
+    figurine1.setDistributors(List.of());
+    figurine1.setEvents(List.of());
+    figurine1.setCreationDate(Instant.now());
+    figurine1.setUpdateDate(Instant.now());
+
+    Figurine figurine2 = new Figurine();
+    figurine2.setId(2L);
+    figurine2.setNormalizedName("Dragon Shiryu");
+    figurine2.setDistributors(List.of());
+    figurine2.setEvents(List.of());
+    figurine2.setCreationDate(Instant.now());
+    figurine2.setUpdateDate(Instant.now());
+
+    Page<Figurine> figurinePage = new PageImpl<>(List.of(figurine1, figurine2), pageRequest, 2);
+    when(figurineRepository.findByNormalizedNameContainingIgnoreCase("seiya", pageRequest))
+        .thenReturn(figurinePage);
+
+    Page<FigurineResp> result = figurineService.searchFigurinesByName("seiya", page, size);
+
+    assertThat(result.getContent().size()).isEqualTo(2);
+    assertThat(result.getContent().get(0).name()).containsIgnoringCase("seiya");
+    verify(figurineRepository).findByNormalizedNameContainingIgnoreCase("seiya", pageRequest);
+  }
+
+  @Test
+  void searchFigurinesByName_shouldReturnEmptyPage_whenNoMatch() {
+    int page = 0, size = 2;
+    PageRequest pageRequest = PageRequest.of(page, size);
+    when(figurineRepository.findByNormalizedNameContainingIgnoreCase("xyz", pageRequest))
+        .thenReturn(Page.empty(pageRequest));
+    Page<FigurineResp> result = figurineService.searchFigurinesByName("xyz", page, size);
+    assertThat(result.getContent().isEmpty()).isTrue();
+  }
+
+  @Test
+  void searchFigurinesByName_shouldHandleNullOrShortName() {
+    // Should not call repository for null or short name (controller/service guards this)
+    // If you want to enforce, add a test for controller or service validation
+    // Here, just ensure no call is made for invalid input
+    assertThatThrownBy(() -> figurineService.searchFigurinesByName(null, 0, 2))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> figurineService.searchFigurinesByName("ab", 0, 2))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(figurineRepository, never())
+        .findByNormalizedNameContainingIgnoreCase(anyString(), any(PageRequest.class));
+  }
+
+  @Test
   void updateFigurine_shouldThrowException_whenFigurineDoesNotExist() {
     // Arrange
     when(figurineRepository.findById(99L)).thenReturn(Optional.empty());
 
     DistributorReq distributorReq =
         new DistributorReq(1L, CurrencyCode.JPY, 16000d, null, null, null, null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, null);
 
     // Act + Assert
     assertThatThrownBy(() -> figurineService.updateFigurine(99L, req))
@@ -984,7 +1156,7 @@ public class FigurineServiceTest {
 
     DistributorReq distributorReq =
         new DistributorReq(1L, CurrencyCode.JPY, 18000d, null, null, null, null);
-    FigurineReq req = createFigurine("Dragon Shiryu", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Dragon Shiryu", distributorReq, 1L, 1L, null);
 
     // Act
     FigurineResp figurineResp = figurineService.updateFigurine(1L, req);
@@ -1048,7 +1220,7 @@ public class FigurineServiceTest {
 
     DistributorReq distributorReq =
         new DistributorReq(1L, CurrencyCode.JPY, 20000d, null, null, null, null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, null);
 
     // Act
     figurineService.updateFigurine(1L, req);
@@ -1100,7 +1272,7 @@ public class FigurineServiceTest {
 
     DistributorReq distributorReq =
         new DistributorReq(1L, CurrencyCode.USD, 150d, null, null, null, null);
-    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, 1L);
+    FigurineReq req = createFigurine("Pegasus Seiya", distributorReq, 1L, 1L, null);
 
     // Act
     figurineService.updateFigurine(1L, req);
@@ -1289,6 +1461,218 @@ public class FigurineServiceTest {
     assertThat(priceWithTax).isEqualTo(150);
   }
 
+  @Test
+  void calculateReleaseStatus_shouldReturnRumored_whenDistributorsIsNull() {
+    // Arrange
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(null);
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.RUMORED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnRumored_whenDistributorsIsEmpty() {
+    // Arrange
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of());
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.RUMORED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnRumored_whenOnlyNonJpyDistributorWithDates() {
+    // Arrange — USD distributor with announcement date; no JPY distributor present
+    FigurineDistributor usdDistributor = new FigurineDistributor();
+    usdDistributor.setCurrency(USD);
+    usdDistributor.setPrice(150d);
+    usdDistributor.setAnnouncementDate(LocalDate.of(2024, 1, 1));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(usdDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert — no JPY distributor means RUMORED regardless of dates
+    assertThat(status).isEqualTo(ReleaseStatus.RUMORED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnRumored_whenJpyDistributorHasNoDates() {
+    // Arrange
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    // no announcementDate, no releaseDate
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.RUMORED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnPrototype_whenJpyHasAnnouncementLessThan5YearsAgo() {
+    // Arrange — current year is 2026; 2026 - 2023 = 3 < 5 → PROTOTYPE
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    jpyDistributor.setAnnouncementDate(LocalDate.of(2023, 6, 1));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.PROTOTYPE);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnUnreleased_whenJpyHasAnnouncementMoreThan5YearsAgo() {
+    // Arrange — current year is 2026; 2026 - 2020 = 6 >= 5 → UNRELEASED
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    jpyDistributor.setAnnouncementDate(LocalDate.of(2020, 3, 15));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.UNRELEASED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnUnreleased_whenJpyHasAnnouncementExactly5YearsAgo() {
+    // Arrange — current year is 2026; 2026 - 2021 = 5 >= 5 → UNRELEASED (boundary case)
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    jpyDistributor.setAnnouncementDate(LocalDate.of(2021, 7, 1));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.UNRELEASED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnAnnounced_whenJpyHasFutureReleaseDate() {
+    // Arrange — release date is in the future
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    jpyDistributor.setReleaseDate(LocalDate.of(2027, 6, 1));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.ANNOUNCED);
+  }
+
+  @Test
+  void calculateReleaseStatus_shouldReturnReleased_whenJpyHasPastReleaseDate() {
+    // Arrange — release date is in the past
+    FigurineDistributor jpyDistributor = new FigurineDistributor();
+    jpyDistributor.setCurrency(JPY);
+    jpyDistributor.setPrice(16000d);
+    jpyDistributor.setReleaseDate(LocalDate.of(2025, 1, 1));
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(jpyDistributor));
+
+    // Act
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(status).isEqualTo(ReleaseStatus.RELEASED);
+  }
+
+  @Test
+  void createFigurine_shouldSkipDefaultEvents_whenDistributorsListIsEmpty() {
+    // Arrange
+    CatalogContext catalogContext =
+        new CatalogContext(
+            loadDistributors(),
+            loadDistributions(),
+            loadLineups(),
+            loadSeries(),
+            loadGroups(),
+            loadAnniversaries());
+
+    when(distributorRepository.findAll()).thenReturn(catalogContext.distributors());
+    when(distributionRepository.findAll()).thenReturn(catalogContext.distributions());
+    when(lineUpRepository.findAll()).thenReturn(catalogContext.lineUps());
+    when(seriesRepository.findAll()).thenReturn(catalogContext.series());
+    when(groupRepository.findAll()).thenReturn(catalogContext.groups());
+    when(anniversaryRepository.findAll()).thenReturn(catalogContext.anniversaries());
+
+    // Use a FigurineReq with an explicitly empty distributors list
+    FigurineReq req =
+        new FigurineReq(
+            "Pegasus Seiya",
+            List.of(),
+            null,
+            null,
+            1L,
+            1L,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+
+    Figurine figurineMapped = mapper.toFigurine(req, catalogContext);
+    figurineMapped.setId(1L);
+
+    when(figurineRepository.save(any(Figurine.class))).thenReturn(figurineMapped);
+
+    // Act
+    FigurineResp figurineResp = figurineService.createFigurine(req);
+
+    // Assert
+    assertThat(figurineResp).isNotNull();
+    ArgumentCaptor<Figurine> figurineCaptor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(figurineCaptor.capture());
+    assertThat(figurineCaptor.getValue().getEvents()).isNotNull();
+    assertThat(figurineCaptor.getValue().getEvents().isEmpty()).isTrue();
+  }
+
   private void assertImportedFigurineIsReadyForPersistence(Figurine figurine) {
     assertThat(figurine.getCreationDate()).isNotNull();
     assertThat(figurine.getUpdateDate()).isNotNull();
@@ -1474,15 +1858,19 @@ public class FigurineServiceTest {
   }
 
   private FigurineReq createFigurine(
-      String name, DistributorReq distributorReq, Long lineUpId, Long seriesId, Long groupId) {
+      String name,
+      DistributorReq distributorReq,
+      Long lineUpId,
+      Long seriesId,
+      String tamashiiUrl) {
     return new FigurineReq(
         name,
         Objects.isNull(distributorReq) ? null : List.of(distributorReq),
-        null,
+        tamashiiUrl,
         null,
         lineUpId,
         seriesId,
-        groupId,
+        null,
         null,
         null,
         null,
