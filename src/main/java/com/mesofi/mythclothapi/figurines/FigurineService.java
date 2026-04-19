@@ -251,6 +251,34 @@ public class FigurineService {
   }
 
   /**
+   * Retrieves a paginated list of figurines filtered by name (case-insensitive, contains).
+   *
+   * @param name name filter (must be at least 3 characters)
+   * @param page zero-based page index
+   * @param size number of records per page
+   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
+   */
+  @Transactional(readOnly = true)
+  public Page<FigurineResp> searchFigurinesByName(String name, int page, int size) {
+    log.info("Reading figurines with name '{}', page '{}' and size '{}'", name, page, size);
+
+    if (name == null || name.trim().length() < 3) {
+      throw new IllegalArgumentException("Name filter must be at least 3 characters");
+    }
+
+    Page<Figurine> figurines =
+        repository.findByNormalizedNameContainingIgnoreCase(name, PageRequest.of(page, size));
+
+    return figurines.map(
+        figurine ->
+            mapper.toFigurineResp(
+                figurine,
+                this::createDisplayableName,
+                this::calculatePriceWithTax,
+                this::calculateReleaseStatus));
+  }
+
+  /**
    * Updates an existing {@link Figurine} with new data provided via an API request.
    *
    * <p>This method:

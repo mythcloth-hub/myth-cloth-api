@@ -17,6 +17,15 @@ import lombok.NonNull;
 public interface FigurineRepository extends JpaRepository<Figurine, Long> {
 
   /**
+   * Finds figurines whose normalized name contains the given string (case-insensitive).
+   *
+   * @param name name filter
+   * @param pageable pagination and page-size information
+   * @return a page of figurines matching the name filter
+   */
+  Page<Figurine> findByNormalizedNameContainingIgnoreCase(String name, Pageable pageable);
+
+  /**
    * Returns figurines using JP catalog ordering rules.
    *
    * <p>SQL equivalent of the HQL query declared in {@link Query}:

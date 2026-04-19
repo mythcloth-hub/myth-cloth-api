@@ -146,6 +146,31 @@ public class FigurineRepositoryTest {
     assertThat(repository.count()).isGreaterThanOrEqualTo(2);
   }
 
+  @Test
+  void findByNormalizedNameContainingIgnoreCase_shouldReturnMatchingFigurines() {
+    Figurine figurine1 = createValidFigurine("Pegasus Seiya EX");
+    figurine1.setNormalizedName("Pegasus Seiya");
+    repository.saveAndFlush(figurine1);
+
+    Figurine figurine2 = createValidFigurine("Dragon Shiryu EX");
+    figurine2.setNormalizedName("Dragon Shiryu");
+    repository.saveAndFlush(figurine2);
+
+    var page =
+        repository.findByNormalizedNameContainingIgnoreCase(
+            "seiya", org.springframework.data.domain.PageRequest.of(0, 10));
+    assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
+    assertThat(page.getContent()).doesNotContain(figurine2);
+  }
+
+  @Test
+  void findByNormalizedNameContainingIgnoreCase_shouldReturnEmpty_whenNoMatch() {
+    var page =
+        repository.findByNormalizedNameContainingIgnoreCase(
+            "xyz", org.springframework.data.domain.PageRequest.of(0, 10));
+    assertThat(page.getContent()).isEmpty();
+  }
+
   // ─── Helper ───────────────────────────────────────────────────────────────
 
   private Figurine createValidFigurine(String legacyName) {

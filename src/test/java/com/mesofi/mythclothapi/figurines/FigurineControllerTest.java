@@ -258,6 +258,45 @@ class FigurineControllerTest {
   }
 
   @Test
+  void retrieveFigurines_shouldReturnFilteredResults_whenNameIsProvided() throws Exception {
+    FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
+    PageRequest pageRequest = PageRequest.of(0, 2);
+
+    when(service.searchFigurinesByName("seiya", 0, 2))
+        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+
+    mockMvc
+        .perform(get("/figurines").param("name", "seiya").param("page", "0").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Pegasus Seiya"));
+
+    verify(service).searchFigurinesByName("seiya", 0, 2);
+  }
+
+  @Test
+  void retrieveFigurines_shouldReturnAll_whenNameIsShortOrMissing() throws Exception {
+    FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
+    PageRequest pageRequest = PageRequest.of(0, 2);
+
+    when(service.readFigurines(0, 2)).thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+
+    // name param too short
+    mockMvc
+        .perform(get("/figurines").param("name", "ab").param("page", "0").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1));
+
+    // name param missing
+    mockMvc
+        .perform(get("/figurines").param("page", "0").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1));
+
+    verify(service, org.mockito.Mockito.times(2)).readFigurines(0, 2);
+  }
+
+  @Test
   void updateFigurine_shouldReturn200_whenRequestIsValid() throws Exception {
     FigurineReq request = createFigurineRequest();
     FigurineResp response = createFigurineResponse(1L, "Dragon Shiryu");
@@ -281,6 +320,23 @@ class FigurineControllerTest {
     mockMvc.perform(delete("/figurines/{id}", 1L)).andExpect(status().isNoContent());
 
     verify(service).deleteFigurine(1L);
+  }
+
+  @Test
+  void retrieveFigurines_shouldSearchByName_whenNameIsExactlyThreeChars() throws Exception {
+    FigurineResp first = createFigurineResponse(1L, "Abc");
+    PageRequest pageRequest = PageRequest.of(0, 2);
+
+    when(service.searchFigurinesByName("abc", 0, 2))
+        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+
+    mockMvc
+        .perform(get("/figurines").param("name", "abc").param("page", "0").param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1))
+        .andExpect(jsonPath("$.content[0].name").value("Abc"));
+
+    verify(service).searchFigurinesByName("abc", 0, 2);
   }
 
   private FigurineReq createFigurineRequest() {

@@ -1045,6 +1045,61 @@ public class FigurineServiceTest {
   }
 
   @Test
+  void searchFigurinesByName_shouldReturnMatchingResults_caseInsensitive() {
+    int page = 0, size = 2;
+    PageRequest pageRequest = PageRequest.of(page, size);
+
+    Figurine figurine1 = new Figurine();
+    figurine1.setId(1L);
+    figurine1.setNormalizedName("Pegasus Seiya");
+    figurine1.setDistributors(List.of());
+    figurine1.setEvents(List.of());
+    figurine1.setCreationDate(Instant.now());
+    figurine1.setUpdateDate(Instant.now());
+
+    Figurine figurine2 = new Figurine();
+    figurine2.setId(2L);
+    figurine2.setNormalizedName("Dragon Shiryu");
+    figurine2.setDistributors(List.of());
+    figurine2.setEvents(List.of());
+    figurine2.setCreationDate(Instant.now());
+    figurine2.setUpdateDate(Instant.now());
+
+    Page<Figurine> figurinePage = new PageImpl<>(List.of(figurine1, figurine2), pageRequest, 2);
+    when(figurineRepository.findByNormalizedNameContainingIgnoreCase("seiya", pageRequest))
+        .thenReturn(figurinePage);
+
+    Page<FigurineResp> result = figurineService.searchFigurinesByName("seiya", page, size);
+
+    assertThat(result.getContent().size()).isEqualTo(2);
+    assertThat(result.getContent().get(0).name()).containsIgnoringCase("seiya");
+    verify(figurineRepository).findByNormalizedNameContainingIgnoreCase("seiya", pageRequest);
+  }
+
+  @Test
+  void searchFigurinesByName_shouldReturnEmptyPage_whenNoMatch() {
+    int page = 0, size = 2;
+    PageRequest pageRequest = PageRequest.of(page, size);
+    when(figurineRepository.findByNormalizedNameContainingIgnoreCase("xyz", pageRequest))
+        .thenReturn(Page.empty(pageRequest));
+    Page<FigurineResp> result = figurineService.searchFigurinesByName("xyz", page, size);
+    assertThat(result.getContent().isEmpty()).isTrue();
+  }
+
+  @Test
+  void searchFigurinesByName_shouldHandleNullOrShortName() {
+    // Should not call repository for null or short name (controller/service guards this)
+    // If you want to enforce, add a test for controller or service validation
+    // Here, just ensure no call is made for invalid input
+    assertThatThrownBy(() -> figurineService.searchFigurinesByName(null, 0, 2))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> figurineService.searchFigurinesByName("ab", 0, 2))
+        .isInstanceOf(IllegalArgumentException.class);
+    verify(figurineRepository, never())
+        .findByNormalizedNameContainingIgnoreCase(anyString(), any(PageRequest.class));
+  }
+
+  @Test
   void updateFigurine_shouldThrowException_whenFigurineDoesNotExist() {
     // Arrange
     when(figurineRepository.findById(99L)).thenReturn(Optional.empty());
