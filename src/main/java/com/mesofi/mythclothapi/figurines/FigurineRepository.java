@@ -23,7 +23,42 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
    * @param pageable pagination and page-size information
    * @return a page of figurines matching the name filter
    */
-  Page<Figurine> findByNormalizedNameContainingIgnoreCase(String name, Pageable pageable);
+  @Query(
+      value =
+          """
+          select f
+          from Figurine f
+          left join f.distributors fd
+            on fd.distributor.country = com.mesofi.mythclothapi.distributors.model.CountryCode.JP
+          where lower(f.normalizedName) like lower(concat('%', :name, '%'))
+          order by
+            case
+              when fd.releaseDate is null and fd.announcementDate is null then 4
+              when fd.releaseDate is null and fd.announcementDate is not null then 3
+              when fd.releaseDate is not null and fd.releaseDate > current_date then 1
+              else 2
+            end,
+            case
+              when fd.releaseDate is not null
+              then fd.releaseDate
+            end desc,
+            case
+              when fd.announcementDate is not null
+              then fd.announcementDate
+            end desc,
+            case
+              when fd.releaseDate is null and fd.announcementDate is null
+              then f.creationDate
+            end
+          """,
+      countQuery =
+          """
+          select count(f)
+          from Figurine f
+          where lower(f.normalizedName) like lower(concat('%', :name, '%'))
+          """)
+  Page<Figurine> findByNormalizedNameContainingIgnoreCase(
+      @NonNull String name, @NonNull Pageable pageable);
 
   /**
    * Returns figurines using JP catalog ordering rules.
