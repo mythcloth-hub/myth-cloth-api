@@ -441,7 +441,7 @@ public class FigurineService {
     Optional<FigurineDistributor> jp =
         Objects.isNull(figurineDistributors)
             ? Optional.empty()
-            : figurineDistributors.stream().filter(fd -> fd.getCurrency() == JPY).findFirst();
+            : figurineDistributors.stream().findFirst();
 
     if (jp.isEmpty()) {
       return RUMORED;

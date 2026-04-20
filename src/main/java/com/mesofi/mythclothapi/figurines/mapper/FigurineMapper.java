@@ -203,15 +203,16 @@ public interface FigurineMapper {
         || Objects.nonNull(csv.getAnnouncementJPY())
         || Objects.nonNull(csv.getReleaseJPY())) {
       // it is either a JP or HK figurine for sure
-      FigurineDistributor jp = new FigurineDistributor();
-      jp.setCurrency(csv.isHk() ? CNY : JPY);
-      jp.setPrice(csv.getPriceJPY());
-      jp.setAnnouncementDate(csv.getAnnouncementJPY());
-      jp.setPreorderDate(csv.getPreorderJPY());
-      jp.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
-      jp.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
-      jp.setDistributor(findDistributorByCountry(distributors, CountryCode.JP));
-      distributorList.add(jp);
+      FigurineDistributor jpOrHk = new FigurineDistributor();
+      jpOrHk.setCurrency(csv.isHk() ? CNY : JPY);
+      jpOrHk.setPrice(csv.getPriceJPY());
+      jpOrHk.setAnnouncementDate(csv.getAnnouncementJPY());
+      jpOrHk.setPreorderDate(csv.getPreorderJPY());
+      jpOrHk.setReleaseDate(optJPY.map(LocalDateConfirmed::getDate).orElse(null));
+      jpOrHk.setReleaseDateConfirmed(optJPY.map(LocalDateConfirmed::isConfirmed).orElse(false));
+      jpOrHk.setDistributor(
+          findDistributorByCountry(distributors, csv.isHk() ? CountryCode.CN : CountryCode.JP));
+      distributorList.add(jpOrHk);
     }
 
     if (Objects.nonNull(csv.getPriceMXN())) {

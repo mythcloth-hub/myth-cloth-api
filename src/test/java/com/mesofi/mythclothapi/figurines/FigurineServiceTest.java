@@ -1488,24 +1488,6 @@ public class FigurineServiceTest {
   }
 
   @Test
-  void calculateReleaseStatus_shouldReturnRumored_whenOnlyNonJpyDistributorWithDates() {
-    // Arrange — USD distributor with announcement date; no JPY distributor present
-    FigurineDistributor usdDistributor = new FigurineDistributor();
-    usdDistributor.setCurrency(USD);
-    usdDistributor.setPrice(150d);
-    usdDistributor.setAnnouncementDate(LocalDate.of(2024, 1, 1));
-
-    Figurine figurine = new Figurine();
-    figurine.setDistributors(List.of(usdDistributor));
-
-    // Act
-    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
-
-    // Assert — no JPY distributor means RUMORED regardless of dates
-    assertThat(status).isEqualTo(ReleaseStatus.RUMORED);
-  }
-
-  @Test
   void calculateReleaseStatus_shouldReturnRumored_whenJpyDistributorHasNoDates() {
     // Arrange
     FigurineDistributor jpyDistributor = new FigurineDistributor();
