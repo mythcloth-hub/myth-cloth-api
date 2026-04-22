@@ -55,3 +55,29 @@ INSERT INTO series (description) VALUES ('Saint Seiya Omega');
 INSERT INTO series (description) VALUES ('The Lost Canvas');
 INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
 
+-- Creates a view for figurines with release status, announcement and release dates
+CREATE VIEW figurines_view AS
+SELECT
+    CASE
+        WHEN fd.release_date IS NULL
+             AND fd.announcement_date IS NULL
+            THEN 'RUMORED'
+        WHEN fd.release_date IS NULL
+             AND fd.announcement_date IS NOT NULL
+            THEN 'PROTOTYPE'
+        WHEN fd.release_date IS NOT NULL
+             AND fd.release_date > CURRENT_DATE
+            THEN 'ANNOUNCED'
+        ELSE 'RELEASED'
+    END AS release_status,
+    fd.announcement_date,
+    fd.release_date,
+    f.*
+FROM figurines f
+LEFT JOIN LATERAL (
+    SELECT fd.*
+    FROM figurine_distributor fd
+    WHERE fd.figurine_id = f.id
+    ORDER BY fd.id
+    LIMIT 1
+) fd ON TRUE;
