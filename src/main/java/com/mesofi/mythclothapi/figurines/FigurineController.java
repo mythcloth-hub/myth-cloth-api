@@ -120,14 +120,16 @@ public class FigurineController {
   @GetMapping
   public ResponseEntity<PaginatedResponse> retrieveFigurines(
       @RequestParam(required = false) String name,
+      @RequestParam(required = false) Long lineUpId,
+      @RequestParam(required = false) Long seriesId,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
-    if (name != null && name.trim().length() >= 3) {
-      result = service.searchFigurinesByName(name, page, size);
-    } else {
-      result = service.readFigurines(page, size);
-    }
+
+    String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
+
+    result = service.filterFigurines(figurineName, lineUpId, seriesId, page, size);
+
     return ResponseEntity.ok(
         new PaginatedResponse(
             result.getContent(),

@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.figurines;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
@@ -219,55 +218,17 @@ public class FigurineService {
         this::calculateReleaseStatus);
   }
 
-  /**
-   * Retrieves a paginated list of figurines.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves figurines using Spring Data pagination
-   *   <li>Executes in a read-only transactional context
-   *   <li>Maps domain entities to API response DTOs
-   *   <li>Includes derived fields such as display name and region-aware pricing
-   * </ul>
-   *
-   * @param page zero-based page index
-   * @param size number of records per page
-   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
-   */
   @Transactional(readOnly = true)
-  public Page<FigurineResp> readFigurines(int page, int size) {
-    log.info("Reading figurines with page '{}' and size '{}'", page, size);
-
-    return repository
-        .findAll(PageRequest.of(page, size))
-        .map(
-            figurine ->
-                mapper.toFigurineResp(
-                    figurine,
-                    this::createDisplayableName,
-                    this::calculatePriceWithTax,
-                    this::calculateReleaseStatus));
-  }
-
-  /**
-   * Retrieves a paginated list of figurines filtered by name (case-insensitive, contains).
-   *
-   * @param name name filter (must be at least 3 characters)
-   * @param page zero-based page index
-   * @param size number of records per page
-   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
-   */
-  @Transactional(readOnly = true)
-  public Page<FigurineResp> searchFigurinesByName(String name, int page, int size) {
+  public Page<FigurineResp> filterFigurines(
+      String name, Long lineUpId, Long seriesId, int page, int size) {
     log.info("Reading figurines with name '{}', page '{}' and size '{}'", name, page, size);
 
-    if (name == null || name.trim().length() < 3) {
-      throw new IllegalArgumentException("Name filter must be at least 3 characters");
-    }
+    FigurineFilter filter = new FigurineFilter();
+    filter.setName(name);
+    filter.setLineUpId(lineUpId);
+    filter.setSeriesId(seriesId);
 
-    Page<Figurine> figurines =
-        repository.findByNormalizedNameContainingIgnoreCase(name, PageRequest.of(page, size));
+    Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));
 
     return figurines.map(
         figurine ->
