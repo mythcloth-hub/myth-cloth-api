@@ -41,9 +41,18 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
    * Finds figurines whose normalized name contains the given substring (case-insensitive), using
    * the same release status and ordering logic as {@link #findAll(Pageable)}.
    *
-   * <p>The search is performed using a native SQL query that classifies each figurine by release
-   * status and applies a case-insensitive filter on the normalized name. Results are ordered by
-   * release status and relevant dates to ensure consistent presentation.
+   * <p>This query uses a derived table to compute a release status for each figurine based on the
+   * presence and timing of distributor release/announcement dates. It joins the figurine with its
+   * first distributor (by id) using a window function (ROW_NUMBER) to simulate the LATERAL join for
+   * compatibility with H2 and other databases. The outer query filters by normalized name and
+   * orders results by release status and relevant dates for consistent presentation.
+   *
+   * <pre>
+   *   - RUMORED: No release or announcement date
+   *   - PROTOTYPE: Announcement date exists, but no release date
+   *   - ANNOUNCED: Release date exists and is in the future
+   *   - RELEASED: Release date exists and is in the past or present
+   * </pre>
    *
    * @param name the substring to search for in normalized names
    * @param pageable pagination information
@@ -79,28 +88,28 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
           FROM (
               SELECT
                   CASE
-                      WHEN fd.release_date IS NULL
-                           AND fd.announcement_date IS NULL
-                          THEN 'RUMORED'
-                      WHEN fd.release_date IS NULL
-                           AND fd.announcement_date IS NOT NULL
-                          THEN 'PROTOTYPE'
-                      WHEN fd.release_date IS NOT NULL
-                           AND fd.release_date > CURRENT_DATE
-                          THEN 'ANNOUNCED'
+                      WHEN fd.release_date IS NULL AND fd.announcement_date IS NULL THEN 'RUMORED'
+                      WHEN fd.release_date IS NULL AND fd.announcement_date IS NOT NULL THEN 'PROTOTYPE'
+                      WHEN fd.release_date IS NOT NULL AND fd.release_date > CURRENT_DATE THEN 'ANNOUNCED'
                       ELSE 'RELEASED'
                   END AS release_status,
                   fd.announcement_date,
                   fd.release_date,
                   f.*
               FROM figurines f
-              LEFT JOIN LATERAL (
-                  SELECT fd.*
-                  FROM figurine_distributor fd
-                  WHERE fd.figurine_id = f.id
-                  ORDER BY fd.id
-                  LIMIT 1
-              ) fd ON TRUE
+              LEFT JOIN (
+                  SELECT *
+                  FROM (
+                      SELECT
+                          fd.*,
+                          ROW_NUMBER() OVER (
+                              PARTITION BY fd.figurine_id
+                              ORDER BY fd.id
+                          ) AS rn
+                      FROM figurine_distributor fd
+                  ) ranked
+                  WHERE rn = 1
+              ) fd ON fd.figurine_id = f.id
           ) t
           WHERE LOWER(normalized_name) LIKE LOWER(CONCAT('%', :name, '%'))
           ORDER BY
@@ -111,24 +120,20 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
                   WHEN 'RUMORED'   THEN 4
               END,
               CASE
-                  WHEN release_status IN ('ANNOUNCED', 'RELEASED')
-                      THEN release_date
+                  WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN release_date
               END DESC,
               CASE
-                  WHEN release_status = 'PROTOTYPE'
-                      THEN announcement_date
+                  WHEN release_status = 'PROTOTYPE' THEN announcement_date
               END DESC,
               CASE
-                  WHEN release_status = 'RUMORED'
-                      THEN creation_date
+                  WHEN release_status = 'RUMORED' THEN creation_date
               END
           """,
       countQuery =
           """
-          SELECT
-                  COUNT(*)
-              FROM figurines f
-              WHERE LOWER(normalized_name) LIKE LOWER(CONCAT('%', :name, '%'))
+          SELECT COUNT(*)
+          FROM figurines f
+          WHERE LOWER(normalized_name) LIKE LOWER(CONCAT('%', :name, '%'))
           """,
       nativeQuery = true)
   Page<Figurine> findByNormalizedNameContainingIgnoreCase(
@@ -137,17 +142,18 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
   /**
    * Finds all figurines with advanced ordering and release status classification.
    *
-   * <p>This method uses a native SQL query to classify each figurine by release status and applies
-   * a consistent ordering:
+   * <p>This query uses a derived table to compute a release status for each figurine based on the
+   * presence and timing of distributor release/announcement dates. It joins the figurine with its
+   * first distributor (by id) using a window function (ROW_NUMBER) to simulate the LATERAL join for
+   * compatibility with H2 and other databases. The outer query orders results by release status and
+   * relevant dates for consistent presentation.
    *
-   * <ul>
-   *   <li><b>RUMORED</b>: No release or announcement date
-   *   <li><b>PROTOTYPE</b>: Announcement date exists, but no release date
-   *   <li><b>ANNOUNCED</b>: Release date exists and is in the future
-   *   <li><b>RELEASED</b>: Release date exists and is in the past or present
-   * </ul>
-   *
-   * Results are ordered by release status and relevant dates for consistent presentation.
+   * <pre>
+   *   - RUMORED: No release or announcement date
+   *   - PROTOTYPE: Announcement date exists, but no release date
+   *   - ANNOUNCED: Release date exists and is in the future
+   *   - RELEASED: Release date exists and is in the past or present
+   * </pre>
    *
    * @param pageable pagination information
    * @return a page of all figurines
@@ -182,28 +188,28 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
           FROM (
               SELECT
                   CASE
-                      WHEN fd.release_date IS NULL
-                           AND fd.announcement_date IS NULL
-                          THEN 'RUMORED'
-                      WHEN fd.release_date IS NULL
-                           AND fd.announcement_date IS NOT NULL
-                          THEN 'PROTOTYPE'
-                      WHEN fd.release_date IS NOT NULL
-                           AND fd.release_date > CURRENT_DATE
-                          THEN 'ANNOUNCED'
+                      WHEN fd.release_date IS NULL AND fd.announcement_date IS NULL THEN 'RUMORED'
+                      WHEN fd.release_date IS NULL AND fd.announcement_date IS NOT NULL THEN 'PROTOTYPE'
+                      WHEN fd.release_date IS NOT NULL AND fd.release_date > CURRENT_DATE THEN 'ANNOUNCED'
                       ELSE 'RELEASED'
                   END AS release_status,
                   fd.announcement_date,
                   fd.release_date,
                   f.*
               FROM figurines f
-              LEFT JOIN LATERAL (
-                  SELECT fd.*
-                  FROM figurine_distributor fd
-                  WHERE fd.figurine_id = f.id
-                  ORDER BY fd.id
-                  LIMIT 1
-              ) fd ON TRUE
+              LEFT JOIN (
+                  SELECT *
+                  FROM (
+                      SELECT
+                          fd.*,
+                          ROW_NUMBER() OVER (
+                              PARTITION BY fd.figurine_id
+                              ORDER BY fd.id
+                          ) AS rn
+                      FROM figurine_distributor fd
+                  ) ranked
+                  WHERE rn = 1
+              ) fd ON fd.figurine_id = f.id
           ) t
           ORDER BY
               CASE release_status
@@ -213,23 +219,18 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long> {
                   WHEN 'RUMORED'   THEN 4
               END,
               CASE
-                  WHEN release_status IN ('ANNOUNCED', 'RELEASED')
-                      THEN release_date
+                  WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN release_date
               END DESC,
               CASE
-                  WHEN release_status = 'PROTOTYPE'
-                      THEN announcement_date
+                  WHEN release_status = 'PROTOTYPE' THEN announcement_date
               END DESC,
               CASE
-                  WHEN release_status = 'RUMORED'
-                      THEN creation_date
+                  WHEN release_status = 'RUMORED' THEN creation_date
               END
           """,
-      countQuery =
-          """
-              SELECT
-                  COUNT(*)
-              FROM figurines f;
+      countQuery = """
+          SELECT COUNT(*)
+          FROM figurines f;
           """,
       nativeQuery = true)
   @NonNull
