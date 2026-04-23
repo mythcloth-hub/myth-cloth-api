@@ -70,6 +70,18 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
       sql.append(" AND series_id = :seriesId");
       params.put("seriesId", filter.getSeriesId());
     }
+    if (Objects.nonNull(filter.getGroupId())) {
+      sql.append(" AND group_id = :groupId");
+      params.put("groupId", filter.getGroupId());
+    }
+    if (Objects.nonNull(filter.getMetalBody())) {
+      sql.append(" AND is_metal_body = :metalBody");
+      params.put("metalBody", filter.getMetalBody());
+    }
+    if (Objects.nonNull(filter.getOce())) {
+      sql.append(" AND is_oce = :oce");
+      params.put("oce", filter.getOce());
+    }
 
     // Sorting (dynamic from Pageable)
     sql.append(" ").append(buildOrderBy());

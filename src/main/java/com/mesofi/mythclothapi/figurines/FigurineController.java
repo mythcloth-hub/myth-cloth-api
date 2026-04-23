@@ -122,13 +122,18 @@ public class FigurineController {
       @RequestParam(required = false) String name,
       @RequestParam(required = false) Long lineUpId,
       @RequestParam(required = false) Long seriesId,
+      @RequestParam(required = false) Long groupId,
+      @RequestParam(required = false) Boolean metalBody,
+      @RequestParam(required = false) Boolean oce,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
 
     String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
 
-    result = service.filterFigurines(figurineName, lineUpId, seriesId, page, size);
+    result =
+        service.filterFigurines(
+            figurineName, lineUpId, seriesId, groupId, metalBody, oce, page, size);
 
     return ResponseEntity.ok(
         new PaginatedResponse(

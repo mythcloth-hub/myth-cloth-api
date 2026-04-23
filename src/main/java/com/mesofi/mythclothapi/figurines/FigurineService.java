@@ -220,13 +220,23 @@ public class FigurineService {
 
   @Transactional(readOnly = true)
   public Page<FigurineResp> filterFigurines(
-      String name, Long lineUpId, Long seriesId, int page, int size) {
+      String name,
+      Long lineUpId,
+      Long seriesId,
+      Long groupId,
+      Boolean metalBody,
+      Boolean oce,
+      int page,
+      int size) {
     log.info("Reading figurines with name '{}', page '{}' and size '{}'", name, page, size);
 
     FigurineFilter filter = new FigurineFilter();
     filter.setName(name);
     filter.setLineUpId(lineUpId);
     filter.setSeriesId(seriesId);
+    filter.setGroupId(groupId);
+    filter.setMetalBody(metalBody);
+    filter.setOce(oce);
 
     Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));
 

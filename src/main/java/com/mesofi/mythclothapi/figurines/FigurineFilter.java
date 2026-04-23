@@ -9,4 +9,7 @@ public class FigurineFilter {
   private String name;
   private Long lineUpId;
   private Long seriesId;
+  private Long groupId;
+  private Boolean metalBody;
+  private Boolean oce;
 }
