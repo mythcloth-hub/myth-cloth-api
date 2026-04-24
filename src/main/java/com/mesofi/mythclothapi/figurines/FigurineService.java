@@ -264,6 +264,33 @@ public class FigurineService {
     // update the distributors' info.
     updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
 
+    // update the events in case it was updated.
+    existing.getDistributors().stream()
+        .findFirst()
+        .ifPresent(
+            fd -> {
+              existing.getEvents().stream()
+                  .filter(e -> e.getType() == ANNOUNCEMENT)
+                  .findFirst()
+                  .ifPresent(e -> e.setEventDate(fd.getAnnouncementDate()));
+
+              /*
+              existing.getEvents().stream()
+                  .filter(e -> e.getType() == PREORDER_OPEN)
+                  .findFirst()
+                  .ifPresent(e -> e.setEventDate(fd.getPreorderDate()));
+
+              existing.getEvents().stream()
+                  .filter(e -> e.getType() == RELEASE)
+                  .findFirst()
+                  .ifPresent(
+                      e -> {
+                        e.setEventDate(fd.getReleaseDate());
+                        e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
+                      });
+               */
+            });
+
     var updated = repository.save(existing);
     return mapper.toFigurineResp(
         updated,
