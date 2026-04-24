@@ -1,15 +1,17 @@
 package com.mesofi.mythclothapi.figurines;
 
-import lombok.Getter;
-import lombok.Setter;
-
-@Setter
-@Getter
-public class FigurineFilter {
-  private String name;
-  private Long lineUpId;
-  private Long seriesId;
-  private Long groupId;
-  private Boolean metalBody;
-  private Boolean oce;
-}
+public record FigurineFilter(
+    String name,
+    Long lineUpId,
+    Long seriesId,
+    Long groupId,
+    Boolean metalBody,
+    Boolean oce,
+    Boolean revival,
+    Boolean plainCloth,
+    Boolean broken,
+    Boolean golden,
+    Boolean gold,
+    Boolean manga,
+    Boolean set,
+    Boolean articulable) {}

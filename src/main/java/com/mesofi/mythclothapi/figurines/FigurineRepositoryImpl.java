@@ -58,29 +58,61 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     Map<String, Object> params = new HashMap<>();
 
     // Dynamic filters
-    if (StringUtils.hasLength(filter.getName())) {
+    if (StringUtils.hasLength(filter.name())) {
       sql.append(" AND LOWER(normalized_name) LIKE LOWER(:name)");
-      params.put("name", "%" + filter.getName() + "%");
+      params.put("name", "%" + filter.name() + "%");
     }
-    if (Objects.nonNull(filter.getLineUpId())) {
+    if (Objects.nonNull(filter.lineUpId())) {
       sql.append(" AND lineup_id = :lineUpId");
-      params.put("lineUpId", filter.getLineUpId());
+      params.put("lineUpId", filter.lineUpId());
     }
-    if (Objects.nonNull(filter.getSeriesId())) {
+    if (Objects.nonNull(filter.seriesId())) {
       sql.append(" AND series_id = :seriesId");
-      params.put("seriesId", filter.getSeriesId());
+      params.put("seriesId", filter.seriesId());
     }
-    if (Objects.nonNull(filter.getGroupId())) {
+    if (Objects.nonNull(filter.groupId())) {
       sql.append(" AND group_id = :groupId");
-      params.put("groupId", filter.getGroupId());
+      params.put("groupId", filter.groupId());
     }
-    if (Objects.nonNull(filter.getMetalBody())) {
+    if (Objects.nonNull(filter.metalBody())) {
       sql.append(" AND is_metal_body = :metalBody");
-      params.put("metalBody", filter.getMetalBody());
+      params.put("metalBody", filter.metalBody());
     }
-    if (Objects.nonNull(filter.getOce())) {
+    if (Objects.nonNull(filter.oce())) {
       sql.append(" AND is_oce = :oce");
-      params.put("oce", filter.getOce());
+      params.put("oce", filter.oce());
+    }
+    if (Objects.nonNull(filter.revival())) {
+      sql.append(" AND is_revival = :revival");
+      params.put("revival", filter.revival());
+    }
+    if (Objects.nonNull(filter.plainCloth())) {
+      sql.append(" AND is_plain_cloth = :plainCloth");
+      params.put("plainCloth", filter.plainCloth());
+    }
+    if (Objects.nonNull(filter.broken())) {
+      sql.append(" AND is_broken = :broken");
+      params.put("broken", filter.broken());
+    }
+    if (Objects.nonNull(filter.golden())) {
+      sql.append(" AND is_golden = :golden");
+      params.put("golden", filter.golden());
+    }
+    if (Objects.nonNull(filter.gold())) {
+      sql.append(" AND is_gold = :gold");
+      params.put("gold", filter.gold());
+    }
+    if (Objects.nonNull(filter.manga())) {
+      sql.append(" AND is_manga = :manga");
+      params.put("manga", filter.manga());
+    }
+    if (Objects.nonNull(filter.set())) {
+      sql.append(" AND is_set = :set");
+      params.put("set", filter.set());
+    }
+    if (Objects.nonNull(filter.articulable())) {
+      sql.append(" AND is_articulable = :articulable");
+      params.put("articulable", filter.articulable());
     }
 
     // Sorting (dynamic from Pageable)

@@ -125,15 +125,38 @@ public class FigurineController {
       @RequestParam(required = false) Long groupId,
       @RequestParam(required = false) Boolean metalBody,
       @RequestParam(required = false) Boolean oce,
+      @RequestParam(required = false) Boolean revival,
+      @RequestParam(required = false) Boolean plainCloth,
+      @RequestParam(required = false) Boolean broken,
+      @RequestParam(required = false) Boolean golden,
+      @RequestParam(required = false) Boolean gold,
+      @RequestParam(required = false) Boolean manga,
+      @RequestParam(required = false) Boolean set,
+      @RequestParam(required = false) Boolean articulable,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
 
     String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
 
-    result =
-        service.filterFigurines(
-            figurineName, lineUpId, seriesId, groupId, metalBody, oce, page, size);
+    FigurineFilter figurineFilter =
+        new FigurineFilter(
+            figurineName,
+            lineUpId,
+            seriesId,
+            groupId,
+            metalBody,
+            oce,
+            revival,
+            plainCloth,
+            broken,
+            golden,
+            gold,
+            manga,
+            set,
+            articulable);
+
+    result = service.filterFigurines(figurineFilter, page, size);
 
     return ResponseEntity.ok(
         new PaginatedResponse(
