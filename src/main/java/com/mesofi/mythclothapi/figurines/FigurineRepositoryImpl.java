@@ -114,6 +114,10 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
       sql.append(" AND is_articulable = :articulable");
       params.put("articulable", filter.articulable());
     }
+    if (Objects.nonNull(filter.releaseStatus())) {
+      sql.append(" AND release_status = :status");
+      params.put("status", filter.releaseStatus());
+    }
 
     // Sorting (dynamic from Pageable)
     sql.append(" ").append(buildOrderBy());

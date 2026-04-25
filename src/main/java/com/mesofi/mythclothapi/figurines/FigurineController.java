@@ -133,6 +133,7 @@ public class FigurineController {
       @RequestParam(required = false) Boolean manga,
       @RequestParam(required = false) Boolean set,
       @RequestParam(required = false) Boolean articulable,
+      @RequestParam(required = false) String releaseStatus,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
@@ -154,7 +155,8 @@ public class FigurineController {
             gold,
             manga,
             set,
-            articulable);
+            articulable,
+            releaseStatus);
 
     result = service.filterFigurines(figurineFilter, page, size);
 

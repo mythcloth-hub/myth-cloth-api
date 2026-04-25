@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,6 +92,10 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
+
+  private final String ANN_MSG = "First announced as a possible future release.";
+  private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
+  private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
 
   @Transactional
   public void importFromPublicDrive() {
@@ -252,7 +257,7 @@ public class FigurineService {
    * @return API response DTO representing the updated figurine
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
-  @Transactional
+  // @Transactional
   public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -270,25 +275,52 @@ public class FigurineService {
         .ifPresent(
             fd -> {
               existing.getEvents().stream()
+                  .sorted(Comparator.comparing(FigurineEvent::getEventDate))
                   .filter(e -> e.getType() == ANNOUNCEMENT)
                   .findFirst()
-                  .ifPresent(e -> e.setEventDate(fd.getAnnouncementDate()));
+                  .ifPresentOrElse(
+                      e -> e.setEventDate(fd.getAnnouncementDate()),
+                      () -> {
+                        if (Objects.nonNull(fd.getAnnouncementDate())) {
+                          addDefaultEvent(
+                              ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
+                        }
+                      });
 
-              /*
               existing.getEvents().stream()
                   .filter(e -> e.getType() == PREORDER_OPEN)
                   .findFirst()
-                  .ifPresent(e -> e.setEventDate(fd.getPreorderDate()));
+                  .ifPresentOrElse(
+                      e -> e.setEventDate(fd.getPreorderDate()),
+                      () -> {
+                        if (Objects.nonNull(fd.getPreorderDate())) {
+                          addDefaultEvent(
+                              PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
+                        }
+                      });
 
               existing.getEvents().stream()
                   .filter(e -> e.getType() == RELEASE)
                   .findFirst()
-                  .ifPresent(
+                  .ifPresentOrElse(
                       e -> {
                         e.setEventDate(fd.getReleaseDate());
                         e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
+                      },
+                      () -> {
+                        if (Objects.nonNull(fd.getReleaseDate())) {
+                          addDefaultEvent(
+                              RELEASE_DATE_MSG,
+                              fd.getReleaseDate(),
+                              fd.isReleaseDateConfirmed(),
+                              RELEASE,
+                              existing);
+                        }
                       });
-               */
+
+              existing.getEvents().forEach(e -> e.setFigurine(existing));
+
+              System.out.println();
             });
 
     var updated = repository.save(existing);
@@ -513,26 +545,16 @@ public class FigurineService {
     Optional.ofNullable(figurineDistributor.getAnnouncementDate())
         .ifPresent(
             announcementDate ->
-                addDefaultEvent(
-                    "First announced as a possible future release.",
-                    announcementDate,
-                    true,
-                    ANNOUNCEMENT,
-                    figurine));
+                addDefaultEvent(ANN_MSG, announcementDate, true, ANNOUNCEMENT, figurine));
     Optional.ofNullable(figurineDistributor.getPreorderDate())
         .ifPresent(
             preorderDate ->
-                addDefaultEvent(
-                    "Pre-orders are officially open.",
-                    preorderDate,
-                    true,
-                    PREORDER_OPEN,
-                    figurine));
+                addDefaultEvent(PRE_ORDER_MSG, preorderDate, true, PREORDER_OPEN, figurine));
     Optional.ofNullable(figurineDistributor.getReleaseDate())
         .ifPresent(
             releaseDate ->
                 addDefaultEvent(
-                    "The global release date has been officially announced.",
+                    RELEASE_DATE_MSG,
                     releaseDate,
                     figurineDistributor.isReleaseDateConfirmed(),
                     RELEASE,

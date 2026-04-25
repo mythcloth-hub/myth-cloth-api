@@ -14,4 +14,5 @@ public record FigurineFilter(
     Boolean gold,
     Boolean manga,
     Boolean set,
-    Boolean articulable) {}
+    Boolean articulable,
+    String releaseStatus) {}
