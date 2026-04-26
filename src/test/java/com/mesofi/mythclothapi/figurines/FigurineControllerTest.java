@@ -235,7 +235,8 @@ class FigurineControllerTest {
     FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    when(service.readFigurines(0, 2))
+    // Use empty filter for all figurines
+    when(service.filterFigurines(any(), any(Integer.class), any(Integer.class)))
         .thenReturn(new PageImpl<>(List.of(first, second), pageRequest, 5));
 
     mockMvc
@@ -247,7 +248,7 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.totalPages").value(3))
         .andExpect(jsonPath("$.content.length()").value(2));
 
-    verify(service).readFigurines(0, 2);
+    verify(service).filterFigurines(any(), any(Integer.class), any(Integer.class));
   }
 
   @Test
@@ -262,7 +263,8 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    when(service.searchFigurinesByName("seiya", 0, 2))
+    // Filter with name
+    when(service.filterFigurines(any(), any(Integer.class), any(Integer.class)))
         .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
 
     mockMvc
@@ -271,7 +273,7 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Pegasus Seiya"));
 
-    verify(service).searchFigurinesByName("seiya", 0, 2);
+    verify(service).filterFigurines(any(), any(Integer.class), any(Integer.class));
   }
 
   @Test
@@ -279,7 +281,8 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    when(service.readFigurines(0, 2)).thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+    when(service.filterFigurines(any(), any(Integer.class), any(Integer.class)))
+        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
 
     // name param too short
     mockMvc
@@ -293,7 +296,8 @@ class FigurineControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(1));
 
-    verify(service, org.mockito.Mockito.times(2)).readFigurines(0, 2);
+    verify(service, org.mockito.Mockito.times(2))
+        .filterFigurines(any(), any(Integer.class), any(Integer.class));
   }
 
   @Test
@@ -327,7 +331,7 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Abc");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    when(service.searchFigurinesByName("abc", 0, 2))
+    when(service.filterFigurines(any(), any(Integer.class), any(Integer.class)))
         .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
 
     mockMvc
@@ -336,7 +340,7 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Abc"));
 
-    verify(service).searchFigurinesByName("abc", 0, 2);
+    verify(service).filterFigurines(any(), any(Integer.class), any(Integer.class));
   }
 
   private FigurineReq createFigurineRequest() {

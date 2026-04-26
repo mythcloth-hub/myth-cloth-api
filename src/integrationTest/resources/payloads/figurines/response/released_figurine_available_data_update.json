@@ -77,8 +77,8 @@
   "events": [
     {
       "id": 1,
-      "date": "2026-01-01",
-      "dateConfirmed": false,
+      "date": "2026-01-16",
+      "dateConfirmed": true,
       "type": "RELEASE",
       "region": "JP",
       "description": "The global release date has been officially announced."

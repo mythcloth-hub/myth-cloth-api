@@ -147,7 +147,7 @@ public class FigurineRepositoryTest {
   }
 
   @Test
-  void findByNormalizedNameContainingIgnoreCase_shouldReturnMatchingFigurines() {
+  void search_shouldReturnMatchingFigurines() {
     Figurine figurine1 = createValidFigurine("Pegasus Seiya EX");
     figurine1.setNormalizedName("Pegasus Seiya");
     repository.saveAndFlush(figurine1);
@@ -156,18 +156,24 @@ public class FigurineRepositoryTest {
     figurine2.setNormalizedName("Dragon Shiryu");
     repository.saveAndFlush(figurine2);
 
-    var page =
-        repository.findByNormalizedNameContainingIgnoreCase(
-            "seiya", org.springframework.data.domain.PageRequest.of(0, 10));
+    var filter =
+        new FigurineFilter(
+            "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
+    var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
-    assertThat(page.getContent()).doesNotContain(figurine2);
+    assertThat(page.getContent())
+        .extracting(Figurine::getNormalizedName)
+        .doesNotContain("Dragon Shiryu");
   }
 
   @Test
-  void findByNormalizedNameContainingIgnoreCase_shouldReturnEmpty_whenNoMatch() {
-    var page =
-        repository.findByNormalizedNameContainingIgnoreCase(
-            "xyz", org.springframework.data.domain.PageRequest.of(0, 10));
+  void search_shouldReturnEmpty_whenNoMatch() {
+    var filter =
+        new FigurineFilter(
+            "xyz", null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
+    var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }
 
