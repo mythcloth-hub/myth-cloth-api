@@ -2,9 +2,9 @@ package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -13,12 +13,12 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
@@ -87,28 +87,95 @@ public class FigurineServiceTest {
   }
 
   @Test
-  void importFromPublicDrive_shouldSaveAllFigurines_andVerifyDependencies() throws IOException {
+  void importFromPublicDrive_shouldSaveAllFigurines_whenAllFigurinesAreDifferent()
+      throws IOException {
     // Arrange
+    List<Figurine> figurines = new ArrayList<>();
+    for (int i = 0; i < 12; i++) {
+      figurines.add(new Figurine());
+    }
+
+    String filename = "MythCloth Catalog - CatalogMyth.csv";
     mockCatalogRepositories();
-    when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture());
+    when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
     when(figurineRepository.findByLegacyName(any())).thenReturn(Optional.empty());
+    when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
     // Act
     figurineService.importFromPublicDrive();
 
-    // Verify that saveAllAndFlush is called with a non-null iterable containing only non-null
-    // Figurine objects
-    verify(figurineRepository)
-        .saveAllAndFlush(
-            argThat(
-                (Iterable<Figurine> iterable) ->
-                    iterable != null
-                        && StreamSupport.stream(iterable.spliterator(), false)
-                            .allMatch(Objects::nonNull)));
-
+    // Verify
     verifyCatalogRepositoryInteractions();
     verify(figurineCsvSource).openReader();
     verify(figurineRepository, times(12)).findByLegacyName(any());
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);
+    verify(figurineRepository).saveAllAndFlush(captor.capture());
+    captor
+        .getValue()
+        .forEach(
+            figurine -> {
+              assertThat(figurine).isNotNull();
+              assertThat(figurine.getCreationDate()).isNotNull();
+              assertThat(figurine.getUpdateDate()).isNotNull();
+            });
+  }
+
+  @Test
+  void importFromPublicDrive_shouldSaveAllFigurines_whenSomeFigurinesAreDuplicates()
+      throws IOException {
+    // Arrange
+    List<Figurine> figurines = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      figurines.add(new Figurine());
+    }
+
+    String filename = "MythCloth Catalog - CatalogMythDuplicates.csv";
+    mockCatalogRepositories();
+    when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
+    when(figurineRepository.findByLegacyName(any()))
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.empty())
+        .thenReturn(Optional.of(new Figurine()));
+    when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
+
+    // Act
+    figurineService.importFromPublicDrive();
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineCsvSource).openReader();
+    verify(figurineRepository, times(3)).findByLegacyName(any());
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);
+    verify(figurineRepository).saveAllAndFlush(captor.capture());
+    Iterable<Figurine> iterable = captor.getValue();
+    int i = 0;
+    for (Figurine figurine : iterable) {
+      if (i == 0) {
+        assertThat(figurine.getLegacyName()).isEqualTo("Cygnus Hyoga (God Cloth) EX");
+        assertThat(figurine.getDistributors().isEmpty()).isFalse();
+        figurine
+            .getDistributors()
+            .forEach(distributor -> assertThat(distributor.getFigurine()).isNotNull());
+        figurine.getEvents().forEach(event -> assertThat(event.getFigurine()).isNotNull());
+      }
+      if (i == 1) {
+        assertThat(figurine.getLegacyName()).isEqualTo("Siren Sorrento <Ark Scale> EX");
+        assertThat(figurine.getDistributors().isEmpty()).isFalse();
+        figurine
+            .getDistributors()
+            .forEach(distributor -> assertThat(distributor.getFigurine()).isNotNull());
+        figurine.getEvents().forEach(event -> assertThat(event.getFigurine()).isNotNull());
+      }
+      if (i == 2) {
+        assertThat(figurine.getLegacyName()).isEqualTo("Cygnus Hyoga (God Cloth) EX");
+        assertThat(figurine.getDistributors().isEmpty()).isTrue();
+      }
+      i++;
+    }
   }
 
   private void mockCatalogRepositories() {
@@ -252,9 +319,8 @@ public class FigurineServiceTest {
     return List.of(anniversary1);
   }
 
-  private Reader loadImportCsvFixture() throws IOException {
-    ClassPathResource resource =
-        new ClassPathResource("import/figurines/MythCloth Catalog - CatalogMyth.csv");
+  private Reader loadImportCsvFixture(String filename) throws IOException {
+    ClassPathResource resource = new ClassPathResource("import/figurines/" + filename);
     return new InputStreamReader(resource.getInputStream());
   }
 }
