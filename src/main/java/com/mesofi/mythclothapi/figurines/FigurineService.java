@@ -223,6 +223,23 @@ public class FigurineService {
         this::calculateReleaseStatus);
   }
 
+  /**
+   * Retrieves a paginated list of figurines matching the provided filter criteria.
+   *
+   * <p>This method:
+   *
+   * <ul>
+   *   <li>Applies the specified {@link FigurineFilter} to search for figurines
+   *   <li>Returns results in a paginated format using the given page and size parameters
+   *   <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO, including display name,
+   *       price with tax, and release status
+   * </ul>
+   *
+   * @param filter the filter criteria to apply when searching for figurines
+   * @param page the page number to retrieve (zero-based)
+   * @param size the number of items per page
+   * @return a page of {@link FigurineResp} objects matching the filter
+   */
   @Transactional(readOnly = true)
   public Page<FigurineResp> filterFigurines(FigurineFilter filter, int page, int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
@@ -257,7 +274,7 @@ public class FigurineService {
    * @return API response DTO representing the updated figurine
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
-  // @Transactional
+  @Transactional
   public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -319,8 +336,6 @@ public class FigurineService {
                       });
 
               existing.getEvents().forEach(e -> e.setFigurine(existing));
-
-              System.out.println();
             });
 
     var updated = repository.save(existing);

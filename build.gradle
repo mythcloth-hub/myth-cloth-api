@@ -135,6 +135,7 @@ pitest {
             'com.mesofi.mythclothapi.figurineevents.FigurineEventMapperImpl',
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapper',
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
+            'com.mesofi.mythclothapi.figurines.FigurineRepositoryImpl',
             'com.mesofi.mythclothapi.StartupRunner'
     ]
 
