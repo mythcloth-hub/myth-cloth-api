@@ -6,7 +6,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,7 +14,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -98,7 +96,6 @@ public class FigurineServiceTest {
     String filename = "MythCloth Catalog - CatalogMyth.csv";
     mockCatalogRepositories();
     when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
-    when(figurineRepository.findByLegacyName(any())).thenReturn(Optional.empty());
     when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
     // Act
@@ -107,7 +104,6 @@ public class FigurineServiceTest {
     // Verify
     verifyCatalogRepositoryInteractions();
     verify(figurineCsvSource).openReader();
-    verify(figurineRepository, times(12)).findByLegacyName(any());
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);
@@ -134,10 +130,6 @@ public class FigurineServiceTest {
     String filename = "MythCloth Catalog - CatalogMythDuplicates.csv";
     mockCatalogRepositories();
     when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
-    when(figurineRepository.findByLegacyName(any()))
-        .thenReturn(Optional.empty())
-        .thenReturn(Optional.empty())
-        .thenReturn(Optional.of(new Figurine()));
     when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
     // Act
@@ -146,7 +138,6 @@ public class FigurineServiceTest {
     // Verify
     verifyCatalogRepositoryInteractions();
     verify(figurineCsvSource).openReader();
-    verify(figurineRepository, times(3)).findByLegacyName(any());
 
     @SuppressWarnings("unchecked")
     ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);
@@ -155,7 +146,7 @@ public class FigurineServiceTest {
     int i = 0;
     for (Figurine figurine : iterable) {
       if (i == 0) {
-        assertThat(figurine.getLegacyName()).isEqualTo("Cygnus Hyoga (God Cloth) EX");
+        assertThat(figurine.getLegacyName()).isEqualTo("Poseidon EX OCE");
         assertThat(figurine.getDistributors().isEmpty()).isFalse();
         figurine
             .getDistributors()
@@ -163,7 +154,7 @@ public class FigurineServiceTest {
         figurine.getEvents().forEach(event -> assertThat(event.getFigurine()).isNotNull());
       }
       if (i == 1) {
-        assertThat(figurine.getLegacyName()).isEqualTo("Siren Sorrento <Ark Scale> EX");
+        assertThat(figurine.getLegacyName()).isEqualTo("Odin Seiya EX");
         assertThat(figurine.getDistributors().isEmpty()).isFalse();
         figurine
             .getDistributors()
@@ -171,8 +162,8 @@ public class FigurineServiceTest {
         figurine.getEvents().forEach(event -> assertThat(event.getFigurine()).isNotNull());
       }
       if (i == 2) {
-        assertThat(figurine.getLegacyName()).isEqualTo("Cygnus Hyoga (God Cloth) EX");
-        assertThat(figurine.getDistributors().isEmpty()).isTrue();
+        assertThat(figurine.getLegacyName()).isEqualTo("Poseidon EX OCE");
+        assertThat(figurine.getDistributors().isEmpty()).isFalse();
       }
       i++;
     }

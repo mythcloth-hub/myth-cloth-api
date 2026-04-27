@@ -110,56 +110,38 @@ public class FigurineService {
               .parse();
 
       List<Figurine> figurines =
-          csvRows.stream().map(csv -> upsertFigurine(csv, catalogContext)).toList();
+          csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext)).toList();
 
       List<Figurine> saved = repository.saveAllAndFlush(figurines);
-      log.info("{} figurines have been processed (inserted or updated)", saved.size());
+      log.info("{} figurines have been inserted", saved.size());
     } catch (IOException ex) {
       throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
     }
   }
 
   /**
-   * Inserts or updates a {@link Figurine} based on its legacy name.
+   * Converts a CSV row into a fully prepared {@link Figurine} entity ready for persistence.
    *
-   * <p>If a figurine already exists:
-   *
-   * <ul>
-   *   <li>Its mutable fields are updated
-   *   <li>References and relationships are re-linked
-   * </ul>
-   *
-   * <p>If it does not exist:
+   * <p>This method performs two steps:
    *
    * <ul>
-   *   <li>Default events are created
-   *   <li>Timestamps are initialized
+   *   <li>Maps the incoming {@link FigurineCsv} record into a domain {@link Figurine}
+   *   <li>Applies persistence preparation logic such as creating default events, linking
+   *       bidirectional relationships, and initializing audit timestamps
    * </ul>
    *
-   * @param csv CSV row representation
-   * @param context preloaded catalog context
-   * @return managed {@link Figurine} entity
+   * <p>Used primarily during bulk CSV imports to normalize imported data before saving.
+   *
+   * @param csv source CSV row representing a figurine
+   * @param context preloaded catalog context used to resolve references
+   * @return prepared {@link Figurine} entity ready to be persisted
    */
-  private Figurine upsertFigurine(FigurineCsv csv, CatalogContext context) {
+  private Figurine convertAndPrepareFigurine(FigurineCsv csv, CatalogContext context) {
     // Convert CSV → Incoming entity
-    Figurine incoming = mapper.toFigurine(csv, context);
+    Figurine figurine = mapper.toFigurine(csv, context);
 
-    // Find existing by unique key (legacyName)
-    return repository
-        .findByLegacyName(incoming.getLegacyName())
-        .map(
-            existing -> {
-              // Update existing record
-              mapper.updateFigurine(existing, incoming);
-              linkReferences(existing);
-              return existing;
-            })
-        .orElseGet(
-            () -> {
-              // Create a new record
-              prepareForPersistence(incoming);
-              return incoming;
-            });
+    prepareForPersistence(figurine);
+    return figurine;
   }
 
   /**
