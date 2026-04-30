@@ -20,6 +20,8 @@ import java.util.Optional;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -223,7 +225,8 @@ public class FigurineService {
    * @return a page of {@link FigurineResp} objects matching the filter
    */
   @Transactional(readOnly = true)
-  public Page<FigurineResp> filterFigurines(FigurineFilter filter, int page, int size) {
+  public Page<FigurineResp> filterFigurines(
+      @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
     Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));

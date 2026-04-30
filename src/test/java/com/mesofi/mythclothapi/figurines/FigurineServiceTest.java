@@ -3,11 +3,12 @@ package com.mesofi.mythclothapi.figurines;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.io.Reader;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import jakarta.validation.ConstraintViolationException;
 
@@ -26,6 +28,9 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.anniversaries.Anniversary;
@@ -53,6 +58,7 @@ import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
@@ -569,6 +575,221 @@ public class FigurineServiceTest {
 
     // Verify
     verifyCatalogRepositoryInteractions();
+  }
+
+  @Test
+  void readFigurine_shouldThrowFigurineNotFoundException_whenIdDoesNotExist() {
+    // Arrange
+    when(figurineRepository.findById(-1L)).thenReturn(Optional.empty());
+
+    // Act
+    assertThatThrownBy(() -> figurineService.readFigurine(-1L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found");
+
+    verify(figurineRepository).findById(-1L);
+  }
+
+  @Test
+  void readFigurine_shouldReturnExpectedResponse_whenFigurineExists() {
+    // Arrange
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    Figurine figurine = new Figurine();
+    figurine.setId(1L);
+    figurine.setLegacyName("Shun");
+    figurine.setNormalizedName("Shun");
+    figurine.setLineup(lineUp);
+    figurine.setSeries(series);
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.of(figurine));
+
+    // Act
+    FigurineResp figurineResp = figurineService.readFigurine(1L);
+
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Shun",
+            "FIXME",
+            List.of(),
+            null,
+            ReleaseStatus.RUMORED,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    verify(figurineRepository).findById(1L);
+  }
+
+  @Test
+  @SuppressWarnings("DataFlowIssue")
+  void filterFigurines_shouldThrowConstraintViolationException_whenRequestIsNull() {
+    // Act
+    assertThatThrownBy(() -> figurineService.filterFigurines(null, -1, -1))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("filterFigurines.filter: must not be null")
+        .hasMessageContaining("filterFigurines.page: must be greater than or equal to 0")
+        .hasMessageContaining("filterFigurines.size: must be greater than 0");
+
+    verifyNoInteractions(figurineRepository);
+  }
+
+  @Test
+  void filterFigurines_shouldReturnEmptyResult_whenNoFiltersAreProvided() {
+    // Arrange
+    FigurineFilter figurineFilter =
+        new FigurineFilter(
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
+
+    Page<Figurine> emptyPage = new PageImpl<>(List.of(), PageRequest.of(1, 10), 0);
+    when(figurineRepository.search(figurineFilter, PageRequest.of(1, 10))).thenReturn(emptyPage);
+
+    // Act
+    Page<FigurineResp> result = figurineService.filterFigurines(figurineFilter, 1, 10);
+
+    // verify
+    assertThat(result.getTotalElements()).isEqualTo(0);
+    assertThat(result.getTotalPages()).isEqualTo(0);
+    assertThat(result.getContent()).isNotNull().isEmpty();
+  }
+
+  @Test
+  void filterFigurines_shouldReturnResult_whenNoFiltersAreProvided() {
+    // Arrange
+    FigurineFilter filter =
+        new FigurineFilter(
+            "Seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
+
+    Figurine figurine = new Figurine();
+    figurine.setId(1L);
+    figurine.setLegacyName("Seiya");
+    figurine.setNormalizedName("Seiya");
+    Page<Figurine> figurineFound = new PageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1);
+
+    when(figurineRepository.search(filter, PageRequest.of(1, 10))).thenReturn(figurineFound);
+
+    // Act
+    Page<FigurineResp> result = figurineService.filterFigurines(filter, 1, 10);
+
+    // verify
+    assertThat(result.getTotalElements()).isEqualTo(1);
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getContent()).isNotNull().hasSize(1);
+    FigurineResp figurineResp = result.getContent().getFirst();
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Seiya",
+            "FIXME",
+            List.of(),
+            null,
+            ReleaseStatus.RUMORED,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
   }
 
   private FigurineReq createFigurineReq(
