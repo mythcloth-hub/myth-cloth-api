@@ -269,7 +269,7 @@ public class FigurineService {
     mapper.updateFigurine(existing, incoming);
 
     // update the distributors' info.
-    updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
+    updateDistributors(existing, incoming.getDistributors());
 
     // update the events in case it was updated.
     existing.getDistributors().stream()
@@ -372,27 +372,32 @@ public class FigurineService {
    * <p>Distributor identity is determined exclusively by currency. This method * does not handle
    * removal of existing distributors.
    *
-   * @param current the owning figurine
-   * @param existing current distributor entries associated with the figurine
-   * @param incoming distributor entries provided by the update request
+   * @param existing the owning figurine
+   * @param incomingDistributors distributor entries provided by the update request
    */
   private void updateDistributors(
-      Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
+      Figurine existing, List<FigurineDistributor> incomingDistributors) {
+    List<FigurineDistributor> existingDistributors = existing.getDistributors();
 
-    if (Objects.nonNull(incoming)) {
-      for (FigurineDistributor incomingFigurineDist : incoming) {
-        CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+    if (Objects.isNull(incomingDistributors)) {
+      return;
+    }
 
-        existing.stream()
-            .filter(fd -> fd.getCurrency().equals(incomingCurrency))
-            .findFirst()
-            .ifPresentOrElse(
-                fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
-                () -> {
-                  incomingFigurineDist.setFigurine(current);
-                  existing.add(incomingFigurineDist);
-                });
-      }
+    for (FigurineDistributor incomingFigurineDist : incomingDistributors) {
+      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+
+      existingDistributors.stream()
+          .filter(
+              existingFd -> {
+                return existingFd.getCurrency().equals(incomingCurrency);
+              })
+          .findFirst()
+          .ifPresentOrElse(
+              existingFd -> mapper.updateFigurineDistributor(existingFd, incomingFigurineDist),
+              () -> {
+                incomingFigurineDist.setFigurine(existing);
+                existingDistributors.add(incomingFigurineDist);
+              });
     }
   }
 

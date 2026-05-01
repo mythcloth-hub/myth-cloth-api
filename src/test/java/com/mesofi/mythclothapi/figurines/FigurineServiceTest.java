@@ -3,6 +3,11 @@ package com.mesofi.mythclothapi.figurines;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_CLOSE;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,12 +23,16 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import jakarta.validation.ConstraintViolationException;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,6 +62,8 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
@@ -924,6 +935,688 @@ public class FigurineServiceTest {
     // Verify
     verifyCatalogRepositoryInteractions();
     verify(figurineRepository).save(any());
+  }
+
+  @Test
+  void
+      updateFigurine_shouldReturnFigurineResp_whenRequestContainsDistributorWithMatchingCurrency() {
+    // Arrange
+    mockCatalogRepositories();
+
+    DistributorReq distributorReq =
+        new DistributorReq(
+            1L, JPY, 50000D, LocalDate.of(2026, 1, 1), null, LocalDate.of(2026, 2, 2), true);
+    FigurineReq figurineReqToUpdate =
+        createFigurineReq(
+            "Pegasus Seiya",
+            "https://tamashiiweb.com/item/15834/",
+            1L,
+            1L,
+            List.of(distributorReq));
+
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    FigurineDistributor figurineDistributorJPY = new FigurineDistributor();
+    figurineDistributorJPY.setId(1L);
+    figurineDistributorJPY.setPrice(16500D);
+    figurineDistributorJPY.setCurrency(JPY);
+    figurineDistributorJPY.setAnnouncementDate(LocalDate.of(2025, 1, 1));
+
+    FigurineDistributor figurineDistributorMXN = new FigurineDistributor();
+    figurineDistributorMXN.setId(1L);
+    figurineDistributorMXN.setPrice(2500D);
+    figurineDistributorMXN.setCurrency(MXN);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+    existingFigurine.setDistributors(List.of(figurineDistributorJPY, figurineDistributorMXN));
+
+    Figurine figurineUpdated = new Figurine();
+    figurineUpdated.setId(1L);
+    figurineUpdated.setNormalizedName("Pegasus Seiya");
+    figurineUpdated.setLineup(lineUp);
+    figurineUpdated.setSeries(series);
+    figurineUpdated.setTamashiiUrl("https://tamashiiweb.com/item/15834/");
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any())).thenReturn(figurineUpdated);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(10L, figurineReqToUpdate);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(captor.capture());
+    Figurine updated = captor.getValue();
+    assertThat(updated.getId()).isEqualTo(1L);
+    assertThat(updated.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(updated.getTamashiiUrl()).isEqualTo("https://tamashiiweb.com/item/15834/");
+    assertThat(updated.getLineup()).isEqualTo(lineUp);
+    assertThat(updated.getSeries()).isEqualTo(series);
+    assertThat(updated.getDistributors().size()).isEqualTo(2);
+    assertThat(updated.getDistributors().getFirst())
+        .extracting(
+            FigurineDistributor::getPrice,
+            FigurineDistributor::getCurrency,
+            FigurineDistributor::getAnnouncementDate,
+            FigurineDistributor::getPreorderDate,
+            FigurineDistributor::getReleaseDate,
+            FigurineDistributor::isReleaseDateConfirmed)
+        .containsExactly(
+            50000D, JPY, LocalDate.of(2026, 1, 1), null, LocalDate.of(2026, 2, 2), true);
+
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            List.of(),
+            "https://tamashiiweb.com/item/15834/",
+            ReleaseStatus.RUMORED,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineRepository).save(any());
+  }
+
+  @Test
+  void
+      updateFigurine_shouldReturnFigurineResp_whenRequestContainsDistributorWithUnMatchingCurrency() {
+    // Arrange
+    CatalogContext catalogContext = mockCatalogRepositories();
+
+    List<DistributorReq> list = new ArrayList<>();
+    DistributorReq distributorReq =
+        new DistributorReq(
+            1L, MXN, 50000D, LocalDate.of(2026, 1, 1), null, LocalDate.of(2026, 2, 2), true);
+    list.add(distributorReq);
+    FigurineReq figurineReqToUpdate =
+        createFigurineReq("Pegasus Seiya", "https://tamashiiweb.com/item/15834/", 1L, 1L, list);
+
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    List<FigurineDistributor> distributors = new ArrayList<>();
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setId(1L);
+    figurineDistributor.setPrice(16500D);
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setAnnouncementDate(LocalDate.of(2025, 1, 1));
+    distributors.add(figurineDistributor);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+    existingFigurine.setDistributors(distributors);
+
+    Figurine figurineUpdated = new Figurine();
+    figurineUpdated.setId(1L);
+    figurineUpdated.setNormalizedName("Pegasus Seiya");
+    figurineUpdated.setLineup(lineUp);
+    figurineUpdated.setSeries(series);
+    figurineUpdated.setTamashiiUrl("https://tamashiiweb.com/item/15834/");
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any())).thenReturn(figurineUpdated);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(10L, figurineReqToUpdate);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(captor.capture());
+    Figurine updated = captor.getValue();
+    assertThat(updated.getId()).isEqualTo(1L);
+    assertThat(updated.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(updated.getTamashiiUrl()).isEqualTo("https://tamashiiweb.com/item/15834/");
+    assertThat(updated.getLineup()).isEqualTo(lineUp);
+    assertThat(updated.getSeries()).isEqualTo(series);
+    assertThat(updated.getDistributors().size()).isEqualTo(2);
+    assertThat(updated.getDistributors().getFirst())
+        .extracting(
+            FigurineDistributor::getPrice,
+            FigurineDistributor::getCurrency,
+            FigurineDistributor::getAnnouncementDate,
+            FigurineDistributor::getPreorderDate,
+            FigurineDistributor::getReleaseDate,
+            FigurineDistributor::isReleaseDateConfirmed)
+        .containsExactly(16500.0, JPY, LocalDate.of(2025, 1, 1), null, null, false);
+    assertThat(updated.getDistributors().getFirst().getFigurine()).isNull();
+
+    assertThat(updated.getDistributors().getLast())
+        .extracting(
+            FigurineDistributor::getPrice,
+            FigurineDistributor::getCurrency,
+            FigurineDistributor::getAnnouncementDate,
+            FigurineDistributor::getPreorderDate,
+            FigurineDistributor::getReleaseDate,
+            FigurineDistributor::isReleaseDateConfirmed)
+        .containsExactly(
+            50000D, MXN, LocalDate.of(2026, 1, 1), null, LocalDate.of(2026, 2, 2), true);
+    assertThat(updated.getDistributors().getLast().getFigurine()).isNotNull();
+
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            List.of(),
+            "https://tamashiiweb.com/item/15834/",
+            ReleaseStatus.RUMORED,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineRepository).save(any());
+  }
+
+  @Test
+  void updateFigurine_shouldReturnFigurineResp_whenRequestIsBasicWithExistingEvents() {
+    // Arrange
+    mockCatalogRepositories();
+
+    FigurineReq figurineReqToUpdate = createFigurineReq("Pegasus Seiya", null, 1L, 1L, null);
+
+    FigurineEvent figurineEvent1 = createEvent(1L, ANNOUNCEMENT, LocalDate.of(2026, 4, 24), false);
+    FigurineEvent figurineEvent2 = createEvent(2L, PREORDER_OPEN, LocalDate.of(2026, 4, 25), false);
+    FigurineEvent figurineEvent3 = createEvent(3L, PREORDER_CLOSE, LocalDate.of(2026, 1, 1), false);
+    FigurineEvent figurineEvent4 = createEvent(4L, RELEASE, LocalDate.of(2026, 4, 27), true);
+
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setId(1L);
+    figurineDistributor.setPrice(1000D);
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setAnnouncementDate(LocalDate.of(2026, 3, 3));
+    figurineDistributor.setReleaseDate(LocalDate.of(2026, 4, 24));
+    figurineDistributor.setReleaseDateConfirmed(false);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+    existingFigurine.setEvents(
+        List.of(figurineEvent1, figurineEvent2, figurineEvent3, figurineEvent4));
+    existingFigurine.setDistributors(List.of(figurineDistributor));
+
+    Figurine figurineUpdated = new Figurine();
+    figurineUpdated.setId(1L);
+    figurineUpdated.setNormalizedName("Pegasus Seiya");
+    figurineUpdated.setLineup(lineUp);
+    figurineUpdated.setSeries(series);
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any())).thenReturn(figurineUpdated);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(10L, figurineReqToUpdate);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(captor.capture());
+    Figurine updated = captor.getValue();
+    assertThat(updated.getId()).isEqualTo(1L);
+    assertThat(updated.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(updated.getLineup()).isEqualTo(lineUp);
+    assertThat(updated.getSeries()).isEqualTo(series);
+    assertThat(updated.getEvents()).hasSize(4);
+    assertThat(updated.getEvents().getFirst())
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(1L, ANNOUNCEMENT, LocalDate.of(2026, 3, 3), false, null, "Event 1");
+    assertThat(updated.getEvents().getFirst().getFigurine()).isNotNull();
+
+    assertThat(updated.getEvents().get(1))
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(2L, PREORDER_OPEN, null, false, null, "Event 2");
+    assertThat(updated.getEvents().get(1).getFigurine()).isNotNull();
+
+    assertThat(updated.getEvents().get(2))
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(3L, PREORDER_CLOSE, LocalDate.of(2026, 1, 1), false, null, "Event 3");
+    assertThat(updated.getEvents().get(2).getFigurine()).isNotNull();
+
+    assertThat(updated.getEvents().getLast())
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(4L, RELEASE, LocalDate.of(2026, 4, 24), false, null, "Event 4");
+    assertThat(updated.getEvents().getLast().getFigurine()).isNotNull();
+
+    assertThat(figurineResp)
+        .isNotNull(); // no need to test all the response, it has been tested already in other
+    // tests.
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineRepository).save(any());
+  }
+
+  @Test
+  void updateFigurine_shouldReturnFigurineResp_whenRequestIsBasicWithNonExistingEvents() {
+    // Arrange
+    mockCatalogRepositories();
+
+    FigurineReq figurineReqToUpdate = createFigurineReq("Pegasus Seiya", null, 1L, 1L, null);
+
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setId(1L);
+    figurineDistributor.setPrice(1000D);
+    figurineDistributor.setCurrency(JPY);
+    figurineDistributor.setAnnouncementDate(LocalDate.of(2026, 3, 3));
+    figurineDistributor.setPreorderDate(LocalDate.of(2026, 4, 21));
+    figurineDistributor.setReleaseDate(LocalDate.of(2026, 4, 24));
+    figurineDistributor.setReleaseDateConfirmed(false);
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+    existingFigurine.setEvents(new ArrayList<>());
+    existingFigurine.setDistributors(List.of(figurineDistributor));
+
+    Figurine figurineUpdated = new Figurine();
+    figurineUpdated.setId(1L);
+    figurineUpdated.setNormalizedName("Pegasus Seiya");
+    figurineUpdated.setLineup(lineUp);
+    figurineUpdated.setSeries(series);
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any())).thenReturn(figurineUpdated);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(10L, figurineReqToUpdate);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(captor.capture());
+    Figurine updated = captor.getValue();
+    assertThat(updated.getId()).isEqualTo(1L);
+    assertThat(updated.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(updated.getLineup()).isEqualTo(lineUp);
+    assertThat(updated.getSeries()).isEqualTo(series);
+    assertThat(updated.getEvents()).hasSize(3);
+    assertThat(updated.getEvents().getFirst())
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(
+            null,
+            ANNOUNCEMENT,
+            LocalDate.of(2026, 3, 3),
+            true,
+            null,
+            "First announced as a possible future release.");
+    assertThat(updated.getEvents().getFirst().getFigurine()).isNotNull();
+
+    assertThat(updated.getEvents().get(1))
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(
+            null,
+            PREORDER_OPEN,
+            LocalDate.of(2026, 4, 21),
+            true,
+            null,
+            "Pre-orders are officially open.");
+    assertThat(updated.getEvents().getFirst().getFigurine()).isNotNull();
+
+    assertThat(updated.getEvents().getLast())
+        .extracting(
+            FigurineEvent::getId,
+            FigurineEvent::getType,
+            FigurineEvent::getEventDate,
+            FigurineEvent::isEventDateConfirmed,
+            FigurineEvent::getRegion,
+            FigurineEvent::getDescription)
+        .containsExactly(
+            null,
+            RELEASE,
+            LocalDate.of(2026, 4, 24),
+            false,
+            null,
+            "The global release date has been officially announced.");
+    assertThat(updated.getEvents().getLast().getFigurine()).isNotNull();
+
+    assertThat(figurineResp)
+        .isNotNull(); // no need to test all the response, it has been tested already in other
+    // tests.
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineRepository).save(any());
+  }
+
+  @Test
+  void deleteFigurine_shouldThrowConstraintViolationException_whenInputIsInvalid() {
+    // Act
+    assertThatThrownBy(() -> figurineService.deleteFigurine(0L))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("deleteFigurine.id: must be greater than 0");
+
+    verifyNoInteractions(figurineRepository);
+  }
+
+  @Test
+  void deleteFigurine_shouldThrowFigurineNotFoundException_whenFigurineNotFound() {
+    // Arrange
+    when(figurineRepository.findById(1L)).thenReturn(Optional.empty());
+
+    // Act
+    assertThatThrownBy(() -> figurineService.deleteFigurine(1L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found");
+  }
+
+  @Test
+  void deleteFigurine_shouldDeleteFigurine_whenRequestIsBasic() {
+    // Arrange
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+
+    // Act
+    figurineService.deleteFigurine(10L);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).delete(captor.capture());
+    Figurine deleted = captor.getValue();
+    assertThat(deleted.getId()).isEqualTo(1L);
+    assertThat(deleted.getNormalizedName()).isEqualTo("Seiya");
+    assertThat(deleted.getLineup()).isEqualTo(lineUp);
+    assertThat(deleted.getSeries()).isEqualTo(series);
+
+    // Verify
+    verify(figurineRepository).delete(any());
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnNullPriceWithTax_whenInputIsInvalid() {
+    // Arrange
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setPrice(0D);
+
+    // Act
+    Double priceWithTax1 = figurineService.calculatePriceWithTax(null);
+    Double priceWithTax2 = figurineService.calculatePriceWithTax(new FigurineDistributor());
+    Double priceWithTax3 = figurineService.calculatePriceWithTax(figurineDistributor);
+
+    // Assert
+    assertThat(priceWithTax1).isNull();
+    assertThat(priceWithTax2).isNull();
+    assertThat(priceWithTax3).isNull();
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideLocalDates")
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsJPY(
+      LocalDate releaseDate, Double expectedPriceWithTax) {
+    // Arrange
+    FigurineDistributor distributor = new FigurineDistributor();
+    distributor.setCurrency(JPY);
+    distributor.setPrice(1000D);
+    distributor.setReleaseDate(releaseDate);
+
+    // Act
+    double priceWithTax = figurineService.calculatePriceWithTax(distributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(expectedPriceWithTax);
+  }
+
+  @Test
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsMXN() {
+    // Arrange
+    FigurineDistributor distributor = new FigurineDistributor();
+    distributor.setCurrency(MXN);
+    distributor.setPrice(1000D);
+
+    // Act
+    double priceWithTax = figurineService.calculatePriceWithTax(distributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(1160.0);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"USD", "CAD"})
+  void calculatePriceWithTax_shouldReturnPriceWithTax_whenCurrencyIsOther(String currency) {
+    // Arrange
+    FigurineDistributor distributor = new FigurineDistributor();
+    distributor.setCurrency(CurrencyCode.valueOf(currency));
+    distributor.setPrice(1000D);
+
+    // Act
+    double priceWithTax = figurineService.calculatePriceWithTax(distributor);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(1000);
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideAllDates")
+  void calculateReleaseStatus_shouldReturnReleaseStatus_whenInputIsValid(
+      LocalDate announcementDate, LocalDate releaseDate, ReleaseStatus expectedReleaseStatus) {
+    // Arrange
+    FigurineDistributor distributor = new FigurineDistributor();
+    distributor.setCurrency(JPY);
+    distributor.setPrice(1000D);
+    distributor.setReleaseDate(releaseDate);
+    distributor.setAnnouncementDate(announcementDate);
+
+    Figurine figurine = new Figurine();
+    figurine.setDistributors(List.of(distributor));
+
+    // Act
+    ReleaseStatus priceWithTax = figurineService.calculateReleaseStatus(figurine);
+
+    // Assert
+    assertThat(priceWithTax).isEqualTo(expectedReleaseStatus);
+  }
+
+  private static Stream<Arguments> provideAllDates() {
+    return Stream.of(
+        Arguments.of(null, null, ReleaseStatus.RUMORED),
+        Arguments.of(LocalDate.of(2013, 1, 1), null, ReleaseStatus.UNRELEASED),
+        Arguments.of(
+            LocalDate.of(LocalDate.now().getYear() - 5, 1, 1), null, ReleaseStatus.UNRELEASED),
+        Arguments.of(LocalDate.of(2026, 1, 1), null, ReleaseStatus.PROTOTYPE),
+        Arguments.of(null, LocalDate.of(2013, 1, 1), ReleaseStatus.RELEASED),
+        Arguments.of(null, LocalDate.of(2046, 1, 1), ReleaseStatus.ANNOUNCED));
+  }
+
+  private static Stream<Arguments> provideLocalDates() {
+    return Stream.of(
+        Arguments.of(LocalDate.of(1995, 1, 1), 1030D),
+        Arguments.of(LocalDate.of(2013, 1, 1), 1050D),
+        Arguments.of(LocalDate.of(2015, 1, 1), 1080D),
+        Arguments.of(LocalDate.of(2020, 1, 1), 1100D));
+  }
+
+  private FigurineEvent createEvent(
+      Long id, FigurineEventType type, LocalDate eventDate, boolean eventDateConfirmed) {
+    FigurineEvent figurineEvent = new FigurineEvent();
+    figurineEvent.setId(id);
+    figurineEvent.setDescription("Event " + id);
+    figurineEvent.setType(type);
+    figurineEvent.setEventDate(eventDate);
+    figurineEvent.setEventDateConfirmed(eventDateConfirmed);
+    return figurineEvent;
   }
 
   private FigurineReq createFigurineReq(
