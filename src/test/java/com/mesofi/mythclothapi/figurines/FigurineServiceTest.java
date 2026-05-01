@@ -580,14 +580,14 @@ public class FigurineServiceTest {
   @Test
   void readFigurine_shouldThrowFigurineNotFoundException_whenIdDoesNotExist() {
     // Arrange
-    when(figurineRepository.findById(-1L)).thenReturn(Optional.empty());
+    when(figurineRepository.findById(10000L)).thenReturn(Optional.empty());
 
     // Act
-    assertThatThrownBy(() -> figurineService.readFigurine(-1L))
+    assertThatThrownBy(() -> figurineService.readFigurine(10000L))
         .isInstanceOf(FigurineNotFoundException.class)
         .hasMessageContaining("Figurine not found");
 
-    verify(figurineRepository).findById(-1L);
+    verify(figurineRepository).findById(10000L);
   }
 
   @Test
@@ -790,6 +790,140 @@ public class FigurineServiceTest {
             List.of(),
             null,
             null);
+  }
+
+  @Test
+  void updateFigurine_shouldThrowConstraintViolationException_whenInputIsInvalid() {
+    // Act
+    assertThatThrownBy(() -> figurineService.updateFigurine(0L, null))
+        .isInstanceOf(ConstraintViolationException.class)
+        .hasMessageContaining("updateFigurine.id: must be greater than 0")
+        .hasMessageContaining("updateFigurine.request: must not be null");
+
+    verifyNoInteractions(figurineRepository);
+  }
+
+  @Test
+  void updateFigurine_shouldThrowFigurineNotFoundException_whenFigurineNotFound() {
+    // Arrange
+    FigurineReq figurineReq =
+        createFigurineReq("Pegasus Seiya", "https://tamashiiweb.com/item/15834/", 1L, 1L, null);
+
+    when(figurineRepository.findById(1L)).thenReturn(Optional.empty());
+
+    // Act
+    assertThatThrownBy(() -> figurineService.updateFigurine(1L, figurineReq))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessageContaining("Figurine not found");
+  }
+
+  @Test
+  void updateFigurine_shouldReturnFigurineResp_whenRequestIsBasic() {
+    // Arrange
+    mockCatalogRepositories();
+
+    FigurineReq figurineReqToUpdate =
+        createFigurineReq("Pegasus Seiya", "https://tamashiiweb.com/item/15834/", 1L, 1L, null);
+
+    LineUp lineUp = new LineUp();
+    lineUp.setId(1L);
+    lineUp.setDescription("Myth Cloth EX");
+
+    Series series = new Series();
+    series.setId(1L);
+    series.setDescription("Saint Seiya");
+
+    Figurine existingFigurine = new Figurine();
+    existingFigurine.setId(1L);
+    existingFigurine.setNormalizedName("Seiya");
+    existingFigurine.setLineup(lineUp);
+    existingFigurine.setSeries(series);
+
+    Figurine figurineUpdated = new Figurine();
+    figurineUpdated.setId(1L);
+    figurineUpdated.setNormalizedName("Pegasus Seiya");
+    figurineUpdated.setLineup(lineUp);
+    figurineUpdated.setSeries(series);
+    figurineUpdated.setTamashiiUrl("https://tamashiiweb.com/item/15834/");
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(existingFigurine));
+    when(figurineRepository.save(any())).thenReturn(figurineUpdated);
+
+    // Act
+    FigurineResp figurineResp = figurineService.updateFigurine(10L, figurineReqToUpdate);
+
+    // Assert
+    ArgumentCaptor<Figurine> captor = ArgumentCaptor.forClass(Figurine.class);
+    verify(figurineRepository).save(captor.capture());
+    Figurine updated = captor.getValue();
+    assertThat(updated.getId()).isEqualTo(1L);
+    assertThat(updated.getNormalizedName()).isEqualTo("Pegasus Seiya");
+    assertThat(updated.getTamashiiUrl()).isEqualTo("https://tamashiiweb.com/item/15834/");
+    assertThat(updated.getLineup()).isEqualTo(lineUp);
+    assertThat(updated.getSeries()).isEqualTo(series);
+
+    assertThat(figurineResp)
+        .isNotNull()
+        .extracting(
+            FigurineResp::id,
+            FigurineResp::name,
+            FigurineResp::displayableName,
+            FigurineResp::distributors,
+            FigurineResp::tamashiiUrl,
+            FigurineResp::releaseStatus,
+            FigurineResp::distribution,
+            FigurineResp::lineUp,
+            FigurineResp::series,
+            FigurineResp::group,
+            FigurineResp::anniversary,
+            FigurineResp::isMetalBody,
+            FigurineResp::isOriginalColorEdition,
+            FigurineResp::isRevival,
+            FigurineResp::isPlainCloth,
+            FigurineResp::isBattleDamaged,
+            FigurineResp::isGoldenArmor,
+            FigurineResp::isGold24kEdition,
+            FigurineResp::isMangaVersion,
+            FigurineResp::isMultiPack,
+            FigurineResp::isArticulable,
+            FigurineResp::notes,
+            FigurineResp::officialImageUrls,
+            FigurineResp::unofficialImageUrls,
+            FigurineResp::events,
+            FigurineResp::createdAt,
+            FigurineResp::updatedAt)
+        .containsExactly(
+            1L,
+            "Pegasus Seiya",
+            "FIXME",
+            List.of(),
+            "https://tamashiiweb.com/item/15834/",
+            ReleaseStatus.RUMORED,
+            null,
+            new CatalogResp(1, "Myth Cloth EX"),
+            new CatalogResp(1, "Saint Seiya"),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(),
+            null,
+            null);
+
+    // Verify
+    verifyCatalogRepositoryInteractions();
+    verify(figurineRepository).save(any());
   }
 
   private FigurineReq createFigurineReq(

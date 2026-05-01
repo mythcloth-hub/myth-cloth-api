@@ -196,7 +196,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional(readOnly = true)
-  public FigurineResp readFigurine(Long id) {
+  public FigurineResp readFigurine(@Positive Long id) {
     log.info("Reading figurine with id '{}'", id);
 
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -260,7 +260,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional
-  public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
+  public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
@@ -349,7 +349,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional
-  public void deleteFigurine(Long id) {
+  public void deleteFigurine(@Positive Long id) {
     log.info("Deleting figurine with id '{}'", id);
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
@@ -379,18 +379,20 @@ public class FigurineService {
   private void updateDistributors(
       Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
 
-    for (FigurineDistributor incomingFigurineDist : incoming) {
-      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+    if (Objects.nonNull(incoming)) {
+      for (FigurineDistributor incomingFigurineDist : incoming) {
+        CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
 
-      existing.stream()
-          .filter(fd -> fd.getCurrency().equals(incomingCurrency))
-          .findFirst()
-          .ifPresentOrElse(
-              fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
-              () -> {
-                incomingFigurineDist.setFigurine(current);
-                existing.add(incomingFigurineDist);
-              });
+        existing.stream()
+            .filter(fd -> fd.getCurrency().equals(incomingCurrency))
+            .findFirst()
+            .ifPresentOrElse(
+                fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
+                () -> {
+                  incomingFigurineDist.setFigurine(current);
+                  existing.add(incomingFigurineDist);
+                });
+      }
     }
   }
 
