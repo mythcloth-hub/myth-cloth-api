@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import com.mesofi.mythclothapi.common.Descriptive;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +19,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "lineups")
+@EqualsAndHashCode(callSuper = true, exclude = "figurines")
 public class LineUp extends Descriptive {
 
   @OneToMany(mappedBy = "lineup", cascade = CascadeType.ALL, orphanRemoval = true)

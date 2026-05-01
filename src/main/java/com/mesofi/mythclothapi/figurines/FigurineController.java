@@ -120,14 +120,46 @@ public class FigurineController {
   @GetMapping
   public ResponseEntity<PaginatedResponse> retrieveFigurines(
       @RequestParam(required = false) String name,
+      @RequestParam(required = false) Long lineUpId,
+      @RequestParam(required = false) Long seriesId,
+      @RequestParam(required = false) Long groupId,
+      @RequestParam(required = false) Boolean metalBody,
+      @RequestParam(required = false) Boolean oce,
+      @RequestParam(required = false) Boolean revival,
+      @RequestParam(required = false) Boolean plainCloth,
+      @RequestParam(required = false) Boolean broken,
+      @RequestParam(required = false) Boolean golden,
+      @RequestParam(required = false) Boolean gold,
+      @RequestParam(required = false) Boolean manga,
+      @RequestParam(required = false) Boolean set,
+      @RequestParam(required = false) Boolean articulable,
+      @RequestParam(required = false) String releaseStatus,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
-    if (name != null && name.trim().length() >= 3) {
-      result = service.searchFigurinesByName(name, page, size);
-    } else {
-      result = service.readFigurines(page, size);
-    }
+
+    String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
+
+    FigurineFilter figurineFilter =
+        new FigurineFilter(
+            figurineName,
+            lineUpId,
+            seriesId,
+            groupId,
+            metalBody,
+            oce,
+            revival,
+            plainCloth,
+            broken,
+            golden,
+            gold,
+            manga,
+            set,
+            articulable,
+            releaseStatus);
+
+    result = service.filterFigurines(figurineFilter, page, size);
+
     return ResponseEntity.ok(
         new PaginatedResponse(
             result.getContent(),

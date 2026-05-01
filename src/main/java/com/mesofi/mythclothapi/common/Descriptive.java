@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.common;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
+@EqualsAndHashCode(callSuper = false)
 public abstract class Descriptive extends BaseId {
 
   /**

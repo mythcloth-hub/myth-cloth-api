@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.figurines;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
@@ -14,12 +13,15 @@ import java.io.IOException;
 import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -93,6 +95,10 @@ public class FigurineService {
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
 
+  private final String ANN_MSG = "First announced as a possible future release.";
+  private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
+  private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
+
   @Transactional
   public void importFromPublicDrive() {
     CatalogContext catalogContext = loadCatalogs();
@@ -106,56 +112,38 @@ public class FigurineService {
               .parse();
 
       List<Figurine> figurines =
-          csvRows.stream().map(csv -> upsertFigurine(csv, catalogContext)).toList();
+          csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext)).toList();
 
       List<Figurine> saved = repository.saveAllAndFlush(figurines);
-      log.info("{} figurines have been processed (inserted or updated)", saved.size());
+      log.info("{} figurines have been inserted", saved.size());
     } catch (IOException ex) {
       throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
     }
   }
 
   /**
-   * Inserts or updates a {@link Figurine} based on its legacy name.
+   * Converts a CSV row into a fully prepared {@link Figurine} entity ready for persistence.
    *
-   * <p>If a figurine already exists:
-   *
-   * <ul>
-   *   <li>Its mutable fields are updated
-   *   <li>References and relationships are re-linked
-   * </ul>
-   *
-   * <p>If it does not exist:
+   * <p>This method performs two steps:
    *
    * <ul>
-   *   <li>Default events are created
-   *   <li>Timestamps are initialized
+   *   <li>Maps the incoming {@link FigurineCsv} record into a domain {@link Figurine}
+   *   <li>Applies persistence preparation logic such as creating default events, linking
+   *       bidirectional relationships, and initializing audit timestamps
    * </ul>
    *
-   * @param csv CSV row representation
-   * @param context preloaded catalog context
-   * @return managed {@link Figurine} entity
+   * <p>Used primarily during bulk CSV imports to normalize imported data before saving.
+   *
+   * @param csv source CSV row representing a figurine
+   * @param context preloaded catalog context used to resolve references
+   * @return prepared {@link Figurine} entity ready to be persisted
    */
-  private Figurine upsertFigurine(FigurineCsv csv, CatalogContext context) {
+  private Figurine convertAndPrepareFigurine(FigurineCsv csv, CatalogContext context) {
     // Convert CSV → Incoming entity
-    Figurine incoming = mapper.toFigurine(csv, context);
+    Figurine figurine = mapper.toFigurine(csv, context);
 
-    // Find existing by unique key (legacyName)
-    return repository
-        .findByLegacyName(incoming.getLegacyName())
-        .map(
-            existing -> {
-              // Update existing record
-              mapper.updateFigurine(existing, incoming);
-              linkReferences(existing);
-              return existing;
-            })
-        .orElseGet(
-            () -> {
-              // Create a new record
-              prepareForPersistence(incoming);
-              return incoming;
-            });
+    prepareForPersistence(figurine);
+    return figurine;
   }
 
   /**
@@ -208,7 +196,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional(readOnly = true)
-  public FigurineResp readFigurine(Long id) {
+  public FigurineResp readFigurine(@Positive Long id) {
     log.info("Reading figurine with id '{}'", id);
 
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -220,54 +208,28 @@ public class FigurineService {
   }
 
   /**
-   * Retrieves a paginated list of figurines.
+   * Retrieves a paginated list of figurines matching the provided filter criteria.
    *
    * <p>This method:
    *
    * <ul>
-   *   <li>Retrieves figurines using Spring Data pagination
-   *   <li>Executes in a read-only transactional context
-   *   <li>Maps domain entities to API response DTOs
-   *   <li>Includes derived fields such as display name and region-aware pricing
+   *   <li>Applies the specified {@link FigurineFilter} to search for figurines
+   *   <li>Returns results in a paginated format using the given page and size parameters
+   *   <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO, including display name,
+   *       price with tax, and release status
    * </ul>
    *
-   * @param page zero-based page index
-   * @param size number of records per page
-   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
+   * @param filter the filter criteria to apply when searching for figurines
+   * @param page the page number to retrieve (zero-based)
+   * @param size the number of items per page
+   * @return a page of {@link FigurineResp} objects matching the filter
    */
   @Transactional(readOnly = true)
-  public Page<FigurineResp> readFigurines(int page, int size) {
-    log.info("Reading figurines with page '{}' and size '{}'", page, size);
+  public Page<FigurineResp> filterFigurines(
+      @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
+    log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-    return repository
-        .findAll(PageRequest.of(page, size))
-        .map(
-            figurine ->
-                mapper.toFigurineResp(
-                    figurine,
-                    this::createDisplayableName,
-                    this::calculatePriceWithTax,
-                    this::calculateReleaseStatus));
-  }
-
-  /**
-   * Retrieves a paginated list of figurines filtered by name (case-insensitive, contains).
-   *
-   * @param name name filter (must be at least 3 characters)
-   * @param page zero-based page index
-   * @param size number of records per page
-   * @return a {@link Page} containing {@link FigurineResp} for the requested slice
-   */
-  @Transactional(readOnly = true)
-  public Page<FigurineResp> searchFigurinesByName(String name, int page, int size) {
-    log.info("Reading figurines with name '{}', page '{}' and size '{}'", name, page, size);
-
-    if (name == null || name.trim().length() < 3) {
-      throw new IllegalArgumentException("Name filter must be at least 3 characters");
-    }
-
-    Page<Figurine> figurines =
-        repository.findByNormalizedNameContainingIgnoreCase(name, PageRequest.of(page, size));
+    Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));
 
     return figurines.map(
         figurine ->
@@ -298,7 +260,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional
-  public FigurineResp updateFigurine(Long id, @Valid FigurineReq request) {
+  public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
     log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
@@ -307,7 +269,59 @@ public class FigurineService {
     mapper.updateFigurine(existing, incoming);
 
     // update the distributors' info.
-    updateDistributors(existing, existing.getDistributors(), incoming.getDistributors());
+    updateDistributors(existing, incoming.getDistributors());
+
+    // update the events in case it was updated.
+    existing.getDistributors().stream()
+        .findFirst()
+        .ifPresent(
+            fd -> {
+              existing.getEvents().stream()
+                  .sorted(Comparator.comparing(FigurineEvent::getEventDate))
+                  .filter(e -> e.getType() == ANNOUNCEMENT)
+                  .findFirst()
+                  .ifPresentOrElse(
+                      e -> e.setEventDate(fd.getAnnouncementDate()),
+                      () -> {
+                        if (Objects.nonNull(fd.getAnnouncementDate())) {
+                          addDefaultEvent(
+                              ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
+                        }
+                      });
+
+              existing.getEvents().stream()
+                  .filter(e -> e.getType() == PREORDER_OPEN)
+                  .findFirst()
+                  .ifPresentOrElse(
+                      e -> e.setEventDate(fd.getPreorderDate()),
+                      () -> {
+                        if (Objects.nonNull(fd.getPreorderDate())) {
+                          addDefaultEvent(
+                              PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
+                        }
+                      });
+
+              existing.getEvents().stream()
+                  .filter(e -> e.getType() == RELEASE)
+                  .findFirst()
+                  .ifPresentOrElse(
+                      e -> {
+                        e.setEventDate(fd.getReleaseDate());
+                        e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
+                      },
+                      () -> {
+                        if (Objects.nonNull(fd.getReleaseDate())) {
+                          addDefaultEvent(
+                              RELEASE_DATE_MSG,
+                              fd.getReleaseDate(),
+                              fd.isReleaseDateConfirmed(),
+                              RELEASE,
+                              existing);
+                        }
+                      });
+
+              existing.getEvents().forEach(e -> e.setFigurine(existing));
+            });
 
     var updated = repository.save(existing);
     return mapper.toFigurineResp(
@@ -335,7 +349,7 @@ public class FigurineService {
    * @throws FigurineNotFoundException if no figurine exists with the given id
    */
   @Transactional
-  public void deleteFigurine(Long id) {
+  public void deleteFigurine(@Positive Long id) {
     log.info("Deleting figurine with id '{}'", id);
     var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
@@ -358,24 +372,31 @@ public class FigurineService {
    * <p>Distributor identity is determined exclusively by currency. This method * does not handle
    * removal of existing distributors.
    *
-   * @param current the owning figurine
-   * @param existing current distributor entries associated with the figurine
-   * @param incoming distributor entries provided by the update request
+   * @param existing the owning figurine
+   * @param incomingDistributors distributor entries provided by the update request
    */
   private void updateDistributors(
-      Figurine current, List<FigurineDistributor> existing, List<FigurineDistributor> incoming) {
+      Figurine existing, List<FigurineDistributor> incomingDistributors) {
+    List<FigurineDistributor> existingDistributors = existing.getDistributors();
 
-    for (FigurineDistributor incomingFigurineDist : incoming) {
+    if (Objects.isNull(incomingDistributors)) {
+      return;
+    }
+
+    for (FigurineDistributor incomingFigurineDist : incomingDistributors) {
       CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
 
-      existing.stream()
-          .filter(fd -> fd.getCurrency().equals(incomingCurrency))
+      existingDistributors.stream()
+          .filter(
+              existingFd -> {
+                return existingFd.getCurrency().equals(incomingCurrency);
+              })
           .findFirst()
           .ifPresentOrElse(
-              fd -> mapper.updateFigurineDistributor(fd, incomingFigurineDist),
+              existingFd -> mapper.updateFigurineDistributor(existingFd, incomingFigurineDist),
               () -> {
-                incomingFigurineDist.setFigurine(current);
-                existing.add(incomingFigurineDist);
+                incomingFigurineDist.setFigurine(existing);
+                existingDistributors.add(incomingFigurineDist);
               });
     }
   }
@@ -531,26 +552,16 @@ public class FigurineService {
     Optional.ofNullable(figurineDistributor.getAnnouncementDate())
         .ifPresent(
             announcementDate ->
-                addDefaultEvent(
-                    "First announced as a possible future release.",
-                    announcementDate,
-                    true,
-                    ANNOUNCEMENT,
-                    figurine));
+                addDefaultEvent(ANN_MSG, announcementDate, true, ANNOUNCEMENT, figurine));
     Optional.ofNullable(figurineDistributor.getPreorderDate())
         .ifPresent(
             preorderDate ->
-                addDefaultEvent(
-                    "Pre-orders are officially open.",
-                    preorderDate,
-                    true,
-                    PREORDER_OPEN,
-                    figurine));
+                addDefaultEvent(PRE_ORDER_MSG, preorderDate, true, PREORDER_OPEN, figurine));
     Optional.ofNullable(figurineDistributor.getReleaseDate())
         .ifPresent(
             releaseDate ->
                 addDefaultEvent(
-                    "The global release date has been officially announced.",
+                    RELEASE_DATE_MSG,
                     releaseDate,
                     figurineDistributor.isReleaseDateConfirmed(),
                     RELEASE,

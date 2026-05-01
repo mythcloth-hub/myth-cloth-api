@@ -682,7 +682,12 @@ public class FigurineControllerIT {
 
     // Execute GET /figurines
     ResponseEntity<PaginatedResponse> response =
-        rest.get().uri(FIGURINES).retrieve().toEntity(PaginatedResponse.class);
+        rest.get()
+            .uri(
+                uriBuilder ->
+                    uriBuilder.path(FIGURINES).queryParam("page", 0).queryParam("size", 10).build())
+            .retrieve()
+            .toEntity(PaginatedResponse.class);
 
     // Basic HTTP contract assertions
     HttpHeaders httpHeaders = response.getHeaders();
