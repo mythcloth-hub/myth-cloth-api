@@ -152,6 +152,9 @@ public class FigurineEventService {
             .orElseThrow(() -> new FigurineNotFoundException(newRequest.getFigurineId()));
 
     figurineEvent.setEventDate(newRequest.getDate());
+    figurineEvent.setEventDateConfirmed(newRequest.isDateConfirmed());
+    figurineEvent.setType(newRequest.getType());
+    figurineEvent.setRegion(newRequest.getRegion());
     figurineEvent.setDescription(newRequest.getDescription());
     if (!Objects.equals(figurine.getId(), figurineId)) {
       // there was a change ... the new figureId is different from the existing one.

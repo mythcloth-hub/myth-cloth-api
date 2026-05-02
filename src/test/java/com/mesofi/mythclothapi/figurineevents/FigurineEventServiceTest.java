@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.figurineevents;
 
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
+import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -23,6 +24,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
@@ -54,7 +56,7 @@ public class FigurineEventServiceTest {
   @Test
   void createFigurineEvent_shouldThrowException_whenFigurineIsNotFound() {
     // Arrange
-    FigurineEventReq request = createRequest(40L, "Event details", LocalDate.of(2025, 1, 1));
+    FigurineEventReq request = createRequest(40L, "Event details", LocalDate.of(2025, 1, 1), false);
     when(figurineRepository.findById(40L)).thenReturn(Optional.empty());
 
     // Act + Assert
@@ -70,7 +72,7 @@ public class FigurineEventServiceTest {
   void createFigurineEvent_shouldPersistAndReturnResponse_whenRequestIsValid() {
     // Arrange
     Figurine figurine = createFigurine(7L);
-    FigurineEventReq request = createRequest(7L, "Tamashii event", LocalDate.of(2025, 1, 1));
+    FigurineEventReq request = createRequest(7L, "Tamashii event", LocalDate.of(2025, 1, 1), true);
 
     when(figurineRepository.findById(7L)).thenReturn(Optional.of(figurine));
     when(figurineEventRepository.save(any(FigurineEvent.class)))
@@ -115,7 +117,7 @@ public class FigurineEventServiceTest {
   void retrieveFigurineEvent_shouldReturnResponse_whenEventExists() {
     // Arrange
     FigurineEvent event =
-        createEvent(18L, LocalDate.of(2024, 1, 1), "Found event", createFigurine(11L));
+        createEvent(18L, LocalDate.of(2024, 1, 1), "Found event", JP, createFigurine(11L));
     when(figurineEventRepository.findByIdAndFigurineId(18L, 11L)).thenReturn(Optional.of(event));
 
     // Act
@@ -145,8 +147,8 @@ public class FigurineEventServiceTest {
   void retrieveFigurineEvents_shouldReturnResponses_whenEventsExist() {
     // Arrange
     Figurine figurine = createFigurine(12L);
-    FigurineEvent event1 = createEvent(1L, LocalDate.of(2024, 1, 1), "Announcement", figurine);
-    FigurineEvent event2 = createEvent(2L, LocalDate.of(2024, 2, 2), "Release", figurine);
+    FigurineEvent event1 = createEvent(1L, LocalDate.of(2024, 1, 1), "Announcement", JP, figurine);
+    FigurineEvent event2 = createEvent(2L, LocalDate.of(2024, 2, 2), "Release", JP, figurine);
     when(figurineEventRepository.findAllByFigurineId(12L)).thenReturn(List.of(event1, event2));
 
     // Act
@@ -161,7 +163,7 @@ public class FigurineEventServiceTest {
   @Test
   void updateFigurineEvent_shouldThrowException_whenEventIsMissing() {
     // Arrange
-    FigurineEventReq request = createRequest(10L, "Updated", LocalDate.of(2025, 1, 1));
+    FigurineEventReq request = createRequest(10L, "Updated", LocalDate.of(2025, 1, 1), true);
     when(figurineEventRepository.findByIdAndFigurineId(50L, 10L)).thenReturn(Optional.empty());
 
     // Act + Assert
@@ -175,8 +177,8 @@ public class FigurineEventServiceTest {
   void updateFigurineEvent_shouldThrowException_whenNewFigurineIsMissing() {
     // Arrange
     FigurineEvent existing =
-        createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", createFigurine(10L));
-    FigurineEventReq request = createRequest(30L, "Updated", LocalDate.of(2025, 1, 1));
+        createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, createFigurine(10L));
+    FigurineEventReq request = createRequest(30L, "Updated", LocalDate.of(2025, 1, 1), true);
 
     when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
     when(figurineRepository.findById(30L)).thenReturn(Optional.empty());
@@ -192,8 +194,9 @@ public class FigurineEventServiceTest {
   void updateFigurineEvent_shouldUpdateDetailsWithoutReassigning_whenFigurineIdIsTheSame() {
     // Arrange
     Figurine sameFigurine = createFigurine(10L);
-    FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", sameFigurine);
-    FigurineEventReq request = createRequest(10L, "Updated description", LocalDate.of(2025, 1, 1));
+    FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", MX, sameFigurine);
+    FigurineEventReq request =
+        createRequest(10L, "Updated description", LocalDate.of(2025, 1, 1), true);
 
     when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
     when(figurineRepository.findById(10L)).thenReturn(Optional.of(sameFigurine));
@@ -214,6 +217,9 @@ public class FigurineEventServiceTest {
 
     FigurineEvent updatedEvent = eventCaptor.getValue();
     assertThat(updatedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+    assertThat(updatedEvent.isEventDateConfirmed()).isTrue();
+    assertThat(updatedEvent.getType()).isEqualTo(ANNOUNCEMENT);
+    assertThat(updatedEvent.getRegion()).isEqualTo(JP);
     assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
     assertThat(updatedEvent.getFigurine()).isSameAs(sameFigurine);
   }
@@ -223,8 +229,9 @@ public class FigurineEventServiceTest {
     // Arrange
     Figurine originalFigurine = createFigurine(10L);
     Figurine newFigurine = createFigurine(44L);
-    FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", originalFigurine);
-    FigurineEventReq request = createRequest(44L, "Moved event", LocalDate.of(2025, 1, 1));
+    FigurineEvent existing =
+        createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, originalFigurine);
+    FigurineEventReq request = createRequest(44L, "Moved event", LocalDate.of(2025, 1, 1), true);
 
     when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
     when(figurineRepository.findById(44L)).thenReturn(Optional.of(newFigurine));
@@ -263,7 +270,7 @@ public class FigurineEventServiceTest {
   void removeFigurineEvent_shouldDeleteEvent_whenEventExists() {
     // Arrange
     FigurineEvent existing =
-        createEvent(90L, LocalDate.of(2024, 1, 1), "Remove me", createFigurine(19L));
+        createEvent(90L, LocalDate.of(2024, 1, 1), "Remove me", JP, createFigurine(19L));
     when(figurineEventRepository.findByIdAndFigurineId(90L, 19L)).thenReturn(Optional.of(existing));
 
     // Act
@@ -273,11 +280,13 @@ public class FigurineEventServiceTest {
     verify(figurineEventRepository).delete(existing);
   }
 
-  private FigurineEventReq createRequest(Long figurineId, String description, LocalDate eventDate) {
+  private FigurineEventReq createRequest(
+      Long figurineId, String description, LocalDate eventDate, boolean eventConfirmed) {
     FigurineEventReq request = new FigurineEventReq();
     request.setFigurineId(figurineId);
     request.setDescription(description);
     request.setDate(eventDate);
+    request.setDateConfirmed(eventConfirmed);
     request.setRegion(JP);
     request.setType(ANNOUNCEMENT);
     return request;
@@ -290,13 +299,13 @@ public class FigurineEventServiceTest {
   }
 
   private FigurineEvent createEvent(
-      Long id, LocalDate date, String description, Figurine figurine) {
+      Long id, LocalDate date, String description, CountryCode region, Figurine figurine) {
     FigurineEvent event = new FigurineEvent();
     event.setId(id);
     event.setEventDate(date);
     event.setDescription(description);
     event.setFigurine(figurine);
-    event.setRegion(JP);
+    event.setRegion(region);
     return event;
   }
 }

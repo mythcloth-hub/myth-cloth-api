@@ -3,7 +3,7 @@ package com.mesofi.mythclothapi.figurineevents.dto;
 import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
@@ -52,7 +52,7 @@ public class FigurineEventReq {
    *
    * <p>Must not be {@code null} and must be a date in the past.
    */
-  @Past
+  @PastOrPresent
   @NotNull(message = "event date must be provided")
   private LocalDate date;
 
