@@ -29,11 +29,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.common.Descriptive;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
@@ -387,10 +389,7 @@ public class FigurineService {
       CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
 
       existingDistributors.stream()
-          .filter(
-              existingFd -> {
-                return existingFd.getCurrency().equals(incomingCurrency);
-              })
+          .filter(existingFd -> existingFd.getCurrency().equals(incomingCurrency))
           .findFirst()
           .ifPresentOrElse(
               existingFd -> mapper.updateFigurineDistributor(existingFd, incomingFigurineDist),
@@ -408,7 +407,241 @@ public class FigurineService {
    * @return displayable name
    */
   public String createDisplayableName(Figurine figurine) {
-    return "FIXME";
+
+    String name = figurine.getNormalizedName();
+
+    String lineUpString = Optional.ofNullable(figurine.getLineup().getDescription()).orElse("");
+    String seriesString = Optional.ofNullable(figurine.getSeries().getDescription()).orElse("");
+    String groupString =
+        Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription).orElse("");
+    String distribution =
+        Optional.ofNullable(figurine.getDistribution()).map(Descriptive::getDescription).orElse("");
+    int year =
+        Optional.ofNullable(figurine.getDistributors())
+            .map(list -> list.isEmpty() ? null : list.getFirst().getReleaseDate())
+            .map(LocalDate::getYear)
+            .orElse(0);
+
+    boolean oce = Optional.ofNullable(figurine.getOce()).orElse(false);
+    boolean revival = Optional.ofNullable(figurine.getRevival()).orElse(false);
+    boolean golden = Optional.ofNullable(figurine.getGolden()).orElse(false);
+    boolean gold = Optional.ofNullable(figurine.getGold()).orElse(false);
+    boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
+    boolean manga = Optional.ofNullable(figurine.getManga()).orElse(false);
+    boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
+    boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
+    boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
+    boolean anniversary = Optional.ofNullable(figurine.getAnniversary()).isPresent();
+    boolean anniversary15 = isAnniversaryEdition(figurine.getAnniversary(), 15);
+    boolean anniversary10 = isAnniversaryEdition(figurine.getAnniversary(), 10);
+    boolean anniversary40 = isAnniversaryEdition(figurine.getAnniversary(), 40);
+
+    // Figuarts Zero
+    if (lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
+      return "Figuarts Zero Touche Métallique " + name;
+    }
+
+    // Myth Cloth EX
+    if (lineUpString.equalsIgnoreCase("Myth Cloth EX")) {
+      if (seriesString.equalsIgnoreCase("Saint Seiya Legend Of Sanctuary")) {
+        return name + " ~Legend of Sanctuary Edition~";
+      }
+      if (seriesString.equalsIgnoreCase("Saintia Sho")) {
+        return name + " Saintia Sho Color Edition";
+      }
+      if (seriesString.equalsIgnoreCase("Soul of Gold")) {
+        if (groupString.equalsIgnoreCase("God Robe")) {
+          return name + " God Robe";
+        } else {
+          if (name.toLowerCase().contains("pedestal")) {
+            return name + " Set";
+          } else {
+            name += " (God Cloth)";
+            if (set) {
+              name += " Saga Saga Premium Set";
+            }
+            return name;
+          }
+        }
+      }
+      if (gold) {
+        return name + " Gold 24";
+      }
+      if (seriesString.equalsIgnoreCase("Saint Seiya The Beginning")) {
+        return name + " -Knights of the Zodiac-";
+      }
+      if (groupString.equalsIgnoreCase("God") && anniversary && set) {
+        return name + " -Divine Saga Premium Set-";
+      }
+      if (groupString.equalsIgnoreCase("Gold Inheritor")) {
+        return name + " ~Inheritor of the Gold Cloth~";
+      }
+      if (groupString.equalsIgnoreCase("God Robe")) {
+        if (anniversary40) {
+          return name + " 40th Anniversary Ver.";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Poseidon Scale")) {
+        if (oce) {
+          return name + " ~Original Color Edition~";
+        }
+        if (name.toLowerCase().contains("sorrento") && !metal && year == 2021) {
+          return name + " <Asgard Final Battle Ver.>";
+        }
+        if (set) {
+          return name + " Imperial Throne Set";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Judge")) {
+        if (oce) {
+          return name + " -Original Color Edition-";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
+        return name + " (Initial Bronze Cloth)";
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
+        if (golden) {
+          return name + " (New Bronze Cloth) ~Golden Limited Edition~";
+        } else if (revival) {
+          return name + " [New Bronze Cloth] <Revival Ver.>";
+        } else if (oce) {
+          if (anniversary) {
+            return name + " ~(New Bronze Cloth) 40th Anniversary Edition~";
+          } else {
+            return name + " ~Original Color Edition~";
+          }
+        } else {
+          return name + " (New Bronze Cloth)";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
+        name += " [Final Bronze Cloth]";
+        if (oce) {
+          name += " ~Original Color Edition~";
+        } else if (golden) {
+          name += " ~Golden Limited Edition~";
+        }
+        return name;
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
+        return name + " [God Cloth]";
+      }
+      if (groupString.equalsIgnoreCase("God")) {
+        if (oce) {
+          return name + " ~Original Color Edition~";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Gold Saint")) {
+        if (oce) {
+          return name + " ~Original Color Edition~";
+        }
+        if (revival && anniversary) {
+          return name + " <20th Revival Ver.>";
+        }
+        if (revival) {
+          return name + " <Revival Ver.>";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Surplice Saint") && !set) {
+        name += " (Surplice)";
+        if (revival) {
+          name += " <20th Revival Ver.>";
+        }
+        return name;
+      }
+      if (groupString.equalsIgnoreCase("Surplice Saint") && set) {
+        return name + " Set";
+      }
+    }
+
+    // Myth Cloth
+    if (lineUpString.equalsIgnoreCase("Myth Cloth")) {
+      if (name.toLowerCase().contains("hilda") && distribution.toLowerCase().contains("stores")) {
+        return name + " -The Earth Representative of Odin-";
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
+        if (manga) {
+          return name + " Comic Ver.";
+        }
+        if (anniversary && !oce) {
+          return name + " 20th Anniversary Ver.";
+        }
+        if (revival) {
+          return name + " Early Bronze Cloth <Revival Ver.>";
+        }
+        if (golden) {
+          return name + " ~Limited Gold~";
+        }
+        if (oce) {
+          return name + " ~Original Color Edition~";
+        }
+        if (!seriesString.equalsIgnoreCase("The Lost Canvas")) {
+          return name + " (Initial Bronze Cloth)";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
+        if (golden) {
+          return name + " Power of Gold";
+        }
+        if (broken) {
+          return name + " ~Broken Version~";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
+        if (gold) {
+          return name + " Golden Genealogy";
+        }
+        if (!oce) {
+          return name + " (Final Bronze Cloth)";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
+        if (anniversary10) {
+          return name + " (God Cloth) -10th Anniversary Edition-";
+        }
+        name += " God Cloth";
+        if (oce) {
+          return name + " ~Original Color Edition~";
+        }
+      }
+      if (groupString.equalsIgnoreCase("Surplice Saint") && !oce) {
+        return name + " (Surplice)";
+      }
+      if (groupString.equalsIgnoreCase("Specter")) {
+        if (set) {
+          return name + " Complete Set";
+        }
+      }
+      if (revival) {
+        return name + " <Revival Ver.>";
+      }
+      if (groupString.equalsIgnoreCase("Bronze Saint V5")) {
+        return name + " (Heaven Chapter)";
+      }
+      if (anniversary15) {
+        return name + " 15th Anniversary Ver.";
+      }
+
+      if (oce) {
+        return name + " ~Original Color Edition~";
+      }
+    }
+    // Appendix
+    if (lineUpString.equalsIgnoreCase("Appendix")) {
+      if (oce) {
+        return name + " ~Original Color Edition~";
+      }
+      if (plainCloth) {
+        return name + " (Plain Cloth)";
+      }
+    }
+
+    return name;
+  }
+
+  private boolean isAnniversaryEdition(Anniversary anniversary, int year) {
+    return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
   }
 
   /**

@@ -335,7 +335,7 @@ public class FigurineServiceTest {
         .containsExactly(
             99L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             distributorReqList,
             "https://tamashiiweb.com/item/15834/",
             ReleaseStatus.RUMORED,
@@ -419,7 +419,7 @@ public class FigurineServiceTest {
         .containsExactly(
             99L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             List.of(
                 new FigurineDistributorResp(
                     new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
@@ -549,7 +549,7 @@ public class FigurineServiceTest {
         .containsExactly(
             99L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             List.of(
                 new FigurineDistributorResp(
                     new DistributorResp(1, "BANDAI", "Tamashii Nations", "JP", null),
@@ -657,7 +657,7 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Shun",
-            "FIXME",
+            "Shun",
             List.of(),
             null,
             ReleaseStatus.RUMORED,
@@ -731,6 +731,8 @@ public class FigurineServiceTest {
     figurine.setId(1L);
     figurine.setLegacyName("Seiya");
     figurine.setNormalizedName("Seiya");
+    figurine.setLineup(new LineUp());
+    figurine.setSeries(new Series());
     Page<Figurine> figurineFound = new PageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1);
 
     when(figurineRepository.search(filter, PageRequest.of(1, 10))).thenReturn(figurineFound);
@@ -776,13 +778,13 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Seiya",
-            "FIXME",
+            "Seiya",
             List.of(),
             null,
             ReleaseStatus.RUMORED,
             null,
-            null,
-            null,
+            new CatalogResp(0, null),
+            new CatalogResp(0, null),
             null,
             null,
             null,
@@ -906,7 +908,7 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             List.of(),
             "https://tamashiiweb.com/item/15834/",
             ReleaseStatus.RUMORED,
@@ -1047,7 +1049,7 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             List.of(),
             "https://tamashiiweb.com/item/15834/",
             ReleaseStatus.RUMORED,
@@ -1194,7 +1196,7 @@ public class FigurineServiceTest {
         .containsExactly(
             1L,
             "Pegasus Seiya",
-            "FIXME",
+            "Pegasus Seiya",
             List.of(),
             "https://tamashiiweb.com/item/15834/",
             ReleaseStatus.RUMORED,
