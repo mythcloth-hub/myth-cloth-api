@@ -108,8 +108,8 @@ class FigurineServiceDisplayNameTest {
           "Seiya God Robe"
         },
         new Object[] {
-          "Myth Cloth EX - Soul of Gold pedestal",
-          baseFigurine("Athena Pedestal", "Myth Cloth EX", "Soul of Gold", "Gold Saint"),
+          "Myth Cloth EX - Soul of Gold accessories",
+          baseFigurine("Athena Pedestal", "Myth Cloth EX", "Soul of Gold", "Accessories"),
           "Athena Pedestal Set"
         },
         new Object[] {

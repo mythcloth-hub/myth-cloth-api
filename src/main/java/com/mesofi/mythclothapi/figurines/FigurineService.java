@@ -484,7 +484,7 @@ public class FigurineService {
         if (groupString.equalsIgnoreCase("God Robe")) {
           return name + " God Robe";
         } else {
-          if (name.toLowerCase().contains("pedestal")) {
+          if (groupString.equalsIgnoreCase("Accessories")) {
             return name + " Set";
           } else {
             name += " (God Cloth)";
