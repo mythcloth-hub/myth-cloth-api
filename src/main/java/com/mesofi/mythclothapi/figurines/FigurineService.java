@@ -14,7 +14,9 @@ import java.io.Reader;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -100,6 +102,25 @@ public class FigurineService {
   private final String ANN_MSG = "First announced as a possible future release.";
   private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
   private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
+
+  private static final Map<String, String> ddNames = new HashMap<>();
+
+  static {
+    ddNames.put("gemini", "{name} -the Pope's Chamber-");
+    ddNames.put("pegasus", "{name} -Pegasus Meteor Punches-");
+    ddNames.put("virgo", "{name} -The Temple of the Maiden-");
+    ddNames.put("phoenix", "{name} -Flying Phoenix-");
+    ddNames.put("leo", "Lightning in the Palace of the Lion -{name}-");
+    ddNames.put("cancer", "Desperate Battle in the Palace of the Giant Crab -{name}-");
+    ddNames.put("dragon", "Rozan Rising Dragon Blow -{name}-");
+    ddNames.put(
+        "sagittarius", "Commitment of Aiolos’ Spirit in the Palace of the Centaur -{name}-");
+    ddNames.put("athena", "Golden Zodiac extension set Fire clock of the Sanctuary -{name}-");
+    ddNames.put("capricorn", "Glittering Excalibur in the Palace of the Rock Goat -{name}-");
+    ddNames.put("andromeda", "Nebula Chain -{name}-");
+    ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
+    ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
+  }
 
   @Transactional
   public void importFromPublicDrive() {
@@ -439,6 +460,16 @@ public class FigurineService {
     // Figuarts Zero
     if (lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
       return "Figuarts Zero Touche Métallique " + name;
+    }
+    // DD Panoramation
+    if (lineUpString.equalsIgnoreCase("DD Panoramation")) {
+      final String simpleName = name.toLowerCase();
+
+      return ddNames.keySet().stream()
+          .filter(simpleName::contains)
+          .findFirst()
+          .map(key -> ddNames.get(key).replace("{name}", figurine.getNormalizedName()))
+          .orElse(name);
     }
 
     // Myth Cloth EX

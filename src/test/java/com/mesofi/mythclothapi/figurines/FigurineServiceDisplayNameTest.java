@@ -83,6 +83,16 @@ class FigurineServiceDisplayNameTest {
           "Figuarts Zero Touche M\u00e9tallique Seiya"
         },
         new Object[] {
+          "DD Panoramation keyword match",
+          baseFigurine("Pegasus Seiya", "DD Panoramation", "Saint Seiya", "Bronze Saint V1"),
+          "Pegasus Seiya -Pegasus Meteor Punches-"
+        },
+        new Object[] {
+          "DD Panoramation fallback",
+          baseFigurine("Odin Seiya", "DD Panoramation", "Saint Seiya", "Bronze Saint V1"),
+          "Odin Seiya"
+        },
+        new Object[] {
           "Myth Cloth EX - Legend Of Sanctuary",
           baseFigurine("Aiolos", "Myth Cloth EX", "Saint Seiya Legend Of Sanctuary", "Gold Saint"),
           "Aiolos ~Legend of Sanctuary Edition~"
