@@ -48,6 +48,7 @@ INSERT INTO lineups (description) VALUES ('DD Panoramation');
 INSERT INTO lineups (description) VALUES ('Figuarts Zero Metallic Touch');
 INSERT INTO lineups (description) VALUES ('Saint Cloth Action');
 INSERT INTO lineups (description) VALUES ('Saint Cloth Rebirth');
+INSERT INTO lineups (description) VALUES ('EX project Metalbuild');
 
 INSERT INTO series (description) VALUES ('Saint Seiya');
 INSERT INTO series (description) VALUES ('Saintia Sho');
