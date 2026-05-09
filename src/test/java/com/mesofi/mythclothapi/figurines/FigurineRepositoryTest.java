@@ -180,7 +180,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
     var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
     assertThat(page.getContent())
@@ -193,7 +193,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             "xyz", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
     var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }
@@ -219,6 +219,7 @@ public class FigurineRepositoryTest {
             null, // lineUpId
             null, // seriesId
             null, // groupId
+            null, // anniversaryId
             true, // metalBody
             true, // oce
             true, // revival
@@ -257,6 +258,7 @@ public class FigurineRepositoryTest {
             null,
             null,
             null,
+            null,
             null);
     var page = repository.search(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
@@ -271,6 +273,7 @@ public class FigurineRepositoryTest {
             null,
             null,
             savedSeries.getId(),
+            null,
             null,
             null,
             null,
@@ -319,7 +322,7 @@ public class FigurineRepositoryTest {
       FigurineFilter filter =
           new FigurineFilter(
               null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-              status);
+              null, status);
       var page = repository.search(filter, PageRequest.of(0, 10));
       assertThat(page.getContent()).isNotEmpty();
     }
@@ -335,7 +338,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
     var page1 = repository.search(filter, PageRequest.of(0, 5));
     var page2 = repository.search(filter, PageRequest.of(1, 5));
     assertThat(page1.getContent()).hasSize(5);
@@ -349,7 +352,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
     var page = repository.search(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
   }
@@ -360,7 +363,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
     var page = repository.search(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }

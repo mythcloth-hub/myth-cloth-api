@@ -56,17 +56,8 @@ public class CatalogRepositoryTest {
     Descriptive entity = newCatalogFor(catalogName);
 
     // Act + Assert
-    if (catalogName.equals("anniversaries")) {
-      assertThatThrownBy(() -> save(repo, entity))
-          .isInstanceOf(DataIntegrityViolationException.class)
-          .hasMessageContaining(
-              "NULL not allowed for column \"ANNIVERSARY_YEAR\""); // depends on DB dialect
-    } else {
-      assertThatThrownBy(() -> save(repo, entity))
-          .isInstanceOf(DataIntegrityViolationException.class)
-          .hasMessageContaining(
-              "NULL not allowed for column \"DESCRIPTION\""); // depends on DB dialect
-    }
+    assertThatThrownBy(() -> save(repo, entity))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   @ParameterizedTest

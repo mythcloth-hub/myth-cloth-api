@@ -25,5 +25,5 @@ public class Anniversary extends Descriptive {
   private List<Figurine> figurines = new ArrayList<>();
 
   @Column(name = "anniversary_year", nullable = false)
-  private Integer year;
+  private int year;
 }

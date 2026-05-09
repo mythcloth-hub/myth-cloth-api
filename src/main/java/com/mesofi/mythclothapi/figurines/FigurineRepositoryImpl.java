@@ -74,6 +74,10 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
       sql.append(" AND group_id = :groupId");
       params.put("groupId", filter.groupId());
     }
+    if (Objects.nonNull(filter.anniversaryId())) {
+      sql.append(" AND anniversary_id = :anniversaryId");
+      params.put("anniversaryId", filter.anniversaryId());
+    }
     if (Objects.nonNull(filter.metalBody())) {
       sql.append(" AND is_metal_body = :metalBody");
       params.put("metalBody", filter.metalBody());

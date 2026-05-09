@@ -705,7 +705,7 @@ public class FigurineServiceTest {
     FigurineFilter figurineFilter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
 
     Page<Figurine> emptyPage = new PageImpl<>(List.of(), PageRequest.of(1, 10), 0);
     when(figurineRepository.search(figurineFilter, PageRequest.of(1, 10))).thenReturn(emptyPage);
@@ -725,7 +725,7 @@ public class FigurineServiceTest {
     FigurineFilter filter =
         new FigurineFilter(
             "Seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
 
     Figurine figurine = new Figurine();
     figurine.setId(1L);

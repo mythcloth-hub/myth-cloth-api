@@ -91,7 +91,9 @@ public interface FigurineMapper {
   @Mapping(target = "lineup", source = "lineupString")
   @Mapping(target = "series", source = "seriesString")
   @Mapping(target = "group", source = "groupString")
-  @Mapping(target = "anniversary", source = "anniversaryNumber")
+  @Mapping(
+      target = "anniversary",
+      expression = "java(toAnniversary(csv.getAnniversaryNumber(), csv.getReleaseJPY(), catalogs))")
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", ignore = true)
   Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
@@ -169,16 +171,36 @@ public interface FigurineMapper {
    * <p>This method is intended for CSV imports where anniversaries are expressed as numeric years
    * instead of catalog identifiers.
    *
-   * @param anniversaryNumber anniversary year (e.g. 20, 30)
+   * @param annYear anniversary year (e.g. 20, 30)
    * @param catalogs catalog context containing cached anniversaries
    * @return the matching {@link Anniversary}, or {@code null} if none matches
    */
-  default Anniversary toAnniversary(Integer anniversaryNumber, @Context CatalogContext catalogs) {
+  default Anniversary toAnniversary(
+      Integer annYear, LocalDateConfirmed dateConfirmed, @Context CatalogContext catalogs) {
+    if (annYear == null) {
+      return null;
+    }
+
+    boolean mustBeMasami =
+        annYear == 40
+            && dateConfirmed != null
+            && dateConfirmed.isConfirmed()
+            && dateConfirmed.getDate() != null
+            && dateConfirmed.getDate().getYear() < 2025;
+
     return catalogs.anniversaries().stream()
-        .filter(item -> Objects.nonNull(item.getYear()))
-        .filter(item -> item.getYear().equals(anniversaryNumber))
+        .filter(ann -> Objects.equals(ann.getYear(), annYear))
+        .filter(ann -> annYear != 40 || isMasamiAnniversary(ann) == mustBeMasami)
         .findFirst()
         .orElse(null);
+  }
+
+  private boolean isMasamiAnniversary(Anniversary anniversary) {
+    return Optional.ofNullable(anniversary)
+        .map(Anniversary::getDescription)
+        .filter(desc -> !desc.isBlank())
+        .map(desc -> desc.contains("Masami"))
+        .orElse(false);
   }
 
   /**

@@ -1,9 +1,10 @@
 INSERT INTO anniversaries (description, anniversary_year) VALUES ('JUMP 50th ANNIVERSARY', 50);
 INSERT INTO anniversaries (description, anniversary_year) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 30);
-INSERT INTO anniversaries (description, anniversary_year) VALUES ('Masami Kurumada 40th Anniversary', 40);
+INSERT INTO anniversaries (description, anniversary_year) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', 40);
 INSERT INTO anniversaries (description, anniversary_year) VALUES ('10th Anniversary', 10);
 INSERT INTO anniversaries (description, anniversary_year) VALUES ('15th Anniversary', 15);
 INSERT INTO anniversaries (description, anniversary_year) VALUES ('20th Anniversary', 20);
+INSERT INTO anniversaries (description, anniversary_year) VALUES ('Saint Seiya 40th anniversary', 40);
 
 INSERT INTO distributions (description) VALUES ('Stores');
 INSERT INTO distributions (description) VALUES ('Tamashii Web Shop');

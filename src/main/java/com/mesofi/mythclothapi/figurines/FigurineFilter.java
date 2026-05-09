@@ -5,6 +5,7 @@ public record FigurineFilter(
     Long lineUpId,
     Long seriesId,
     Long groupId,
+    Long anniversaryId,
     Boolean metalBody,
     Boolean oce,
     Boolean revival,

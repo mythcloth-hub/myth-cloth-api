@@ -237,7 +237,8 @@ class FigurineControllerTest {
 
     FigurineFilter emptyFilter =
         new FigurineFilter(
-            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
 
     // Use empty filter for all figurines
     when(service.filterFigurines(emptyFilter, 0, 2))
@@ -270,7 +271,7 @@ class FigurineControllerTest {
     FigurineFilter filterWithName =
         new FigurineFilter(
             "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
 
     // Filter with name
     when(service.filterFigurines(filterWithName, 0, 2))
@@ -292,7 +293,8 @@ class FigurineControllerTest {
 
     FigurineFilter emptyFilter =
         new FigurineFilter(
-            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null);
 
     when(service.filterFigurines(emptyFilter, 0, 2))
         .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
@@ -346,7 +348,7 @@ class FigurineControllerTest {
     FigurineFilter filterWithAbc =
         new FigurineFilter(
             "abc", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
+            null, null);
 
     when(service.filterFigurines(filterWithAbc, 0, 2))
         .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
