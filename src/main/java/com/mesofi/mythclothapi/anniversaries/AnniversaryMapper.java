@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 
 @Mapper(componentModel = "spring")
 public interface AnniversaryMapper {

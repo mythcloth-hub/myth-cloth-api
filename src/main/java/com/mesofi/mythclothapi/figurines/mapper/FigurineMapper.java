@@ -20,7 +20,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.util.StringUtils;
 
-import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
@@ -93,7 +93,7 @@ public interface FigurineMapper {
   @Mapping(target = "group", source = "groupString")
   @Mapping(
       target = "anniversary",
-      expression = "java(toAnniversary(csv.getAnniversaryNumber(), csv.getReleaseJPY(), catalogs))")
+      expression = "java(toAnniversary(csv.getAnniversaryNumberType(), catalogs))")
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", ignore = true)
   Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
@@ -166,41 +166,36 @@ public interface FigurineMapper {
   }
 
   /**
-   * Resolves an {@link Anniversary} catalog entry using its year value.
+   * Resolves an {@link Anniversary} catalog entry using a combined anniversary number/type value.
    *
-   * <p>This method is intended for CSV imports where anniversaries are expressed as numeric years
-   * instead of catalog identifiers.
+   * <p>This method is intended for CSV imports where anniversaries can be represented either as a
+   * year only or as a year combined with an {@link
+   * com.mesofi.mythclothapi.anniversaries.model.AnniversaryType}. When the type is present, the
+   * lookup matches both the anniversary year and type. When the type is absent, only the
+   * anniversary year is used.
    *
-   * @param annYear anniversary year (e.g. 20, 30)
+   * @param anniversaryNumberType combined anniversary year/type value parsed from CSV
    * @param catalogs catalog context containing cached anniversaries
    * @return the matching {@link Anniversary}, or {@code null} if none matches
    */
   default Anniversary toAnniversary(
-      Integer annYear, LocalDateConfirmed dateConfirmed, @Context CatalogContext catalogs) {
-    if (annYear == null) {
+      AnniversaryNumberType anniversaryNumberType, @Context CatalogContext catalogs) {
+    if (anniversaryNumberType == null) {
       return null;
     }
 
-    boolean mustBeMasami =
-        annYear == 40
-            && dateConfirmed != null
-            && dateConfirmed.isConfirmed()
-            && dateConfirmed.getDate() != null
-            && dateConfirmed.getDate().getYear() < 2025;
-
-    return catalogs.anniversaries().stream()
-        .filter(ann -> Objects.equals(ann.getYear(), annYear))
-        .filter(ann -> annYear != 40 || isMasamiAnniversary(ann) == mustBeMasami)
-        .findFirst()
-        .orElse(null);
-  }
-
-  private boolean isMasamiAnniversary(Anniversary anniversary) {
-    return Optional.ofNullable(anniversary)
-        .map(Anniversary::getDescription)
-        .filter(desc -> !desc.isBlank())
-        .map(desc -> desc.contains("Masami"))
-        .orElse(false);
+    if (anniversaryNumberType.getAnniversaryType() == null) {
+      return catalogs.anniversaries().stream()
+          .filter(ann -> ann.getYear() == anniversaryNumberType.getAnniversaryNumber())
+          .findFirst()
+          .orElse(null);
+    } else {
+      return catalogs.anniversaries().stream()
+          .filter(ann -> ann.getYear() == anniversaryNumberType.getAnniversaryNumber())
+          .filter(ann -> ann.getType() == anniversaryNumberType.getAnniversaryType())
+          .findFirst()
+          .orElse(null);
+    }
   }
 
   /**

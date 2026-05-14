@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.mesofi.mythclothapi.figurines.mapper.converters.AmountConverter;
+import com.mesofi.mythclothapi.figurines.mapper.converters.AnniversaryNumberTypeConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.CommaListStringConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.LocalDateConfirmedConverter;
 import com.mesofi.mythclothapi.figurines.mapper.converters.LocalDateConverter;
@@ -61,8 +62,8 @@ public class FigurineCsv {
   @CsvBindByName(column = "Group")
   private String groupString;
 
-  @CsvBindByName(column = "Anniversary")
-  private Integer anniversaryNumber;
+  @CsvCustomBindByName(column = "Anniversary", converter = AnniversaryNumberTypeConverter.class)
+  private AnniversaryNumberType anniversaryNumberType;
 
   @CsvCustomBindByName(column = "Metal", converter = TrueFalseConverter.class)
   private boolean metalBody;

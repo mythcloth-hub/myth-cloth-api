@@ -106,8 +106,8 @@ public class CatalogTestClient {
 
   public List<AnniversaryResp> createAnniversaries() {
     return Stream.of(
-            new AnniversaryReq("Masami Kurumada 40th Anniversary", 40),
-            new AnniversaryReq("20th Anniversary", 20))
+            new AnniversaryReq("Masami Kurumada 40th Anniversary", 40, null),
+            new AnniversaryReq("20th Anniversary", 20, null))
         .map(req -> postAndAssertCreated(ANNIVERSARY, req, AnniversaryResp.class))
         .toList();
   }

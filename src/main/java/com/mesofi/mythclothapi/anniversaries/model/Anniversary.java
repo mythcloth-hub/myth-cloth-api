@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.anniversaries;
+package com.mesofi.mythclothapi.anniversaries.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,8 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -26,4 +28,8 @@ public class Anniversary extends Descriptive {
 
   @Column(name = "anniversary_year", nullable = false)
   private int year;
+
+  @Column(name = "anniversary_type")
+  @Enumerated(EnumType.STRING)
+  private AnniversaryType type;
 }

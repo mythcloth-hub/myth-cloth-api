@@ -106,8 +106,8 @@ class AnniversaryControllerTest {
 
   @Test
   void createAnniversary_shouldReturn201AndLocationHeader() throws Exception {
-    AnniversaryReq request = new AnniversaryReq("Saint Seiya 35th Anniversary", 35);
-    AnniversaryResp response = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35);
+    AnniversaryReq request = new AnniversaryReq("Saint Seiya 35th Anniversary", 35, null);
+    AnniversaryResp response = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35, null);
 
     when(service.createAnniversary(any())).thenReturn(response);
 
@@ -127,7 +127,7 @@ class AnniversaryControllerTest {
 
   @Test
   void retrieveAnniversary_shouldReturn200_whenAnniversaryExists() throws Exception {
-    AnniversaryResp response = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35);
+    AnniversaryResp response = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35, null);
 
     when(service.retrieveAnniversary(1L)).thenReturn(response);
 
@@ -143,8 +143,8 @@ class AnniversaryControllerTest {
 
   @Test
   void retrieveAnniversaries_shouldReturnList_whenAnniversariesExist() throws Exception {
-    AnniversaryResp first = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35);
-    AnniversaryResp second = new AnniversaryResp(2L, "Hades Chapter Anniversary", 20);
+    AnniversaryResp first = new AnniversaryResp(1L, "Saint Seiya 35th Anniversary", 35, null);
+    AnniversaryResp second = new AnniversaryResp(2L, "Hades Chapter Anniversary", 20, null);
 
     when(service.retrieveAnniversaries()).thenReturn(List.of(first, second));
 
@@ -162,8 +162,8 @@ class AnniversaryControllerTest {
 
   @Test
   void updateAnniversary_shouldReturn200_whenRequestIsValid() throws Exception {
-    AnniversaryReq request = new AnniversaryReq("Updated Anniversary", 40);
-    AnniversaryResp response = new AnniversaryResp(1L, "Updated Anniversary", 40);
+    AnniversaryReq request = new AnniversaryReq("Updated Anniversary", 40, null);
+    AnniversaryResp response = new AnniversaryResp(1L, "Updated Anniversary", 40, null);
 
     when(service.updateAnniversary(1L, request)).thenReturn(response);
 

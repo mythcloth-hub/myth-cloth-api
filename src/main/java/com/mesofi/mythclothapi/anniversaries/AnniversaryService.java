@@ -2,11 +2,13 @@ package com.mesofi.mythclothapi.anniversaries;
 
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +41,7 @@ public class AnniversaryService {
 
   @Transactional(readOnly = true)
   public List<AnniversaryResp> retrieveAnniversaries() {
-    return repository.findAll().stream().map(mapper::toAnniversaryResp).toList();
+    return repository.findAll(Sort.by("id")).stream().map(mapper::toAnniversaryResp).toList();
   }
 
   @Transactional
@@ -49,6 +51,7 @@ public class AnniversaryService {
 
     existing.setDescription(request.description());
     existing.setYear(request.year());
+    existing.setType(request.type());
 
     var saved = repository.save(existing);
     return mapper.toAnniversaryResp(saved);
