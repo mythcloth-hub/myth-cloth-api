@@ -17,7 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.anniversaries.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -104,7 +104,7 @@ public class Figurine extends BaseId {
   @Column(name = "is_articulable")
   private Boolean articulable;
 
-  @Column(length = 800)
+  @Column(length = 1500)
   private String remarks;
 
   @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)

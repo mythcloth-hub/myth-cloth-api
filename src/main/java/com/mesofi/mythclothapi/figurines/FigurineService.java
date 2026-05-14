@@ -31,8 +31,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.mesofi.mythclothapi.anniversaries.Anniversary;
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
