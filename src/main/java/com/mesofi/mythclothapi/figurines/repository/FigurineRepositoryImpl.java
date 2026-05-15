@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines;
+package com.mesofi.mythclothapi.figurines.repository;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @Repository
@@ -25,7 +26,7 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
   @Override
   public Page<Figurine> search(FigurineFilter filter, Pageable pageable) {
 
-    StringBuilder sql =
+    StringBuilder baseSql =
         new StringBuilder(
             """
 	                SELECT
@@ -59,74 +60,74 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
 
     // Dynamic filters
     if (StringUtils.hasLength(filter.name())) {
-      sql.append(" AND LOWER(normalized_name) LIKE LOWER(:name)");
+      baseSql.append(" AND LOWER(normalized_name) LIKE LOWER(:name)");
       params.put("name", "%" + filter.name() + "%");
     }
     if (Objects.nonNull(filter.lineUpId())) {
-      sql.append(" AND lineup_id = :lineUpId");
+      baseSql.append(" AND lineup_id = :lineUpId");
       params.put("lineUpId", filter.lineUpId());
     }
     if (Objects.nonNull(filter.seriesId())) {
-      sql.append(" AND series_id = :seriesId");
+      baseSql.append(" AND series_id = :seriesId");
       params.put("seriesId", filter.seriesId());
     }
     if (Objects.nonNull(filter.groupId())) {
-      sql.append(" AND group_id = :groupId");
+      baseSql.append(" AND group_id = :groupId");
       params.put("groupId", filter.groupId());
     }
     if (Objects.nonNull(filter.anniversaryId())) {
-      sql.append(" AND anniversary_id = :anniversaryId");
+      baseSql.append(" AND anniversary_id = :anniversaryId");
       params.put("anniversaryId", filter.anniversaryId());
     }
     if (Objects.nonNull(filter.metalBody())) {
-      sql.append(" AND is_metal_body = :metalBody");
+      baseSql.append(" AND is_metal_body = :metalBody");
       params.put("metalBody", filter.metalBody());
     }
     if (Objects.nonNull(filter.oce())) {
-      sql.append(" AND is_oce = :oce");
+      baseSql.append(" AND is_oce = :oce");
       params.put("oce", filter.oce());
     }
     if (Objects.nonNull(filter.revival())) {
-      sql.append(" AND is_revival = :revival");
+      baseSql.append(" AND is_revival = :revival");
       params.put("revival", filter.revival());
     }
     if (Objects.nonNull(filter.plainCloth())) {
-      sql.append(" AND is_plain_cloth = :plainCloth");
+      baseSql.append(" AND is_plain_cloth = :plainCloth");
       params.put("plainCloth", filter.plainCloth());
     }
     if (Objects.nonNull(filter.broken())) {
-      sql.append(" AND is_broken = :broken");
+      baseSql.append(" AND is_broken = :broken");
       params.put("broken", filter.broken());
     }
     if (Objects.nonNull(filter.golden())) {
-      sql.append(" AND is_golden = :golden");
+      baseSql.append(" AND is_golden = :golden");
       params.put("golden", filter.golden());
     }
     if (Objects.nonNull(filter.gold())) {
-      sql.append(" AND is_gold = :gold");
+      baseSql.append(" AND is_gold = :gold");
       params.put("gold", filter.gold());
     }
     if (Objects.nonNull(filter.manga())) {
-      sql.append(" AND is_manga = :manga");
+      baseSql.append(" AND is_manga = :manga");
       params.put("manga", filter.manga());
     }
     if (Objects.nonNull(filter.set())) {
-      sql.append(" AND is_set = :set");
+      baseSql.append(" AND is_set = :set");
       params.put("set", filter.set());
     }
     if (Objects.nonNull(filter.articulable())) {
-      sql.append(" AND is_articulable = :articulable");
+      baseSql.append(" AND is_articulable = :articulable");
       params.put("articulable", filter.articulable());
     }
     if (Objects.nonNull(filter.releaseStatus())) {
-      sql.append(" AND release_status = :status");
+      baseSql.append(" AND release_status = :status");
       params.put("status", filter.releaseStatus());
     }
 
     // Sorting (dynamic from Pageable)
-    sql.append(" ").append(buildOrderBy());
+    baseSql.append(" ").append(buildOrderBy());
 
-    Query query = em.createNativeQuery(sql.toString(), Figurine.class);
+    Query query = em.createNativeQuery(baseSql.toString(), Figurine.class);
     params.forEach(query::setParameter);
 
     // Pagination
@@ -136,7 +137,7 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     List<Figurine> result = query.getResultList();
 
     // Count query (simplified version)
-    String countSql = "SELECT COUNT(*) FROM (" + sql + ") count_q";
+    String countSql = "SELECT COUNT(*) FROM (" + baseSql + ") count_q";
 
     Query countQuery = em.createNativeQuery(countSql);
     params.forEach(countQuery::setParameter);

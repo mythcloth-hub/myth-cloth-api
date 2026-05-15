@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines;
+package com.mesofi.mythclothapi.figurines.repository;
 
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -27,6 +27,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.figurines.FigurineController;
+import com.mesofi.mythclothapi.figurines.FigurineFilter;
+import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;

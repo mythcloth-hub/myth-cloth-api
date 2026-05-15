@@ -31,6 +31,7 @@ import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @SpringBootTest
 @ActiveProfiles("test")
