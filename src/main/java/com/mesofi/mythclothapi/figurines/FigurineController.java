@@ -139,11 +139,9 @@ public class FigurineController {
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
 
-    String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
-
     FigurineFilter figurineFilter =
-        new FigurineFilter(
-            figurineName,
+        FigurineFilterFactory.build(
+            name,
             lineUpId,
             seriesId,
             groupId,
