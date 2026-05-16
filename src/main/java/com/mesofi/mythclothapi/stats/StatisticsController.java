@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
+import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +23,7 @@ public class StatisticsController {
   private final StatisticsService service;
 
   @GetMapping
-  public String retrieveFigurine(
+  public StatisticsResp retrieveStatistics(
       @RequestParam(required = false) String name,
       @RequestParam(required = false) Long lineUpId,
       @RequestParam(required = false) Long seriesId,
@@ -59,6 +60,6 @@ public class StatisticsController {
             articulable,
             releaseStatus);
 
-    return service.test(figurineFilter);
+    return service.retrieveStatistics(figurineFilter);
   }
 }
