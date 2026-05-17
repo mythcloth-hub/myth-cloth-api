@@ -3,12 +3,20 @@ package com.mesofi.mythclothapi.stats;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.stereotype.Service;
 
+import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.model.Group;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.Series;
+import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
@@ -28,45 +36,67 @@ public class StatisticsService {
   private final FigurineRepository repository;
   private final LineUpRepository lineUpRepository;
   private final SeriesRepository seriesRepository;
+  private final GroupRepository groupRepository;
+  private final AnniversaryRepository anniversaryRepository;
 
   public StatisticsResp retrieveStatistics(@NotNull FigurineFilter filter) {
-
     List<Figurine> allFigurines = repository.findAllFigurines(filter);
 
-    Map<String, Integer> countByReleaseStatus =
-        allFigurines.stream()
-            .map(figurineService::calculateReleaseStatus)
-            .collect(
-                Collectors.groupingBy(ReleaseStatus::name, Collectors.summingInt(status -> 1)));
-
-    // Group figurines by lineUpId for efficient counting
-    Map<Long, Long> figurinesByLineUpId =
-        allFigurines.stream()
-            .collect(Collectors.groupingBy(fig -> fig.getLineup().getId(), Collectors.counting()));
-
-    Map<Long, Long> figurinesBySeriesId =
-        allFigurines.stream()
-            .collect(Collectors.groupingBy(fig -> fig.getSeries().getId(), Collectors.counting()));
-
-    Map<String, Integer> countByLineUp = new HashMap<>();
-    lineUpRepository
-        .findAll()
-        .forEach(
-            line -> {
-              long count = figurinesByLineUpId.getOrDefault(line.getId(), 0L);
-              countByLineUp.put(line.getDescription(), (int) count);
-            });
-
-    Map<String, Integer> countBySeries = new HashMap<>();
-    seriesRepository
-        .findAll()
-        .forEach(
-            series -> {
-              long count = figurinesBySeriesId.getOrDefault(series.getId(), 0L);
-              countBySeries.put(series.getDescription(), (int) count);
-            });
-
     return new StatisticsResp(
-        allFigurines.size(), countByReleaseStatus, countByLineUp, countBySeries);
+        allFigurines.size(),
+        countByCatalog(
+            allFigurines,
+            lineUpRepository.findAll(),
+            Figurine::getLineup,
+            LineUp::getId,
+            LineUp::getDescription),
+        countByCatalog(
+            allFigurines,
+            seriesRepository.findAll(),
+            Figurine::getSeries,
+            Series::getId,
+            Series::getDescription),
+        countByCatalog(
+            allFigurines,
+            groupRepository.findAll(),
+            Figurine::getGroup,
+            Group::getId,
+            Group::getDescription),
+        countByCatalog(
+            allFigurines,
+            anniversaryRepository.findAll(),
+            Figurine::getAnniversary,
+            Anniversary::getId,
+            Anniversary::getDescription),
+        countByReleaseStatus(allFigurines));
+  }
+
+  private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {
+    return allFigurines.stream()
+        .map(figurineService::calculateReleaseStatus)
+        .collect(Collectors.groupingBy(ReleaseStatus::name, Collectors.summingInt(status -> 1)));
+  }
+
+  private <T> Map<String, Integer> countByCatalog(
+      List<Figurine> allFigurines,
+      List<T> allCatalogs,
+      Function<Figurine, T> figurineCatalogSelector,
+      Function<T, Long> catalogIdSelector,
+      Function<T, String> catalogDescriptionSelector) {
+
+    Map<Long, Long> figurinesByCatalogId =
+        allFigurines.stream()
+            .map(figurineCatalogSelector)
+            .filter(Objects::nonNull)
+            .collect(Collectors.groupingBy(catalogIdSelector, Collectors.counting()));
+
+    Map<String, Integer> countByCatalog = new HashMap<>();
+    allCatalogs.forEach(
+        catalog -> {
+          long count = figurinesByCatalogId.getOrDefault(catalogIdSelector.apply(catalog), 0L);
+          countByCatalog.put(catalogDescriptionSelector.apply(catalog), (int) count);
+        });
+
+    return countByCatalog;
   }
 }
