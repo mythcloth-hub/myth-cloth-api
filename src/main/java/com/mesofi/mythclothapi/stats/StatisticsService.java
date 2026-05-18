@@ -136,7 +136,7 @@ public class StatisticsService {
   }
 
   public List<MonthStatisticsResp> retrieveStatisticsByYear(Integer year) {
-    Map<Integer, Map<String, Map<Long, String>>> groupedByMonth = new HashMap<>();
+    Map<Integer, Map<String, Map<Long, FigurinePayload>>> groupedByMonth = new HashMap<>();
 
     repository
         .findAll()
@@ -144,6 +144,7 @@ public class StatisticsService {
             figurine -> {
               String lineUpDescription = figurine.getLineup().getDescription();
               String figurineName = figurine.getNormalizedName();
+              String figurineUrl = figurine.getOfficialImages().getFirst();
 
               figurine.getDistributors().stream()
                   .map(FigurineDistributor::getReleaseDate)
@@ -156,7 +157,9 @@ public class StatisticsService {
                           groupedByMonth
                               .computeIfAbsent(month, $ -> new HashMap<>())
                               .computeIfAbsent(lineUpDescription, $ -> new HashMap<>())
-                              .put(figurine.getId(), figurineName));
+                              .put(
+                                  figurine.getId(),
+                                  new FigurinePayload(figurineName, figurineUrl)));
             });
 
     return groupedByMonth.entrySet().stream()
@@ -170,10 +173,16 @@ public class StatisticsService {
                           lineUpEntry -> {
                             List<FigurineByMonthResp> figurines =
                                 lineUpEntry.getValue().entrySet().stream()
-                                    .sorted(Map.Entry.comparingByValue())
+                                    .sorted(
+                                        Comparator.comparing(
+                                            entry -> entry.getValue().name(),
+                                            Comparator.nullsLast(String::compareToIgnoreCase)))
                                     .map(
                                         fig ->
-                                            new FigurineByMonthResp(fig.getKey(), fig.getValue()))
+                                            new FigurineByMonthResp(
+                                                fig.getKey(),
+                                                fig.getValue().name(),
+                                                fig.getValue().url()))
                                     .toList();
                             return new LineUpByMonthResp(lineUpEntry.getKey(), figurines);
                           })
@@ -185,6 +194,8 @@ public class StatisticsService {
             })
         .toList();
   }
+
+  private record FigurinePayload(String name, String url) {}
 
   private boolean isReleasedOrAnnounced(Figurine figurine) {
     ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
