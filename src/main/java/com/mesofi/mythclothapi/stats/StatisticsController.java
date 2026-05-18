@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
+import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
@@ -108,7 +109,7 @@ public class StatisticsController {
   }
 
   @GetMapping("/releases/years/{year}")
-  public List<String> retrieveStatisticsByYear(@PathVariable Integer year) {
+  public List<MonthStatisticsResp> retrieveStatisticsByYear(@PathVariable Integer year) {
     return service.retrieveStatisticsByYear(year);
   }
 }

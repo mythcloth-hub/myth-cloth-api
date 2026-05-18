@@ -4,10 +4,13 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 
 import java.time.LocalDate;
+import java.time.Month;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -31,7 +34,10 @@ import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
+import com.mesofi.mythclothapi.stats.dto.LineUpByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.LineUpCountResp;
+import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
@@ -129,8 +135,55 @@ public class StatisticsService {
     return respList;
   }
 
-  public List<String> retrieveStatisticsByYear(Integer year) {
-    return null;
+  public List<MonthStatisticsResp> retrieveStatisticsByYear(Integer year) {
+    Map<Integer, Map<String, Map<Long, String>>> groupedByMonth = new HashMap<>();
+
+    repository
+        .findAll()
+        .forEach(
+            figurine -> {
+              String lineUpDescription = figurine.getLineup().getDescription();
+              String figurineName = figurine.getNormalizedName();
+
+              figurine.getDistributors().stream()
+                  .map(FigurineDistributor::getReleaseDate)
+                  .filter(Objects::nonNull)
+                  .filter(releaseDate -> releaseDate.getYear() == year)
+                  .map(LocalDate::getMonthValue)
+                  .distinct()
+                  .forEach(
+                      month ->
+                          groupedByMonth
+                              .computeIfAbsent(month, $ -> new HashMap<>())
+                              .computeIfAbsent(lineUpDescription, $ -> new HashMap<>())
+                              .put(figurine.getId(), figurineName));
+            });
+
+    return groupedByMonth.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .map(
+            monthEntry -> {
+              List<LineUpByMonthResp> lineUps =
+                  monthEntry.getValue().entrySet().stream()
+                      .sorted(Map.Entry.comparingByKey())
+                      .map(
+                          lineUpEntry -> {
+                            List<FigurineByMonthResp> figurines =
+                                lineUpEntry.getValue().entrySet().stream()
+                                    .sorted(Map.Entry.comparingByValue())
+                                    .map(
+                                        fig ->
+                                            new FigurineByMonthResp(fig.getKey(), fig.getValue()))
+                                    .toList();
+                            return new LineUpByMonthResp(lineUpEntry.getKey(), figurines);
+                          })
+                      .toList();
+
+              int month = monthEntry.getKey();
+              return new MonthStatisticsResp(
+                  month, Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH), lineUps);
+            })
+        .toList();
   }
 
   private boolean isReleasedOrAnnounced(Figurine figurine) {
