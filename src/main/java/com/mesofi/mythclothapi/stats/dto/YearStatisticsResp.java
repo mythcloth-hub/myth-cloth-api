@@ -1,8 +1,5 @@
 package com.mesofi.mythclothapi.stats.dto;
 
-import java.util.Map;
+import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
-public record YearStatisticsResp(int year, Map<String, Integer> lineUp) {}
+public record YearStatisticsResp(int year, List<LineUpCountResp> lineUp) {}

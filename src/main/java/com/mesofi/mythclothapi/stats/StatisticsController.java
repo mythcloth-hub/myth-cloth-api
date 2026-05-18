@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,7 +67,7 @@ public class StatisticsController {
     return service.retrieveStatistics(figurineFilter);
   }
 
-  @GetMapping("/releases")
+  @GetMapping("/releases/years")
   public List<YearStatisticsResp> retrieveStatisticsByReleases(
       @RequestParam(required = false) String name,
       @RequestParam(required = false) Long lineUpId,
@@ -104,5 +105,10 @@ public class StatisticsController {
             null);
 
     return service.retrieveStatisticsByReleases(figurineFilter);
+  }
+
+  @GetMapping("/releases/years/{year}")
+  public List<String> retrieveStatisticsByYear(@PathVariable Integer year) {
+    return service.retrieveStatisticsByYear(year);
   }
 }

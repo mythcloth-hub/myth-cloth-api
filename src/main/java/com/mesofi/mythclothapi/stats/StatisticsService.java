@@ -5,6 +5,7 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.stats.dto.LineUpCountResp;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
@@ -111,14 +113,24 @@ public class StatisticsService {
     List<YearStatisticsResp> respList = new ArrayList<>();
     for (int currYear = startingYear; currYear <= endingYear; currYear++) {
       Map<Long, Integer> yearlyByLineUp = countByYearAndLineUp.getOrDefault(currYear, Map.of());
-      Map<String, Integer> countByLineUp = new HashMap<>();
-      lineUpDescById.forEach(
-          (lineUpId, description) ->
-              countByLineUp.put(description, yearlyByLineUp.getOrDefault(lineUpId, 0)));
+      List<LineUpCountResp> countByLineUp =
+          yearlyByLineUp.entrySet().stream()
+              .filter(entry -> entry.getValue() > 0)
+              .map(
+                  entry ->
+                      new LineUpCountResp(
+                          lineUpDescById.getOrDefault(entry.getKey(), "Unknown"), entry.getValue()))
+              .sorted(Comparator.comparing(LineUpCountResp::line))
+              .toList();
+
       respList.add(new YearStatisticsResp(currYear, countByLineUp));
     }
 
     return respList;
+  }
+
+  public List<String> retrieveStatisticsByYear(Integer year) {
+    return null;
   }
 
   private boolean isReleasedOrAnnounced(Figurine figurine) {
