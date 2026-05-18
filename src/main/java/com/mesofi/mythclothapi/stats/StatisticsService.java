@@ -24,6 +24,7 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -78,43 +79,51 @@ public class StatisticsService {
   }
 
   public List<YearStatisticsResp> retrieveStatisticsByReleases(@NotNull FigurineFilter filter) {
-    List<YearStatisticsResp> respList = new ArrayList<>();
-
-    List<Figurine> allFigurines =
-        repository.findAllFigurines(filter).stream()
-            .filter(
-                figurine -> {
-                  ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
-                  return status == RELEASED || status == ANNOUNCED;
-                })
-            .toList();
-
+    List<Figurine> allFigurines = repository.findAllFigurines(filter);
     final int startingYear = 2003;
     final int endingYear = LocalDate.now().getYear() + 1;
     List<LineUp> allLineUps = lineUpRepository.findAll();
 
+    Map<Long, String> lineUpDescById =
+        allLineUps.stream().collect(Collectors.toMap(LineUp::getId, LineUp::getDescription));
+
+    Map<Integer, Map<Long, Integer>> countByYearAndLineUp = new HashMap<>();
+
+    allFigurines.stream()
+        .filter(this::isReleasedOrAnnounced)
+        .forEach(
+            figurine -> {
+              Long lineUpId = figurine.getLineup().getId();
+
+              figurine.getDistributors().stream()
+                  .map(FigurineDistributor::getReleaseDate)
+                  .filter(Objects::nonNull)
+                  .map(LocalDate::getYear)
+                  .filter(year -> year >= startingYear && year <= endingYear)
+                  .distinct()
+                  .forEach(
+                      year ->
+                          countByYearAndLineUp
+                              .computeIfAbsent(year, y -> new HashMap<>())
+                              .merge(lineUpId, 1, Integer::sum));
+            });
+
+    List<YearStatisticsResp> respList = new ArrayList<>();
     for (int currYear = startingYear; currYear <= endingYear; currYear++) {
-      final int year = currYear;
-      List<Figurine> filteredFigurines =
-          allFigurines.stream()
-              .filter(
-                  figurine ->
-                      figurine.getDistributors().stream()
-                          .filter($ -> $.getReleaseDate() != null)
-                          .anyMatch(distributor -> distributor.getReleaseDate().getYear() == year))
-              .toList();
-
-      Map<String, Integer> countByLineUp =
-          countByCatalog(
-              filteredFigurines,
-              allLineUps,
-              Figurine::getLineup,
-              LineUp::getId,
-              LineUp::getDescription);
-
+      Map<Long, Integer> yearlyByLineUp = countByYearAndLineUp.getOrDefault(currYear, Map.of());
+      Map<String, Integer> countByLineUp = new HashMap<>();
+      lineUpDescById.forEach(
+          (lineUpId, description) ->
+              countByLineUp.put(description, yearlyByLineUp.getOrDefault(lineUpId, 0)));
       respList.add(new YearStatisticsResp(currYear, countByLineUp));
     }
+
     return respList;
+  }
+
+  private boolean isReleasedOrAnnounced(Figurine figurine) {
+    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+    return status == RELEASED || status == ANNOUNCED;
   }
 
   private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {
