@@ -1,5 +1,10 @@
 package com.mesofi.mythclothapi.stats;
 
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +30,7 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
+import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,6 +75,46 @@ public class StatisticsService {
             Anniversary::getId,
             Anniversary::getDescription),
         countByReleaseStatus(allFigurines));
+  }
+
+  public List<YearStatisticsResp> retrieveStatisticsByReleases(@NotNull FigurineFilter filter) {
+    List<YearStatisticsResp> respList = new ArrayList<>();
+
+    List<Figurine> allFigurines =
+        repository.findAllFigurines(filter).stream()
+            .filter(
+                figurine -> {
+                  ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
+                  return status == RELEASED || status == ANNOUNCED;
+                })
+            .toList();
+
+    final int startingYear = 2003;
+    final int endingYear = LocalDate.now().getYear() + 1;
+    List<LineUp> allLineUps = lineUpRepository.findAll();
+
+    for (int currYear = startingYear; currYear <= endingYear; currYear++) {
+      final int year = currYear;
+      List<Figurine> filteredFigurines =
+          allFigurines.stream()
+              .filter(
+                  figurine ->
+                      figurine.getDistributors().stream()
+                          .filter($ -> $.getReleaseDate() != null)
+                          .anyMatch(distributor -> distributor.getReleaseDate().getYear() == year))
+              .toList();
+
+      Map<String, Integer> countByLineUp =
+          countByCatalog(
+              filteredFigurines,
+              allLineUps,
+              Figurine::getLineup,
+              LineUp::getId,
+              LineUp::getDescription);
+
+      respList.add(new YearStatisticsResp(currYear, countByLineUp));
+    }
+    return respList;
   }
 
   private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {

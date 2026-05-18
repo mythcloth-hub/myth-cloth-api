@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.stats;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
+import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,5 +64,45 @@ public class StatisticsController {
             releaseStatus);
 
     return service.retrieveStatistics(figurineFilter);
+  }
+
+  @GetMapping("/releases")
+  public List<YearStatisticsResp> retrieveStatisticsByReleases(
+      @RequestParam(required = false) String name,
+      @RequestParam(required = false) Long lineUpId,
+      @RequestParam(required = false) Long seriesId,
+      @RequestParam(required = false) Long groupId,
+      @RequestParam(required = false) Long anniversaryId,
+      @RequestParam(required = false) Boolean metalBody,
+      @RequestParam(required = false) Boolean oce,
+      @RequestParam(required = false) Boolean revival,
+      @RequestParam(required = false) Boolean plainCloth,
+      @RequestParam(required = false) Boolean broken,
+      @RequestParam(required = false) Boolean golden,
+      @RequestParam(required = false) Boolean gold,
+      @RequestParam(required = false) Boolean manga,
+      @RequestParam(required = false) Boolean set,
+      @RequestParam(required = false) Boolean articulable) {
+
+    FigurineFilter figurineFilter =
+        FigurineFilterFactory.build(
+            name,
+            lineUpId,
+            seriesId,
+            groupId,
+            anniversaryId,
+            metalBody,
+            oce,
+            revival,
+            plainCloth,
+            broken,
+            golden,
+            gold,
+            manga,
+            set,
+            articulable,
+            null);
+
+    return service.retrieveStatisticsByReleases(figurineFilter);
   }
 }
