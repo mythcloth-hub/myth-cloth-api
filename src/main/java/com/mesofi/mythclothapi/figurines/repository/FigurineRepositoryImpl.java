@@ -180,6 +180,9 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
                       WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN release_date
                   END DESC,
                   CASE
+                      WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN id
+                  END,
+                  CASE
                       WHEN release_status = 'PROTOTYPE' THEN announcement_date
                   END DESC,
                   CASE
