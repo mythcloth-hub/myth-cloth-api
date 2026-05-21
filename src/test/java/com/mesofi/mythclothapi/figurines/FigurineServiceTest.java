@@ -709,7 +709,8 @@ public class FigurineServiceTest {
             null, null);
 
     Page<Figurine> emptyPage = new PageImpl<>(List.of(), PageRequest.of(1, 10), 0);
-    when(figurineRepository.search(figurineFilter, PageRequest.of(1, 10))).thenReturn(emptyPage);
+    when(figurineRepository.findPaginated(figurineFilter, PageRequest.of(1, 10)))
+        .thenReturn(emptyPage);
 
     // Act
     Page<FigurineResp> result = figurineService.filterFigurines(figurineFilter, 1, 10);
@@ -736,7 +737,7 @@ public class FigurineServiceTest {
     figurine.setSeries(new Series());
     Page<Figurine> figurineFound = new PageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1);
 
-    when(figurineRepository.search(filter, PageRequest.of(1, 10))).thenReturn(figurineFound);
+    when(figurineRepository.findPaginated(filter, PageRequest.of(1, 10))).thenReturn(figurineFound);
 
     // Act
     Page<FigurineResp> result = figurineService.filterFigurines(filter, 1, 10);

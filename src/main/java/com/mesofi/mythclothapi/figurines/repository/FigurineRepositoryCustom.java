@@ -9,7 +9,9 @@ import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 public interface FigurineRepositoryCustom {
-  Page<Figurine> search(FigurineFilter filter, Pageable pageable);
+  Page<Figurine> findPaginated(FigurineFilter filter, Pageable pageable);
 
-  List<Figurine> findAllFigurines(FigurineFilter filter);
+  List<Figurine> findAll(FigurineFilter filter);
+
+  List<Figurine> findAllByYear(int year);
 }

@@ -54,7 +54,7 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Page<Figurine> search(FigurineFilter filter, Pageable pageable) {
+  public Page<Figurine> findPaginated(FigurineFilter filter, Pageable pageable) {
     SearchQueryContext queryContext = getSearchQueryContext(filter);
 
     StringBuilder sql = queryContext.sql();
@@ -85,10 +85,31 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
 
   @Override
   @SuppressWarnings("unchecked")
-  public List<Figurine> findAllFigurines(FigurineFilter filter) {
+  public List<Figurine> findAll(FigurineFilter filter) {
     SearchQueryContext queryContext = getSearchQueryContext(filter);
 
-    Query query = em.createNativeQuery(queryContext.sql().toString(), Figurine.class);
+    StringBuilder sql = queryContext.sql();
+    sql.append(" ").append(buildOrderBy());
+
+    Query query = em.createNativeQuery(sql.toString(), Figurine.class);
+    queryContext.params().forEach(query::setParameter);
+
+    return query.getResultList();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<Figurine> findAllByYear(int year) {
+    SearchQueryContext queryContext = getSearchQueryContext(null);
+
+    StringBuilder sql = queryContext.sql();
+    Map<String, Object> params = queryContext.params();
+
+    sql.append(" ").append("AND EXTRACT(YEAR FROM t.release_date) = :year");
+    sql.append(" ").append(buildOrderBy());
+    params.put("year", year);
+
+    Query query = em.createNativeQuery(sql.toString(), Figurine.class);
     queryContext.params().forEach(query::setParameter);
 
     return query.getResultList();
@@ -97,6 +118,10 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
   private SearchQueryContext getSearchQueryContext(FigurineFilter filter) {
     StringBuilder dynamicSql = new StringBuilder(BASE_SQL);
     Map<String, Object> params = new HashMap<>();
+
+    if (Objects.isNull(filter)) {
+      return new SearchQueryContext(dynamicSql, params);
+    }
 
     // Dynamic filters
     if (StringUtils.hasLength(filter.name())) {
@@ -186,7 +211,13 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
                       WHEN release_status = 'PROTOTYPE' THEN announcement_date
                   END DESC,
                   CASE
+                      WHEN release_status = 'PROTOTYPE' THEN id
+                  END,
+                  CASE
                       WHEN release_status = 'RUMORED' THEN creation_date
+                  END,
+                  CASE
+                      WHEN release_status = 'RUMORED' THEN id
                   END
               """;
   }

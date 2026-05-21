@@ -253,7 +253,7 @@ public class FigurineService {
       @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-    Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));
+    Page<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
     return figurines.map(
         figurine ->

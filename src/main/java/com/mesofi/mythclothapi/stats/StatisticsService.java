@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.stats;
 
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 
 import java.time.LocalDate;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +43,12 @@ import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Provides aggregated statistics for figurines across catalogs and release timelines.
+ *
+ * <p>The service exposes entry points for overall totals, yearly release summaries and monthly
+ * release details.
+ */
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
@@ -54,8 +60,14 @@ public class StatisticsService {
   private final GroupRepository groupRepository;
   private final AnniversaryRepository anniversaryRepository;
 
+  /**
+   * Builds a global statistics snapshot for the figurines that match the provided filter.
+   *
+   * @param filter filters applied to the figurine search
+   * @return aggregate totals by catalog and release status
+   */
   public StatisticsResp retrieveStatistics(@NotNull FigurineFilter filter) {
-    List<Figurine> allFigurines = repository.findAllFigurines(filter);
+    List<Figurine> allFigurines = repository.findAll(filter);
 
     return new StatisticsResp(
         allFigurines.size(),
@@ -86,8 +98,18 @@ public class StatisticsService {
         countByReleaseStatus(allFigurines));
   }
 
+  /**
+   * Returns yearly release totals per line-up.
+   *
+   * <p>Only figurines currently considered {@code RELEASED} or {@code ANNOUNCED} are counted. A
+   * figurine contributes at most once per year even if it has multiple distributor rows in the same
+   * year.
+   *
+   * @param filter filters applied to the figurine search
+   * @return ordered list of yearly totals from 2003 to next year
+   */
   public List<YearStatisticsResp> retrieveStatisticsByReleases(@NotNull FigurineFilter filter) {
-    List<Figurine> allFigurines = repository.findAllFigurines(filter);
+    List<Figurine> allFigurines = repository.findAll(filter);
     final int startingYear = 2003;
     final int endingYear = LocalDate.now().getYear() + 1;
     List<LineUp> allLineUps = lineUpRepository.findAll();
@@ -98,7 +120,7 @@ public class StatisticsService {
     Map<Integer, Map<Long, Integer>> countByYearAndLineUp = new HashMap<>();
 
     allFigurines.stream()
-        .filter(this::isReleasedOrAnnounced)
+        .filter(this::isReleased)
         .forEach(
             figurine -> {
               Long lineUpId = figurine.getLineup().getId();
@@ -135,71 +157,68 @@ public class StatisticsService {
     return respList;
   }
 
+  /**
+   * Returns monthly releases for a specific year, grouped by line-up.
+   *
+   * <p>For each figurine, the earliest release month found in the requested year is used.
+   *
+   * @param year target year
+   * @return months sorted in ascending order with line-ups and figurines sorted alphabetically
+   */
   public List<MonthStatisticsResp> retrieveStatisticsByYear(Integer year) {
-    Map<Integer, Map<String, Map<Long, FigurinePayload>>> groupedByMonth = new HashMap<>();
+    List<Figurine> respList = repository.findAllByYear(year);
 
-    repository
-        .findAll()
-        .forEach(
-            figurine -> {
-              String lineUpDescription = figurine.getLineup().getDescription();
-              String figurineName = figurine.getNormalizedName();
-              String figurineUrl = figurine.getOfficialImages().getFirst();
+    Map<Integer, Map<String, List<FigurineByMonthResp>>> groupedByMonthAndLineUp = new HashMap<>();
 
-              figurine.getDistributors().stream()
-                  .map(FigurineDistributor::getReleaseDate)
-                  .filter(Objects::nonNull)
-                  .filter(releaseDate -> releaseDate.getYear() == year)
-                  .map(LocalDate::getMonthValue)
-                  .distinct()
-                  .forEach(
-                      month ->
-                          groupedByMonth
-                              .computeIfAbsent(month, $ -> new HashMap<>())
-                              .computeIfAbsent(lineUpDescription, $ -> new HashMap<>())
-                              .put(
-                                  figurine.getId(),
-                                  new FigurinePayload(figurineName, figurineUrl)));
-            });
+    respList.forEach(
+        figurine -> {
+          Optional<Integer> month = extractReleaseMonthForYear(figurine, year);
+          if (month.isEmpty()) {
+            return;
+          }
 
-    return groupedByMonth.entrySet().stream()
+          String lineUp =
+              Optional.ofNullable(figurine.getLineup())
+                  .map(LineUp::getDescription)
+                  .orElse("Unknown");
+
+          groupedByMonthAndLineUp
+              .computeIfAbsent(month.get(), key -> new HashMap<>())
+              .computeIfAbsent(lineUp, key -> new ArrayList<>())
+              .add(
+                  new FigurineByMonthResp(
+                      figurine.getId(),
+                      figurine.getNormalizedName(),
+                      resolveFigurineUrl(figurine)));
+        });
+
+    return groupedByMonthAndLineUp.entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
         .map(
             monthEntry -> {
-              List<LineUpByMonthResp> lineUps =
+              int month = monthEntry.getKey();
+
+              List<LineUpByMonthResp> lineUp =
                   monthEntry.getValue().entrySet().stream()
-                      .sorted(Map.Entry.comparingByKey())
                       .map(
-                          lineUpEntry -> {
-                            List<FigurineByMonthResp> figurines =
-                                lineUpEntry.getValue().entrySet().stream()
-                                    .sorted(
-                                        Comparator.comparing(
-                                            entry -> entry.getValue().name(),
-                                            Comparator.nullsLast(String::compareToIgnoreCase)))
-                                    .map(
-                                        fig ->
-                                            new FigurineByMonthResp(
-                                                fig.getKey(),
-                                                fig.getValue().name(),
-                                                fig.getValue().url()))
-                                    .toList();
-                            return new LineUpByMonthResp(lineUpEntry.getKey(), figurines);
-                          })
+                          lineEntry ->
+                              new LineUpByMonthResp(
+                                  lineEntry.getKey(),
+                                  lineEntry.getValue().stream()
+                                      .sorted(Comparator.comparing(FigurineByMonthResp::name))
+                                      .toList()))
+                      .sorted(Comparator.comparing(LineUpByMonthResp::line))
                       .toList();
 
-              int month = monthEntry.getKey();
               return new MonthStatisticsResp(
-                  month, Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH), lineUps);
+                  month, Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH), lineUp);
             })
         .toList();
   }
 
-  private record FigurinePayload(String name, String url) {}
-
-  private boolean isReleasedOrAnnounced(Figurine figurine) {
+  private boolean isReleased(Figurine figurine) {
     ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
-    return status == RELEASED || status == ANNOUNCED;
+    return status == RELEASED;
   }
 
   private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {
@@ -229,5 +248,21 @@ public class StatisticsService {
         });
 
     return countByCatalog;
+  }
+
+  private Optional<Integer> extractReleaseMonthForYear(Figurine figurine, Integer year) {
+    return figurine.getDistributors().stream()
+        .map(FigurineDistributor::getReleaseDate)
+        .filter(Objects::nonNull)
+        .filter(releaseDate -> releaseDate.getYear() == year)
+        .map(LocalDate::getMonthValue)
+        .min(Comparator.naturalOrder());
+  }
+
+  private String resolveFigurineUrl(Figurine figurine) {
+    if (figurine.getOfficialImages() != null && !figurine.getOfficialImages().isEmpty()) {
+      return figurine.getOfficialImages().getFirst();
+    }
+    return "";
   }
 }
