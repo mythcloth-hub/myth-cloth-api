@@ -13,6 +13,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,10 +45,15 @@ import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Provides aggregated statistics for figurines across catalogs and release timelines.
+ * Service responsible for generating aggregated figurine statistics used by the stats endpoints.
  *
- * <p>The service exposes entry points for overall totals, yearly release summaries and monthly
- * release details.
+ * <p>It provides:
+ *
+ * <ul>
+ *   <li>global counters by catalog and release status,
+ *   <li>yearly release totals grouped by line-up,
+ *   <li>monthly release breakdown for a specific year.
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -61,9 +67,9 @@ public class StatisticsService {
   private final AnniversaryRepository anniversaryRepository;
 
   /**
-   * Builds a global statistics snapshot for the figurines that match the provided filter.
+   * Retrieves a global statistics snapshot for figurines that match the given filter.
    *
-   * @param filter filters applied to the figurine search
+   * @param filter search filter used to constrain figurines included in the aggregation
    * @return aggregate totals by catalog and release status
    */
   public StatisticsResp retrieveStatistics(@NotNull FigurineFilter filter) {
@@ -99,73 +105,61 @@ public class StatisticsService {
   }
 
   /**
-   * Returns yearly release totals per line-up.
+   * Retrieves yearly release statistics grouped by line-up description.
    *
-   * <p>Only figurines currently considered {@code RELEASED} or {@code ANNOUNCED} are counted. A
-   * figurine contributes at most once per year even if it has multiple distributor rows in the same
-   * year.
+   * <p>Only figurines currently evaluated as {@code RELEASED} are considered. Each figurine is
+   * counted against the release year of its first distributor record when present.
    *
-   * @param filter filters applied to the figurine search
-   * @return ordered list of yearly totals from 2003 to next year
+   * @param filter search filter used to constrain figurines included in the aggregation
+   * @return list of yearly aggregates sorted by year (ascending)
    */
   public List<YearStatisticsResp> retrieveStatisticsByReleases(@NotNull FigurineFilter filter) {
-    List<Figurine> allFigurines = repository.findAll(filter);
-    final int startingYear = 2003;
-    final int endingYear = LocalDate.now().getYear() + 1;
-    List<LineUp> allLineUps = lineUpRepository.findAll();
+    List<Figurine> allFigurines =
+        repository.findAll(filter).stream()
+            .filter(figurine -> figurineService.calculateReleaseStatus(figurine) == RELEASED)
+            .toList();
 
-    Map<Long, String> lineUpDescById =
-        allLineUps.stream().collect(Collectors.toMap(LineUp::getId, LineUp::getDescription));
+    Map<Integer, Map<String, Integer>> map = new TreeMap<>();
 
-    Map<Integer, Map<Long, Integer>> countByYearAndLineUp = new HashMap<>();
+    for (Figurine figurine : allFigurines) {
+      Optional<FigurineDistributor> s = figurine.getDistributors().stream().findFirst();
+      if (s.isPresent()) {
+        int theYear = s.get().getReleaseDate().getYear();
+        String description = figurine.getLineup().getDescription();
 
-    allFigurines.stream()
-        .filter(this::isReleased)
-        .forEach(
-            figurine -> {
-              Long lineUpId = figurine.getLineup().getId();
-
-              figurine.getDistributors().stream()
-                  .map(FigurineDistributor::getReleaseDate)
-                  .filter(Objects::nonNull)
-                  .map(LocalDate::getYear)
-                  .filter(year -> year >= startingYear && year <= endingYear)
-                  .distinct()
-                  .forEach(
-                      year ->
-                          countByYearAndLineUp
-                              .computeIfAbsent(year, y -> new HashMap<>())
-                              .merge(lineUpId, 1, Integer::sum));
-            });
-
-    List<YearStatisticsResp> respList = new ArrayList<>();
-    for (int currYear = startingYear; currYear <= endingYear; currYear++) {
-      Map<Long, Integer> yearlyByLineUp = countByYearAndLineUp.getOrDefault(currYear, Map.of());
-      List<LineUpCountResp> countByLineUp =
-          yearlyByLineUp.entrySet().stream()
-              .filter(entry -> entry.getValue() > 0)
-              .map(
-                  entry ->
-                      new LineUpCountResp(
-                          lineUpDescById.getOrDefault(entry.getKey(), "Unknown"), entry.getValue()))
-              .sorted(Comparator.comparing(LineUpCountResp::line))
-              .toList();
-
-      respList.add(new YearStatisticsResp(currYear, countByLineUp));
+        if (map.containsKey(theYear)) {
+          Map<String, Integer> mm = map.get(theYear);
+          mm.merge(description, 1, Integer::sum);
+        } else {
+          Map<String, Integer> map1 = new HashMap<>();
+          map1.put(description, 1);
+          map.put(theYear, map1);
+        }
+      }
     }
 
-    return respList;
+    List<YearStatisticsResp> resp = new ArrayList<>();
+    map.forEach(
+        (year, lineUpMap) -> {
+          List<LineUpCountResp> lineUp = new ArrayList<>();
+          lineUpMap.forEach((line, count) -> lineUp.add(new LineUpCountResp(line, count)));
+
+          resp.add(new YearStatisticsResp(year, lineUp));
+        });
+
+    return resp;
   }
 
   /**
-   * Returns monthly releases for a specific year, grouped by line-up.
+   * Retrieves monthly release statistics for a specific year.
    *
-   * <p>For each figurine, the earliest release month found in the requested year is used.
+   * <p>Results are grouped first by month and then by line-up, with figurines sorted by normalized
+   * name inside each line-up.
    *
-   * @param year target year
-   * @return months sorted in ascending order with line-ups and figurines sorted alphabetically
+   * @param year year to inspect
+   * @return month-based release breakdown for the requested year
    */
-  public List<MonthStatisticsResp> retrieveStatisticsByYear(Integer year) {
+  public List<MonthStatisticsResp> retrieveStatisticsByYear(int year) {
     List<Figurine> respList = repository.findAllByYear(year);
 
     Map<Integer, Map<String, List<FigurineByMonthResp>>> groupedByMonthAndLineUp = new HashMap<>();
@@ -214,11 +208,6 @@ public class StatisticsService {
                   month, Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH), lineUp);
             })
         .toList();
-  }
-
-  private boolean isReleased(Figurine figurine) {
-    ReleaseStatus status = figurineService.calculateReleaseStatus(figurine);
-    return status == RELEASED;
   }
 
   private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {
