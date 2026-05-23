@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -20,10 +21,12 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
+import com.mesofi.mythclothapi.stats.dto.FigurinePriceResp;
 import com.mesofi.mythclothapi.stats.dto.LineUpByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.LineUpCountResp;
 import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
+import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
 @WebMvcTest(StatisticsController.class)
@@ -108,5 +111,39 @@ class StatisticsControllerTest {
         .andExpect(jsonPath("$[0].lineUp[0].figurines[0].name").value("Gemini Saga"));
 
     verify(service).retrieveStatisticsByYear(2026);
+  }
+
+  @Test
+  void retrieveYearlyReleasePrices_shouldReturnYearlyPriceList() throws Exception {
+    when(service.retrieveYearlyReleasePrices(any()))
+        .thenReturn(
+            List.of(
+                new YearReleasePriceResp(
+                    2025,
+                    new BigDecimal("13000.00"),
+                    new BigDecimal("15000.00"),
+                    new BigDecimal("11000.00"),
+                    new FigurinePriceResp(101L, "Dohko", "https://img/dohko.jpg"),
+                    new FigurinePriceResp(100L, "Aldebaran", "https://img/aldebaran.jpg"),
+                    2)));
+
+    mockMvc
+        .perform(
+            get("/stats/prices/releases/years")
+                .param("name", " Saga ")
+                .param("releaseStatus", "RELEASED"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].year").value(2025))
+        .andExpect(jsonPath("$[0].averageReleasePrice").value(13000.00))
+        .andExpect(jsonPath("$[0].highestReleasePrice").value(15000.00))
+        .andExpect(jsonPath("$[0].lowestReleasePrice").value(11000.00))
+        .andExpect(jsonPath("$[0].highestPriceFigurines.id").value(101))
+        .andExpect(jsonPath("$[0].lowestPriceFigurines.id").value(100))
+        .andExpect(jsonPath("$[0].releaseCount").value(2));
+
+    ArgumentCaptor<FigurineFilter> captor = ArgumentCaptor.forClass(FigurineFilter.class);
+    verify(service).retrieveYearlyReleasePrices(captor.capture());
+    assertThat(captor.getValue().name()).isEqualTo("Saga");
+    assertThat(captor.getValue().releaseStatus()).isEqualTo("RELEASED");
   }
 }

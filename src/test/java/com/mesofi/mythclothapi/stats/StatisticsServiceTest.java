@@ -2,9 +2,13 @@ package com.mesofi.mythclothapi.stats;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -23,14 +27,17 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
+import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,6 +56,7 @@ class StatisticsServiceTest {
   @Mock private SeriesRepository seriesRepository;
   @Mock private GroupRepository groupRepository;
   @Mock private AnniversaryRepository anniversaryRepository;
+  @Mock private CurrencyConversionService currencyConversionService;
 
   @Test
   void retrieveStatistics_shouldAggregateCatalogsAndStatuses() {
@@ -210,6 +218,97 @@ class StatisticsServiceTest {
     verify(repository).findAllByYear(2024);
   }
 
+  @Test
+  void retrieveYearlyReleasePrices_shouldAggregateAndConvertToJpy() {
+    LineUp ex = lineUp(1L, "Myth Cloth EX");
+
+    Figurine jpyFigurine = figurine(100L, "Aldebaran", ex, "https://img/aldebaran.jpg");
+    jpyFigurine.setDistributors(
+        List.of(distributor(LocalDate.of(2025, 1, 10), 11000.0, CurrencyCode.JPY)));
+
+    Figurine usdFigurine = figurine(101L, "Dohko", ex, "https://img/dohko.jpg");
+    usdFigurine.setDistributors(
+        List.of(distributor(LocalDate.of(2025, 2, 15), 100.0, CurrencyCode.USD)));
+
+    when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(jpyFigurine, usdFigurine));
+    when(figurineService.calculateReleaseStatus(jpyFigurine)).thenReturn(ReleaseStatus.RELEASED);
+    when(figurineService.calculateReleaseStatus(usdFigurine)).thenReturn(ReleaseStatus.RELEASED);
+    when(currencyConversionService.convert(any(BigDecimal.class), eq("USD"), eq("JPY")))
+        .thenReturn(new BigDecimal("15000.0"));
+
+    List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
+
+    assertThat(result).hasSize(1);
+    YearReleasePriceResp yearly = result.getFirst();
+    assertThat(yearly.year()).isEqualTo(2025);
+    assertThat(yearly.averageReleasePrice()).isEqualByComparingTo("13000.00");
+    assertThat(yearly.highestReleasePrice()).isEqualByComparingTo("15000.00");
+    assertThat(yearly.lowestReleasePrice()).isEqualByComparingTo("11000.00");
+    assertThat(yearly.releaseCount()).isEqualTo(2);
+    assertThat(yearly.highestPriceFigurines().id()).isEqualTo(101L);
+    assertThat(yearly.lowestPriceFigurines().id()).isEqualTo(100L);
+
+    verify(currencyConversionService).convert(any(BigDecimal.class), eq("USD"), eq("JPY"));
+  }
+
+  @Test
+  void retrieveYearlyReleasePrices_shouldSkipNullPricesAndIgnoreNonReleased() {
+    LineUp ex = lineUp(1L, "Myth Cloth EX");
+
+    Figurine nullPrice = figurine(200L, "Shaka", ex, "https://img/shaka.jpg");
+    nullPrice.setDistributors(
+        List.of(distributor(LocalDate.of(2026, 4, 1), null, CurrencyCode.JPY)));
+
+    Figurine announced = figurine(201L, "Milo", ex, "https://img/milo.jpg");
+    announced.setDistributors(
+        List.of(distributor(LocalDate.of(2026, 4, 1), 12000.0, CurrencyCode.JPY)));
+
+    when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(nullPrice, announced));
+    when(figurineService.calculateReleaseStatus(nullPrice)).thenReturn(ReleaseStatus.RELEASED);
+    when(figurineService.calculateReleaseStatus(announced)).thenReturn(ReleaseStatus.ANNOUNCED);
+
+    List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
+
+    assertThat(result).isEmpty();
+    verify(currencyConversionService, never()).convert(any(BigDecimal.class), eq("JPY"), eq("JPY"));
+  }
+
+  @Test
+  void retrieveYearlyReleasePrices_shouldUpdateLowestPriceAndLowestFigurineOnLowerAndEqualValues() {
+    LineUp ex = lineUp(1L, "Myth Cloth EX");
+
+    Figurine high = figurine(300L, "Aiolia", ex, "https://img/aiolia.jpg");
+    high.setDistributors(List.of(distributor(LocalDate.of(2025, 1, 1), 15000.0, CurrencyCode.JPY)));
+
+    Figurine lower = figurine(301L, "Milo", ex, "https://img/milo.jpg");
+    lower.setDistributors(List.of(distributor(LocalDate.of(2025, 2, 1), 100.0, CurrencyCode.USD)));
+
+    Figurine equalLowest = figurine(302L, "Aphrodite", ex, "https://img/aphrodite.jpg");
+    equalLowest.setDistributors(
+        List.of(distributor(LocalDate.of(2025, 3, 1), 10000.0, CurrencyCode.JPY)));
+
+    when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(high, lower, equalLowest));
+    when(figurineService.calculateReleaseStatus(high)).thenReturn(ReleaseStatus.RELEASED);
+    when(figurineService.calculateReleaseStatus(lower)).thenReturn(ReleaseStatus.RELEASED);
+    when(figurineService.calculateReleaseStatus(equalLowest)).thenReturn(ReleaseStatus.RELEASED);
+    when(currencyConversionService.convert(any(BigDecimal.class), eq("USD"), eq("JPY")))
+        .thenReturn(new BigDecimal("10000.0"));
+
+    List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
+
+    assertThat(result).hasSize(1);
+    YearReleasePriceResp yearly = result.getFirst();
+    assertThat(yearly.year()).isEqualTo(2025);
+    assertThat(yearly.averageReleasePrice()).isEqualByComparingTo("11666.67");
+    assertThat(yearly.highestReleasePrice()).isEqualByComparingTo("15000.00");
+    assertThat(yearly.lowestReleasePrice()).isEqualByComparingTo("10000.00");
+    assertThat(yearly.releaseCount()).isEqualTo(3);
+    assertThat(yearly.highestPriceFigurines().id()).isEqualTo(300L);
+    assertThat(yearly.lowestPriceFigurines().id()).isEqualTo(302L);
+
+    verify(currencyConversionService).convert(any(BigDecimal.class), eq("USD"), eq("JPY"));
+  }
+
   private Figurine figurine(Long id, String name, LineUp lineUp, String imageUrl) {
     Figurine figurine = new Figurine();
     figurine.setId(id);
@@ -251,6 +350,14 @@ class StatisticsServiceTest {
   private FigurineDistributor distributor(LocalDate releaseDate) {
     FigurineDistributor distributor = new FigurineDistributor();
     distributor.setReleaseDate(releaseDate);
+    return distributor;
+  }
+
+  private FigurineDistributor distributor(
+      LocalDate releaseDate, Double price, CurrencyCode currency) {
+    FigurineDistributor distributor = distributor(releaseDate);
+    distributor.setPrice(price);
+    distributor.setCurrency(currency);
     return distributor;
   }
 }
