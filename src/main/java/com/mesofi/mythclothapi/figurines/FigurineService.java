@@ -52,6 +52,7 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import lombok.RequiredArgsConstructor;
@@ -252,7 +253,7 @@ public class FigurineService {
       @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-    Page<Figurine> figurines = repository.search(filter, PageRequest.of(page, size));
+    Page<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
     return figurines.map(
         figurine ->

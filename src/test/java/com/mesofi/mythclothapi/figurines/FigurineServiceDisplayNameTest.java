@@ -28,6 +28,7 @@ import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @ExtendWith(MockitoExtension.class)
 class FigurineServiceDisplayNameTest {

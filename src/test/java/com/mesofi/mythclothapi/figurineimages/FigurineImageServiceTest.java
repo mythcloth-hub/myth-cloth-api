@@ -22,9 +22,9 @@ import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageResp;
 import com.mesofi.mythclothapi.figurineimages.exceptions.ImageAlreadyExistsException;
 import com.mesofi.mythclothapi.figurineimages.exceptions.ImageNotFoundException;
-import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @SpringBootTest(classes = {FigurineImageService.class})
 public class FigurineImageServiceTest {

@@ -14,9 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
-import com.mesofi.mythclothapi.figurines.FigurineRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

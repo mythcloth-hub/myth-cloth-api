@@ -31,6 +31,7 @@ import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -181,7 +182,8 @@ public class FigurineRepositoryTest {
         new FigurineFilter(
             "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
             null, null);
-    var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
+    var page =
+        repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
     assertThat(page.getContent())
         .extracting(Figurine::getNormalizedName)
@@ -194,7 +196,8 @@ public class FigurineRepositoryTest {
         new FigurineFilter(
             "xyz", null, null, null, null, null, null, null, null, null, null, null, null, null,
             null, null);
-    var page = repository.search(filter, org.springframework.data.domain.PageRequest.of(0, 10));
+    var page =
+        repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }
 
@@ -232,7 +235,7 @@ public class FigurineRepositoryTest {
             true, // articulable
             null // releaseStatus
             );
-    var page = repository.search(filter, PageRequest.of(0, 10));
+    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent())
         .extracting(Figurine::getNormalizedName)
         .contains("pegasus-seiya-ex");
@@ -260,7 +263,7 @@ public class FigurineRepositoryTest {
             null,
             null,
             null);
-    var page = repository.search(filter, PageRequest.of(0, 10));
+    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
   }
 
@@ -286,7 +289,7 @@ public class FigurineRepositoryTest {
             null,
             null,
             null);
-    var page = repository.search(filter, PageRequest.of(0, 10));
+    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
   }
 
@@ -323,7 +326,7 @@ public class FigurineRepositoryTest {
           new FigurineFilter(
               null, null, null, null, null, null, null, null, null, null, null, null, null, null,
               null, status);
-      var page = repository.search(filter, PageRequest.of(0, 10));
+      var page = repository.findPaginated(filter, PageRequest.of(0, 10));
       assertThat(page.getContent()).isNotEmpty();
     }
   }
@@ -339,8 +342,8 @@ public class FigurineRepositoryTest {
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             null, null);
-    var page1 = repository.search(filter, PageRequest.of(0, 5));
-    var page2 = repository.search(filter, PageRequest.of(1, 5));
+    var page1 = repository.findPaginated(filter, PageRequest.of(0, 5));
+    var page2 = repository.findPaginated(filter, PageRequest.of(1, 5));
     assertThat(page1.getContent()).hasSize(5);
     assertThat(page2.getContent()).hasSize(5);
   }
@@ -353,7 +356,7 @@ public class FigurineRepositoryTest {
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             null, null);
-    var page = repository.search(filter, PageRequest.of(0, 10));
+    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
   }
 
@@ -364,7 +367,7 @@ public class FigurineRepositoryTest {
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             null, null);
-    var page = repository.search(filter, PageRequest.of(0, 10));
+    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }
 
