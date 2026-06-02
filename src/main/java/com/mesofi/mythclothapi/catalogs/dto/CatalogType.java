@@ -4,5 +4,6 @@ public enum CatalogType {
   distributions,
   groups,
   lineups,
-  series
+  series,
+  collections
 }

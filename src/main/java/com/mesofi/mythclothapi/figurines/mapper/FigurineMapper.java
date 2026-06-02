@@ -96,6 +96,7 @@ public interface FigurineMapper {
       expression = "java(toAnniversary(csv.getAnniversaryNumberType(), catalogs))")
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", ignore = true)
+  @Mapping(target = "collections", ignore = true)
   Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
   /**
@@ -307,6 +308,7 @@ public interface FigurineMapper {
   @Mapping(target = "nonOfficialImages", source = "unofficialImageUrls")
   @Mapping(target = "creationDate", ignore = true)
   @Mapping(target = "updateDate", ignore = true)
+  @Mapping(target = "collections", ignore = true)
   Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
   /**
