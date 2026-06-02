@@ -22,7 +22,7 @@ import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
@@ -53,7 +53,7 @@ public class Figurine extends BaseId {
   private List<FigurineDistributor> distributors = new ArrayList<>();
 
   @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CollectorCollection> collections = new ArrayList<>();
+  private List<CollectorCollectionFigurine> collections = new ArrayList<>();
 
   @Column(length = 50)
   private String tamashiiUrl;

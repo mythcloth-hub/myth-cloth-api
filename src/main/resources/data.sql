@@ -60,3 +60,9 @@ INSERT INTO series (description) VALUES ('Saint Seiya Legend Of Sanctuary');
 INSERT INTO series (description) VALUES ('Saint Seiya Omega');
 INSERT INTO series (description) VALUES ('The Lost Canvas');
 INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
+
+-- =================================================================
+-- INSERT INTO collectors (display_name, email, creation_date, update_date) VALUES ('Armando Rivas', 'rivasarmando271084@gmail.com', now(), now());
+-- INSERT INTO collector_providers (collector_id, creation_date, provider, provider_user_id) VALUES (1, now(), 'GOOGLE', '123456789');
+-- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'Personal Collection');
+-- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'For Sale Collection');

@@ -1,11 +1,18 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -13,11 +20,17 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
+@Table(
+    name = "collector_collections",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_collection_collector_name",
+            columnNames = {"collector_id", "description"}))
 public class CollectorCollection extends Descriptive {
 
-  @ManyToOne(optional = false)
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Collector collector;
 
-  @ManyToOne(optional = false)
-  private Figurine figurine;
+  @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<CollectorCollectionFigurine> figurines = new ArrayList<>();
 }

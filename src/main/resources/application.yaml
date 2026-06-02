@@ -1,4 +1,13 @@
 myth-cloth:
+  facebook:
+    app-id: "4393993617525351"
+    app-secret: "50f71fa2dbdb2acb02eef826ae10c110"
+  security:
+    jwt:
+      secret: "sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E="
+      issuer: "myth-cloth-api"
+      ttl-minutes: 60
+# openssl rand -base64 32
   import:
     drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
     file-id: 1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio
@@ -28,7 +37,14 @@ spring:
     init:
       mode: always   # FORCE data.sql to run
 
+  #security:
+  #  oauth2:
+  #    resourceserver:
+  #      jwt:
+  #        issuer-uri: https://accounts.google.com
+
 server:
+  port: 9090
   servlet:
     context-path: /api/v1
 

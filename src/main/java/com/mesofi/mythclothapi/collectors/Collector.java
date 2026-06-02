@@ -25,7 +25,7 @@ import lombok.Setter;
 @Table(name = "collectors")
 public class Collector extends BaseId {
 
-  @Column(unique = true, length = 254)
+  @Column(unique = true, length = 254, nullable = false)
   private String email;
 
   @Column(length = 200)
