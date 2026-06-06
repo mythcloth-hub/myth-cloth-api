@@ -34,7 +34,7 @@ import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
-import com.mesofi.mythclothapi.fix.CurrencyConversionService;
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;

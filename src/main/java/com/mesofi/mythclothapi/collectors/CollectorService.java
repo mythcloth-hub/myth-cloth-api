@@ -1,28 +1,38 @@
 package com.mesofi.mythclothapi.collectors;
 
-import static com.mesofi.mythclothapi.collectorproviders.ProviderType.FACEBOOK;
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.FACEBOOK;
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.GOOGLE;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
 
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProviderRepository;
-import com.mesofi.mythclothapi.collectorproviders.ProviderType;
+import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
+import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
+import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
 import com.mesofi.mythclothapi.integration.fb.FbTokenData;
 import com.mesofi.mythclothapi.integration.fb.FbUserInfoResponse;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
+import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
+import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
+import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.ApiTokenService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service that orchestrates collector social authentication and login.
+ *
+ * <p>Validates provider tokens, creates or reuses collector/provider associations, and returns the
+ * API authentication payload used by the client.
+ */
 @Slf4j
 @Service
 @Validated
@@ -33,46 +43,184 @@ public class CollectorService {
   private final CollectorAuthProviderRepository collectorAuthProviderRepository;
   private final FbApiClient fbApiClient;
   private final FcCredentialsProperties fcCredentials;
+  private final GoogleApiClient googleApiClient;
+  private final GoogleCredentialsProperties googleCredentials;
   private final ApiTokenService apiTokenService;
 
-  public CollectorLoginResp login(String accessToken) {
+  /**
+   * Logs in a collector using the requested social provider.
+   *
+   * @param provider provider name from the API path (for example, facebook or google)
+   * @param loginRequest social login payload with provider token values
+   * @return authenticated collector response containing API token details
+   * @throws IllegalArgumentException if provider is missing or unsupported
+   */
+  public CollectorLoginResp login(String provider, CollectorLoginReq loginRequest) {
+    ProviderType providerType = resolveProvider(provider);
 
-    FbTokenData fbTokenData = fbApiClient.validateAccessToken(accessToken).data();
-    if (fbTokenData.valid() && fbTokenData.appId().equals(fcCredentials.appId())) {
-      // the token is valid, now we get the user profile...
-      log.info("Facebook token is valid for user id {}", fbTokenData.userId());
-      FbUserInfoResponse fbUserInfoResponse = fbApiClient.getUserInfo(accessToken);
-      log.info(
-          "Facebook user info: id={}, name={}, email={}",
-          fbUserInfoResponse.id(),
-          fbUserInfoResponse.name(),
-          fbUserInfoResponse.email());
-
-      // creates or update user
-      Collector collector =
-          createOrUpdateRegisteredCollector(
-              FACEBOOK,
-              fbUserInfoResponse.id(),
-              fbUserInfoResponse.name(),
-              fbUserInfoResponse.email(),
-              true,
-              null);
-
-      String apiJwt =
-          apiTokenService.generateToken(
-              collector.getId(), FACEBOOK.name(), fbUserInfoResponse.id(), collector.getEmail());
-
-      return new CollectorLoginResp(
-          collector.getId(),
-          collector.getDisplayName(),
-          collector.getEmail(),
-          apiJwt,
-          "Bearer",
-          3600L);
-    }
-    throw new CollectorInvalidTokenException("Facebook token is invalid");
+    return switch (providerType) {
+      case FACEBOOK -> loginWithFacebook(loginRequest.accessToken());
+      case GOOGLE -> loginWithGoogle(loginRequest.idToken());
+      default ->
+          throw new IllegalArgumentException(
+              "Provider %s is not supported yet".formatted(providerType));
+    };
   }
 
+  /**
+   * Validates a Facebook access token and logs in or provisions the related collector.
+   *
+   * @param accessToken Facebook user access token
+   * @return authenticated collector response containing API token details
+   * @throws IllegalArgumentException if the token is blank
+   * @throws CollectorInvalidTokenException if the token is invalid for this application
+   */
+  private CollectorLoginResp loginWithFacebook(String accessToken) {
+    requireToken(accessToken, "Facebook access token is required");
+
+    FbTokenData fbTokenData = fbApiClient.validateAccessToken(accessToken).data();
+    boolean appMatches = fcCredentials.appId().equals(fbTokenData.appId());
+
+    if (!fbTokenData.valid() || !appMatches) {
+      throw new CollectorInvalidTokenException("Facebook token is invalid");
+    }
+
+    FbUserInfoResponse userInfo = fbApiClient.getUserInfo(accessToken);
+
+    Collector collector =
+        createOrUpdateRegisteredCollector(
+            FACEBOOK, userInfo.id(), userInfo.name(), userInfo.email(), true, null);
+
+    return buildLoginResponse(collector, FACEBOOK, userInfo.id());
+  }
+
+  /**
+   * Validates a Google ID token and logs in or provisions the related collector.
+   *
+   * @param idToken Google ID token
+   * @return authenticated collector response containing API token details
+   * @throws IllegalArgumentException if the token is blank
+   * @throws CollectorInvalidTokenException if token claims are invalid or expired
+   */
+  private CollectorLoginResp loginWithGoogle(String idToken) {
+    requireToken(idToken, "Google idToken is required");
+
+    GoogleTokenInfoResponse tokenInfo = googleApiClient.validateIdToken(idToken);
+    validateGoogleToken(tokenInfo);
+
+    Collector collector =
+        createOrUpdateRegisteredCollector(
+            GOOGLE,
+            tokenInfo.sub(),
+            tokenInfo.name(),
+            tokenInfo.email(),
+            tokenInfo.emailVerified(),
+            tokenInfo.picture());
+
+    return buildLoginResponse(collector, GOOGLE, tokenInfo.sub());
+  }
+
+  /**
+   * Verifies Google token claims required by this API.
+   *
+   * @param tokenInfo parsed token info returned by Google token introspection
+   * @throws CollectorInvalidTokenException if issuer, audience, expiry, or subject is invalid
+   */
+  private void validateGoogleToken(GoogleTokenInfoResponse tokenInfo) {
+    boolean issuerValid =
+        "https://accounts.google.com".equals(tokenInfo.iss())
+            || "accounts.google.com".equals(tokenInfo.iss());
+
+    if (!issuerValid) {
+      throw new CollectorInvalidTokenException("Google token issuer is invalid");
+    }
+
+    if (!googleCredentials.clientId().equals(tokenInfo.aud())) {
+      throw new CollectorInvalidTokenException("Google token audience is invalid");
+    }
+
+    long expiresAt;
+    try {
+      expiresAt = tokenInfo.expiresAtEpochSecond();
+    } catch (NumberFormatException ex) {
+      throw new CollectorInvalidTokenException("Google token expiry claim is invalid");
+    }
+
+    if (expiresAt <= Instant.now().getEpochSecond()) {
+      throw new CollectorInvalidTokenException("Google token is expired");
+    }
+
+    if (tokenInfo.sub() == null || tokenInfo.sub().isBlank()) {
+      throw new CollectorInvalidTokenException("Google token subject is missing");
+    }
+  }
+
+  /**
+   * Builds the API login response and signs an internal API token for the collector.
+   *
+   * @param collector authenticated collector entity
+   * @param provider social provider used for the login
+   * @param providerUserId provider-specific user id
+   * @return login response payload for API clients
+   */
+  private CollectorLoginResp buildLoginResponse(
+      Collector collector, ProviderType provider, String providerUserId) {
+    String apiJwt =
+        apiTokenService.generateToken(
+            collector.getId(), provider.name(), providerUserId, collector.getEmail());
+
+    return new CollectorLoginResp(
+        collector.getId(),
+        collector.getDisplayName(),
+        collector.getEmail(),
+        apiJwt,
+        "Bearer",
+        apiTokenService.ttlSeconds());
+  }
+
+  /**
+   * Resolves an incoming provider string to a supported {@link ProviderType}.
+   *
+   * @param provider raw provider value from the request path
+   * @return normalized provider enum value
+   * @throws IllegalArgumentException if provider is missing or unsupported
+   */
+  private ProviderType resolveProvider(String provider) {
+    if (provider == null || provider.isBlank()) {
+      throw new IllegalArgumentException("Provider is required");
+    }
+
+    try {
+      return ProviderType.valueOf(provider.trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException("Unsupported provider: " + provider);
+    }
+  }
+
+  /**
+   * Ensures a required token value is present.
+   *
+   * @param token token value to validate
+   * @param message error message used when token is missing
+   * @throws IllegalArgumentException if token is null or blank
+   */
+  private void requireToken(String token, String message) {
+    if (token == null || token.isBlank()) {
+      throw new IllegalArgumentException(message);
+    }
+  }
+
+  /**
+   * Finds an existing collector by provider identity or creates a new collector and link.
+   *
+   * @param providerType provider associated with the social identity
+   * @param userId provider user id
+   * @param name display name from provider claims
+   * @param email email from provider claims
+   * @param emailVerified provider-reported email verification flag
+   * @param picture profile picture URL from provider claims
+   * @return existing or newly created collector entity
+   */
   private Collector createOrUpdateRegisteredCollector(
       ProviderType providerType,
       String userId,
@@ -88,76 +236,25 @@ public class CollectorService {
       log.info("Logging in collector {} with {} provider", existingCollector.getId(), providerType);
 
       return existingCollector;
-    } else {
-      // no existing provider, create new collector and provider
-      log.info("Creating new collector for {} user {}", providerType, userId);
-
-      Collector collector = new Collector();
-      collector.setEmail(email);
-      collector.setDisplayName(name);
-      collector.setProfilePictureUrl(picture);
-      Collector newCollector = collectorRepository.save(collector);
-
-      CollectorAuthProvider newProvider = new CollectorAuthProvider();
-      newProvider.setCollector(newCollector);
-      newProvider.setProvider(providerType);
-      newProvider.setEmail(email);
-      newProvider.setProviderUserId(userId);
-      newProvider.setEmailVerified(emailVerified);
-      collectorAuthProviderRepository.save(newProvider);
-
-      return newCollector;
     }
-  }
 
-  public CollectorLoginResp login(Jwt jwt) {
+    // No existing provider link, create collector and provider association.
+    log.info("Creating new collector for {} user {}", providerType, userId);
 
-    URL issuer = jwt.getIssuer();
-    try {
-      if (issuer.toURI().equals(new URI("https://accounts.google.com"))) {
-        String subject = jwt.getSubject();
+    Collector collector = new Collector();
+    collector.setEmail(email);
+    collector.setDisplayName(name);
+    collector.setProfilePictureUrl(picture);
+    Collector newCollector = collectorRepository.save(collector);
 
-        Optional<CollectorAuthProvider> found =
-            collectorAuthProviderRepository.findByProviderAndProviderUserId(
-                ProviderType.GOOGLE, subject);
+    CollectorAuthProvider newProvider = new CollectorAuthProvider();
+    newProvider.setCollector(newCollector);
+    newProvider.setProvider(providerType);
+    newProvider.setEmail(email);
+    newProvider.setProviderUserId(userId);
+    newProvider.setEmailVerified(emailVerified);
+    collectorAuthProviderRepository.save(newProvider);
 
-        if (found.isPresent()) {
-          Collector collector = found.get().getCollector();
-
-          log.info("Logging in collector {} with Google provider", collector.getId());
-
-          return new CollectorLoginResp(
-              collector.getId(), collector.getDisplayName(), collector.getEmail(), null, null, 0);
-        } else {
-          // no existing provider, create new collector and provider
-          log.info("Creating new collector for Google user {}", subject);
-
-          Collector collector = new Collector();
-          collector.setEmail(jwt.getClaimAsString("email"));
-          collector.setDisplayName(jwt.getClaimAsString("name"));
-          collector.setProfilePictureUrl(jwt.getClaimAsString("picture"));
-          Collector collectorSaved = collectorRepository.save(collector);
-
-          CollectorAuthProvider newProvider = new CollectorAuthProvider();
-          newProvider.setCollector(collectorSaved);
-          newProvider.setProvider(ProviderType.GOOGLE);
-          newProvider.setEmail(jwt.getClaimAsString("email"));
-          newProvider.setProviderUserId(subject);
-          newProvider.setEmailVerified(jwt.getClaimAsBoolean("email_verified"));
-          collectorAuthProviderRepository.save(newProvider);
-
-          return new CollectorLoginResp(
-              collectorSaved.getId(),
-              collectorSaved.getDisplayName(),
-              collectorSaved.getEmail(),
-              null,
-              null,
-              0);
-        }
-      }
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-    return null;
+    return newCollector;
   }
 }

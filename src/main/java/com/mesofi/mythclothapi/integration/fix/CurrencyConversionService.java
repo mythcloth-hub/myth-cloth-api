@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.fix;
+package com.mesofi.mythclothapi.integration.fix;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

@@ -12,20 +12,21 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProvider;
+import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.common.BaseId;
 
 import lombok.Getter;
 import lombok.Setter;
 
+/** Collector account entity used for authenticated users of the API. */
 @Entity
 @Getter
 @Setter
 @Table(name = "collectors")
 public class Collector extends BaseId {
 
-  @Column(unique = true, length = 254, nullable = false)
+  @Column(length = 254, nullable = false)
   private String email;
 
   @Column(length = 200)
@@ -46,12 +47,14 @@ public class Collector extends BaseId {
   @Column(nullable = false)
   private Instant updateDate;
 
+  /** Initializes creation and update timestamps before first persistence. */
   @PrePersist
   public void prePersist() {
     creationDate = Instant.now();
     updateDate = Instant.now();
   }
 
+  /** Refreshes the update timestamp before entity updates. */
   @PreUpdate
   public void preUpdate() {
     updateDate = Instant.now();

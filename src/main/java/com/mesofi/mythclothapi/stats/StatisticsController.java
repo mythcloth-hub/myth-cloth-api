@@ -19,17 +19,17 @@ import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-@RestController
-@RequestMapping("/stats")
-@RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 /**
  * REST controller exposing figurine statistics endpoints.
  *
  * <p>Endpoints support optional filtering through query parameters that are converted into a {@link
  * FigurineFilter} before delegating to {@link StatisticsService}.
  */
+@Slf4j
+@RestController
+@RequestMapping("/stats")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class StatisticsController {
 
   private final StatisticsService service;

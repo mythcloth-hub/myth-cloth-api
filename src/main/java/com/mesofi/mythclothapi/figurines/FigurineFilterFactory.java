@@ -8,10 +8,6 @@ package com.mesofi.mythclothapi.figurines;
  */
 public final class FigurineFilterFactory {
 
-  private FigurineFilterFactory() {
-    // utility class, no instantiation
-  }
-
   /**
    * Constructs a {@link FigurineFilter} from the provided request parameters.
    *
