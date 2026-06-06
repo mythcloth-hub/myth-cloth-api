@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.security;
+package com.mesofi.mythclothapi.security.config;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
+import com.mesofi.mythclothapi.security.JwtProperties;
+
+/** Configures the application's HTTP security rules for a stateless, permit-all setup. */
 @Configuration
 @EnableWebSecurity
 @EnableConfigurationProperties(JwtProperties.class)

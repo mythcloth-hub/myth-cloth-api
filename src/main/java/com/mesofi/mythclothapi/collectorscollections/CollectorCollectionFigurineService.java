@@ -38,20 +38,15 @@ public class CollectorCollectionFigurineService {
             .findById(collectionId)
             .orElseGet(this::createDefaultCollection);
 
-    collectorCollectionFigurineRepository
+    if (collectorCollectionFigurineRepository
         .findByCollectionAndFigurine(existingCollection, existingFigurine)
-        .<CollectorCollectionFigurine>map(
-            ignored -> {
-              throw new IllegalArgumentException(
-                  "Figurine with id "
-                      + figurineId
-                      + " already in collection with id "
-                      + collectionId);
-            })
-        .orElseGet(
-            () ->
-                collectorCollectionFigurineRepository.save(
-                    buildCollectionFigurine(existingCollection, existingFigurine)));
+        .isPresent()) {
+      throw new IllegalArgumentException(
+          "Figurine with id " + figurineId + " already in collection with id " + collectionId);
+    }
+
+    collectorCollectionFigurineRepository.save(
+        buildCollectionFigurine(existingCollection, existingFigurine));
   }
 
   private CollectorCollection createDefaultCollection() {

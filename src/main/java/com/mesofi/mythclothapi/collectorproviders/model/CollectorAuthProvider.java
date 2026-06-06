@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.collectorproviders;
+package com.mesofi.mythclothapi.collectorproviders.model;
 
 import java.time.Instant;
 
@@ -21,6 +21,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Entity that links a {@link com.mesofi.mythclothapi.collectors.Collector} to an external
+ * authentication provider identity.
+ *
+ * <p>Each record is unique by provider and provider user id.
+ */
 @Entity
 @Getter
 @Setter
@@ -54,6 +60,7 @@ public class CollectorAuthProvider extends BaseId {
   @Column(nullable = false)
   private Instant creationDate;
 
+  /** Sets the creation timestamp when the entity is first persisted. */
   @PrePersist
   public void prePersist() {
     creationDate = Instant.now();

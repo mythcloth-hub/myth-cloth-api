@@ -19,6 +19,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
+import com.mesofi.mythclothapi.integration.fix.FxApiClient;
+
 @ExtendWith(MockitoExtension.class)
 class CurrencyConversionServiceTest {
 
@@ -74,7 +77,8 @@ class CurrencyConversionServiceTest {
 
   private Object expiredCachedRate(BigDecimal rate) throws Exception {
     Class<?> cachedRateClass =
-        Class.forName("com.mesofi.mythclothapi.fix.CurrencyConversionService$CachedRate");
+        Class.forName(
+            "com.mesofi.mythclothapi.integration.fix.CurrencyConversionService$CachedRate");
     Constructor<?> constructor =
         cachedRateClass.getDeclaredConstructor(BigDecimal.class, Instant.class);
     constructor.setAccessible(true);

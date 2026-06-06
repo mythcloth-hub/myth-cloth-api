@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClient;
 
+import com.mesofi.mythclothapi.integration.fix.FxApiClient;
+import com.mesofi.mythclothapi.integration.fix.FxRateResponse;
+
 class FxApiClientTest {
 
   @Test

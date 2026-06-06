@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
+/** Resolves the country/region associated with a figurine distribution currency. */
 @Component
 public class CurrencyRegionResolver {
 
