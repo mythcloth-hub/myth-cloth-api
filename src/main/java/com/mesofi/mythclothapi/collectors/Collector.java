@@ -7,6 +7,8 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -15,6 +17,7 @@ import jakarta.persistence.Table;
 import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.security.roles.model.Role;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -40,6 +43,9 @@ public class Collector extends BaseId {
 
   @OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<CollectorCollection> collections = new ArrayList<>();
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  private Role role;
 
   @Column(nullable = false)
   private Instant creationDate;

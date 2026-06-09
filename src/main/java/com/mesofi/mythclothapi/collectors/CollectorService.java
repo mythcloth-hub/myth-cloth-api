@@ -23,6 +23,8 @@ import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.ApiTokenService;
+import com.mesofi.mythclothapi.security.roles.RoleRepository;
+import com.mesofi.mythclothapi.security.roles.model.Role;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,7 @@ public class CollectorService {
   private final GoogleApiClient googleApiClient;
   private final GoogleCredentialsProperties googleCredentials;
   private final ApiTokenService apiTokenService;
+  private final RoleRepository roleRepository;
 
   /**
    * Logs in a collector using the requested social provider.
@@ -238,6 +241,10 @@ public class CollectorService {
       return existingCollector;
     }
 
+    // In case it is the first collector, this would have an Admin role.
+    String role = collectorRepository.count() == 0 ? "Admin" : "Basic Collector";
+    Role currRole = retrieveRoleByDescription(role);
+
     // No existing provider link, create collector and provider association.
     log.info("Creating new collector for {} user {}", providerType, userId);
 
@@ -245,6 +252,7 @@ public class CollectorService {
     collector.setEmail(email);
     collector.setDisplayName(name);
     collector.setProfilePictureUrl(picture);
+    collector.setRole(currRole);
     Collector newCollector = collectorRepository.save(collector);
 
     CollectorAuthProvider newProvider = new CollectorAuthProvider();
@@ -256,5 +264,16 @@ public class CollectorService {
     collectorAuthProviderRepository.save(newProvider);
 
     return newCollector;
+  }
+
+  private Role retrieveRoleByDescription(String description) {
+    return roleRepository
+        .findByDescription(description)
+        .orElseGet(
+            () -> {
+              Role adminRole = new Role();
+              adminRole.setDescription(description);
+              return roleRepository.save(adminRole);
+            });
   }
 }

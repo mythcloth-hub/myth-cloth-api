@@ -66,3 +66,6 @@ INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
 -- INSERT INTO collector_providers (collector_id, creation_date, provider, provider_user_id) VALUES (1, now(), 'GOOGLE', '123456789');
 -- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'Personal Collection');
 -- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'For Sale Collection');
+
+INSERT INTO roles (description) VALUES ('Admin');
+INSERT INTO roles (description) VALUES ('Basic Collector');
