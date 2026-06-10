@@ -53,7 +53,7 @@ public class RolePermissionController {
   public ResponseEntity<Void> syncRolePermissions(
       @PathVariable Long roleId, @Valid @RequestBody SyncPermissionsReq request) {
 
-    syncService.syncPermissions(roleId, request.permissionIds());
+    syncService.syncPermissions(roleId, request);
 
     // 204 No Content is the standard REST response for successful updates
     // when no body content needs to accompany the confirmation.

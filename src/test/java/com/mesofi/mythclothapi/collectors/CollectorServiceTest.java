@@ -32,6 +32,8 @@ import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.ApiTokenService;
+import com.mesofi.mythclothapi.security.roles.RoleRepository;
+import com.mesofi.mythclothapi.security.roles.model.Role;
 
 @ExtendWith(MockitoExtension.class)
 class CollectorServiceTest {
@@ -45,6 +47,7 @@ class CollectorServiceTest {
   @Mock private GoogleApiClient googleApiClient;
   @Mock private GoogleCredentialsProperties googleCredentials;
   @Mock private ApiTokenService apiTokenService;
+  @Mock private RoleRepository roleRepository;
 
   @Test
   void login_shouldThrowIllegalArgumentException_whenProviderIsBlank() {
@@ -168,6 +171,10 @@ class CollectorServiceTest {
     when(apiTokenService.generateToken(11L, "FACEBOOK", "fb-123", "seiya@example.com"))
         .thenReturn("jwt-created");
     when(apiTokenService.ttlSeconds()).thenReturn(7200L);
+    Role roleSaved = new Role();
+    roleSaved.setId(1L);
+    roleSaved.setDescription("Admin");
+    when(roleRepository.save(any(Role.class))).thenReturn(roleSaved);
 
     CollectorLoginResp response =
         service.login("facebook", new CollectorLoginReq(null, "fb-access-token"));
