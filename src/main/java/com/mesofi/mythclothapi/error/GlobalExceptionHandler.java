@@ -25,6 +25,7 @@ import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsE
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 
@@ -91,19 +92,16 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(DistributorNotFoundException.class)
   public ProblemDetail handleDistributorNotFound(DistributorNotFoundException ex) {
-
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
   @ExceptionHandler(CatalogNotFoundException.class)
   public ProblemDetail handleCatalogNotFound(CatalogNotFoundException ex) {
-
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
   @ExceptionHandler(RepositoryNotFoundException.class)
   public ProblemDetail handleRepositoryNotFound(RepositoryNotFoundException ex) {
-
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
@@ -124,7 +122,6 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(RoleNotFoundException.class)
   public ProblemDetail handleRoleNotFound(RoleNotFoundException ex) {
-
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
@@ -135,7 +132,12 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(PermissionNotFoundException.class)
   public ProblemDetail handlePermissionNotFound(PermissionNotFoundException ex) {
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
 
+  @ExceptionHandler(RoleAlreadyAssociatedToPermissionException.class)
+  public ProblemDetail handleRoleAlreadyAssociatedToPermission(
+      RoleAlreadyAssociatedToPermissionException ex) {
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 }

@@ -8,8 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.security.SecurityMapper;
 import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
+import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
+import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
@@ -79,18 +81,31 @@ public class RoleService {
             .findById(permissionId)
             .orElseThrow(() -> new PermissionNotFoundException(permissionId));
 
-    // The helper method guarantees no duplicates are added to the list
-    boolean alreadyExists = role.addPermission(permission);
+    // Check if association already exists in the list
+    boolean alreadyExists =
+        role.getPermissions().stream()
+            .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
+
     if (alreadyExists) {
       throw new RoleAlreadyAssociatedToPermissionException(role.getId(), permission.getId());
-    } else {
-      roleRepository.save(role);
     }
 
-    // RolePermission rolePermission = new RolePermission();
-    // rolePermission.setRole(role);
-    // rolePermission.setPermission(permission);
-    // role.getPermissions().add(rolePermission);
+    RolePermission rolePermission = new RolePermission();
+    rolePermission.setRole(role);
+    rolePermission.setPermission(permission);
+    role.getPermissions().add(rolePermission);
 
+    roleRepository.save(role);
+  }
+
+  @Transactional(readOnly = true)
+  public List<PermissionResp> retrievePermissionsByRoleId(Long roleId) {
+    Role role =
+        roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
+
+    return role.getPermissions().stream()
+        .map(RolePermission::getPermission)
+        .map(permission -> new PermissionResp(permission.getId(), permission.getDescription()))
+        .toList();
   }
 }

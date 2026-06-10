@@ -15,7 +15,7 @@ public class RoleAlreadyAssociatedToPermissionException extends ApiException {
   private final Long permissionId;
 
   public RoleAlreadyAssociatedToPermissionException(Long roleId, Long permissionId) {
-    super("Role with Id: %s has a permission associated: %s".formatted(roleId, permissionId));
+    super("Role with ID %s already has permission %s assigned.".formatted(roleId, permissionId));
     this.roleId = roleId;
     this.permissionId = permissionId;
   }

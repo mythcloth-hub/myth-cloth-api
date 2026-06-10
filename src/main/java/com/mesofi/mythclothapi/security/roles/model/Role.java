@@ -9,7 +9,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 
 import lombok.EqualsAndHashCode;
@@ -26,21 +25,4 @@ public class Role extends Descriptive {
   // RolePermission.role
   @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<RolePermission> permissions = new ArrayList<>();
-
-  public boolean addPermission(Permission permission) {
-    // Check if association already exists in the list
-    boolean alreadyExists =
-        this.permissions.stream()
-            .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
-
-    if (!alreadyExists) {
-      RolePermission rolePermission = new RolePermission();
-      rolePermission.setRole(this);
-      rolePermission.setPermission(permission);
-
-      this.permissions.add(rolePermission);
-      permission.getRoles().add(rolePermission); // Keep both sides in sync
-    }
-    return alreadyExists;
-  }
 }
