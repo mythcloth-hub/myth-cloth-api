@@ -139,6 +139,7 @@ pitest {
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapper',
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
             'com.mesofi.mythclothapi.figurines.repository.FigurineRepositoryImpl',
+            'com.mesofi.mythclothapi.security.SecurityMapperImpl',
             'com.mesofi.mythclothapi.StartupRunner'
     ]
 

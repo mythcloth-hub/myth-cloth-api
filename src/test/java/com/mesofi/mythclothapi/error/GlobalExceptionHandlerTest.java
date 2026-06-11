@@ -24,6 +24,11 @@ import com.mesofi.mythclothapi.collectors.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.integration.ServiceName;
+import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
+import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 
 class GlobalExceptionHandlerTest {
 
@@ -159,5 +164,69 @@ class GlobalExceptionHandlerTest {
     assertThat(result.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY.value());
     assertThat(result.getTitle()).isEqualTo("Facebook gateway error");
     assertThat(result.getDetail()).isEqualTo("Facebook gateway error");
+  }
+
+  @Test
+  void handleRoleDuplicateException_shouldUseExceptionMessageForTitleAndDetail() {
+    RoleAlreadyExistsException ex = new RoleAlreadyExistsException("Admin");
+
+    ProblemDetail result = handler.handleRoleDuplicateException(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+    assertThat(result.getTitle()).isEqualTo("Duplicate Role with description: 'Admin'");
+    assertThat(result.getDetail()).isEqualTo("Duplicate Role with description: 'Admin'");
+    assertThat(ex.getDescription()).isEqualTo("Admin");
+  }
+
+  @Test
+  void handleRoleNotFound_shouldUseExceptionMessageForTitleAndDetail() {
+    RoleNotFoundException ex = new RoleNotFoundException(1L);
+
+    ProblemDetail result = handler.handleRoleNotFound(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+    assertThat(result.getTitle()).isEqualTo("Role not found");
+    assertThat(result.getDetail()).isEqualTo("Role not found");
+    assertThat(ex.getId()).isEqualTo(1L);
+  }
+
+  @Test
+  void handlePermissionDuplicateException_shouldUseExceptionMessageForTitleAndDetail() {
+    PermissionAlreadyExistsException ex = new PermissionAlreadyExistsException("catalogs:read");
+
+    ProblemDetail result = handler.handlePermissionDuplicateException(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+    assertThat(result.getTitle())
+        .isEqualTo("Duplicate Permission with description: 'catalogs:read'");
+    assertThat(result.getDetail())
+        .isEqualTo("Duplicate Permission with description: 'catalogs:read'");
+    assertThat(ex.getDescription()).isEqualTo("catalogs:read");
+  }
+
+  @Test
+  void handlePermissionNotFound_shouldUseExceptionMessageForTitleAndDetail() {
+    PermissionNotFoundException ex = new PermissionNotFoundException(1L);
+
+    ProblemDetail result = handler.handlePermissionNotFound(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+    assertThat(result.getTitle()).isEqualTo("Permission not found");
+    assertThat(result.getDetail()).isEqualTo("Permission not found");
+    assertThat(ex.getId()).isEqualTo(1L);
+  }
+
+  @Test
+  void handleRoleAlreadyAssociatedToPermission_shouldUseExceptionMessageForTitleAndDetail() {
+    RoleAlreadyAssociatedToPermissionException ex =
+        new RoleAlreadyAssociatedToPermissionException(1L, 1L);
+
+    ProblemDetail result = handler.handleRoleAlreadyAssociatedToPermission(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+    assertThat(result.getTitle()).isEqualTo("Role with ID 1 already has permission 1 assigned.");
+    assertThat(result.getDetail()).isEqualTo("Role with ID 1 already has permission 1 assigned.");
+    assertThat(ex.getRoleId()).isEqualTo(1L);
+    assertThat(ex.getPermissionId()).isEqualTo(1L);
   }
 }

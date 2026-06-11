@@ -62,7 +62,16 @@ INSERT INTO series (description) VALUES ('The Lost Canvas');
 INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
 
 -- =================================================================
--- INSERT INTO collectors (display_name, email, creation_date, update_date) VALUES ('Armando Rivas', 'rivasarmando271084@gmail.com', now(), now());
--- INSERT INTO collector_providers (collector_id, creation_date, provider, provider_user_id) VALUES (1, now(), 'GOOGLE', '123456789');
--- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'Personal Collection');
--- INSERT INTO collector_collections (collector_id, description) VALUES (1, 'For Sale Collection');
+INSERT INTO roles (description) VALUES ('Admin');
+INSERT INTO roles (description) VALUES ('Basic Collector');
+
+INSERT INTO permissions (description) VALUES ('catalogs:read');
+INSERT INTO permissions (description) VALUES ('catalogs:write');
+INSERT INTO permissions (description) VALUES ('catalogs:delete');
+INSERT INTO permissions (description) VALUES ('catalogs:update');
+
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 1);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 2);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 3);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 4);
+--INSERT INTO role_permissions (role_id, permission_id) VALUES (2, 1);

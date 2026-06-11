@@ -7,6 +7,12 @@ package com.mesofi.mythclothapi.figurines;
  * parameter validation and name normalization across all controllers.
  */
 public final class FigurineFilterFactory {
+  /**
+   * Private constructor to prevent instantiation of this utility class.
+   *
+   * <p>All functionality is exposed through static factory methods.
+   */
+  private FigurineFilterFactory() {}
 
   /**
    * Constructs a {@link FigurineFilter} from the provided request parameters.
