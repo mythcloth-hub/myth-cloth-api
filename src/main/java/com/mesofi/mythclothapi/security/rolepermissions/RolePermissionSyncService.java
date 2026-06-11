@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
+import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
@@ -38,7 +39,7 @@ public class RolePermissionSyncService {
 
     // Quick validation check
     if (targetPermissions.size() != request.permissionIds().size()) {
-      throw new IllegalArgumentException("One or more permission IDs provided do not exist.");
+      throw new PermissionNotFoundException("One or more permission IDs provided do not exist.");
     }
 
     // 3. Determine which permissions need to be REMOVED

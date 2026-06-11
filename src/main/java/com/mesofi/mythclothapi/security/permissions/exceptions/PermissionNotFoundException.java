@@ -13,6 +13,11 @@ public class PermissionNotFoundException extends ApiException {
   @Serial private static final long serialVersionUID = -4170723581171178442L;
   private final Long id;
 
+  public PermissionNotFoundException(String message) {
+    super(message);
+    this.id = null;
+  }
+
   public PermissionNotFoundException(Long id) {
     super("Permission not found");
     this.id = id;

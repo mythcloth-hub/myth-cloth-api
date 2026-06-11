@@ -45,7 +45,7 @@ public class RolePermissionController {
   }
 
   @GetMapping
-  public List<PermissionResp> retrieveAnniversaries(@PathVariable Long roleId) {
+  public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
     return service.retrievePermissionsByRoleId(roleId);
   }
 
