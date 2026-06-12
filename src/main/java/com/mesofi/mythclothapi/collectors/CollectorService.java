@@ -170,7 +170,7 @@ public class CollectorService {
       Collector collector, ProviderType provider, String providerUserId) {
     String apiJwt =
         apiTokenService.generateToken(
-            collector.getId(), provider.name(), providerUserId, collector.getEmail());
+            collector, provider.name(), providerUserId, collector.getEmail());
 
     return new CollectorLoginResp(
         collector.getId(),

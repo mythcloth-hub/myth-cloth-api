@@ -20,29 +20,11 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     http.csrf(AbstractHttpConfigurer::disable)
         .authorizeHttpRequests(
-            auth -> auth.requestMatchers("/**").permitAll().anyRequest().authenticated())
+            auth ->
+                auth.requestMatchers("/distributors/**").authenticated().anyRequest().permitAll())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
     return http.build();
   }
 }
-
-// @Configuration
-// public class SecurityConfig {
-//  @Bean
-//  public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-
-//    http.csrf(AbstractHttpConfigurer::disable)
-//        .authorizeHttpRequests(
-//            auth ->
-//                auth.requestMatchers("/collections/**")
-//                    // auth.requestMatchers("/collections/**", "/collectors/auth/**")
-//                    .authenticated()
-//                    .anyRequest()
-//                    .permitAll())
-//        .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
-
-//    return http.build();
-//  }
-// }
