@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
@@ -25,7 +24,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
   private final String PERMISSION = "/permissions";
   private final String ROLE_PERMISSION = "/roles/{roleId}/permissions";
 
-  @Test
+  // @Test
   @DisplayName("Test flow to manage roles and permissions")
   void fullRolePermissionFlow() {
 

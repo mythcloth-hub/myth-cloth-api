@@ -9,4 +9,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param appSecret Facebook application secret
  */
 @ConfigurationProperties(prefix = "myth-cloth.facebook")
-public record FcCredentialsProperties(String appId, String appSecret) {}
+public record FcCredentialsProperties(String appId, String appSecret, String graphUrl) {}

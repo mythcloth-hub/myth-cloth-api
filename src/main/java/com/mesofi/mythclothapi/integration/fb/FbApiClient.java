@@ -41,7 +41,7 @@ public class FbApiClient {
    * @param fcCredentials Facebook application credentials used for token validation.
    */
   public FbApiClient(FcCredentialsProperties fcCredentials) {
-    this.restClient = RestClient.builder().baseUrl("https://graph.facebook.com/").build();
+    this.restClient = RestClient.builder().baseUrl(fcCredentials.graphUrl()).build();
     this.fcCredentials = fcCredentials;
   }
 
