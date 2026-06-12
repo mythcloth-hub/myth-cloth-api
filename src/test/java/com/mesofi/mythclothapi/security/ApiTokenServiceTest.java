@@ -18,6 +18,9 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.security.roles.model.Role;
+
 @ExtendWith(MockitoExtension.class)
 class ApiTokenServiceTest {
 
@@ -47,7 +50,15 @@ class ApiTokenServiceTest {
         ArgumentCaptor.forClass(JwtEncoderParameters.class);
     when(jwtEncoder.encode(captor.capture())).thenReturn(encodedJwt);
 
-    String token = service.generateToken(77L, "GOOGLE", "sub-123", "seiya@example.com");
+    Role role = new Role();
+    role.setDescription("Admin");
+
+    Collector collector = new Collector();
+    collector.setId(77L);
+    collector.setDisplayName("Armando");
+    collector.setRole(role);
+
+    String token = service.generateToken(collector, "GOOGLE", "sub-123", "seiya@example.com");
 
     assertThat(token).isEqualTo("signed-jwt-token");
 

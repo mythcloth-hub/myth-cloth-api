@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -41,6 +42,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.utils.TestJwtFactory;
 
 public class FigurineScenarioExtension
     implements BeforeAllCallback, AfterEachCallback, BeforeEachCallback, ParameterResolver {
@@ -79,7 +81,7 @@ public class FigurineScenarioExtension
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Override
-  public void beforeAll(ExtensionContext context) {
+  public void beforeAll(@NonNull ExtensionContext context) throws Exception {
     this.restClient = retrieveRestClient(context);
   }
 
@@ -212,7 +214,7 @@ public class FigurineScenarioExtension
     }
   }
 
-  private RestClient retrieveRestClient(ExtensionContext context) {
+  private RestClient retrieveRestClient(ExtensionContext context) throws Exception {
     // Get Spring context
     Environment environment = SpringExtension.getApplicationContext(context).getEnvironment();
 
@@ -224,8 +226,17 @@ public class FigurineScenarioExtension
       throw new IllegalStateException("local.server.port not available");
     }
 
+    // String getSecret = environment.getProperty("myth-cloth.security.jwt.secret", String.class);
+    // if (getSecret == null) {
+    //  throw new IllegalStateException("myth-cloth.security.jwt.secret not available");
+    // }
+
     // Build RestClient
-    return RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
+    String token = TestJwtFactory.createAdminToken("sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E=");
+    return RestClient.builder()
+        .baseUrl("http://localhost:" + port + contextPath)
+        .defaultHeaders(headers -> headers.setBearerAuth(token))
+        .build();
   }
 
   private boolean hasSupplierIdPlaceholder(JsonNode node) {

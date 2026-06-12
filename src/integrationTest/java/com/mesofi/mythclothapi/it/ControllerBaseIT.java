@@ -10,6 +10,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
+import com.mesofi.mythclothapi.utils.TestJwtFactory;
+
 @ActiveProfiles("integration")
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -23,7 +25,12 @@ public abstract class ControllerBaseIT {
   protected RestClient rest;
 
   @BeforeAll
-  void setUpRestClient() {
-    this.rest = RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
+  void setUpRestClient() throws Exception {
+    String token = TestJwtFactory.createAdminToken("sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E=");
+    this.rest =
+        RestClient.builder()
+            .baseUrl("http://localhost:" + port + contextPath)
+            .defaultHeaders(headers -> headers.setBearerAuth(token))
+            .build();
   }
 }

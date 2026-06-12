@@ -1,4 +1,8 @@
 myth-cloth:
+#  security:
+#    jwt:
+#      secret: "oKZWkHhXSgaMPwnJ77qIjAiy72IPh+51cN3A8pbae14="
+      # Generate a new secret by executing: openssl rand -base64 32
   import:
     drive-url: http://localhost:8089/test.csv
     file-id: ignored
