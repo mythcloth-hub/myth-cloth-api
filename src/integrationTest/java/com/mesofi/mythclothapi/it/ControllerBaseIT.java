@@ -26,7 +26,7 @@ public abstract class ControllerBaseIT {
 
   @BeforeAll
   void setUpRestClient() throws Exception {
-    String token = TestJwtFactory.createAdminToken("sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E=");
+    String token = TestJwtFactory.createAdminToken();
     this.rest =
         RestClient.builder()
             .baseUrl("http://localhost:" + port + contextPath)

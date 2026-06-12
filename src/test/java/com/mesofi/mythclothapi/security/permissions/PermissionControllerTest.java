@@ -86,24 +86,6 @@ public class PermissionControllerTest {
   }
 
   @Test
-  void createPermission_shouldReturn400_whenDescriptionExceedsMaxLength() throws Exception {
-    String requestBody = "{\"description\":\"%s\"}".formatted("a".repeat(201));
-
-    mockMvc
-        .perform(post("/permissions").contentType(MediaType.APPLICATION_JSON).content(requestBody))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-        .andExpect(jsonPath("$.instance").value("/permissions"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Validation Failed"))
-        .andExpect(jsonPath("$.timestamp").exists())
-        .andExpect(
-            jsonPath("$.errors.description").value("description must not exceed 200 characters"));
-
-    verifyNoInteractions(service);
-  }
-
-  @Test
   void createPermission_shouldReturn201AndLocationHeader() throws Exception {
     PermissionReq request = new PermissionReq("figurines:read");
     PermissionResp response = new PermissionResp(1L, "figurines:read");

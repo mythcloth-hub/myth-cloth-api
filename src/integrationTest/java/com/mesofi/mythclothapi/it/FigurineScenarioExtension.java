@@ -226,13 +226,8 @@ public class FigurineScenarioExtension
       throw new IllegalStateException("local.server.port not available");
     }
 
-    // String getSecret = environment.getProperty("myth-cloth.security.jwt.secret", String.class);
-    // if (getSecret == null) {
-    //  throw new IllegalStateException("myth-cloth.security.jwt.secret not available");
-    // }
-
     // Build RestClient
-    String token = TestJwtFactory.createAdminToken("sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E=");
+    String token = TestJwtFactory.createAdminToken();
     return RestClient.builder()
         .baseUrl("http://localhost:" + port + contextPath)
         .defaultHeaders(headers -> headers.setBearerAuth(token))
