@@ -8,11 +8,13 @@ import static org.springframework.http.HttpStatus.OK;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
 
+@Sql(scripts = "/cleanup-catalog-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class CatalogControllerIT extends ControllerBaseIT {
 
   private final String CATALOG = "/catalogs";
