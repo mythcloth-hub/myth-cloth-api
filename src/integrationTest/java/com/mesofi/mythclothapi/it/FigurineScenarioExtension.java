@@ -42,7 +42,6 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
-import com.mesofi.mythclothapi.utils.TestJwtFactory;
 
 public class FigurineScenarioExtension
     implements BeforeAllCallback, AfterEachCallback, BeforeEachCallback, ParameterResolver {
@@ -227,10 +226,10 @@ public class FigurineScenarioExtension
     }
 
     // Build RestClient
-    String token = TestJwtFactory.createAdminToken();
+    // String token = TestJwtFactory.createAdminToken();
     return RestClient.builder()
         .baseUrl("http://localhost:" + port + contextPath)
-        .defaultHeaders(headers -> headers.setBearerAuth(token))
+        // .defaultHeaders(headers -> headers.setBearerAuth(token))
         .build();
   }
 
