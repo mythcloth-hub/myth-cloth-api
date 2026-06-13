@@ -19,7 +19,6 @@ import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
-import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ public class RolePermissionController {
   private final RolePermissionSyncService syncService;
 
   @PostMapping
-  public ResponseEntity<RoleResp> addPermissionToRole(
+  public ResponseEntity<Void> addPermissionToRole(
       @PathVariable Long roleId, @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
     service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
     // Standard REST practice: Return 204 No Content for a successful association

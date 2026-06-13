@@ -60,7 +60,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write"))))
+                            new SimpleGrantedAuthority("distributors:write"))))
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.detail")
@@ -208,7 +208,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
+                            new SimpleGrantedAuthority("distributors:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
@@ -240,7 +240,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
+                            new SimpleGrantedAuthority("distributors:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isConflict())
@@ -266,7 +266,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:read"))))
+                            new SimpleGrantedAuthority("distributors:read"))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.detail").value("Distributor not found"))
         .andExpect(jsonPath("$.instance").value("/distributors/0"))
@@ -291,7 +291,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:read"))))
+                            new SimpleGrantedAuthority("distributors:read"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(5L))
         .andExpect(jsonPath("$.name").value(DistributorName.BLUE_FIN.toString()))
@@ -316,7 +316,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:read"))))
+                            new SimpleGrantedAuthority("distributors:read"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(2))
         .andExpect(jsonPath("$[0].id").value(1L))
@@ -339,7 +339,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:read"))))
+                            new SimpleGrantedAuthority("distributors:read"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.length()").value(0));
 
@@ -363,7 +363,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:update")))
+                            new SimpleGrantedAuthority("distributors:update")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
@@ -408,7 +408,7 @@ class DistributorControllerTest {
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
                         .authorities(
                             new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:delete"))))
+                            new SimpleGrantedAuthority("distributors:delete"))))
         .andExpect(status().isNoContent());
 
     verify(service).removeDistributor(1L);

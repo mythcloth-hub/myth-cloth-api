@@ -10,9 +10,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
@@ -22,8 +22,14 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
+import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
+import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
+import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
+import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 
 @AutoConfigureMockMvc
+@Sql(scripts = "/cleanup-collector-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class CollectorControllerIT extends ControllerBaseIT {
   static WireMockServer wireMockServer = new WireMockServer(options().dynamicPort());
 
@@ -81,23 +87,64 @@ public class CollectorControllerIT extends ControllerBaseIT {
                     """
               {
                 "id": "1234567890",
-                "name": "Test User",
-                "email": "test@test.com"
+                "name": "Facebook Testing User",
+                "email": "test@facebook.com"
               }
               """)));
 
-    ResponseEntity<CollectorLoginResp> collectorLoginResp =
+    // Prepare the setup for this scenario.
+
+    PermissionResp distributorWritePermission =
+        rest.post()
+            .uri("/permissions")
+            .body(new PermissionReq("distributors:write"))
+            .retrieve()
+            .body(PermissionResp.class);
+
+    PermissionResp distributorReadPermission =
+        rest.post()
+            .uri("/permissions")
+            .body(new PermissionReq("distributors:read"))
+            .retrieve()
+            .body(PermissionResp.class);
+
+    RoleResp adminRole =
+        rest.post().uri("/roles").body(new RoleReq("Admin")).retrieve().body(RoleResp.class);
+
+    assert adminRole != null;
+    assert distributorWritePermission != null;
+    assert distributorReadPermission != null;
+
+    assignPermissionToRole(adminRole.id(), distributorWritePermission.id());
+    assignPermissionToRole(adminRole.id(), distributorReadPermission.id());
+
+    // The user logs in using Facebook and receives a JWT token from our system. This token should
+    // have the permissions assigned to the Admin role.
+
+    CollectorLoginResp collectorLoginResp =
         rest.post()
             .uri("/collectors/auth/{provider}", "facebook")
             .body(new CollectorLoginReq(null, fbFakeAccessToken))
             .retrieve()
-            .toEntity(CollectorLoginResp.class);
+            .body(CollectorLoginResp.class);
 
+    assert collectorLoginResp != null;
 
+    // Call the protected resource using the collector's JWT token and verify access is granted due
+    // to the Admin role permissions.
     rest.post()
         .uri("/distributors")
+        .headers(httpHeaders -> httpHeaders.setBearerAuth(collectorLoginResp.accessToken()))
         .body(new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com"))
         .retrieve()
         .toEntity(DistributorResp.class);
+  }
+
+  private void assignPermissionToRole(long roleId, long permissionId) {
+    rest.post()
+        .uri("/roles/{roleId}/permissions", roleId)
+        .body(new RolePermissionReq(permissionId))
+        .retrieve()
+        .toBodilessEntity();
   }
 }

@@ -36,3 +36,8 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
+
+    org.springframework.security: DEBUG
+    org.springframework.security.web: TRACE
+    org.springframework.security.authentication: TRACE
+    org.springframework.security.authorization: TRACE

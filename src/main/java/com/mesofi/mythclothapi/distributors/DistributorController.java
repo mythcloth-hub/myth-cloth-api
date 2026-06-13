@@ -38,7 +38,7 @@ public class DistributorController {
   private final DistributorService service;
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:write')")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('distributors:write')")
   public ResponseEntity<DistributorResp> createDistributor(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody DistributorReq distributorRequest) {
     log.info(
@@ -58,19 +58,19 @@ public class DistributorController {
   }
 
   @GetMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:read')")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('distributors:read')")
   public DistributorResp retrieveDistributor(@PathVariable Long id) {
     return service.retrieveDistributor(id);
   }
 
   @GetMapping
-  @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:read')")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('distributors:read')")
   public List<DistributorResp> retrieveDistributors() {
     return service.retrieveDistributors();
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:update')")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('distributors:update')")
   public ResponseEntity<DistributorResp> updateDistributor(
       @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long id,
@@ -86,7 +86,7 @@ public class DistributorController {
   }
 
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:delete')")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('distributors:delete')")
   public ResponseEntity<?> removeDistributor(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     log.info(
