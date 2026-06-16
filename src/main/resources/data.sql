@@ -78,6 +78,10 @@ INSERT INTO permissions (description) VALUES ('catalogs:write');
 INSERT INTO permissions (description) VALUES ('catalogs:update');
 INSERT INTO permissions (description) VALUES ('catalogs:delete');
 
+INSERT INTO permissions (description) VALUES ('roles:permissions:read');
+INSERT INTO permissions (description) VALUES ('roles:permissions:assign');
+INSERT INTO permissions (description) VALUES ('roles:permissions:sync');
+
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 1);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 2);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 3);
@@ -89,3 +93,6 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 8);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 9);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 10);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 11);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 12);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 13);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 14);
