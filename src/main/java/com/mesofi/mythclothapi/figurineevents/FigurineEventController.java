@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,11 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/figurines/{figurineId}/events")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class FigurineEventController {
 
   private final FigurineEventService service;
 
   @PostMapping
+  @PreAuthorize("hasAuthority('figurines:events:add')")
   public ResponseEntity<FigurineEventResp> createEvent(
       @Positive @PathVariable Long figurineId,
       @Valid @RequestBody FigurineEventReq figurineEventRequest) {
@@ -51,17 +54,20 @@ public class FigurineEventController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('figurines:events:read')")
   public FigurineEventResp retrieveEvent(
       @Positive @PathVariable Long figurineId, @PathVariable Long id) {
     return service.retrieveFigurineEvent(figurineId, id);
   }
 
   @GetMapping
+  @PreAuthorize("hasAuthority('figurines:events:read')")
   public List<FigurineEventResp> retrieveEvents(@Positive @PathVariable Long figurineId) {
     return service.retrieveFigurineEvents(figurineId);
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('figurines:events:update')")
   public ResponseEntity<FigurineEventResp> updateEvent(
       @Positive @PathVariable Long figurineId,
       @PathVariable Long id,
@@ -71,6 +77,7 @@ public class FigurineEventController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('figurines:events:delete')")
   public ResponseEntity<Void> removeEvent(
       @Positive @PathVariable Long figurineId, @PathVariable Long id) {
     service.removeFigurineEvent(figurineId, id);

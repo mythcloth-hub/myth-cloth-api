@@ -17,12 +17,16 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageResp;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
 import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 
+@Sql(
+    scripts = "/cleanup-figurine-image-it.sql",
+    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineImageControllerIT extends ControllerBaseIT {
 
   private static final String IMAGES_BY_FIGURINE = "/figurines/{figurineId}/images";

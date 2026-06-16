@@ -25,6 +25,7 @@ import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
 import com.mesofi.mythclothapi.integration.fb.FbTokenData;
+import com.mesofi.mythclothapi.integration.fb.FbTokenError;
 import com.mesofi.mythclothapi.integration.fb.FbTokenResponse;
 import com.mesofi.mythclothapi.integration.fb.FbUserInfoResponse;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
@@ -104,7 +105,20 @@ class CollectorServiceTest {
 
     assertThatThrownBy(() -> service.login("facebook", request))
         .isInstanceOf(CollectorInvalidTokenException.class)
-        .hasMessage("Facebook token is invalid");
+        .hasMessage("Facebook token is invalid.");
+  }
+
+  @Test
+  void loginWithFacebook_shouldThrowCollectorInvalidTokenException_whenTokenIsUnparseable() {
+    CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token");
+
+    when(fcCredentials.appId()).thenReturn("myth-app-id");
+    when(fbApiClient.validateAccessToken("fb-access-token"))
+        .thenReturn(new FbTokenResponse(fbTokenDataError(999, "Unable to parse Token")));
+
+    assertThatThrownBy(() -> service.login("facebook", request))
+        .isInstanceOf(CollectorInvalidTokenException.class)
+        .hasMessage("Facebook token is invalid. Reason: Unable to parse Token");
   }
 
   @Test
@@ -117,7 +131,7 @@ class CollectorServiceTest {
 
     assertThatThrownBy(() -> service.login("facebook", request))
         .isInstanceOf(CollectorInvalidTokenException.class)
-        .hasMessage("Facebook token is invalid");
+        .hasMessage("Facebook token is invalid.");
   }
 
   @Test
@@ -534,7 +548,20 @@ class CollectorServiceTest {
 
   private FbTokenData fbTokenData(String appId, boolean valid, String userId) {
     return new FbTokenData(
-        appId, "USER", "myth-cloth", 0L, 0L, valid, new String[] {"email"}, userId);
+        appId, "USER", "myth-cloth", 0L, 0L, valid, new String[] {"email"}, userId, null);
+  }
+
+  private FbTokenData fbTokenDataError(int code, String errorMessage) {
+    return new FbTokenData(
+        null,
+        null,
+        null,
+        0L,
+        0L,
+        false,
+        new String[] {},
+        null,
+        new FbTokenError(code, errorMessage));
   }
 
   private GoogleTokenInfoResponse googleToken(

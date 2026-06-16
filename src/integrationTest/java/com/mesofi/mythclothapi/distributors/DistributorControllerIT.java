@@ -11,12 +11,14 @@ import static org.springframework.http.HttpStatus.OK;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
 
+@Sql(scripts = "/cleanup-distributor-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class DistributorControllerIT extends ControllerBaseIT {
 
   private static final String DISTRIBUTORS = "/distributors";

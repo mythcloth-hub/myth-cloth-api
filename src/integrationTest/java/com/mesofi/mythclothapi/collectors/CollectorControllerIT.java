@@ -62,21 +62,21 @@ public class CollectorControllerIT extends ControllerBaseIT {
             .willReturn(
                 okJson(
                     """
-                {
-                  "data": {
-                    "app_id": "0000",
-                    "type": "USER",
-                    "application": "MyApp",
-                    "data_access_expires_at": 1789055926,
-                    "expires_at": 1789055926,
-                    "is_valid": true,
-                    "scopes": [
-                      "email", "public_profile"
-                    ],
-                    "user_id": "1234567890"
-                  }
-                }
-            """)));
+                                {
+                                  "data": {
+                                    "app_id": "0000",
+                                    "type": "USER",
+                                    "application": "MyApp",
+                                    "data_access_expires_at": 1789055926,
+                                    "expires_at": 1789055926,
+                                    "is_valid": true,
+                                    "scopes": [
+                                      "email", "public_profile"
+                                    ],
+                                    "user_id": "1234567890"
+                                  }
+                                }
+                            """)));
 
     // Mock Facebook user information
     wireMockServer.stubFor(
@@ -85,12 +85,12 @@ public class CollectorControllerIT extends ControllerBaseIT {
             .willReturn(
                 okJson(
                     """
-              {
-                "id": "1234567890",
-                "name": "Facebook Testing User",
-                "email": "test@facebook.com"
-              }
-              """)));
+                              {
+                                "id": "1234567890",
+                                "name": "Facebook Testing User",
+                                "email": "test@facebook.com"
+                              }
+                              """)));
 
     // Prepare the setup for this scenario.
 

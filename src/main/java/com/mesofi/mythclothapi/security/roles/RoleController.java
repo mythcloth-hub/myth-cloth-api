@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,11 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/roles")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class RoleController {
 
   private final RoleService service;
 
   @PostMapping
+  @PreAuthorize("hasAuthority('roles:write')")
   public ResponseEntity<RoleResp> createRole(@Valid @RequestBody RoleReq roleRequest) {
     RoleResp response = service.createRole(roleRequest);
     URI location =
@@ -46,16 +49,19 @@ public class RoleController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('roles:read')")
   public RoleResp retrieveRole(@PathVariable Long id) {
     return service.retrieveRole(id);
   }
 
   @GetMapping
+  @PreAuthorize("hasAuthority('roles:read')")
   public List<RoleResp> retrieveRoles() {
     return service.retrieveRoles();
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('roles:update')")
   public ResponseEntity<RoleResp> updateRole(
       @PathVariable Long id, @Valid @RequestBody RoleReq roleRequest) {
     RoleResp updated = service.updateRole(id, roleRequest);

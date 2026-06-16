@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Min;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -71,6 +72,7 @@ public class FigurineController {
    *     body, and a {@code Location} header referencing the new resource
    */
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
   public ResponseEntity<FigurineResp> createFigurine(
       @RequestBody @Valid FigurineReq figurineRequest) {
 
@@ -186,6 +188,7 @@ public class FigurineController {
    * @return {@link ResponseEntity} containing the updated figurine with status {@code 200 OK}
    */
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
   public ResponseEntity<FigurineResp> updateFigurine(
       @PathVariable Long id, @RequestBody @Valid FigurineReq figurineRequest) {
     FigurineResp updated = service.updateFigurine(id, figurineRequest);
@@ -210,6 +213,7 @@ public class FigurineController {
    * @return {@link ResponseEntity} with no content
    */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
   public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
     service.deleteFigurine(id);
     return ResponseEntity.noContent().build();

@@ -85,7 +85,12 @@ public class CollectorService {
     boolean appMatches = fcCredentials.appId().equals(fbTokenData.appId());
 
     if (!fbTokenData.valid() || !appMatches) {
-      throw new CollectorInvalidTokenException("Facebook token is invalid");
+      String errorMessage = "Facebook token is invalid.";
+      if (!fbTokenData.valid() && fbTokenData.error() != null) {
+        errorMessage += " Reason: " + fbTokenData.error().message();
+      }
+      log.warn(errorMessage);
+      throw new CollectorInvalidTokenException(errorMessage);
     }
 
     FbUserInfoResponse userInfo = fbApiClient.getUserInfo(accessToken);

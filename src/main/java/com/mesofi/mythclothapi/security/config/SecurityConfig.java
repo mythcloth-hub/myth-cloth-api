@@ -1,5 +1,9 @@
 package com.mesofi.mythclothapi.security.config;
 
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.OPTIONS;
+import static org.springframework.http.HttpMethod.POST;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,7 +78,14 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/distributors/**").authenticated().anyRequest().permitAll())
+                auth.requestMatchers(OPTIONS, "/**")
+                    .permitAll()
+                    .requestMatchers(GET, "/figurines/**")
+                    .permitAll()
+                    .requestMatchers(POST, "/collectors/auth/{provider}/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
         .oauth2ResourceServer(
             oauth ->
                 oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

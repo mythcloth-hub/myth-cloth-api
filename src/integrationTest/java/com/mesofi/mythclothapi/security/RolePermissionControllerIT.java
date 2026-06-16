@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
@@ -19,6 +20,9 @@ import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 
+@Sql(
+    scripts = "/cleanup-role-permission-it.sql",
+    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class RolePermissionControllerIT extends ControllerBaseIT {
 
   private final String ROLE = "/roles";

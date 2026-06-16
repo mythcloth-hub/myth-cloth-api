@@ -16,6 +16,12 @@ tags:
   - name: Figurines
   - name: Figurine Events
   - name: Figurine Images
+  - name: Collectors
+  - name: Permissions
+  - name: Roles
+  - name: Role Permissions
+  - name: Statistics
+  - name: Collections
 
 paths:
   /anniversaries:
@@ -529,6 +535,535 @@ paths:
         default:
           $ref: '#/components/responses/ProblemResponse'
 
+  /collectors/auth/{provider}:
+    parameters:
+      - $ref: '#/components/parameters/ProviderPathParam'
+    post:
+      tags: [Collectors]
+      summary: Login collector with social provider
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectorLoginReq'
+      responses:
+        '200':
+          description: Collector authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectorLoginResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /permissions:
+    get:
+      tags: [Permissions]
+      summary: List permissions
+      operationId: retrievePermissions
+      responses:
+        '200':
+          description: List of permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags: [Permissions]
+      summary: Create permission
+      operationId: createPermission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionReq'
+      responses:
+        '201':
+          description: Permission created
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /permissions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Permissions]
+      summary: Get permission by id
+      operationId: retrievePermission
+      responses:
+        '200':
+          description: Permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    put:
+      tags: [Permissions]
+      summary: Update permission
+      operationId: updatePermission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionReq'
+      responses:
+        '200':
+          description: Updated permission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags: [Permissions]
+      summary: Delete permission
+      operationId: removePermission
+      responses:
+        '204':
+          description: Permission deleted
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /roles:
+    get:
+      tags: [Roles]
+      summary: List roles
+      operationId: retrieveRoles
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags: [Roles]
+      summary: Create role
+      operationId: createRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleReq'
+      responses:
+        '201':
+          description: Role created
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /roles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPathParam'
+    get:
+      tags: [Roles]
+      summary: Get role by id
+      operationId: retrieveRole
+      responses:
+        '200':
+          description: Role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    put:
+      tags: [Roles]
+      summary: Update role
+      operationId: updateRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleReq'
+      responses:
+        '200':
+          description: Updated role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /roles/{roleId}/permissions:
+    parameters:
+      - $ref: '#/components/parameters/RoleIdPathParam'
+    get:
+      tags: [Role Permissions]
+      summary: List permissions for role
+      operationId: retrievePermissionsByRoleId
+      responses:
+        '200':
+          description: Role permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PermissionResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags: [Role Permissions]
+      summary: Add permission to role
+      operationId: addPermissionToRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RolePermissionReq'
+      responses:
+        '204':
+          description: Permission added to role
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    put:
+      tags: [Role Permissions]
+      summary: Sync role permissions
+      operationId: syncRolePermissions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPermissionsReq'
+      responses:
+        '204':
+          description: Role permissions synchronized
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /stats:
+    get:
+      tags: [Statistics]
+      summary: Retrieve global figurine statistics
+      operationId: retrieveStatistics
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: lineUpId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: seriesId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: groupId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: anniversaryId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: metalBody
+          schema:
+            type: boolean
+        - in: query
+          name: oce
+          schema:
+            type: boolean
+        - in: query
+          name: revival
+          schema:
+            type: boolean
+        - in: query
+          name: plainCloth
+          schema:
+            type: boolean
+        - in: query
+          name: broken
+          schema:
+            type: boolean
+        - in: query
+          name: golden
+          schema:
+            type: boolean
+        - in: query
+          name: gold
+          schema:
+            type: boolean
+        - in: query
+          name: manga
+          schema:
+            type: boolean
+        - in: query
+          name: set
+          schema:
+            type: boolean
+        - in: query
+          name: articulable
+          schema:
+            type: boolean
+        - in: query
+          name: releaseStatus
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Aggregated statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /stats/releases/years:
+    get:
+      tags: [Statistics]
+      summary: Retrieve yearly release statistics
+      operationId: retrieveStatisticsByReleases
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: lineUpId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: seriesId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: groupId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: anniversaryId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: metalBody
+          schema:
+            type: boolean
+        - in: query
+          name: oce
+          schema:
+            type: boolean
+        - in: query
+          name: revival
+          schema:
+            type: boolean
+        - in: query
+          name: plainCloth
+          schema:
+            type: boolean
+        - in: query
+          name: broken
+          schema:
+            type: boolean
+        - in: query
+          name: golden
+          schema:
+            type: boolean
+        - in: query
+          name: gold
+          schema:
+            type: boolean
+        - in: query
+          name: manga
+          schema:
+            type: boolean
+        - in: query
+          name: set
+          schema:
+            type: boolean
+        - in: query
+          name: articulable
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Yearly release statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YearStatisticsResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /stats/releases/years/{year}:
+    parameters:
+      - in: path
+        name: year
+        required: true
+        schema:
+          type: integer
+          format: int32
+    get:
+      tags: [Statistics]
+      summary: Retrieve monthly release statistics for year
+      operationId: retrieveStatisticsByYear
+      responses:
+        '200':
+          description: Monthly release statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthStatisticsResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /stats/prices/releases/years:
+    get:
+      tags: [Statistics]
+      summary: Retrieve yearly release price statistics
+      operationId: retrieveYearlyReleasePrices
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+        - in: query
+          name: lineUpId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: seriesId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: groupId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: anniversaryId
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: metalBody
+          schema:
+            type: boolean
+        - in: query
+          name: oce
+          schema:
+            type: boolean
+        - in: query
+          name: revival
+          schema:
+            type: boolean
+        - in: query
+          name: plainCloth
+          schema:
+            type: boolean
+        - in: query
+          name: broken
+          schema:
+            type: boolean
+        - in: query
+          name: golden
+          schema:
+            type: boolean
+        - in: query
+          name: gold
+          schema:
+            type: boolean
+        - in: query
+          name: manga
+          schema:
+            type: boolean
+        - in: query
+          name: set
+          schema:
+            type: boolean
+        - in: query
+          name: articulable
+          schema:
+            type: boolean
+        - in: query
+          name: releaseStatus
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Yearly release price statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YearReleasePriceResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
+  /collections/{collectionId}/figurines/{figurineId}:
+    parameters:
+      - $ref: '#/components/parameters/CollectionIdPathParam'
+      - $ref: '#/components/parameters/FigurineIdPathParam'
+    put:
+      tags: [Collections]
+      summary: Add figurine to collection
+      operationId: addFigurineToCollection
+      responses:
+        '200':
+          description: Figurine added to collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FigurineResp'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+
 components:
   parameters:
     IdPathParam:
@@ -554,6 +1089,28 @@ components:
       schema:
         type: string
         enum: [distributions, groups, lineups, series]
+    RoleIdPathParam:
+      in: path
+      name: roleId
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    CollectionIdPathParam:
+      in: path
+      name: collectionId
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    ProviderPathParam:
+      in: path
+      name: provider
+      required: true
+      schema:
+        type: string
 
   responses:
     ProblemResponse:
@@ -916,3 +1473,190 @@ components:
         totalPages:
           type: integer
 
+    CollectorLoginReq:
+      type: object
+      properties:
+        idToken:
+          type: string
+        accessToken:
+          type: string
+
+    CollectorLoginResp:
+      type: object
+      properties:
+        collectorId:
+          type: integer
+          format: int64
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+        expiresInSeconds:
+          type: integer
+          format: int64
+
+    RoleReq:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          maxLength: 200
+
+    RoleResp:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+
+    PermissionReq:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          maxLength: 200
+          pattern: '^[a-z0-9_-]+:[a-z0-9_-]+$'
+
+    PermissionResp:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        description:
+          type: string
+
+    RolePermissionReq:
+      type: object
+      required: [permissionId]
+      properties:
+        permissionId:
+          type: integer
+          format: int64
+
+    SyncPermissionsReq:
+      type: object
+      required: [permissionIds]
+      properties:
+        permissionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+
+    StatisticsResp:
+      type: object
+      properties:
+        totalFigurines:
+          type: integer
+        countByLineUp:
+          type: object
+          additionalProperties:
+            type: integer
+        countBySeries:
+          type: object
+          additionalProperties:
+            type: integer
+        countByGroup:
+          type: object
+          additionalProperties:
+            type: integer
+        countByAnniversary:
+          type: object
+          additionalProperties:
+            type: integer
+        totalByReleaseStatus:
+          type: object
+          additionalProperties:
+            type: integer
+
+    YearStatisticsResp:
+      type: object
+      properties:
+        year:
+          type: integer
+        lineUp:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineUpCountResp'
+
+    LineUpCountResp:
+      type: object
+      properties:
+        line:
+          type: string
+        count:
+          type: integer
+
+    MonthStatisticsResp:
+      type: object
+      properties:
+        month:
+          type: integer
+        name:
+          type: string
+        lineUp:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineUpByMonthResp'
+
+    LineUpByMonthResp:
+      type: object
+      properties:
+        line:
+          type: string
+        figurines:
+          type: array
+          items:
+            $ref: '#/components/schemas/FigurineByMonthResp'
+
+    FigurineByMonthResp:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+
+    YearReleasePriceResp:
+      type: object
+      properties:
+        year:
+          type: integer
+        averageReleasePrice:
+          type: number
+        highestReleasePrice:
+          type: number
+        lowestReleasePrice:
+          type: number
+        highestPriceFigurines:
+          $ref: '#/components/schemas/FigurinePriceResp'
+        lowestPriceFigurines:
+          $ref: '#/components/schemas/FigurinePriceResp'
+        releaseCount:
+          type: integer
+
+    FigurinePriceResp:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
