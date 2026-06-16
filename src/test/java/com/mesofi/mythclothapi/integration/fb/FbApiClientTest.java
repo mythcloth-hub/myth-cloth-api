@@ -22,7 +22,9 @@ import com.mesofi.mythclothapi.integration.ServiceName;
 class FbApiClientTest {
 
   private TestContext context() {
-    FbApiClient client = new FbApiClient(new FcCredentialsProperties("app-id", "app-secret"));
+    FbApiClient client =
+        new FbApiClient(
+            new FcCredentialsProperties("app-id", "app-secret", "https://graph.facebook.com/"));
     RestClient.Builder restClientBuilder =
         RestClient.builder().baseUrl("https://graph.facebook.com/");
     MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();

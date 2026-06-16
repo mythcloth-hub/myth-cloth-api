@@ -154,6 +154,17 @@ class GlobalExceptionHandlerTest {
   }
 
   @Test
+  void handleIllegalArgumentException_shouldUseExceptionMessageForTitleAndDetail() {
+    IllegalArgumentException ex = new IllegalArgumentException("Some error message");
+
+    ProblemDetail result = handler.handleIllegalArgumentException(ex);
+
+    assertThat(result.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+    assertThat(result.getTitle()).isEqualTo("Invalid argument");
+    assertThat(result.getDetail()).isEqualTo("Some error message");
+  }
+
+  @Test
   void handleIntegrationException_shouldUseExceptionMessageForTitleAndDetail() {
     IntegrationException ex =
         new IntegrationException(

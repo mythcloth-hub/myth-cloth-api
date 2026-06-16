@@ -18,8 +18,9 @@ public record FbTokenData(
     @JsonProperty("app_id") String appId,
     String type,
     String application,
-    @JsonProperty("data_access_expires_at") long dataAccessExpiresAt,
-    @JsonProperty("expires_at") long expiresAt,
+    @JsonProperty("data_access_expires_at") Long dataAccessExpiresAt,
+    @JsonProperty("expires_at") Long expiresAt,
     @JsonProperty("is_valid") boolean valid,
     String[] scopes,
-    @JsonProperty("user_id") String userId) {}
+    @JsonProperty("user_id") String userId,
+    FbTokenError error) {}

@@ -40,6 +40,7 @@ public class CollectorController {
   @PostMapping("/{provider}")
   public CollectorLoginResp login(
       @PathVariable String provider, @RequestBody @Validated CollectorLoginReq loginRequest) {
+    log.info("User is trying to authenticate with provider '{}'", provider);
     return collectorService.login(provider, loginRequest);
   }
 }

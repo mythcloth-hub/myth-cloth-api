@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -26,7 +27,9 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Environment;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -41,6 +44,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.utils.TestRestClientFactory;
 
 public class FigurineScenarioExtension
     implements BeforeAllCallback, AfterEachCallback, BeforeEachCallback, ParameterResolver {
@@ -79,7 +83,7 @@ public class FigurineScenarioExtension
           .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
   @Override
-  public void beforeAll(ExtensionContext context) {
+  public void beforeAll(@NonNull ExtensionContext context) throws Exception {
     this.restClient = retrieveRestClient(context);
   }
 
@@ -212,9 +216,12 @@ public class FigurineScenarioExtension
     }
   }
 
-  private RestClient retrieveRestClient(ExtensionContext context) {
+  private RestClient retrieveRestClient(ExtensionContext context) throws Exception {
     // Get Spring context
-    Environment environment = SpringExtension.getApplicationContext(context).getEnvironment();
+    ApplicationContext applicationContext = SpringExtension.getApplicationContext(context);
+
+    JwtEncoder jwtEncoder = applicationContext.getBean("jwtEncoder", JwtEncoder.class);
+    Environment environment = applicationContext.getEnvironment();
 
     // Get random port
     Integer port = environment.getProperty("local.server.port", Integer.class);
@@ -224,8 +231,7 @@ public class FigurineScenarioExtension
       throw new IllegalStateException("local.server.port not available");
     }
 
-    // Build RestClient
-    return RestClient.builder().baseUrl("http://localhost:" + port + contextPath).build();
+    return new TestRestClientFactory(jwtEncoder).createAdminClient(port, contextPath);
   }
 
   private boolean hasSupplierIdPlaceholder(JsonNode node) {

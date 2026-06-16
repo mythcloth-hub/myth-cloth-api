@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,11 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/permissions")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class PermissionController {
 
   private final PermissionService service;
 
   @PostMapping
+  @PreAuthorize("hasAuthority('permissions:write')")
   public ResponseEntity<PermissionResp> createPermission(
       @Valid @RequestBody PermissionReq permissionRequest) {
     PermissionResp response = service.createPermission(permissionRequest);
@@ -48,16 +51,19 @@ public class PermissionController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('permissions:read')")
   public PermissionResp retrievePermission(@PathVariable Long id) {
     return service.retrievePermission(id);
   }
 
   @GetMapping
+  @PreAuthorize("hasAuthority('permissions:read')")
   public List<PermissionResp> retrievePermissions() {
     return service.retrievePermissions();
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('permissions:update')")
   public ResponseEntity<PermissionResp> updatePermission(
       @PathVariable Long id, @Valid @RequestBody PermissionReq permissionRequest) {
     PermissionResp updated = service.updatePermission(id, permissionRequest);
@@ -65,6 +71,7 @@ public class PermissionController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('permissions:delete')")
   public ResponseEntity<?> removePermission(@PathVariable Long id) {
     service.removePermission(id);
     return ResponseEntity.noContent().build();

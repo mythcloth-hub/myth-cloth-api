@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +20,6 @@ import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
-import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/roles/{roleId}/permissions")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class RolePermissionController {
 
   private final RoleService service;
   private final RolePermissionSyncService syncService;
 
   @PostMapping
-  public ResponseEntity<RoleResp> addPermissionToRole(
+  @PreAuthorize("hasAuthority('roles:permissions:assign')")
+  public ResponseEntity<Void> addPermissionToRole(
       @PathVariable Long roleId, @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
     service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
     // Standard REST practice: Return 204 No Content for a successful association
@@ -45,11 +47,13 @@ public class RolePermissionController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAuthority('roles:permissions:read')")
   public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
     return service.retrievePermissionsByRoleId(roleId);
   }
 
   @PutMapping
+  @PreAuthorize("hasAuthority('roles:permissions:sync')")
   public ResponseEntity<Void> syncRolePermissions(
       @PathVariable Long roleId, @Valid @RequestBody SyncPermissionsReq request) {
 

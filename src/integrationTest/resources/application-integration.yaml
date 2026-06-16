@@ -1,4 +1,8 @@
 myth-cloth:
+  facebook:
+    app-id: "0000"
+    app-secret: "1111"
+    graph-url: https://localhost:8080/
   import:
     drive-url: http://localhost:8089/test.csv
     file-id: ignored
@@ -32,3 +36,8 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
+
+    org.springframework.security: INFO
+    org.springframework.security.web: INFO
+    org.springframework.security.authentication: INFO
+    org.springframework.security.authorization: INFO

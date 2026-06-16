@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
@@ -27,6 +28,9 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
 import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 
+@Sql(
+    scripts = "/cleanup-figurine-event-it.sql",
+    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineEventControllerIT extends ControllerBaseIT {
 
   private static final String EVENTS_BY_FIGURINE = "/figurines/{figurineId}/events";

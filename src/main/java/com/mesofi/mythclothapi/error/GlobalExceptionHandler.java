@@ -84,6 +84,11 @@ public class GlobalExceptionHandler {
     return problemDetail;
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
+    return Problem.of(BAD_REQUEST, "Invalid argument", ex.getMessage());
+  }
+
   @ExceptionHandler(DistributorAlreadyExistsException.class)
   public ProblemDetail handleDistributorAlreadyExists(DistributorAlreadyExistsException ex) {
 

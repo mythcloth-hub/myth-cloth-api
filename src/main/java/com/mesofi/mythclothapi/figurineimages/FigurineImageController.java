@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/figurines/{figurineId}/images")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class FigurineImageController {
 
   private final FigurineImageService service;
@@ -68,6 +70,7 @@ public class FigurineImageController {
    * @return response entity containing the updated image collection
    */
   @PostMapping
+  @PreAuthorize("hasAuthority('figurines:images:add')")
   public ResponseEntity<FigurineImageResp> createImage(
       @Positive @PathVariable Long figurineId,
       @Valid @RequestBody FigurineImageReq figurineImageRequest) {
@@ -89,6 +92,7 @@ public class FigurineImageController {
    * @return response containing the requested image URLs
    */
   @GetMapping
+  @PreAuthorize("hasAuthority('figurines:images:read')")
   public FigurineImageResp retrieveImages(
       @Positive @PathVariable Long figurineId,
       @RequestParam(name = "isOfficialImage", required = false, defaultValue = "true")
@@ -111,6 +115,7 @@ public class FigurineImageController {
    * @return empty response with HTTP {@code 204 No Content}
    */
   @DeleteMapping
+  @PreAuthorize("hasAuthority('figurines:images:delete')")
   public ResponseEntity<Void> removeImage(
       @Positive @PathVariable Long figurineId,
       @RequestParam URI imageUrl,

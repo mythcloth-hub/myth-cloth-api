@@ -25,6 +25,7 @@ import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
 import com.mesofi.mythclothapi.integration.fb.FbTokenData;
+import com.mesofi.mythclothapi.integration.fb.FbTokenError;
 import com.mesofi.mythclothapi.integration.fb.FbTokenResponse;
 import com.mesofi.mythclothapi.integration.fb.FbUserInfoResponse;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
@@ -104,7 +105,20 @@ class CollectorServiceTest {
 
     assertThatThrownBy(() -> service.login("facebook", request))
         .isInstanceOf(CollectorInvalidTokenException.class)
-        .hasMessage("Facebook token is invalid");
+        .hasMessage("Facebook token is invalid.");
+  }
+
+  @Test
+  void loginWithFacebook_shouldThrowCollectorInvalidTokenException_whenTokenIsUnparseable() {
+    CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token");
+
+    when(fcCredentials.appId()).thenReturn("myth-app-id");
+    when(fbApiClient.validateAccessToken("fb-access-token"))
+        .thenReturn(new FbTokenResponse(fbTokenDataError(999, "Unable to parse Token")));
+
+    assertThatThrownBy(() -> service.login("facebook", request))
+        .isInstanceOf(CollectorInvalidTokenException.class)
+        .hasMessage("Facebook token is invalid. Reason: Unable to parse Token");
   }
 
   @Test
@@ -117,7 +131,7 @@ class CollectorServiceTest {
 
     assertThatThrownBy(() -> service.login("facebook", request))
         .isInstanceOf(CollectorInvalidTokenException.class)
-        .hasMessage("Facebook token is invalid");
+        .hasMessage("Facebook token is invalid.");
   }
 
   @Test
@@ -134,7 +148,7 @@ class CollectorServiceTest {
     when(collectorAuthProviderRepository.findByProviderAndProviderUserId(
             ProviderType.FACEBOOK, "fb-777"))
         .thenReturn(Optional.of(providerLink));
-    when(apiTokenService.generateToken(7L, "FACEBOOK", "fb-777", "ikki@example.com"))
+    when(apiTokenService.generateToken(existingCollector, "FACEBOOK", "fb-777", "ikki@example.com"))
         .thenReturn("api-jwt");
     when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
@@ -173,7 +187,7 @@ class CollectorServiceTest {
     basicRole.setDescription("Basic Collector");
     when(roleRepository.findByDescription("Basic Collector")).thenReturn(Optional.of(basicRole));
     when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-    when(apiTokenService.generateToken(11L, "FACEBOOK", "fb-123", "seiya@example.com"))
+    when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-123", "seiya@example.com"))
         .thenReturn("jwt-created");
     when(apiTokenService.ttlSeconds()).thenReturn(7200L);
 
@@ -347,7 +361,7 @@ class CollectorServiceTest {
     Collector savedCollector =
         collector(20L, "Hyoga", "hyoga@example.com", "https://img/hyoga.jpg");
     when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-    when(apiTokenService.generateToken(20L, "GOOGLE", "sub-456", "hyoga@example.com"))
+    when(apiTokenService.generateToken(savedCollector, "GOOGLE", "sub-456", "hyoga@example.com"))
         .thenReturn("jwt-google");
     when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
@@ -377,7 +391,7 @@ class CollectorServiceTest {
     assertThat(providerCaptor.getValue().getEmail()).isEqualTo("hyoga@example.com");
     assertThat(providerCaptor.getValue().getEmailVerified()).isFalse();
 
-    verify(apiTokenService).generateToken(20L, "GOOGLE", "sub-456", "hyoga@example.com");
+    verify(apiTokenService).generateToken(savedCollector, "GOOGLE", "sub-456", "hyoga@example.com");
     verify(apiTokenService).ttlSeconds();
   }
 
@@ -399,7 +413,8 @@ class CollectorServiceTest {
     when(collectorAuthProviderRepository.findByProviderAndProviderUserId(
             ProviderType.GOOGLE, "sub-999"))
         .thenReturn(Optional.of(providerLink));
-    when(apiTokenService.generateToken(33L, "GOOGLE", "sub-999", "shiryu@example.com"))
+    when(apiTokenService.generateToken(
+            existingCollector, "GOOGLE", "sub-999", "shiryu@example.com"))
         .thenReturn("jwt-existing");
     when(apiTokenService.ttlSeconds()).thenReturn(600L);
 
@@ -415,7 +430,8 @@ class CollectorServiceTest {
     verify(collectorRepository, never()).save(any(Collector.class));
     verify(collectorAuthProviderRepository, never()).save(any(CollectorAuthProvider.class));
     verify(apiTokenService)
-        .generateToken(eq(33L), eq("GOOGLE"), eq("sub-999"), eq("shiryu@example.com"));
+        .generateToken(
+            eq(existingCollector), eq("GOOGLE"), eq("sub-999"), eq("shiryu@example.com"));
   }
 
   @Test
@@ -436,7 +452,7 @@ class CollectorServiceTest {
     adminRole.setDescription("Admin");
     when(roleRepository.findByDescription("Admin")).thenReturn(Optional.of(adminRole));
     when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-    when(apiTokenService.generateToken(1L, "FACEBOOK", "fb-100", "mu@example.com"))
+    when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-100", "mu@example.com"))
         .thenReturn("jwt-admin");
     when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
@@ -469,7 +485,7 @@ class CollectorServiceTest {
     basicRole.setDescription("Basic Collector");
     when(roleRepository.findByDescription("Basic Collector")).thenReturn(Optional.of(basicRole));
     when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-    when(apiTokenService.generateToken(6L, "FACEBOOK", "fb-200", "camus@example.com"))
+    when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-200", "camus@example.com"))
         .thenReturn("jwt-basic");
     when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
@@ -511,7 +527,8 @@ class CollectorServiceTest {
     Collector savedCollector =
         collector(10L, "Aiolia", "aiolia@example.com", "https://img/aiolia.jpg");
     when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-    when(apiTokenService.generateToken(10L, "GOOGLE", "sub-role-1", "aiolia@example.com"))
+    when(apiTokenService.generateToken(
+            savedCollector, "GOOGLE", "sub-role-1", "aiolia@example.com"))
         .thenReturn("jwt-new-role");
     when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
@@ -531,7 +548,20 @@ class CollectorServiceTest {
 
   private FbTokenData fbTokenData(String appId, boolean valid, String userId) {
     return new FbTokenData(
-        appId, "USER", "myth-cloth", 0L, 0L, valid, new String[] {"email"}, userId);
+        appId, "USER", "myth-cloth", 0L, 0L, valid, new String[] {"email"}, userId, null);
+  }
+
+  private FbTokenData fbTokenDataError(int code, String errorMessage) {
+    return new FbTokenData(
+        null,
+        null,
+        null,
+        0L,
+        0L,
+        false,
+        new String[] {},
+        null,
+        new FbTokenError(code, errorMessage));
   }
 
   private GoogleTokenInfoResponse googleToken(

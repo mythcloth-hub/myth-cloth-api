@@ -6,6 +6,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,11 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/anniversaries")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class AnniversaryController {
 
   private final AnniversaryService service;
 
   @PostMapping
+  @PreAuthorize("hasAuthority('anniversaries:write')")
   public ResponseEntity<AnniversaryResp> createAnniversary(
       @Valid @RequestBody AnniversaryReq anniversaryRequest) {
     AnniversaryResp response = service.createAnniversary(anniversaryRequest);
@@ -48,16 +51,19 @@ public class AnniversaryController {
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("hasAuthority('anniversaries:read')")
   public AnniversaryResp retrieveAnniversary(@PathVariable Long id) {
     return service.retrieveAnniversary(id);
   }
 
   @GetMapping
+  @PreAuthorize("hasAuthority('anniversaries:read')")
   public List<AnniversaryResp> retrieveAnniversaries() {
     return service.retrieveAnniversaries();
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('anniversaries:update')")
   public ResponseEntity<AnniversaryResp> updateAnniversary(
       @PathVariable Long id, @Valid @RequestBody AnniversaryReq anniversaryRequest) {
     AnniversaryResp updated = service.updateAnniversary(id, anniversaryRequest);
@@ -65,6 +71,7 @@ public class AnniversaryController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('anniversaries:delete')")
   public ResponseEntity<?> removeAnniversary(@PathVariable Long id) {
     service.removeAnniversary(id);
     return ResponseEntity.noContent().build();

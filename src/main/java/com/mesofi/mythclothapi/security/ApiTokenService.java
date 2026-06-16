@@ -1,6 +1,8 @@
 package com.mesofi.mythclothapi.security;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
@@ -8,6 +10,10 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,14 +28,14 @@ public class ApiTokenService {
   /**
    * Generates a JWT containing collector and provider identity details.
    *
-   * @param collectorId collector identifier used as the token subject
+   * @param collector collector used as the token subject
    * @param provider authentication provider name
    * @param providerUserId provider-specific user identifier
    * @param email collector email address
    * @return signed JWT token value
    */
   public String generateToken(
-      Long collectorId, String provider, String providerUserId, String email) {
+      Collector collector, String provider, String providerUserId, String email) {
     Instant now = Instant.now();
     Instant exp = now.plusSeconds(ttlSeconds());
 
@@ -38,10 +44,19 @@ public class ApiTokenService {
             .issuer(props.issuer())
             .issuedAt(now)
             .expiresAt(exp)
-            .subject(String.valueOf(collectorId))
+            .subject(String.valueOf(collector.getId()))
+            .claim("email", email)
+            .claim("name", collector.getDisplayName())
+            .claim("roles", List.of(collector.getRole().getDescription().toUpperCase()))
+            .claim(
+                "permissions",
+                collector.getRole().getPermissions().stream()
+                    .map(RolePermission::getPermission)
+                    .map(Descriptive::getDescription)
+                    .toList())
             .claim("provider", provider)
             .claim("provider_user_id", providerUserId)
-            .claim("email", email)
+            .claim("jti", UUID.randomUUID().toString())
             .build();
 
     JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
