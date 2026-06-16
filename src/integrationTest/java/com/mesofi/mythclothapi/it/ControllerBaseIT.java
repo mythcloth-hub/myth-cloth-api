@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
-import com.mesofi.mythclothapi.utils.TestJwtFactory;
+import com.mesofi.mythclothapi.utils.TestRestClientFactory;
 
 /**
  * Base class for integration tests that execute against the application's embedded HTTP server.
@@ -69,15 +69,6 @@ public abstract class ControllerBaseIT {
    */
   @BeforeAll
   void setUpRestClient() {
-
-    TestJwtFactory jwtFactory = new TestJwtFactory(jwtEncoder);
-
-    String token = jwtFactory.createAdminToken();
-
-    this.rest =
-        RestClient.builder()
-            .baseUrl("http://localhost:%s%s".formatted(port, contextPath))
-            .defaultHeaders(headers -> headers.setBearerAuth(token))
-            .build();
+    this.rest = new TestRestClientFactory(jwtEncoder).createAdminClient(port, contextPath);
   }
 }

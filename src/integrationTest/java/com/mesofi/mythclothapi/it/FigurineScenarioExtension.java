@@ -44,7 +44,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
-import com.mesofi.mythclothapi.utils.TestJwtFactory;
+import com.mesofi.mythclothapi.utils.TestRestClientFactory;
 
 public class FigurineScenarioExtension
     implements BeforeAllCallback, AfterEachCallback, BeforeEachCallback, ParameterResolver {
@@ -231,15 +231,7 @@ public class FigurineScenarioExtension
       throw new IllegalStateException("local.server.port not available");
     }
 
-    // Build RestClient
-    TestJwtFactory jwtFactory = new TestJwtFactory(jwtEncoder);
-
-    String token = jwtFactory.createAdminToken();
-
-    return RestClient.builder()
-        .baseUrl("http://localhost:%s%s".formatted(port, contextPath))
-        .defaultHeaders(headers -> headers.setBearerAuth(token))
-        .build();
+    return new TestRestClientFactory(jwtEncoder).createAdminClient(port, contextPath);
   }
 
   private boolean hasSupplierIdPlaceholder(JsonNode node) {
