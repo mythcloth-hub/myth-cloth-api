@@ -58,7 +58,8 @@ public final class TestJwtFactory {
   private static final String FIGURINES_IMAGE_DELETE_PERMISSION = "figurines:images:delete";
   private static final String ANNIVERSARIES_WRITE_PERMISSION = "anniversaries:write";
 
-  private static final long TOKEN_EXPIRATION_HOURS = 1;
+  private static final long TOKEN_EXPIRATION_HOURS =
+      720; // valid for 30 days, it's long, but it is OK for testing.
 
   private final JwtEncoder encoder;
 
