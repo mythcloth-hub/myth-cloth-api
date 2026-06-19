@@ -1,6 +1,9 @@
 package com.mesofi.mythclothapi.figurines;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -9,6 +12,8 @@ import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -121,6 +126,8 @@ public class FigurineController {
    */
   @GetMapping
   public ResponseEntity<PaginatedResponse> retrieveFigurines(
+      Authentication authentication,
+      @RequestParam(required = false) Long collectionId,
       @RequestParam(required = false) String name,
       @RequestParam(required = false) Long lineUpId,
       @RequestParam(required = false) Long seriesId,
@@ -141,8 +148,16 @@ public class FigurineController {
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
     Page<FigurineResp> result;
 
+    List<Long> figurineIds = new ArrayList<>();
+    getCollectorId(authentication)
+        .ifPresent(
+            collectorId ->
+                figurineIds.addAll(
+                    service.retrieveCollectedFigurineIds(collectorId, collectionId)));
+
     FigurineFilter figurineFilter =
         FigurineFilterFactory.build(
+            figurineIds,
             name,
             lineUpId,
             seriesId,
@@ -169,6 +184,15 @@ public class FigurineController {
             result.getSize(),
             result.getTotalElements(),
             result.getTotalPages()));
+  }
+
+  private Optional<Long> getCollectorId(Authentication authentication) {
+    if (authentication != null && authentication.isAuthenticated()) {
+      if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+        return Optional.of(Long.valueOf(jwtAuth.getToken().getSubject()));
+      }
+    }
+    return Optional.empty();
   }
 
   /**

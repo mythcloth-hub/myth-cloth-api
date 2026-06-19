@@ -20,7 +20,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
-import com.mesofi.mythclothapi.collectors.CollectorInvalidTokenException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
@@ -112,6 +113,11 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(CollectorInvalidTokenException.class)
   public ProblemDetail handleCollectorInvalidToken(CollectorInvalidTokenException ex) {
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
+
+  @ExceptionHandler(CollectorNotFoundException.class)
+  public ProblemDetail handleCollectorNotFound(CollectorNotFoundException ex) {
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 

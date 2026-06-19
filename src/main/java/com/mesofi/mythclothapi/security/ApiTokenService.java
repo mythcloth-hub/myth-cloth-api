@@ -44,7 +44,7 @@ public class ApiTokenService {
             .issuer(props.issuer())
             .issuedAt(now)
             .expiresAt(exp)
-            .subject(String.valueOf(collector.getId()))
+            .subject(String.valueOf(collector.getId())) // database ID in sub
             .claim("email", email)
             .claim("name", collector.getDisplayName())
             .claim("roles", List.of(collector.getRole().getDescription().toUpperCase()))

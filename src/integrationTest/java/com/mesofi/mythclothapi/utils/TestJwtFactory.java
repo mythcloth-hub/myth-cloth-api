@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.utils;
 
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.FACEBOOK;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -24,8 +26,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 public final class TestJwtFactory {
 
   private static final String TEST_ISSUER = "myth-cloth-api-test";
-  private static final String TEST_USER = "test-user";
+  private static final String TEST_USER = "123456789"; // arbitrary user ID for testing
 
+  private static final String CLAIM_NAME = "name";
+  private static final String CLAIM_EMAIL = "name";
+  private static final String CLAIM_PROVIDER_USER_ID = "provider_user_id";
+  private static final String CLAIM_PROVIDER = "provider";
   private static final String CLAIM_ROLES = "roles";
   private static final String CLAIM_PERMISSIONS = "permissions";
 
@@ -94,6 +100,12 @@ public final class TestJwtFactory {
             .issuer(TEST_ISSUER)
             .issuedAt(Instant.now())
             .expiresAt(Instant.now().plus(TOKEN_EXPIRATION_HOURS, ChronoUnit.HOURS))
+            .claim(CLAIM_PROVIDER, FACEBOOK) // or GOOGLE, arbitrary provider for testing
+            .claim(
+                CLAIM_PROVIDER_USER_ID,
+                "102359319715722089") // arbitrary provider user ID for testing
+            .claim(CLAIM_NAME, "Test")
+            .claim(CLAIM_EMAIL, "test-admin@mesofi.com")
             .claim(CLAIM_ROLES, List.of(ADMIN_ROLE))
             .claim(
                 CLAIM_PERMISSIONS,

@@ -1,8 +1,11 @@
 package com.mesofi.mythclothapi.figurines;
 
+import java.util.List;
+
 /**
  * Filter criteria used to search and narrow figurine results.
  *
+ * @param figurineIds figurine id's
  * @param name figurine name or partial name to match
  * @param lineUpId lineup identifier to filter by
  * @param seriesId series identifier to filter by
@@ -21,6 +24,7 @@ package com.mesofi.mythclothapi.figurines;
  * @param releaseStatus release status to filter by
  */
 public record FigurineFilter(
+    List<Long> figurineIds,
     String name,
     Long lineUpId,
     Long seriesId,

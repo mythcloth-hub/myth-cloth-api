@@ -37,6 +37,13 @@ import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurine;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.common.Descriptive;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -99,6 +106,8 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
+  private final CollectorRepository collectorRepository;
+  private final CollectorCollectionRepository collectorCollectionRepository;
 
   private final String ANN_MSG = "First announced as a possible future release.";
   private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
@@ -262,6 +271,31 @@ public class FigurineService {
                 this::createDisplayableName,
                 this::calculatePriceWithTax,
                 this::calculateReleaseStatus));
+  }
+
+  public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
+    if (collectionId == null) {
+      return List.of();
+    }
+
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    List<CollectorCollection> collectorCollection =
+        collectorCollectionRepository.findByCollector(collectorFound);
+
+    return collectorCollection.stream()
+        .filter(cc -> cc.getId().equals(collectionId))
+        .findFirst()
+        .map(
+            collection ->
+                collection.getFigurines().stream()
+                    .map(CollectorCollectionFigurine::getFigurine)
+                    .map(BaseId::getId)
+                    .toList())
+        .orElseGet(List::of);
   }
 
   /**

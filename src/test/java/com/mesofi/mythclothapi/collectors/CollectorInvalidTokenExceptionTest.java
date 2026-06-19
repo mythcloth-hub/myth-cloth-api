@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.error.ApiException;
 
 class CollectorInvalidTokenExceptionTest {

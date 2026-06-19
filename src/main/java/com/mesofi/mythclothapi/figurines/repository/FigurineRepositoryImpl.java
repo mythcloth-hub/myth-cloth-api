@@ -124,6 +124,10 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     }
 
     // Dynamic filters
+    if (Objects.nonNull(filter.figurineIds()) && !filter.figurineIds().isEmpty()) {
+      dynamicSql.append(" AND id IN (:figurineIds)");
+      params.put("figurineIds", filter.figurineIds());
+    }
     if (StringUtils.hasLength(filter.name())) {
       dynamicSql.append(" AND LOWER(normalized_name) LIKE LOWER(:name)");
       params.put("name", "%" + filter.name() + "%");

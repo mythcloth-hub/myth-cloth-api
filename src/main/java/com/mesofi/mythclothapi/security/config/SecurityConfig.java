@@ -84,7 +84,7 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers(GET, "/figurines/**")
+                    .requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**")
                     .permitAll()
                     .requestMatchers(POST, "/collectors/auth/{provider}/**")
                     .permitAll()

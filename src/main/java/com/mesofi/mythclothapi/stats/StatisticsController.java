@@ -78,6 +78,7 @@ public class StatisticsController {
 
     FigurineFilter figurineFilter =
         FigurineFilterFactory.build(
+            List.of(),
             name,
             lineUpId,
             seriesId,
@@ -138,6 +139,7 @@ public class StatisticsController {
 
     FigurineFilter figurineFilter =
         FigurineFilterFactory.build(
+            List.of(),
             name,
             lineUpId,
             seriesId,
@@ -211,6 +213,7 @@ public class StatisticsController {
 
     FigurineFilter figurineFilter =
         FigurineFilterFactory.build(
+            List.of(),
             name,
             lineUpId,
             seriesId,
