@@ -99,6 +99,7 @@ INSERT INTO permissions (description) VALUES ('catalogs:update');
 INSERT INTO permissions (description) VALUES ('catalogs:write');
 
 INSERT INTO permissions (description) VALUES ('collections:figurines:add');
+INSERT INTO permissions (description) VALUES ('collections:read');
 
 INSERT INTO permissions (description) VALUES ('distributors:delete');
 INSERT INTO permissions (description) VALUES ('distributors:read');
@@ -142,3 +143,4 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 31);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 32);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 33);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 34);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 35);

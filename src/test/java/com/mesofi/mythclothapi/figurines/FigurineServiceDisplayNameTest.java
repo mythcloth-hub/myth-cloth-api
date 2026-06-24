@@ -23,6 +23,8 @@ import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
@@ -43,6 +45,8 @@ class FigurineServiceDisplayNameTest {
   @Mock private AnniversaryRepository anniversaryRepository;
   @Mock private FigurineRepository figurineRepository;
   @Mock private CurrencyRegionResolver currencyRegionResolver;
+  @Mock private CollectorRepository collectorRepository;
+  @Mock private CollectorCollectionRepository collectorCollectionRepository;
 
   private FigurineService service;
 
@@ -59,7 +63,9 @@ class FigurineServiceDisplayNameTest {
             groupRepository,
             anniversaryRepository,
             figurineRepository,
-            currencyRegionResolver);
+            currencyRegionResolver,
+            collectorRepository,
+            collectorCollectionRepository);
   }
 
   @ParameterizedTest(name = "{index} - {0}")

@@ -25,7 +25,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +36,13 @@ import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurine;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.common.Descriptive;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -52,6 +58,7 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -99,6 +106,8 @@ public class FigurineService {
   private final AnniversaryRepository anniversaryRepository;
   private final FigurineRepository repository;
   private final CurrencyRegionResolver currencyRegionResolver;
+  private final CollectorRepository collectorRepository;
+  private final CollectorCollectionRepository collectorCollectionRepository;
 
   private final String ANN_MSG = "First announced as a possible future release.";
   private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
@@ -249,19 +258,65 @@ public class FigurineService {
    * @return a page of {@link FigurineResp} objects matching the filter
    */
   @Transactional(readOnly = true)
-  public Page<FigurineResp> filterFigurines(
+  public CollectablePageImpl<FigurineResp> filterFigurines(
       @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-    Page<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
+    CollectablePageImpl<Figurine> figurines =
+        repository.findPaginated(filter, PageRequest.of(page, size));
 
-    return figurines.map(
-        figurine ->
-            mapper.toFigurineResp(
-                figurine,
-                this::createDisplayableName,
-                this::calculatePriceWithTax,
-                this::calculateReleaseStatus));
+    List<FigurineResp> list =
+        figurines.getContent().stream()
+            .map(
+                figurine ->
+                    mapper.toFigurineResp(
+                        figurine,
+                        this::createDisplayableName,
+                        this::calculatePriceWithTax,
+                        this::calculateReleaseStatus))
+            .toList();
+
+    return new CollectablePageImpl<>(
+        list,
+        figurines.getPageable(),
+        figurines.getTotalElements(),
+        figurines.getTotalCollectables());
+  }
+
+  public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
+    if (collectionId == null) {
+      return List.of();
+    }
+
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    List<CollectorCollection> collectorCollection =
+        collectorCollectionRepository.findByCollector(collectorFound);
+
+    return collectorCollection.stream()
+        .filter(cc -> cc.getId().equals(collectionId))
+        .findFirst()
+        .map(
+            collection ->
+                collection.getFigurines().stream()
+                    .map(CollectorCollectionFigurine::getFigurine)
+                    .map(BaseId::getId)
+                    .toList())
+        .orElseGet(List::of);
+  }
+
+  public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
+    return repository.findAll(filter).stream()
+        .filter(
+            figurine -> {
+              ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
+              return releaseStatus == ANNOUNCED || releaseStatus == RELEASED;
+            })
+        .map(BaseId::getId)
+        .toList();
   }
 
   /**

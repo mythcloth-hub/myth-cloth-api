@@ -15,6 +15,7 @@ import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
 import com.mesofi.mythclothapi.integration.fb.FbTokenData;
 import com.mesofi.mythclothapi.integration.fb.FbUserInfoResponse;

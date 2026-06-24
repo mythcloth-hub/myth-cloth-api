@@ -1,10 +1,12 @@
-package com.mesofi.mythclothapi.figurines.repository;
+package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,31 +21,34 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
-import com.mesofi.mythclothapi.figurines.FigurineController;
-import com.mesofi.mythclothapi.figurines.FigurineFilter;
-import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
+import com.mesofi.mythclothapi.security.config.SecurityConfig;
 
 import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(FigurineController.class)
+@Import(SecurityConfig.class)
 class FigurineControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private FigurineService service;
+  @MockitoBean private JwtDecoder jwtDecoder;
 
   @Autowired private ObjectMapper objectMapper;
 
@@ -51,7 +56,13 @@ class FigurineControllerTest {
   void createFigurine_shouldReturn404_whenPostingToRootPath() throws Exception {
 
     mockMvc
-        .perform(post("/"))
+        .perform(
+            post("/")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write"))))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.detail").value("The URL you are calling does not exist."))
         .andExpect(jsonPath("$.instance").value("/"))
@@ -64,7 +75,13 @@ class FigurineControllerTest {
   void createFigurine_shouldReturn400_whenRequestBodyIsMissing() throws Exception {
 
     mockMvc
-        .perform(post("/figurines"))
+        .perform(
+            post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write"))))
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.detail")
@@ -80,7 +97,14 @@ class FigurineControllerTest {
   void createFigurine_shouldReturn415_whenContentTypeIsMissing() throws Exception {
 
     mockMvc
-        .perform(post("/figurines").content("{}"))
+        .perform(
+            post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
+                .content("{}"))
         .andExpect(status().isUnsupportedMediaType())
         .andExpect(
             jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
@@ -94,7 +118,15 @@ class FigurineControllerTest {
   void createFigurine_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
 
     mockMvc
-        .perform(post("/figurines").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        .perform(
+            post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
         .andExpect(jsonPath("$.instance").value("/figurines"))
@@ -112,6 +144,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Seiya\"}"))
         .andExpect(status().isBadRequest())
@@ -130,6 +167,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Seiya\", \"distributors\":[{}]}"))
         .andExpect(status().isBadRequest())
@@ -148,6 +190,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\"}"))
         .andExpect(status().isBadRequest())
@@ -165,6 +212,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\",\"seriesId\":\"2\"}"))
@@ -182,6 +234,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     "{\"name\":\"Seiya\", \"distributors\":[{\"currency\":\"=\"}],\"lineUpId\":\"3\",\"seriesId\":\"2\", \"groupId\":\"5\"}"))
@@ -206,6 +263,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             post("/figurines")
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:write")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isCreated())
@@ -238,14 +300,8 @@ class FigurineControllerTest {
     FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    FigurineFilter emptyFilter =
-        new FigurineFilter(
-            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
-
-    // Use empty filter for all figurines
-    when(service.filterFigurines(emptyFilter, 0, 2))
-        .thenReturn(new PageImpl<>(List.of(first, second), pageRequest, 5));
+    when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        .thenReturn(new CollectablePageImpl<>(List.of(first, second), pageRequest, 5, 0));
 
     mockMvc
         .perform(get("/figurines").param("page", "0").param("size", "2"))
@@ -256,7 +312,7 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.totalPages").value(3))
         .andExpect(jsonPath("$.content.length()").value(2));
 
-    verify(service).filterFigurines(emptyFilter, 0, 2);
+    verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
   }
 
   @Test
@@ -271,14 +327,8 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    FigurineFilter filterWithName =
-        new FigurineFilter(
-            "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
-
-    // Filter with name
-    when(service.filterFigurines(filterWithName, 0, 2))
-        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+    when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
     mockMvc
         .perform(get("/figurines").param("name", "seiya").param("page", "0").param("size", "2"))
@@ -286,7 +336,7 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Pegasus Seiya"));
 
-    verify(service).filterFigurines(filterWithName, 0, 2);
+    verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
   }
 
   @Test
@@ -294,13 +344,8 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    FigurineFilter emptyFilter =
-        new FigurineFilter(
-            "", null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null);
-
-    when(service.filterFigurines(emptyFilter, 0, 2))
-        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+    when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
     // name param too short
     mockMvc
@@ -314,7 +359,8 @@ class FigurineControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.content.length()").value(1));
 
-    verify(service, org.mockito.Mockito.times(2)).filterFigurines(emptyFilter, 0, 2);
+    verify(service, org.mockito.Mockito.times(2))
+        .filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
   }
 
   @Test
@@ -327,6 +373,11 @@ class FigurineControllerTest {
     mockMvc
         .perform(
             put("/figurines/{id}", 1L)
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:update")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk())
@@ -338,7 +389,15 @@ class FigurineControllerTest {
 
   @Test
   void deleteFigurine_shouldReturn204_whenFigurineExists() throws Exception {
-    mockMvc.perform(delete("/figurines/{id}", 1L)).andExpect(status().isNoContent());
+    mockMvc
+        .perform(
+            delete("/figurines/{id}", 1L)
+                .with(
+                    jwt()
+                        .authorities(
+                            new SimpleGrantedAuthority("ROLE_ADMIN"),
+                            new SimpleGrantedAuthority("figurines:delete"))))
+        .andExpect(status().isNoContent());
 
     verify(service).deleteFigurine(1L);
   }
@@ -348,13 +407,8 @@ class FigurineControllerTest {
     FigurineResp first = createFigurineResponse(1L, "Abc");
     PageRequest pageRequest = PageRequest.of(0, 2);
 
-    FigurineFilter filterWithAbc =
-        new FigurineFilter(
-            "abc", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
-
-    when(service.filterFigurines(filterWithAbc, 0, 2))
-        .thenReturn(new PageImpl<>(List.of(first), pageRequest, 1));
+    when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
     mockMvc
         .perform(get("/figurines").param("name", "abc").param("page", "0").param("size", "2"))
@@ -362,7 +416,43 @@ class FigurineControllerTest {
         .andExpect(jsonPath("$.content.length()").value(1))
         .andExpect(jsonPath("$.content[0].name").value("Abc"));
 
-    verify(service).filterFigurines(filterWithAbc, 0, 2);
+    verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+  }
+
+  @Test
+  void retrieveFigurines_shouldUseCollectorSelection_whenJwtIsAuthenticated() throws Exception {
+    FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
+    PageRequest pageRequest = PageRequest.of(0, 2);
+    when(service.retrieveCollectedFigurineIds(1L, 99L)).thenReturn(List.of(10L, 11L));
+    when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 2));
+
+    mockMvc
+        .perform(
+            get("/figurines")
+                .with(jwt().jwt(jwt -> jwt.subject("1")))
+                .param("collectionId", "99")
+                .param("page", "0")
+                .param("size", "2"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content.length()").value(1));
+
+    verify(service).retrieveCollectedFigurineIds(1L, 99L);
+    verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+  }
+
+  @Test
+  void retrieveSelectableFigurines_shouldReturnIds_whenFiltersAreProvided() throws Exception {
+    when(service.retrieveSelectableFigurines(any(FigurineFilter.class)))
+        .thenReturn(List.of(1L, 2L));
+
+    mockMvc
+        .perform(get("/figurines/selectable-ids").param("name", "seiya"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0]").value(1L))
+        .andExpect(jsonPath("$[1]").value(2L));
+
+    verify(service).retrieveSelectableFigurines(any(FigurineFilter.class));
   }
 
   private FigurineReq createFigurineRequest() {

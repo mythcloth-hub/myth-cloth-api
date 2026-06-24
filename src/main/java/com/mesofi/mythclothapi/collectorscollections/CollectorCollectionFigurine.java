@@ -28,4 +28,6 @@ public class CollectorCollectionFigurine extends BaseId {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Figurine figurine;
+
+  private int totalFigurines = 1;
 }

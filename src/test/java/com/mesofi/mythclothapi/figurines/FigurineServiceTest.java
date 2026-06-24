@@ -38,7 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -54,6 +53,12 @@ import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurine;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 import com.mesofi.mythclothapi.config.TestCsvConfig;
@@ -75,6 +80,7 @@ import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @SpringBootTest(
@@ -98,6 +104,8 @@ public class FigurineServiceTest {
   @MockitoBean private FigurineRepository figurineRepository;
   @MockitoBean private CurrencyRegionResolver currencyRegionResolver;
   @MockitoBean private FigurineCsvSource figurineCsvSource;
+  @MockitoBean private CollectorRepository collectorRepository;
+  @MockitoBean private CollectorCollectionRepository collectorCollectionRepository;
 
   @Test
   void importFromPublicDrive_shouldThrowIllegalStateException_whenCsvSourceOpenFails()
@@ -706,9 +714,10 @@ public class FigurineServiceTest {
     FigurineFilter figurineFilter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, null, null);
 
-    Page<Figurine> emptyPage = new PageImpl<>(List.of(), PageRequest.of(1, 10), 0);
+    CollectablePageImpl<Figurine> emptyPage =
+        new CollectablePageImpl<>(List.of(), PageRequest.of(1, 10), 0, 0);
     when(figurineRepository.findPaginated(figurineFilter, PageRequest.of(1, 10)))
         .thenReturn(emptyPage);
 
@@ -726,8 +735,8 @@ public class FigurineServiceTest {
     // Arrange
     FigurineFilter filter =
         new FigurineFilter(
-            "Seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, "Seiya", null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null);
 
     Figurine figurine = new Figurine();
     figurine.setId(1L);
@@ -735,7 +744,8 @@ public class FigurineServiceTest {
     figurine.setNormalizedName("Seiya");
     figurine.setLineup(new LineUp());
     figurine.setSeries(new Series());
-    Page<Figurine> figurineFound = new PageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1);
+    CollectablePageImpl<Figurine> figurineFound =
+        new CollectablePageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1, 0);
 
     when(figurineRepository.findPaginated(filter, PageRequest.of(1, 10))).thenReturn(figurineFound);
 
@@ -1593,6 +1603,98 @@ public class FigurineServiceTest {
     assertThat(priceWithTax).isEqualTo(expectedReleaseStatus);
   }
 
+  @Test
+  void calculateReleaseStatus_shouldReturnRumored_whenDistributorsAreMissing() {
+    Figurine figurineWithNullDistributors = new Figurine();
+    figurineWithNullDistributors.setDistributors(null);
+
+    Figurine figurineWithEmptyDistributors = new Figurine();
+    figurineWithEmptyDistributors.setDistributors(List.of());
+
+    assertThat(figurineService.calculateReleaseStatus(figurineWithNullDistributors))
+        .isEqualTo(ReleaseStatus.RUMORED);
+    assertThat(figurineService.calculateReleaseStatus(figurineWithEmptyDistributors))
+        .isEqualTo(ReleaseStatus.RUMORED);
+  }
+
+  @Test
+  void retrieveCollectedFigurineIds_shouldReturnEmptyList_whenCollectionIdIsNull() {
+    assertThat(figurineService.retrieveCollectedFigurineIds(1L, null)).isEmpty();
+
+    verifyNoInteractions(collectorRepository, collectorCollectionRepository);
+  }
+
+  @Test
+  void retrieveCollectedFigurineIds_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> figurineService.retrieveCollectedFigurineIds(1L, 10L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void retrieveCollectedFigurineIds_shouldReturnCollectedFigurineIds_whenCollectionMatches() {
+    Collector collector = new Collector();
+    collector.setId(1L);
+
+    Figurine figurine1 = new Figurine();
+    figurine1.setId(11L);
+    Figurine figurine2 = new Figurine();
+    figurine2.setId(12L);
+
+    CollectorCollectionFigurine link1 = new CollectorCollectionFigurine();
+    link1.setFigurine(figurine1);
+    CollectorCollectionFigurine link2 = new CollectorCollectionFigurine();
+    link2.setFigurine(figurine2);
+
+    CollectorCollection matchingCollection = new CollectorCollection();
+    matchingCollection.setId(10L);
+    matchingCollection.setFigurines(List.of(link1, link2));
+
+    CollectorCollection ignoredCollection = new CollectorCollection();
+    ignoredCollection.setId(99L);
+    ignoredCollection.setFigurines(List.of());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(List.of(ignoredCollection, matchingCollection));
+
+    assertThat(figurineService.retrieveCollectedFigurineIds(1L, 10L)).containsExactly(11L, 12L);
+  }
+
+  @Test
+  void retrieveCollectedFigurineIds_shouldReturnEmptyList_whenCollectionDoesNotMatch() {
+    Collector collector = new Collector();
+    collector.setId(1L);
+
+    CollectorCollection collection = new CollectorCollection();
+    collection.setId(20L);
+    collection.setFigurines(List.of());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector)).thenReturn(List.of(collection));
+
+    assertThat(figurineService.retrieveCollectedFigurineIds(1L, 10L)).isEmpty();
+  }
+
+  @Test
+  void retrieveSelectableFigurines_shouldReturnOnlyAnnouncedAndReleasedIds() {
+    Figurine announced = figurineWithReleaseStatus(1L, null, LocalDate.of(2046, 1, 1));
+    Figurine released = figurineWithReleaseStatus(2L, null, LocalDate.of(2013, 1, 1));
+    Figurine rumored = figurineWithReleaseStatus(3L, null, null);
+    Figurine prototype = figurineWithReleaseStatus(4L, LocalDate.of(2026, 1, 1), null);
+
+    FigurineFilter filter =
+        new FigurineFilter(
+            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null);
+    when(figurineRepository.findAll(filter))
+        .thenReturn(List.of(announced, released, rumored, prototype));
+
+    assertThat(figurineService.retrieveSelectableFigurines(filter)).containsExactly(1L, 2L);
+  }
+
   private static Stream<Arguments> provideAllDates() {
     return Stream.of(
         Arguments.of(null, null, ReleaseStatus.RUMORED),
@@ -1799,5 +1901,18 @@ public class FigurineServiceTest {
   private Reader loadImportCsvFixture(String filename) throws IOException {
     ClassPathResource resource = new ClassPathResource("import/figurines/" + filename);
     return new InputStreamReader(resource.getInputStream());
+  }
+
+  private Figurine figurineWithReleaseStatus(
+      Long id, LocalDate announcementDate, LocalDate releaseDate) {
+    FigurineDistributor distributor = new FigurineDistributor();
+    distributor.setCurrency(JPY);
+    distributor.setAnnouncementDate(announcementDate);
+    distributor.setReleaseDate(releaseDate);
+
+    Figurine figurine = new Figurine();
+    figurine.setId(id);
+    figurine.setDistributors(List.of(distributor));
+    return figurine;
   }
 }

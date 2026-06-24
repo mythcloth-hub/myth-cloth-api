@@ -31,26 +31,51 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.mesofi.mythclothapi.security.JwtProperties;
 
 /**
- * Configures JWT-based authentication and authorization for the application.
+ * Configures application security using Spring Security with JWT-based authentication and
+ * authorization.
  *
- * <p>This configuration:
+ * <p>This configuration defines the application's security model:
  *
  * <ul>
- *   <li>Disables CSRF protection because the API is stateless.
- *   <li>Uses JWT Bearer tokens for authentication.
- *   <li>Does not create or use HTTP sessions.
- *   <li>Protects configured endpoints through Spring Security.
- *   <li>Converts JWT permission claims into Spring Security authorities.
- *   <li>Enables method-level authorization using {@code @PreAuthorize}.
+ *   <li>Enables Spring Security web protection and method-level security.
+ *   <li>Configures the application as an OAuth2 Resource Server using JWT Bearer tokens.
+ *   <li>Disables CSRF protection because the API is stateless and does not rely on server-side
+ *       sessions.
+ *   <li>Configures stateless session management.
+ *   <li>Defines public and protected API endpoints.
+ *   <li>Configures CORS support for the frontend application.
+ *   <li>Maps JWT claims into Spring Security authorities.
  * </ul>
  *
- * <p>Incoming JWT tokens are validated using the configured {@link JwtDecoder}. The {@code
- * permissions} claim is mapped into {@link GrantedAuthority} instances, allowing endpoint access to
- * be controlled with expressions such as:
+ * <p>The JWT token is expected to contain authorization information through the following claims:
  *
  * <pre>{@code
- * @PreAuthorize("hasAuthority('catalogs:write')")
+ * {
+ *   "roles": [
+ *     "ADMIN"
+ *   ],
+ *   "permissions": [
+ *     "figurines:read",
+ *     "figurines:write"
+ *   ]
+ * }
  * }</pre>
+ *
+ * <p>Roles are converted into Spring Security roles using the {@code ROLE_} prefix, allowing
+ * authorization rules such as:
+ *
+ * <pre>{@code
+ * @PreAuthorize("hasRole('ADMIN')")
+ * }</pre>
+ *
+ * <p>Permissions are mapped directly as authorities and can be used with:
+ *
+ * <pre>{@code
+ * @PreAuthorize("hasAuthority('figurines:write')")
+ * }</pre>
+ *
+ * <p>This configuration supports both URL-based authorization through the security filter chain and
+ * method-level authorization through {@link EnableMethodSecurity}.
  */
 @Configuration
 @EnableWebSecurity
@@ -64,14 +89,15 @@ public class SecurityConfig {
    * <p>The configuration:
    *
    * <ul>
-   *   <li>Disables CSRF protection.
+   *   <li>Disables CSRF protection for the stateless REST API.
    *   <li>Configures stateless session management.
-   *   <li>Requires authentication for distributor endpoints.
-   *   <li>Allows anonymous access to all other endpoints.
-   *   <li>Enables JWT Bearer token authentication through Spring's OAuth2 Resource Server.
+   *   <li>Allows CORS requests from configured origins.
+   *   <li>Allows unauthenticated access to public endpoints.
+   *   <li>Requires authentication for all protected endpoints.
+   *   <li>Enables JWT Bearer authentication through Spring OAuth2 Resource Server.
    * </ul>
    *
-   * @param http the HTTP security builder
+   * @param http the HTTP security builder used to configure application security
    * @return the configured security filter chain
    */
   @Bean
@@ -84,7 +110,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(OPTIONS, "/**")
                     .permitAll()
-                    .requestMatchers(GET, "/figurines/**")
+                    .requestMatchers(
+                        GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**")
                     .permitAll()
                     .requestMatchers(POST, "/collectors/auth/{provider}/**")
                     .permitAll()
@@ -97,6 +124,23 @@ public class SecurityConfig {
     return http.build();
   }
 
+  /**
+   * Creates the CORS configuration used by the application.
+   *
+   * <p>This configuration allows requests from the configured frontend origin and enables the HTTP
+   * methods required by the API.
+   *
+   * <p>The current configuration:
+   *
+   * <ul>
+   *   <li>Allows requests from the local frontend development server.
+   *   <li>Allows GET, POST, PUT, DELETE, and OPTIONS requests.
+   *   <li>Allows all request headers.
+   *   <li>Allows credentials to be included in requests.
+   * </ul>
+   *
+   * @return the configured CORS source applied to all endpoints
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();

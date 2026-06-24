@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.figurines;
 
+import java.util.List;
+
 /**
  * Factory utility for constructing {@link FigurineFilter} instances from request parameters.
  *
@@ -20,6 +22,8 @@ public final class FigurineFilterFactory {
    * <p>The name parameter is trimmed and validated to have at least 3 characters. If it does not
    * meet this requirement, an empty string is used instead.
    *
+   * @param figurineIds optional figurine identifier list for filtering by collector's figurines (if
+   *     applicable)
    * @param name optional name filter
    * @param lineUpId optional lineup identifier
    * @param seriesId optional series identifier
@@ -39,6 +43,7 @@ public final class FigurineFilterFactory {
    * @return a new {@link FigurineFilter} instance
    */
   public static FigurineFilter build(
+      List<Long> figurineIds,
       String name,
       Long lineUpId,
       Long seriesId,
@@ -59,6 +64,7 @@ public final class FigurineFilterFactory {
     String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
 
     return new FigurineFilter(
+        figurineIds,
         figurineName,
         lineUpId,
         seriesId,
