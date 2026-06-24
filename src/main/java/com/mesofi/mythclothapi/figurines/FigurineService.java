@@ -25,7 +25,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +58,7 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -258,19 +258,29 @@ public class FigurineService {
    * @return a page of {@link FigurineResp} objects matching the filter
    */
   @Transactional(readOnly = true)
-  public Page<FigurineResp> filterFigurines(
+  public CollectablePageImpl<FigurineResp> filterFigurines(
       @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
     log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-    Page<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
+    CollectablePageImpl<Figurine> figurines =
+        repository.findPaginated(filter, PageRequest.of(page, size));
 
-    return figurines.map(
-        figurine ->
-            mapper.toFigurineResp(
-                figurine,
-                this::createDisplayableName,
-                this::calculatePriceWithTax,
-                this::calculateReleaseStatus));
+    List<FigurineResp> list =
+        figurines.getContent().stream()
+            .map(
+                figurine ->
+                    mapper.toFigurineResp(
+                        figurine,
+                        this::createDisplayableName,
+                        this::calculatePriceWithTax,
+                        this::calculateReleaseStatus))
+            .toList();
+
+    return new CollectablePageImpl<>(
+        list,
+        figurines.getPageable(),
+        figurines.getTotalElements(),
+        figurines.getTotalCollectables());
   }
 
   public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
@@ -296,6 +306,17 @@ public class FigurineService {
                     .map(BaseId::getId)
                     .toList())
         .orElseGet(List::of);
+  }
+
+  public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
+    return repository.findAll(filter).stream()
+        .filter(
+            figurine -> {
+              ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
+              return releaseStatus == ANNOUNCED || releaseStatus == RELEASED;
+            })
+        .map(BaseId::getId)
+        .toList();
   }
 
   /**

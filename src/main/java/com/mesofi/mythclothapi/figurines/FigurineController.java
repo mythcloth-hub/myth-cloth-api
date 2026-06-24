@@ -9,7 +9,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -31,6 +30,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -146,7 +146,7 @@ public class FigurineController {
       @RequestParam(required = false) String releaseStatus,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-    Page<FigurineResp> result;
+    CollectablePageImpl<FigurineResp> result;
 
     List<Long> figurineIds = new ArrayList<>();
     getCollectorId(authentication)
@@ -183,6 +183,7 @@ public class FigurineController {
             result.getNumber(),
             result.getSize(),
             result.getTotalElements(),
+            result.getTotalCollectables(),
             result.getTotalPages()));
   }
 
@@ -193,6 +194,47 @@ public class FigurineController {
       }
     }
     return Optional.empty();
+  }
+
+  @GetMapping("/selectable-ids")
+  public List<Long> retrieveSelectableFigurines(
+      @RequestParam(required = false) String name,
+      @RequestParam(required = false) Long lineUpId,
+      @RequestParam(required = false) Long seriesId,
+      @RequestParam(required = false) Long groupId,
+      @RequestParam(required = false) Long anniversaryId,
+      @RequestParam(required = false) Boolean metalBody,
+      @RequestParam(required = false) Boolean oce,
+      @RequestParam(required = false) Boolean revival,
+      @RequestParam(required = false) Boolean plainCloth,
+      @RequestParam(required = false) Boolean broken,
+      @RequestParam(required = false) Boolean golden,
+      @RequestParam(required = false) Boolean gold,
+      @RequestParam(required = false) Boolean manga,
+      @RequestParam(required = false) Boolean set,
+      @RequestParam(required = false) Boolean articulable,
+      @RequestParam(required = false) String releaseStatus) {
+
+    FigurineFilter figurineFilter =
+        FigurineFilterFactory.build(
+            List.of(),
+            name,
+            lineUpId,
+            seriesId,
+            groupId,
+            anniversaryId,
+            metalBody,
+            oce,
+            revival,
+            plainCloth,
+            broken,
+            golden,
+            gold,
+            manga,
+            set,
+            articulable,
+            releaseStatus);
+    return service.retrieveSelectableFigurines(figurineFilter);
   }
 
   /**

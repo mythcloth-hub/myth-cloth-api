@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.error;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -12,6 +13,7 @@ import java.util.Map;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,6 +24,8 @@ import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
@@ -46,6 +50,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
   public ProblemDetail handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
     return Problem.of(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type", ex.getMessage());
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ProblemDetail handleHttpRequestMethodNotSupportedException(
+      HttpRequestMethodNotSupportedException ex) {
+    return Problem.of(METHOD_NOT_ALLOWED, "Method Not Allowed", ex.getMessage());
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -118,6 +128,16 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(CollectorNotFoundException.class)
   public ProblemDetail handleCollectorNotFound(CollectorNotFoundException ex) {
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
+
+  @ExceptionHandler(CollectionNotFoundException.class)
+  public ProblemDetail handleCollectionNotFoundException(CollectionNotFoundException ex) {
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+  }
+
+  @ExceptionHandler(CollectionAlreadyExistsException.class)
+  public ProblemDetail handleCollectionAlreadyExistsException(CollectionAlreadyExistsException ex) {
     return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 

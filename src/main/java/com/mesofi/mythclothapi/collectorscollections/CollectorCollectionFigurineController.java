@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
@@ -24,10 +25,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST controller responsible for managing figurines associated with collector collections.
+ * REST controller responsible for managing the relationship between collectors, collections, and
+ * figurines.
  *
- * <p>This controller exposes operations to add figurines to a specific collector collection. Access
- * to these operations is controlled using Spring Security authorities.
+ * <p>This controller exposes operations to:
+ *
+ * <ul>
+ *   <li>Assign one or multiple figurines to one or multiple collector collections.
+ *   <li>Retrieve collections associated with the authenticated collector.
+ * </ul>
+ *
+ * <p>Figurine assignment operations require the authenticated collector identity, which is obtained
+ * from the JWT subject claim provided by Spring Security.
+ *
+ * <p>Authorization is controlled through Spring Security permissions defined with
+ * {@code @PreAuthorize}.
+ *
+ * <p>The preferred way to associate figurines with collections is through {@link
+ * #assignFigurinesToCollections(Jwt, AssignFigurinesReq)}. The previous single figurine assignment
+ * endpoint {@link #addFigurineToCollection(Jwt, Long, Long)} is deprecated and should no longer be
+ * used.
  */
 @Slf4j
 @Validated
@@ -40,20 +57,24 @@ public class CollectorCollectionFigurineController {
   private final CollectorCollectionFigurineService service;
 
   /**
-   * Adds a figurine to the specified collector collection.
+   * Adds a single figurine to a specific collector collection.
    *
-   * <p>The authenticated user is obtained from the JWT token provided by Spring Security. The
-   * operation requires the authenticated principal to have the {@code collections:figurines:add}
-   * authority.
+   * <p>This endpoint is deprecated. Use {@link #assignFigurinesToCollections(Jwt,
+   * AssignFigurinesReq)} instead, which supports assigning one or multiple figurines to one or
+   * multiple collections using a unified assignment workflow.
    *
-   * @param jwt authenticated user's JWT token containing identity and security claims
-   * @param collectionId unique identifier of the collector collection
-   * @param figurineId unique identifier of the figurine to add
-   * @return a {@link ResponseEntity} containing the added figurine information
+   * <p>The authenticated collector is obtained from the JWT subject claim. The operation requires
+   * the {@code collections:figurines:add} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param collectionId unique identifier of the target collector collection
+   * @param figurineId unique identifier of the figurine to assign
+   * @return an empty response with HTTP {@code 204 No Content} when the assignment succeeds
+   * @deprecated Use {@link #assignFigurinesToCollections(Jwt, AssignFigurinesReq)} instead.
    */
   @Deprecated
   @PostMapping("/{collectionId}/figurines/{figurineId}")
-  // @PreAuthorize("hasAuthority('collections:figurines:add')")
+  @PreAuthorize("hasAuthority('collections:figurines:add')")
   public ResponseEntity<Void> addFigurineToCollection(
       @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long collectionId,
@@ -67,7 +88,26 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Assigns one or more figurines to one or more collector collections.
+   *
+   * <p>This endpoint provides the main workflow for managing figurine collection assignments.
+   * Depending on the request configuration, it can:
+   *
+   * <ul>
+   *   <li>Assign figurines to existing collections.
+   *   <li>Create collections automatically when required.
+   *   <li>Apply predefined or user-provided collection information.
+   * </ul>
+   *
+   * <p>The authenticated collector is obtained from the JWT subject claim.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param request assignment request containing figurines, collections, and assignment options
+   * @return an empty response with HTTP {@code 204 No Content} when the assignment succeeds
+   */
   @PostMapping("/assign-figurines")
+  @PreAuthorize("hasAuthority('collections:figurines:add')")
   public ResponseEntity<Void> assignFigurinesToCollections(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody AssignFigurinesReq request) {
     service.assignFigurinesToCollections(getCollectorId(jwt), request);
@@ -75,7 +115,17 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Retrieves all collections belonging to the authenticated collector.
+   *
+   * <p>The collector identity is extracted from the JWT subject claim. Access requires the {@code
+   * collections:read} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @return list of collector collections
+   */
   @GetMapping
+  @PreAuthorize("hasAuthority('collections:read')")
   public List<CollectorCollectionResp> retrieveCollections(@AuthenticationPrincipal Jwt jwt) {
     return service.retrieveCollections(getCollectorId(jwt));
   }

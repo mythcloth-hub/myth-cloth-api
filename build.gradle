@@ -135,6 +135,8 @@ pitest {
             '*.entity.*',
             'com.mesofi.mythclothapi.anniversaries.AnniversaryMapperImpl',
             'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl',
+            'com.mesofi.mythclothapi.collectors.mapper.CollectorMapper',
+            'com.mesofi.mythclothapi.collectors.mapper.CollectorMapperImpl',
             'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
             'com.mesofi.mythclothapi.error.Problem',
             'com.mesofi.mythclothapi.figurineevents.FigurineEventMapperImpl',

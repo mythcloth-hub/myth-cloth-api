@@ -46,7 +46,7 @@ class StatisticsServiceTest {
   private static final FigurineFilter EMPTY_FILTER =
       new FigurineFilter(
           null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-          null);
+          null, null);
 
   @InjectMocks private StatisticsService service;
 

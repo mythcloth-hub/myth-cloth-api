@@ -180,8 +180,8 @@ public class FigurineRepositoryTest {
 
     var filter =
         new FigurineFilter(
-            "seiya", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, "seiya", null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null);
     var page =
         repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
@@ -194,8 +194,8 @@ public class FigurineRepositoryTest {
   void search_shouldReturnEmpty_whenNoMatch() {
     var filter =
         new FigurineFilter(
-            "xyz", null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, "xyz", null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null);
     var page =
         repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
@@ -218,6 +218,7 @@ public class FigurineRepositoryTest {
 
     FigurineFilter filter =
         new FigurineFilter(
+            null, // figurineIds
             null, // name
             null, // lineUpId
             null, // seriesId
@@ -248,6 +249,7 @@ public class FigurineRepositoryTest {
     FigurineFilter filter =
         new FigurineFilter(
             null,
+            null,
             savedLineUp.getId(),
             null,
             null,
@@ -273,6 +275,7 @@ public class FigurineRepositoryTest {
     repository.saveAndFlush(figurine);
     FigurineFilter filter =
         new FigurineFilter(
+            null,
             null,
             null,
             savedSeries.getId(),
@@ -325,7 +328,7 @@ public class FigurineRepositoryTest {
       FigurineFilter filter =
           new FigurineFilter(
               null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-              null, status);
+              null, null, status);
       var page = repository.findPaginated(filter, PageRequest.of(0, 10));
       assertThat(page.getContent()).isNotEmpty();
     }
@@ -341,7 +344,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, null, null);
     var page1 = repository.findPaginated(filter, PageRequest.of(0, 5));
     var page2 = repository.findPaginated(filter, PageRequest.of(1, 5));
     assertThat(page1.getContent()).hasSize(5);
@@ -355,7 +358,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, null, null);
     var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isNotEmpty();
   }
@@ -366,7 +369,7 @@ public class FigurineRepositoryTest {
     var filter =
         new FigurineFilter(
             null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null);
+            null, null, null);
     var page = repository.findPaginated(filter, PageRequest.of(0, 10));
     assertThat(page.getContent()).isEmpty();
   }
