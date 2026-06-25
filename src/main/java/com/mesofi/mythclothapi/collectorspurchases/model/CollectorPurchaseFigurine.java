@@ -1,6 +1,10 @@
-package com.mesofi.mythclothapi.collectorscollections;
+package com.mesofi.mythclothapi.collectorspurchases.model;
+
+import java.math.BigDecimal;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -16,18 +20,23 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(
-    name = "collector_collection_figurines",
+    name = "collector_purchase_figurines",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_collection_figurine_pair",
-            columnNames = {"collection_id", "figurine_id"}))
-public class CollectorCollectionFigurine extends BaseId {
+            name = "uk_purchase_figurine_pair",
+            columnNames = {"purchase_id", "figurine_id"}))
+public class CollectorPurchaseFigurine extends BaseId {
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  private CollectorCollection collection;
+  private CollectorPurchase purchase;
 
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
   private Figurine figurine;
 
-  private int totalFigurines = 1;
+  private Integer quantity;
+
+  private BigDecimal pricePaid;
+
+  @Enumerated(EnumType.STRING)
+  private PurchaseType purchaseType;
 }

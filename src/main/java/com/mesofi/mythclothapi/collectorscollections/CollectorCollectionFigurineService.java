@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.collectors.Collector;
@@ -14,14 +17,17 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -137,16 +143,168 @@ public class CollectorCollectionFigurineService {
             .findByCollectionAndFigurine(existingCollection, existingFigurine)
             .ifPresentOrElse(
                 existing -> {
-                  int currentTotal = existing.getTotalFigurines();
+                  int currentTotal = existing.getQuantity();
                   currentTotal++;
-                  existing.setTotalFigurines(currentTotal);
+                  existing.setQuantity(currentTotal);
                   collectorCollectionFigurineRepository.save(existing);
+                  log.info(
+                      "This figurine is already in the collection [{}] - '{}'. It wont be added again, but increase "
+                          + "the number of figurines, currently there are {} for figurine [{}] - {}",
+                      existingCollection.getId(),
+                      existingCollection.getName(),
+                      currentTotal,
+                      existing.getFigurine().getId(),
+                      existing.getFigurine().getNormalizedName());
                 },
-                () ->
-                    collectorCollectionFigurineRepository.save(
-                        buildCollectionFigurine(existingCollection, existingFigurine)));
+                () -> {
+                  CollectorCollectionFigurine collectionFigurine =
+                      buildCollectionFigurine(existingCollection, existingFigurine);
+                  collectorCollectionFigurineRepository.save(collectionFigurine);
+                  log.info(
+                      "Added figurine [{}] - '{}' to the collection [{}] - '{}'",
+                      collectionFigurine.getFigurine().getId(),
+                      collectionFigurine.getFigurine().getNormalizedName(),
+                      existingCollection.getId(),
+                      existingCollection.getName());
+                });
       }
     }
+  }
+
+  public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(
+      Long collectorId, @Positive Long collectionId) {
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    // make sure this collection owns the collection to be removed.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    var collectionFound =
+        collectorCollectionRepository
+            .findById(collectionId)
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    return List.of(
+        new CollectorCollectionFigurineResp(
+            1L,
+            "Poseidon",
+            "Poseidon",
+            ReleaseStatus.RELEASED,
+            "This is note",
+            List.of("https://imagizer.imageshack.com/img923/2904/VQXnmG.jpg"),
+            true,
+            1),
+        new CollectorCollectionFigurineResp(
+            2L,
+            "Phoenix Ikki",
+            "Phoenix Ikki",
+            ReleaseStatus.RELEASED,
+            "This is note",
+            List.of("https://imagizer.imageshack.com/img924/9391/JGWJnR.jpg"),
+            false,
+            3),
+        new CollectorCollectionFigurineResp(
+            3L,
+            "Aquarius Camus",
+            "Aquarius Camus (Surplice) 20 anniversary",
+            ReleaseStatus.RELEASED,
+            "Shown for the first time in Tamashii 2024, 2025 TN Exclusive. This figure was also sold in Mexico for MXN, special sale via www.tamashii.mx on October 27th 2025",
+            List.of("https://imagizer.imageshack.com/img922/4663/RwUKeo.jpg"),
+            true,
+            3),
+        new CollectorCollectionFigurineResp(
+            4L,
+            "Pandora",
+            "Pandora",
+            ReleaseStatus.RELEASED,
+            null,
+            List.of("https://imagizer.imageshack.com/img924/7557/mAcgiO.jpg"),
+            true,
+            2));
+  }
+
+  /**
+   * Retrieves all collections associated with a collector.
+   *
+   * @param collectorId identifier of the collector
+   * @return list of collector collections
+   * @throws CollectorNotFoundException if the collector does not exist
+   */
+  public List<CollectorCollectionResp> retrieveCollections(Long collectorId) {
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    // finds all the collections from the collector and maps them to the response DTOs
+    List<CollectorCollection> collectorCollection =
+        collectorCollectionRepository.findByCollector(collectorFound);
+
+    return collectorCollection.stream().map(collectorMapper::toCollectorCollectionResp).toList();
+  }
+
+  @Transactional
+  public void deleteCollection(Long collectorId, Long collectionId) {
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    // make sure this collection owns the collection to be removed.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    // deletes all the figurines associated with the collection.
+    int deletedCount =
+        collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(
+            collectionId, collectorId);
+
+    // Now it deletes the collection itself
+    if (!collectorCollectionRepository.existsById(collectionId)) {
+      throw new CollectionNotFoundException(collectionId);
+    }
+    collectorCollectionRepository.deleteCollectionById(collectionId);
+
+    log.info("{} items deleted in collection with id {}", deletedCount, collectionId);
+  }
+
+  @Transactional
+  public CollectorCollectionResp updateCollection(
+      @Positive Long collectorId,
+      @Positive Long collectionId,
+      @NotNull @Valid CollectorCollectionReq request) {
+    log.info("Updating collection with id '{}'. New name: '{}'", collectionId, request.name());
+    Collector collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    // make sure this collection owns the collection to be removed.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    var existing =
+        collectorCollectionRepository
+            .findById(collectionId)
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    // No need to use MapStruct when properties are too simple. Just update them directly.
+    existing.setName(request.name());
+    existing.setDescription(request.description());
+
+    var updated = collectorCollectionRepository.save(existing);
+
+    return new CollectorCollectionResp(
+        updated.getId(), updated.getName(), updated.getDescription(), 0, List.of());
   }
 
   private List<Figurine> retrieveExistingFigurines(List<Long> figurineIds) {
@@ -184,25 +342,6 @@ public class CollectorCollectionFigurineService {
       throw new IllegalArgumentException("Unsupported collection assignment mode: " + mode);
     }
     return existingCollections;
-  }
-
-  /**
-   * Retrieves all collections associated with a collector.
-   *
-   * @param collectorId identifier of the collector
-   * @return list of collector collections
-   * @throws CollectorNotFoundException if the collector does not exist
-   */
-  public List<CollectorCollectionResp> retrieveCollections(Long collectorId) {
-    Collector collectorFound =
-        collectorRepository
-            .findById(collectorId)
-            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-    List<CollectorCollection> collectorCollection =
-        collectorCollectionRepository.findByCollector(collectorFound);
-
-    return collectorCollection.stream().map(collectorMapper::toCollectorCollectionResp).toList();
   }
 
   private CollectorCollection createDefaultCollection(Long collectorId) {
