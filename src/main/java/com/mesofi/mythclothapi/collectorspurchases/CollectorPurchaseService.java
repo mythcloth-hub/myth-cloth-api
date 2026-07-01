@@ -28,12 +28,37 @@ import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseN
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
+import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseFigurineRepository;
+import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service responsible for managing collector purchase records and their associated figurine items.
+ *
+ * <p>This service handles the complete lifecycle of collector purchases, including:
+ *
+ * <ul>
+ *   <li>Creating purchase summaries with their figurine line items
+ *   <li>Updating existing purchases and synchronizing line items
+ *   <li>Retrieving purchase history for collectors
+ *   <li>Deleting purchases and related line items
+ *   <li>Calculating purchase totals and figurine quantities
+ * </ul>
+ *
+ * <p>Purchases are tracked separately from the collector's current collection state. This allows
+ * preserving purchase history, quantities acquired, prices paid, shipping information, and other
+ * transaction details without modifying the current collection inventory.
+ *
+ * <p>This service validates collector ownership and referenced figurines before performing any
+ * persistence operations.
+ *
+ * @see CollectorPurchase
+ * @see CollectorPurchaseFigurine
+ */
 @Slf4j
 @Service
 @Validated
@@ -45,6 +70,18 @@ public class CollectorPurchaseService {
   private final CollectorRepository collectorRepository;
   private final FigurineRepository figurineRepository;
 
+  /**
+   * Creates a new collector purchase summary together with its figurine line items.
+   *
+   * <p>This operation creates the purchase record, calculates totals, validates referenced
+   * figurines, and persists all line items.
+   *
+   * @param collectorId collector identifier
+   * @param request purchase summary data and line items
+   * @return the created purchase summary with persisted line items
+   * @throws CollectorNotFoundException when the collector does not exist
+   * @throws FigurineNotFoundException when a referenced figurine does not exist
+   */
   @Transactional
   public CollectorPurchaseSummaryLineItemResp createSummaryLineItem(
       @Positive Long collectorId, @NotNull @Valid CollectorPurchaseSummaryLineItemReq request) {
@@ -85,6 +122,18 @@ public class CollectorPurchaseService {
         lineItems);
   }
 
+  /**
+   * Updates an existing collector purchase summary and its associated figurine line items.
+   *
+   * <p>If line item information changes, existing items are replaced with the updated values.
+   *
+   * @param collectorId collector identifier
+   * @param purchaseId purchase identifier
+   * @param request updated purchase summary data and line items
+   * @return the updated purchase summary
+   * @throws CollectorNotFoundException when the collector does not exist
+   * @throws CollectorPurchaseNotFoundException when the purchase does not exist
+   */
   @Transactional
   public CollectorPurchaseSummaryLineItemResp updateSummaryLineItem(
       @Positive Long collectorId,
@@ -142,6 +191,15 @@ public class CollectorPurchaseService {
         lineItems);
   }
 
+  /**
+   * Retrieves all purchase summaries for a collector.
+   *
+   * <p>Results are ordered by purchase date descending and include associated figurine line items.
+   *
+   * @param collectorId collector identifier
+   * @return list of purchase summaries
+   * @throws CollectorNotFoundException when the collector does not exist
+   */
   @Transactional(readOnly = true)
   public List<CollectorPurchaseSummaryLineItemResp> retrieveSummaryLineItems(
       @Positive Long collectorId) {
@@ -175,6 +233,15 @@ public class CollectorPurchaseService {
         .toList();
   }
 
+  /**
+   * Retrieves a specific purchase summary for a collector.
+   *
+   * @param collectorId collector identifier
+   * @param purchaseId purchase identifier
+   * @return purchase summary including its line items
+   * @throws CollectorNotFoundException when the collector does not exist
+   * @throws CollectorPurchaseNotFoundException when the purchase does not exist
+   */
   @Transactional(readOnly = true)
   public CollectorPurchaseSummaryLineItemResp retrieveSummaryLineItem(
       @Positive Long collectorId, @Positive Long purchaseId) {
@@ -195,6 +262,14 @@ public class CollectorPurchaseService {
     return mapToSummaryResponse(purchase, lineItems);
   }
 
+  /**
+   * Deletes a collector purchase summary and all related figurine line items.
+   *
+   * @param collectorId collector identifier
+   * @param purchaseId purchase identifier
+   * @throws CollectorNotFoundException when the collector does not exist
+   * @throws CollectorPurchaseNotFoundException when the purchase does not exist
+   */
   @Transactional
   public void deleteSummaryLineItem(@Positive Long collectorId, @Positive Long purchaseId) {
     collectorRepository

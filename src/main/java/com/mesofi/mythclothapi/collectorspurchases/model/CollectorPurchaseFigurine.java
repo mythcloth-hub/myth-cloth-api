@@ -16,6 +16,18 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Entity representing a figurine included in a collector purchase.
+ *
+ * <p>This entity acts as a purchase line item, storing the figurine acquired, quantity purchased,
+ * price paid, and purchase type.
+ *
+ * <p>Purchase line items preserve historical transaction information and are independent from the
+ * collector's current collection quantities.
+ *
+ * <p>A figurine can only appear once within the same purchase. If multiple units are purchased, the
+ * quantity field represents the amount acquired.
+ */
 @Entity
 @Getter
 @Setter
