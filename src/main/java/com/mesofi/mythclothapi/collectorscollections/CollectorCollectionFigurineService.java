@@ -1,5 +1,8 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
@@ -25,6 +29,9 @@ import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFou
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.figurines.FigurineFilter;
+import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
+import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
@@ -69,6 +76,7 @@ public class CollectorCollectionFigurineService {
   private final CollectorCollectionRepository collectorCollectionRepository;
   private final CollectorRepository collectorRepository;
   private final FigurineRepository figurineRepository;
+  private final FigurineService figurineService;
   private final CollectorMapper collectorMapper;
 
   /**
@@ -171,61 +179,71 @@ public class CollectorCollectionFigurineService {
     }
   }
 
+  @Transactional(readOnly = true)
   public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(
-      Long collectorId, @Positive Long collectionId) {
-    Collector collectorFound =
+      @Positive Long collectorId, @Positive Long collectionId) {
+
+    var collectorFound =
         collectorRepository
             .findById(collectorId)
             .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-    // make sure this collection owns the collection to be removed.
-    collectorFound.getCollections().stream()
-        .filter(c -> c.getId().equals(collectionId))
-        .findFirst()
-        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
     var collectionFound =
         collectorCollectionRepository
             .findById(collectionId)
             .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
-    return List.of(
-        new CollectorCollectionFigurineResp(
-            1L,
-            "Poseidon",
-            "Poseidon",
-            ReleaseStatus.RELEASED,
-            "This is note",
-            List.of("https://imagizer.imageshack.com/img923/2904/VQXnmG.jpg"),
-            true,
-            1),
-        new CollectorCollectionFigurineResp(
-            2L,
-            "Phoenix Ikki",
-            "Phoenix Ikki",
-            ReleaseStatus.RELEASED,
-            "This is note",
-            List.of("https://imagizer.imageshack.com/img924/9391/JGWJnR.jpg"),
-            false,
-            3),
-        new CollectorCollectionFigurineResp(
-            3L,
-            "Aquarius Camus",
-            "Aquarius Camus (Surplice) 20 anniversary",
-            ReleaseStatus.RELEASED,
-            "Shown for the first time in Tamashii 2024, 2025 TN Exclusive. This figure was also sold in Mexico for MXN, special sale via www.tamashii.mx on October 27th 2025",
-            List.of("https://imagizer.imageshack.com/img922/4663/RwUKeo.jpg"),
-            true,
-            3),
-        new CollectorCollectionFigurineResp(
-            4L,
-            "Pandora",
-            "Pandora",
-            ReleaseStatus.RELEASED,
-            null,
-            List.of("https://imagizer.imageshack.com/img924/7557/mAcgiO.jpg"),
-            true,
-            2));
+    // make sure this collector owns the collection to be retrieved.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    FigurineFilter figurineFilter =
+        FigurineFilterFactory.build(
+            List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null);
+
+    return figurineRepository.findAll(figurineFilter).stream()
+        .filter(
+            figurine -> {
+              ReleaseStatus releaseStatus = figurineService.calculateReleaseStatus(figurine);
+              return releaseStatus == RELEASED || releaseStatus == ANNOUNCED;
+            })
+        .map(
+            figurine -> {
+              boolean isCollected = false;
+              int ownedQuantity = 0;
+
+              for (CollectorCollectionFigurine collectorCollectionFigurine :
+                  collectionFound.getFigurines()) {
+                if (figurine.getId().equals(collectorCollectionFigurine.getFigurine().getId())) {
+                  isCollected = true;
+                  ownedQuantity = collectorCollectionFigurine.getQuantity();
+                  break;
+                }
+              }
+
+              ReleaseStatus releaseStatus = figurineService.calculateReleaseStatus(figurine);
+              int year = figurine.getDistributors().getFirst().getReleaseDate().getYear();
+
+              return collectorMapper.toCollectorCollectionFigurineResp(
+                  figurine, releaseStatus, isCollected, ownedQuantity, year);
+            })
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(
+      @Positive Long collectorId, @Positive Long collectionId, @Positive Long figurineId) {
+
+    var existing =
+        figurineRepository
+            .findById(figurineId)
+            .orElseThrow(() -> new FigurineNotFoundException(figurineId));
+
+    return collectorMapper.toCollectorCollectionFigurineDetailResp(
+        existing, figurineService::createDisplayableName);
   }
 
   /**

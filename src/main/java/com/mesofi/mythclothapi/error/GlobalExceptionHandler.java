@@ -26,6 +26,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenExcept
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
@@ -56,6 +57,12 @@ public class GlobalExceptionHandler {
   public ProblemDetail handleHttpRequestMethodNotSupportedException(
       HttpRequestMethodNotSupportedException ex) {
     return Problem.of(METHOD_NOT_ALLOWED, "Method Not Allowed", ex.getMessage());
+  }
+
+  @ExceptionHandler(CollectorPurchaseNotFoundException.class)
+  public ProblemDetail handleCollectorPurchaseNotFoundException(
+      CollectorPurchaseNotFoundException ex) {
+    return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
   }
 
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)

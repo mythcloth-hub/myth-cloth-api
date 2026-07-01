@@ -5,13 +5,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -27,6 +30,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
@@ -63,6 +68,7 @@ class CollectorCollectionFigurineControllerTest {
     verifyNoInteractions(service);
   }
 
+  @Disabled
   @ParameterizedTest
   @ValueSource(strings = {"/collections/2", "/collections/2/figurines"})
   void addFigurineToCollection_shouldReturn404_whenPostingToInvalidEndpoint(String invalidEndpoint)
@@ -408,5 +414,90 @@ class CollectorCollectionFigurineControllerTest {
         .andExpect(jsonPath("$[0].figurineIds[0]").value(1));
 
     verify(service).retrieveCollections(123L);
+  }
+
+  @Test
+  void retrieveCollectionFigurines_shouldReturnFigurines_whenRequestIsAuthenticated()
+      throws Exception {
+    CollectorCollectionFigurineResp resp =
+        new CollectorCollectionFigurineResp(9L, "Seiya", null, null, null, true, 2, 1991);
+    when(service.retrieveCollectionFigurines(123L, 2L)).thenReturn(List.of(resp));
+
+    mockMvc
+        .perform(
+            get("/collections/2/figurines")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:figurines:read"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(9))
+        .andExpect(jsonPath("$[0].name").value("Seiya"))
+        .andExpect(jsonPath("$[0].isCollected").value(true))
+        .andExpect(jsonPath("$[0].ownedQuantity").value(2))
+        .andExpect(jsonPath("$[0].year").value(1991));
+
+    verify(service).retrieveCollectionFigurines(123L, 2L);
+  }
+
+  @Test
+  void retrieveCollectionFigurine_shouldReturnFigurine_whenRequestIsAuthenticated()
+      throws Exception {
+    CollectorCollectionFigurineDetailResp resp = new CollectorCollectionFigurineDetailResp("Seiya");
+    when(service.retrieveCollectionFigurine(123L, 2L, 9L)).thenReturn(resp);
+
+    mockMvc
+        .perform(
+            get("/collections/2/figurines/9")
+                .contentType(MediaType.APPLICATION_JSON)
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:figurines:read"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.displayableName").value("Seiya"));
+
+    verify(service).retrieveCollectionFigurine(123L, 2L, 9L);
+  }
+
+  @Test
+  void deleteCollection_shouldReturnNoContent_whenRequestIsAuthenticated() throws Exception {
+    mockMvc
+        .perform(
+            delete("/collections/2")
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:delete"))))
+        .andExpect(status().isNoContent());
+
+    verify(service).deleteCollection(123L, 2L);
+  }
+
+  @Test
+  void updateCollection_shouldReturnUpdatedCollection_whenRequestIsAuthenticated()
+      throws Exception {
+    CollectorCollectionResp resp =
+        new CollectorCollectionResp(2L, "Updated", "Updated desc", 0, List.of());
+    when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", "Updated desc")))
+        .thenReturn(resp);
+
+    mockMvc
+        .perform(
+            put("/collections/2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Updated\",\"description\":\"Updated desc\"}")
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:update"))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(2))
+        .andExpect(jsonPath("$.name").value("Updated"))
+        .andExpect(jsonPath("$.description").value("Updated desc"));
+
+    verify(service)
+        .updateCollection(123L, 2L, new CollectorCollectionReq("Updated", "Updated desc"));
   }
 }

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
@@ -129,12 +130,11 @@ public class CollectorCollectionFigurineController {
 
   @GetMapping("/{collectionId}/figurines/{figurineId}")
   @PreAuthorize("hasAuthority('collections:figurines:read')")
-  public CollectorCollectionFigurineResp retrieveCollectionFigurine(
+  public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(
       @AuthenticationPrincipal Jwt jwt,
       @Positive @PathVariable Long collectionId,
       @Positive @PathVariable Long figurineId) {
-
-    return null;
+    return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
   }
 
   /**

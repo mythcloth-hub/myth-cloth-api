@@ -40,6 +40,7 @@ public final class TestJwtFactory {
   private static final String CATALOG_READ_PERMISSION = "catalogs:read";
   private static final String CATALOG_UPDATE_PERMISSION = "catalogs:update";
   private static final String CATALOG_DELETE_PERMISSION = "catalogs:delete";
+  private static final String COLLECTION_READ_PERMISSION = "collections:figurines:read";
   private static final String PERMISSIONS_WRITE_PERMISSION = "permissions:write";
   private static final String PERMISSIONS_READ_PERMISSION = "permissions:read";
   private static final String PERMISSIONS_DELETE_PERMISSION = "permissions:delete";
@@ -114,6 +115,7 @@ public final class TestJwtFactory {
                     CATALOG_READ_PERMISSION,
                     CATALOG_UPDATE_PERMISSION,
                     CATALOG_DELETE_PERMISSION,
+                    COLLECTION_READ_PERMISSION,
                     PERMISSIONS_WRITE_PERMISSION,
                     PERMISSIONS_READ_PERMISSION,
                     PERMISSIONS_DELETE_PERMISSION,
