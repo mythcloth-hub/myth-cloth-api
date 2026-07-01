@@ -470,7 +470,8 @@ public class CollectorPurchaseServiceTest {
     CollectorPurchaseSummaryLineItemResp response =
         service.updateSummaryLineItem(123L, 500L, request);
 
-    verify(collectorPurchaseFigurineRepository).delete(existingLineItem);
+    verify(collectorPurchaseFigurineRepository)
+        .deletePurchaseFigurineById(existingLineItem.getId());
     verify(collectorPurchaseFigurineRepository).save(any());
     assertThat(response.orderDate()).isEqualTo(LocalDate.of(2026, 6, 21));
     assertThat(response.store()).isEqualTo("Amiami updated");
@@ -609,7 +610,8 @@ public class CollectorPurchaseServiceTest {
     CollectorPurchaseSummaryLineItemResp response =
         service.updateSummaryLineItem(123L, 500L, request);
 
-    verify(collectorPurchaseFigurineRepository).delete(existingLineItem);
+    verify(collectorPurchaseFigurineRepository)
+        .deletePurchaseFigurineById(existingLineItem.getId());
     verify(collectorPurchaseFigurineRepository, times(2)).save(any());
     assertThat(response.lineItems()).hasSize(2);
   }
@@ -674,7 +676,8 @@ public class CollectorPurchaseServiceTest {
     CollectorPurchaseSummaryLineItemResp response =
         service.updateSummaryLineItem(123L, 500L, request);
 
-    verify(collectorPurchaseFigurineRepository).delete(existingLineItem);
+    verify(collectorPurchaseFigurineRepository)
+        .deletePurchaseFigurineById(existingLineItem.getId());
     verify(collectorPurchaseFigurineRepository).save(any());
     assertThat(response.lineItems()).hasSize(1);
     assertThat(response.lineItems().getFirst().purchaseType()).isEqualTo(PurchaseType.RETAIL);

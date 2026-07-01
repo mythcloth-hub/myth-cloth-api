@@ -3,6 +3,8 @@ package com.mesofi.mythclothapi.collectorspurchases.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
@@ -47,4 +49,16 @@ public interface CollectorPurchaseFigurineRepository
    * @return ordered list of figurine line items
    */
   List<CollectorPurchaseFigurine> findByPurchaseIdOrderByIdAsc(Long purchaseId);
+
+  /**
+   * Deletes a figurine line item from a collector purchase by its identifier.
+   *
+   * <p>This operation removes the specific purchase line item entity and does not affect the
+   * associated figurine or purchase records.
+   *
+   * @param id identifier of the figurine line item to delete
+   */
+  @Modifying
+  @Query("DELETE FROM CollectorPurchaseFigurine cpf WHERE cpf.id = :id")
+  void deletePurchaseFigurineById(Long id);
 }

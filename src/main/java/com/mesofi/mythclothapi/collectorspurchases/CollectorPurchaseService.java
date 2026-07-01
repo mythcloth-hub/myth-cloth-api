@@ -160,9 +160,13 @@ public class CollectorPurchaseService {
 
     boolean wasThereAnyChange = detectChangesInLineItems(existingLineItems, request.lineItems());
     if (wasThereAnyChange) {
-      collectorPurchaseFigurineRepository
-          .findByPurchase(updatedPurchase)
-          .forEach(collectorPurchaseFigurineRepository::delete);
+      List<CollectorPurchaseFigurine> toBeDeleted =
+          collectorPurchaseFigurineRepository.findByPurchase(updatedPurchase);
+
+      for (CollectorPurchaseFigurine purchaseFigurine : toBeDeleted) {
+        collectorPurchaseFigurineRepository.deletePurchaseFigurineById(purchaseFigurine.getId());
+        log.info("Deleted collector purchase figurine [{}]", purchaseFigurine.getId());
+      }
 
       lineItems = saveLineItems(updatedPurchase, request.lineItems());
     } else {
