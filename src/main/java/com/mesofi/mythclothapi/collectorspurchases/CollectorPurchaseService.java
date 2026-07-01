@@ -195,6 +195,24 @@ public class CollectorPurchaseService {
     return mapToSummaryResponse(purchase, lineItems);
   }
 
+  @Transactional
+  public void deleteSummaryLineItem(@Positive Long collectorId, @Positive Long purchaseId) {
+    collectorRepository
+        .findById(collectorId)
+        .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    CollectorPurchase purchase =
+        collectorPurchaseRepository
+            .findByIdAndCollectorId(purchaseId, collectorId)
+            .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
+
+    collectorPurchaseFigurineRepository
+        .findByPurchase(purchase)
+        .forEach(collectorPurchaseFigurineRepository::delete);
+
+    collectorPurchaseRepository.delete(purchase);
+  }
+
   private boolean detectChangesInLineItems(
       List<CollectorPurchaseFigurine> existingLineItems,
       List<CollectorPurchaseLineItemReq> collectorPurchaseLineItemReqs) {

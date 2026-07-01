@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,14 +30,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/purchases")
+@RequestMapping("/purchases/summary-line-items")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CollectorPurchaseController {
 
   private final CollectorPurchaseService service;
 
-  @PostMapping("/summary-line-items")
+  @PostMapping
   @PreAuthorize("hasAuthority('purchases:add')")
   public ResponseEntity<CollectorPurchaseSummaryLineItemResp> createSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt,
@@ -53,7 +54,7 @@ public class CollectorPurchaseController {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
-  @PutMapping("/summary-line-items/{purchaseId}")
+  @PutMapping("/{purchaseId}")
   @PreAuthorize("hasAuthority('purchases:update')")
   public ResponseEntity<CollectorPurchaseSummaryLineItemResp> updateSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt,
@@ -84,6 +85,18 @@ public class CollectorPurchaseController {
   public CollectorPurchaseSummaryLineItemResp retrieveSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long purchaseId) {
     return service.retrieveSummaryLineItem(getCollectorId(jwt), purchaseId);
+  }
+
+  @DeleteMapping("/{purchaseId}")
+  @PreAuthorize("hasAuthority('purchases:delete')")
+  public ResponseEntity<Void> deleteSummaryLineItem(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
+    log.info(
+        "Deleting collector purchase summary with line items. CollectorId: {}, PurchaseId: {}",
+        jwt.getSubject(),
+        purchaseId);
+    service.deleteSummaryLineItem(getCollectorId(jwt), purchaseId);
+    return ResponseEntity.noContent().build();
   }
 
   private Long getCollectorId(Jwt jwt) {

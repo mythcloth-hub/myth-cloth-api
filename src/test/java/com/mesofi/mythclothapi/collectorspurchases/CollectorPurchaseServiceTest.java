@@ -406,6 +406,7 @@ public class CollectorPurchaseServiceTest {
     verifyNoInteractions(collectorPurchaseFigurineRepository, figurineRepository);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void updateSummaryLineItem_shouldReplaceLineItems_whenLineItemsChanged() {
     Collector collectorFound = new Collector();
@@ -482,6 +483,7 @@ public class CollectorPurchaseServiceTest {
     assertThat(response.lineItems().getFirst().quantity()).isEqualTo(2);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void updateSummaryLineItem_shouldReuseExistingLineItems_whenLineItemsAreUnchanged() {
     Collector collectorFound = new Collector();
@@ -539,6 +541,7 @@ public class CollectorPurchaseServiceTest {
     assertThat(response.lineItems().getFirst().figurineId()).isEqualTo(101L);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void updateSummaryLineItem_shouldReplaceLineItems_whenLineItemCountDiffers() {
     Collector collectorFound = new Collector();
@@ -609,6 +612,7 @@ public class CollectorPurchaseServiceTest {
     assertThat(response.lineItems()).hasSize(2);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void updateSummaryLineItem_shouldReplaceLineItems_whenPurchaseTypeDiffers() {
     Collector collectorFound = new Collector();
@@ -824,6 +828,98 @@ public class CollectorPurchaseServiceTest {
     assertThat(response.purchaseId()).isEqualTo(500L);
     assertThat(response.lineItems()).hasSize(1);
     assertThat(response.lineItems().getFirst().figurineId()).isEqualTo(101L);
+  }
+
+  @Test
+  void deleteSummaryLineItem_shouldThrowCollectorNotFoundException_whenCollectorDoesNotExist() {
+    when(collectorRepository.findById(123L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteSummaryLineItem(123L, 500L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 123 was not found");
+
+    verify(collectorRepository).findById(123L);
+    verifyNoInteractions(
+        collectorPurchaseRepository, collectorPurchaseFigurineRepository, figurineRepository);
+  }
+
+  @Test
+  void
+      deleteSummaryLineItem_shouldThrowCollectorPurchaseNotFoundException_whenPurchaseDoesNotExist() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteSummaryLineItem(123L, 500L))
+        .isInstanceOf(
+            com.mesofi.mythclothapi.collectorspurchases.exceptions
+                .CollectorPurchaseNotFoundException.class)
+        .hasMessage("Collector purchase not found for this id: 500");
+
+    verify(collectorRepository).findById(123L);
+    verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
+    verifyNoInteractions(collectorPurchaseFigurineRepository, figurineRepository);
+  }
+
+  @Test
+  void deleteSummaryLineItem_shouldDeleteLineItemsAndPurchase_whenPurchaseExists() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    CollectorPurchase purchase = getCollectorPurchase(collectorFound);
+    purchase.setId(500L);
+
+    CollectorPurchaseFigurine lineItem1 = new CollectorPurchaseFigurine();
+    lineItem1.setId(301L);
+    lineItem1.setPurchase(purchase);
+    lineItem1.setQuantity(1);
+
+    CollectorPurchaseFigurine lineItem2 = new CollectorPurchaseFigurine();
+    lineItem2.setId(302L);
+    lineItem2.setPurchase(purchase);
+    lineItem2.setQuantity(2);
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.of(purchase));
+    when(collectorPurchaseFigurineRepository.findByPurchase(purchase))
+        .thenReturn(List.of(lineItem1, lineItem2));
+
+    service.deleteSummaryLineItem(123L, 500L);
+
+    verify(collectorPurchaseFigurineRepository).delete(lineItem1);
+    verify(collectorPurchaseFigurineRepository).delete(lineItem2);
+    verify(collectorPurchaseRepository).delete(purchase);
+    verifyNoInteractions(figurineRepository);
+  }
+
+  @Test
+  void deleteSummaryLineItem_shouldDeletePurchase_whenNoLineItemsExist() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    CollectorPurchase purchase = getCollectorPurchase(collectorFound);
+    purchase.setId(500L);
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.of(purchase));
+    when(collectorPurchaseFigurineRepository.findByPurchase(purchase)).thenReturn(List.of());
+
+    service.deleteSummaryLineItem(123L, 500L);
+
+    verify(collectorPurchaseFigurineRepository, never()).delete(any());
+    verify(collectorPurchaseRepository).delete(purchase);
+    verifyNoInteractions(figurineRepository);
   }
 
   private static @NonNull CollectorPurchase getCollectorPurchase(Collector collectorFound) {

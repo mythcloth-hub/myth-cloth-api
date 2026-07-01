@@ -2,11 +2,14 @@ package com.mesofi.mythclothapi.collectorspurchases;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,7 +46,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @WebMvcTest(CollectorPurchaseController.class)
 @Import(SecurityConfig.class)
-class CollectorPurchaseControllerTest {
+public class CollectorPurchaseControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
@@ -58,14 +61,14 @@ class CollectorPurchaseControllerTest {
       throws Exception {
     mockMvc
         .perform(
-            post("/purchases")
+            patch("/purchases/summary-line-items")
                 .with(
                     jwt()
                         .jwt(jwt -> jwt.subject("123"))
                         .authorities(new SimpleGrantedAuthority("purchases:add"))))
         .andExpect(status().isMethodNotAllowed())
-        .andExpect(jsonPath("$.detail").value("Request method 'POST' is not supported"))
-        .andExpect(jsonPath("$.instance").value("/purchases"))
+        .andExpect(jsonPath("$.detail").value("Request method 'PATCH' is not supported"))
+        .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
         .andExpect(jsonPath("$.status").value("405"))
         .andExpect(jsonPath("$.title").value("Method Not Allowed"))
         .andExpect(jsonPath("$.timestamp").exists());
@@ -496,7 +499,7 @@ class CollectorPurchaseControllerTest {
 
     mockMvc
         .perform(
-            get("/purchases")
+            get("/purchases/summary-line-items")
                 .with(
                     jwt()
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
@@ -538,7 +541,7 @@ class CollectorPurchaseControllerTest {
 
     mockMvc
         .perform(
-            get("/purchases/{purchaseId}", 5002L)
+            get("/purchases/summary-line-items/{purchaseId}", 5002L)
                 .with(
                     jwt()
                         .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
@@ -551,5 +554,21 @@ class CollectorPurchaseControllerTest {
         .andExpect(jsonPath("$.lineItems[1].figurineId").value(103L));
 
     verify(service).retrieveSummaryLineItem(1L, 5002L);
+  }
+
+  @Test
+  void deleteSummaryLineItem_shouldReturn204_whenRequestIsValid() throws Exception {
+    doNothing().when(service).deleteSummaryLineItem(eq(1L), eq(5002L));
+
+    mockMvc
+        .perform(
+            delete("/purchases/summary-line-items/{purchaseId}", 5002L)
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
+                        .authorities(new SimpleGrantedAuthority("purchases:delete"))))
+        .andExpect(status().isNoContent());
+
+    verify(service).deleteSummaryLineItem(eq(1L), eq(5002L));
   }
 }
