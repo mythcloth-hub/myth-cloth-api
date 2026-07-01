@@ -123,6 +123,7 @@ INSERT INTO permissions (description) VALUES ('figurines:write');
 INSERT INTO permissions (description) VALUES ('purchases:add');
 INSERT INTO permissions (description) VALUES ('purchases:read');
 INSERT INTO permissions (description) VALUES ('purchases:update');
+INSERT INTO permissions (description) VALUES ('purchases:delete');
 
 INSERT INTO permissions (description) VALUES ('stats:read');
 
@@ -157,3 +158,4 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 38);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 39);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 40);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 41);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 42);
