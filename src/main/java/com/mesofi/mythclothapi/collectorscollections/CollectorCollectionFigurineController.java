@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.collectorscollections;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,15 +11,20 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 
 import lombok.RequiredArgsConstructor;
@@ -115,6 +121,22 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.noContent().build();
   }
 
+  @GetMapping("/{collectionId}/figurines")
+  @PreAuthorize("hasAuthority('collections:figurines:read')")
+  public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(
+      @AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long collectionId) {
+    return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId);
+  }
+
+  @GetMapping("/{collectionId}/figurines/{figurineId}")
+  @PreAuthorize("hasAuthority('collections:figurines:read')")
+  public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(
+      @AuthenticationPrincipal Jwt jwt,
+      @Positive @PathVariable Long collectionId,
+      @Positive @PathVariable Long figurineId) {
+    return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
+  }
+
   /**
    * Retrieves all collections belonging to the authenticated collector.
    *
@@ -128,6 +150,24 @@ public class CollectorCollectionFigurineController {
   @PreAuthorize("hasAuthority('collections:read')")
   public List<CollectorCollectionResp> retrieveCollections(@AuthenticationPrincipal Jwt jwt) {
     return service.retrieveCollections(getCollectorId(jwt));
+  }
+
+  @DeleteMapping("/{id}")
+  @PreAuthorize("hasAuthority('collections:delete')")
+  public ResponseEntity<Void> deleteCollection(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+    service.deleteCollection(getCollectorId(jwt), id);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/{id}")
+  @PreAuthorize("hasAuthority('collections:update')")
+  public ResponseEntity<CollectorCollectionResp> updateCollection(
+      @AuthenticationPrincipal Jwt jwt,
+      @Positive @PathVariable Long id,
+      @RequestBody @Valid CollectorCollectionReq request) {
+    CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
+    return ResponseEntity.ok(updated);
   }
 
   private Long getCollectorId(Jwt jwt) {

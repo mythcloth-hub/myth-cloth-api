@@ -3,11 +3,15 @@ package com.mesofi.mythclothapi.collectorscollections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,14 +28,25 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.distributors.model.CountryCode;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
+import com.mesofi.mythclothapi.distributors.model.DistributorName;
+import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurines.FigurineFilter;
+import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +58,7 @@ class CollectorCollectionFigurineServiceTest {
   @Mock private CollectorCollectionRepository collectorCollectionRepository;
   @Mock private CollectorRepository collectorRepository;
   @Mock private FigurineRepository figurineRepository;
+  @Mock private FigurineService figurineService;
   @Mock private CollectorMapper collectorMapper;
 
   @Test
@@ -103,7 +119,7 @@ class CollectorCollectionFigurineServiceTest {
     CollectorCollectionFigurine persisted = captor.getValue();
     assertThat(persisted.getCollection()).isEqualTo(collection);
     assertThat(persisted.getFigurine()).isEqualTo(figurine);
-    assertThat(persisted.getTotalFigurines()).isEqualTo(1);
+    assertThat(persisted.getQuantity()).isEqualTo(1);
   }
 
   @Test
@@ -193,7 +209,7 @@ class CollectorCollectionFigurineServiceTest {
     verify(collectorCollectionFigurineRepository).save(linkCaptor.capture());
     assertThat(linkCaptor.getValue().getCollection()).isEqualTo(collection);
     assertThat(linkCaptor.getValue().getFigurine()).isEqualTo(figurine);
-    assertThat(linkCaptor.getValue().getTotalFigurines()).isEqualTo(1);
+    assertThat(linkCaptor.getValue().getQuantity()).isEqualTo(1);
   }
 
   @Test
@@ -202,7 +218,7 @@ class CollectorCollectionFigurineServiceTest {
     Collector collector = collector(1L);
     CollectorCollection collection = collection(20L, collector, "Existing", null);
     CollectorCollectionFigurine existingLink = link(collection, figurine);
-    existingLink.setTotalFigurines(2);
+    existingLink.setQuantity(2);
     AssignFigurinesReq request =
         new AssignFigurinesReq(List.of(10L), CollectionAssignmentMode.EXISTING, List.of(20L), null);
 
@@ -217,7 +233,7 @@ class CollectorCollectionFigurineServiceTest {
         ArgumentCaptor.forClass(CollectorCollectionFigurine.class);
     verify(collectorCollectionFigurineRepository).save(linkCaptor.capture());
     assertThat(linkCaptor.getValue()).isSameAs(existingLink);
-    assertThat(linkCaptor.getValue().getTotalFigurines()).isEqualTo(3);
+    assertThat(linkCaptor.getValue().getQuantity()).isEqualTo(3);
   }
 
   @Test
@@ -353,15 +369,265 @@ class CollectorCollectionFigurineServiceTest {
         .hasMessage("Collector with id 1 was not found");
   }
 
+  @Test
+  void retrieveCollectionFigurines_shouldReturnMappedFigurines_whenCollectorOwnsCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
+    Figurine releasedFigurine = figurineWithReleaseDate(10L, "Seiya", LocalDate.of(1991, 4, 20));
+    Figurine announcedFigurine = figurineWithReleaseDate(11L, "Shiryu", LocalDate.of(1992, 5, 21));
+    Figurine unreleasedFigurine = figurineWithReleaseDate(12L, "Hyoga", LocalDate.of(1993, 6, 22));
+    CollectorCollectionFigurine ownedLink = link(collection, releasedFigurine);
+    ownedLink.setQuantity(2);
+    collection.getFigurines().add(ownedLink);
+
+    CollectorCollectionFigurineResp response =
+        new CollectorCollectionFigurineResp(
+            10L, "Seiya", ReleaseStatus.RELEASED, null, null, true, 2, 1991);
+    CollectorCollectionFigurineResp announcedResponse =
+        new CollectorCollectionFigurineResp(
+            11L, "Shiryu", ReleaseStatus.ANNOUNCED, null, null, false, 0, 1992);
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+    when(figurineRepository.findAll(any(FigurineFilter.class)))
+        .thenReturn(List.of(releasedFigurine, announcedFigurine, unreleasedFigurine));
+    when(figurineService.calculateReleaseStatus(releasedFigurine))
+        .thenReturn(ReleaseStatus.RELEASED, ReleaseStatus.RELEASED);
+    when(figurineService.calculateReleaseStatus(announcedFigurine))
+        .thenReturn(ReleaseStatus.ANNOUNCED, ReleaseStatus.ANNOUNCED);
+    when(figurineService.calculateReleaseStatus(unreleasedFigurine))
+        .thenReturn(ReleaseStatus.UNRELEASED);
+    when(collectorMapper.toCollectorCollectionFigurineResp(
+            eq(releasedFigurine), eq(ReleaseStatus.RELEASED), eq(true), eq(2), eq(1991)))
+        .thenReturn(response);
+    when(collectorMapper.toCollectorCollectionFigurineResp(
+            eq(announcedFigurine), eq(ReleaseStatus.ANNOUNCED), eq(false), eq(0), eq(1992)))
+        .thenReturn(announcedResponse);
+
+    List<CollectorCollectionFigurineResp> result = service.retrieveCollectionFigurines(1L, 20L);
+
+    assertThat(result).containsExactly(response, announcedResponse);
+    verify(collectorMapper)
+        .toCollectorCollectionFigurineResp(releasedFigurine, ReleaseStatus.RELEASED, true, 2, 1991);
+    verify(collectorMapper)
+        .toCollectorCollectionFigurineResp(
+            announcedFigurine, ReleaseStatus.ANNOUNCED, false, 0, 1992);
+  }
+
+  @Test
+  void
+      retrieveCollectionFigurines_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection ownCollection = collection(99L, collector, "Other", null);
+    collector.setCollections(new ArrayList<>(List.of(ownCollection)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L))
+        .thenReturn(Optional.of(collection(20L, collector, "Collection", "Desc")));
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 20L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void retrieveCollectionFigurines_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 20L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void retrieveCollectionFigurines_shouldThrowCollectionNotFoundException_whenCollectionMissing() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>(List.of(collection(99L, collector, "Other", null))));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 20L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void retrieveCollectionFigurine_shouldReturnMappedFigurine_whenFigurineExists() {
+    Figurine figurine = figurine(10L);
+    CollectorCollectionFigurineDetailResp response =
+        new CollectorCollectionFigurineDetailResp("Seiya SSG");
+
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(figurine));
+    when(collectorMapper.toCollectorCollectionFigurineDetailResp(eq(figurine), any()))
+        .thenReturn(response);
+
+    CollectorCollectionFigurineDetailResp result = service.retrieveCollectionFigurine(1L, 20L, 10L);
+
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  void retrieveCollectionFigurine_shouldThrowFigurineNotFoundException_whenFigurineMissing() {
+    when(figurineRepository.findById(10L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessage("Figurine not found");
+  }
+
+  @Test
+  void deleteCollection_shouldDeleteCollection_whenCollectorOwnsCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", null);
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(20L, 1L))
+        .thenReturn(2);
+    lenient().when(collectorCollectionRepository.existsById(20L)).thenReturn(true);
+
+    service.deleteCollection(1L, 20L);
+
+    verify(collectorCollectionFigurineRepository).deleteByCollectionIdAndCollectorId(20L, 1L);
+    verify(collectorCollectionRepository).deleteCollectionById(20L);
+  }
+
+  @Test
+  void deleteCollection_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteCollection(1L, 20L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void deleteCollection_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>(List.of(collection(99L, collector, "Other", null))));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    lenient().when(collectorCollectionRepository.existsById(20L)).thenReturn(true);
+
+    assertThatThrownBy(() -> service.deleteCollection(1L, 20L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void deleteCollection_shouldThrowCollectionNotFoundException_whenCollectionNoLongerExists() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", null);
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(20L, 1L))
+        .thenReturn(1);
+    when(collectorCollectionRepository.existsById(20L)).thenReturn(false);
+
+    assertThatThrownBy(() -> service.deleteCollection(1L, 20L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+
+    verify(collectorCollectionRepository, never()).deleteCollectionById(20L);
+  }
+
+  @Test
+  void updateCollection_shouldUpdateCollection_whenCollectorOwnsCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Old", "Old desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+    CollectorCollectionReq request = new CollectorCollectionReq("New", "New desc");
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    lenient().when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+    when(collectorCollectionRepository.save(collection)).thenReturn(collection);
+
+    CollectorCollectionResp result = service.updateCollection(1L, 20L, request);
+
+    assertThat(result.id()).isEqualTo(20L);
+    assertThat(result.name()).isEqualTo("New");
+    assertThat(result.description()).isEqualTo("New desc");
+    verify(collectorCollectionRepository).save(collection);
+  }
+
+  @Test
+  void updateCollection_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(
+            () -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void updateCollection_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>(List.of(collection(99L, collector, "Other", null))));
+    CollectorCollection collection = collection(20L, collector, "Old", "Old desc");
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    lenient().when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+
+    assertThatThrownBy(
+            () -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void updateCollection_shouldThrowCollectionNotFoundException_whenCollectionMissingInRepository() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(
+        new ArrayList<>(List.of(collection(20L, collector, "Old", "Old desc"))));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(
+            () -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
   private Figurine figurine(Long id) {
     Figurine figurine = new Figurine();
     figurine.setId(id);
     return figurine;
   }
 
+  private Figurine figurineWithReleaseDate(Long id, String normalizedName, LocalDate releaseDate) {
+    Figurine figurine = figurine(id);
+    figurine.setNormalizedName(normalizedName);
+
+    Distributor distributor = new Distributor();
+    distributor.setId(id + 100);
+    distributor.setName(DistributorName.BANDAI);
+    distributor.setCountry(CountryCode.JP);
+
+    FigurineDistributor figurineDistributor = new FigurineDistributor();
+    figurineDistributor.setFigurine(figurine);
+    figurineDistributor.setDistributor(distributor);
+    figurineDistributor.setCurrency(CurrencyCode.JPY);
+    figurineDistributor.setReleaseDate(releaseDate);
+
+    figurine.setDistributors(new ArrayList<>(List.of(figurineDistributor)));
+    return figurine;
+  }
+
   private Collector collector(Long id) {
     Collector collector = new Collector();
     collector.setId(id);
+    return collector;
+  }
+
+  private Collector collectorWithCollections(Long id) {
+    Collector collector = collector(id);
+    collector.setCollections(new ArrayList<>());
     return collector;
   }
 
