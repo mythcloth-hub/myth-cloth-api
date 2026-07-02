@@ -571,4 +571,34 @@ public class CollectorPurchaseControllerTest {
 
     verify(service).deleteSummaryLineItem(eq(1L), eq(5002L));
   }
+
+  @Test
+  void syncPurchaseFigurineTotals_shouldReturn202_whenRequestIsValid() throws Exception {
+    doNothing().when(service).syncPurchaseFigurineTotals(eq(1L), eq(5002L), eq(9001L));
+
+    mockMvc
+        .perform(
+            put("/purchases/{purchaseId}/collections/{collectionId}/sync-total", 5002L, 9001L)
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
+                        .authorities(new SimpleGrantedAuthority("purchases:update"))))
+        .andExpect(status().isAccepted());
+
+    verify(service).syncPurchaseFigurineTotals(eq(1L), eq(5002L), eq(9001L));
+  }
+
+  @Test
+  void syncAllPurchaseFigurineTotals_shouldReturn202_whenRequestIsValid() throws Exception {
+    mockMvc
+        .perform(
+            put("/purchases/collections/{collectionId}/sync-total", 9001L)
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
+                        .authorities(new SimpleGrantedAuthority("purchases:update"))))
+        .andExpect(status().isAccepted());
+
+    verifyNoInteractions(service);
+  }
 }

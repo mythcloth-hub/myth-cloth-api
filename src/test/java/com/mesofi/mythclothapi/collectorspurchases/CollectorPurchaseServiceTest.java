@@ -26,6 +26,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
@@ -45,6 +50,8 @@ public class CollectorPurchaseServiceTest {
 
   @InjectMocks private CollectorPurchaseService service;
 
+  @Mock private CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
+  @Mock private CollectorCollectionRepository collectorCollectionRepository;
   @Mock private CollectorPurchaseRepository collectorPurchaseRepository;
   @Mock private CollectorPurchaseFigurineRepository collectorPurchaseFigurineRepository;
   @Mock private CollectorRepository collectorRepository;
@@ -925,6 +932,164 @@ public class CollectorPurchaseServiceTest {
     verify(collectorPurchaseFigurineRepository, never()).delete(any());
     verify(collectorPurchaseRepository).delete(purchase);
     verifyNoInteractions(figurineRepository);
+  }
+
+  @Test
+  void
+      syncPurchaseFigurineTotals_shouldThrowCollectorNotFoundException_whenCollectorDoesNotExist() {
+    when(collectorRepository.findById(123L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 123 was not found");
+
+    verify(collectorRepository).findById(123L);
+    verifyNoInteractions(
+        collectorPurchaseRepository,
+        collectorPurchaseFigurineRepository,
+        collectorCollectionRepository,
+        collectorCollectionFigurineRepository,
+        figurineRepository);
+  }
+
+  @Test
+  void
+      syncPurchaseFigurineTotals_shouldThrowCollectorPurchaseNotFoundException_whenPurchaseDoesNotExist() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
+        .isInstanceOf(
+            com.mesofi.mythclothapi.collectorspurchases.exceptions
+                .CollectorPurchaseNotFoundException.class)
+        .hasMessage("Collector purchase not found for this id: 500");
+
+    verify(collectorRepository).findById(123L);
+    verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
+    verifyNoInteractions(
+        collectorPurchaseFigurineRepository, collectorCollectionRepository, figurineRepository);
+  }
+
+  @Test
+  void
+      syncPurchaseFigurineTotals_shouldThrowCollectionNotFoundException_whenCollectionDoesNotExist() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    CollectorPurchase purchase = getCollectorPurchase(collectorFound);
+    purchase.setId(500L);
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.of(purchase));
+    when(collectorCollectionRepository.findById(900L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 900 was not found");
+
+    verify(collectorRepository).findById(123L);
+    verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
+    verify(collectorCollectionRepository).findById(900L);
+    verifyNoInteractions(
+        collectorPurchaseFigurineRepository, collectorCollectionFigurineRepository);
+  }
+
+  @Test
+  void syncPurchaseFigurineTotals_shouldUpdateCollectionQuantity_whenMatchingFigurineExists() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    CollectorPurchase purchase = getCollectorPurchase(collectorFound);
+    purchase.setId(500L);
+
+    CollectorCollection collection = new CollectorCollection();
+    collection.setId(900L);
+    collection.setCollector(collectorFound);
+
+    Figurine figurine1Found = new Figurine();
+    figurine1Found.setId(101L);
+    figurine1Found.setNormalizedName("Figurine 1");
+
+    CollectorPurchaseFigurine purchaseLineItem = new CollectorPurchaseFigurine();
+    purchaseLineItem.setId(301L);
+    purchaseLineItem.setPurchase(purchase);
+    purchaseLineItem.setFigurine(figurine1Found);
+    purchaseLineItem.setQuantity(4);
+
+    com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine
+        collectionFigurine =
+            new com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine();
+    collectionFigurine.setId(401L);
+    collectionFigurine.setCollection(collection);
+    collectionFigurine.setFigurine(figurine1Found);
+    collectionFigurine.setQuantity(2);
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.of(purchase));
+    when(collectorCollectionRepository.findById(900L)).thenReturn(Optional.of(collection));
+    when(collectorPurchaseFigurineRepository.findByPurchase(purchase))
+        .thenReturn(List.of(purchaseLineItem));
+    when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(
+            collection, figurine1Found))
+        .thenReturn(Optional.of(collectionFigurine));
+
+    service.syncPurchaseFigurineTotals(123L, 500L, 900L);
+
+    ArgumentCaptor<CollectorCollectionFigurine> captor =
+        ArgumentCaptor.forClass(CollectorCollectionFigurine.class);
+    verify(collectorCollectionFigurineRepository).save(captor.capture());
+    assertThat(captor.getValue().getQuantity()).isEqualTo(4);
+  }
+
+  @Test
+  void syncPurchaseFigurineTotals_shouldSkipWhenCollectionFigurineDoesNotExist() {
+    Collector collectorFound = new Collector();
+    collectorFound.setId(123L);
+    collectorFound.setEmail("myemail@sample.com");
+    collectorFound.setCreationDate(Instant.now());
+
+    CollectorPurchase purchase = getCollectorPurchase(collectorFound);
+    purchase.setId(500L);
+
+    CollectorCollection collection = new CollectorCollection();
+    collection.setId(900L);
+    collection.setCollector(collectorFound);
+
+    Figurine figurine1Found = new Figurine();
+    figurine1Found.setId(101L);
+    figurine1Found.setNormalizedName("Figurine 1");
+
+    CollectorPurchaseFigurine purchaseLineItem = new CollectorPurchaseFigurine();
+    purchaseLineItem.setId(301L);
+    purchaseLineItem.setPurchase(purchase);
+    purchaseLineItem.setFigurine(figurine1Found);
+    purchaseLineItem.setQuantity(4);
+
+    when(collectorRepository.findById(123L)).thenReturn(Optional.of(collectorFound));
+    when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L))
+        .thenReturn(Optional.of(purchase));
+    when(collectorCollectionRepository.findById(900L)).thenReturn(Optional.of(collection));
+    when(collectorPurchaseFigurineRepository.findByPurchase(purchase))
+        .thenReturn(List.of(purchaseLineItem));
+    when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(
+            collection, figurine1Found))
+        .thenReturn(Optional.empty());
+
+    service.syncPurchaseFigurineTotals(123L, 500L, 900L);
+
+    verify(collectorCollectionFigurineRepository, never()).save(any());
   }
 
   private static @NonNull CollectorPurchase getCollectorPurchase(Collector collectorFound) {
