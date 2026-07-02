@@ -444,7 +444,8 @@ class CollectorCollectionFigurineControllerTest {
   @Test
   void retrieveCollectionFigurine_shouldReturnFigurine_whenRequestIsAuthenticated()
       throws Exception {
-    CollectorCollectionFigurineDetailResp resp = new CollectorCollectionFigurineDetailResp("Seiya");
+    CollectorCollectionFigurineDetailResp resp =
+        new CollectorCollectionFigurineDetailResp("Seiya", List.of(), null, null, null);
     when(service.retrieveCollectionFigurine(123L, 2L, 9L)).thenReturn(resp);
 
     mockMvc
@@ -459,6 +460,21 @@ class CollectorCollectionFigurineControllerTest {
         .andExpect(jsonPath("$.displayableName").value("Seiya"));
 
     verify(service).retrieveCollectionFigurine(123L, 2L, 9L);
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldReturnNoContent_whenRequestIsAuthenticated()
+      throws Exception {
+    mockMvc
+        .perform(
+            delete("/collections/2/figurines/9")
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:figurines:delete"))))
+        .andExpect(status().isNoContent());
+
+    verify(service).deleteCollectionFigurine(123L, 2L, 9L);
   }
 
   @Test
