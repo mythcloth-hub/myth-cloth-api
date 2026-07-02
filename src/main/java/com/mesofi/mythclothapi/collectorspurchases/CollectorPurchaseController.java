@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/purchases/summary-line-items")
+@RequestMapping("/purchases")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class CollectorPurchaseController {
@@ -67,7 +67,7 @@ public class CollectorPurchaseController {
    * @param request purchase information and line items to create
    * @return HTTP 201 response containing the created purchase summary
    */
-  @PostMapping
+  @PostMapping("/summary-line-items")
   @PreAuthorize("hasAuthority('purchases:add')")
   public ResponseEntity<CollectorPurchaseSummaryLineItemResp> createSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt,
@@ -95,7 +95,7 @@ public class CollectorPurchaseController {
    * @param request updated purchase information and line items
    * @return updated purchase summary
    */
-  @PutMapping("/{purchaseId}")
+  @PutMapping("/summary-line-items/{purchaseId}")
   @PreAuthorize("hasAuthority('purchases:update')")
   public ResponseEntity<CollectorPurchaseSummaryLineItemResp> updateSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt,
@@ -122,7 +122,7 @@ public class CollectorPurchaseController {
    * @param jwt authenticated collector token
    * @return list of collector purchase summaries
    */
-  @GetMapping
+  @GetMapping("/summary-line-items")
   @PreAuthorize("hasAuthority('purchases:read')")
   public List<CollectorPurchaseSummaryLineItemResp> retrieveSummaryLineItems(
       @AuthenticationPrincipal Jwt jwt) {
@@ -138,7 +138,7 @@ public class CollectorPurchaseController {
    * @param purchaseId identifier of the purchase
    * @return purchase summary including its figurine line items
    */
-  @GetMapping("/{purchaseId}")
+  @GetMapping("/summary-line-items/{purchaseId}")
   @PreAuthorize("hasAuthority('purchases:read')")
   public CollectorPurchaseSummaryLineItemResp retrieveSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long purchaseId) {
@@ -154,7 +154,7 @@ public class CollectorPurchaseController {
    * @param purchaseId identifier of the purchase to delete
    * @return HTTP 204 response when deletion is successful
    */
-  @DeleteMapping("/{purchaseId}")
+  @DeleteMapping("/summary-line-items/{purchaseId}")
   @PreAuthorize("hasAuthority('purchases:delete')")
   public ResponseEntity<Void> deleteSummaryLineItem(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
@@ -164,6 +164,36 @@ public class CollectorPurchaseController {
         purchaseId);
     service.deleteSummaryLineItem(getCollectorId(jwt), purchaseId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/{purchaseId}/collections/{collectionId}/sync-total")
+  @PreAuthorize("hasAuthority('purchases:update')")
+  public ResponseEntity<Void> syncPurchaseFigurineTotals(
+      @AuthenticationPrincipal Jwt jwt,
+      @Positive @PathVariable Long purchaseId,
+      @Positive @PathVariable Long collectionId) {
+    log.info(
+        "Syncing purchase figurine totals. CollectorId: {}, PurchaseId: {}, CollectionId: {}",
+        jwt.getSubject(),
+        purchaseId,
+        collectionId);
+
+    service.syncPurchaseFigurineTotals(getCollectorId(jwt), purchaseId, collectionId);
+    return ResponseEntity.accepted().build();
+  }
+
+  @PutMapping("/collections/{collectionId}/sync-total")
+  @PreAuthorize("hasAuthority('purchases:update')")
+  public ResponseEntity<Void> syncAllPurchaseFigurineTotals(
+      @AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long collectionId) {
+    log.info(
+        "Syncing all purchase figurine totals for collection. CollectorId: {}, CollectionId: {}",
+        jwt.getSubject(),
+        collectionId);
+
+    // TODO: Uncomment the following line when the service method is implemented
+    // service.syncPurchaseFigurineTotals(getCollectorId(jwt),  collectionId);
+    return ResponseEntity.accepted().build();
   }
 
   /**

@@ -20,6 +20,9 @@ import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
@@ -65,6 +68,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CollectorPurchaseService {
 
+  private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
+  private final CollectorCollectionRepository collectorCollectionRepository;
   private final CollectorPurchaseRepository collectorPurchaseRepository;
   private final CollectorPurchaseFigurineRepository collectorPurchaseFigurineRepository;
   private final CollectorRepository collectorRepository;
@@ -160,9 +165,13 @@ public class CollectorPurchaseService {
 
     boolean wasThereAnyChange = detectChangesInLineItems(existingLineItems, request.lineItems());
     if (wasThereAnyChange) {
-      collectorPurchaseFigurineRepository
-          .findByPurchase(updatedPurchase)
-          .forEach(collectorPurchaseFigurineRepository::delete);
+      List<CollectorPurchaseFigurine> toBeDeleted =
+          collectorPurchaseFigurineRepository.findByPurchase(updatedPurchase);
+
+      for (CollectorPurchaseFigurine purchaseFigurine : toBeDeleted) {
+        collectorPurchaseFigurineRepository.deletePurchaseFigurineById(purchaseFigurine.getId());
+        log.info("Deleted collector purchase figurine [{}]", purchaseFigurine.getId());
+      }
 
       lineItems = saveLineItems(updatedPurchase, request.lineItems());
     } else {
@@ -286,6 +295,47 @@ public class CollectorPurchaseService {
         .forEach(collectorPurchaseFigurineRepository::delete);
 
     collectorPurchaseRepository.delete(purchase);
+  }
+
+  @Transactional
+  public void syncPurchaseFigurineTotals(
+      Long collectorId, @Positive Long purchaseId, @Positive Long collectionId) {
+    collectorRepository
+        .findById(collectorId)
+        .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    var existingPurchase =
+        collectorPurchaseRepository
+            .findByIdAndCollectorId(purchaseId, collectorId)
+            .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
+
+    var existingCollection =
+        collectorCollectionRepository
+            .findById(collectionId)
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    List<CollectorPurchaseFigurine> lineItems =
+        collectorPurchaseFigurineRepository.findByPurchase(existingPurchase);
+
+    for (CollectorPurchaseFigurine lineItem : lineItems) {
+      // Here you can implement the logic to sync the figurine totals.
+      // For example, you might want to update some fields in the lineItem or perform calculations.
+      // This is a placeholder for your actual sync logic.
+      log.info("Syncing line item [{}] for purchase [{}]", lineItem.getId(), purchaseId);
+
+      collectorCollectionFigurineRepository
+          .findByCollectionAndFigurine(existingCollection, lineItem.getFigurine())
+          .ifPresent(
+              (cf -> {
+                // Update the collection figurine with the purchase line item details
+                cf.setQuantity(lineItem.getQuantity());
+                collectorCollectionFigurineRepository.save(cf);
+                log.info(
+                    "Updated collection figurine [{}] with new quantity [{}]",
+                    cf.getId(),
+                    cf.getQuantity());
+              }));
+    }
   }
 
   private boolean detectChangesInLineItems(
