@@ -456,12 +456,18 @@ class CollectorCollectionFigurineServiceTest {
 
   @Test
   void retrieveCollectionFigurine_shouldReturnMappedFigurine_whenFigurineExists() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
     Figurine figurine = figurine(10L);
     CollectorCollectionFigurineDetailResp response =
-        new CollectorCollectionFigurineDetailResp("Seiya SSG");
+        new CollectorCollectionFigurineDetailResp("Seiya SSG", List.of(), null, null, null);
 
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
     when(figurineRepository.findById(10L)).thenReturn(Optional.of(figurine));
-    when(collectorMapper.toCollectorCollectionFigurineDetailResp(eq(figurine), any()))
+    when(collectorMapper.toCollectorCollectionFigurineDetailResp(eq(figurine), any(), any()))
         .thenReturn(response);
 
     CollectorCollectionFigurineDetailResp result = service.retrieveCollectionFigurine(1L, 20L, 10L);
@@ -470,12 +476,142 @@ class CollectorCollectionFigurineServiceTest {
   }
 
   @Test
+  void retrieveCollectionFigurine_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void retrieveCollectionFigurine_shouldThrowCollectionNotFoundException_whenCollectionMissing() {
+    Collector collector = collectorWithCollections(1L);
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void
+      retrieveCollectionFigurine_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>(List.of(collection(99L, collector, "Other", null))));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L))
+        .thenReturn(Optional.of(collection(20L, collector, "Collection", "Desc")));
+
+    assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
   void retrieveCollectionFigurine_shouldThrowFigurineNotFoundException_whenFigurineMissing() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
     when(figurineRepository.findById(10L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
         .isInstanceOf(FigurineNotFoundException.class)
         .hasMessage("Figurine not found");
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldThrowCollectionNotFoundException_whenCollectionMissing() {
+    Collector collector = collectorWithCollections(1L);
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void
+      deleteCollectionFigurine_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>(List.of(collection(99L, collector, "Other", null))));
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+
+    assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldThrowFigurineNotFoundException_whenFigurineMissing() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+    when(figurineRepository.findById(10L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
+        .isInstanceOf(FigurineNotFoundException.class)
+        .hasMessage("Figurine not found");
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldDeleteLink_whenFigurineExistsInCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+    Figurine figurine = figurine(10L);
+    CollectorCollectionFigurine existing = link(collection, figurine);
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(figurine));
+    when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(collection, figurine))
+        .thenReturn(Optional.of(existing));
+
+    service.deleteCollectionFigurine(1L, 20L, 10L);
+
+    verify(collectorCollectionFigurineRepository).delete(existing);
+  }
+
+  @Test
+  void deleteCollectionFigurine_shouldDoNothing_whenFigurineIsNotInCollection() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection collection = collection(20L, collector, "Collection", "Desc");
+    collector.setCollections(new ArrayList<>(List.of(collection)));
+    Figurine figurine = figurine(10L);
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
+    when(figurineRepository.findById(10L)).thenReturn(Optional.of(figurine));
+    when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(collection, figurine))
+        .thenReturn(Optional.empty());
+
+    service.deleteCollectionFigurine(1L, 20L, 10L);
+
+    verify(collectorCollectionFigurineRepository, never()).delete(any());
   }
 
   @Test

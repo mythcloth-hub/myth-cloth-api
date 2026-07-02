@@ -166,6 +166,17 @@ public class CollectorPurchaseController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Synchronizes figurine quantities from a specific purchase into a collector collection.
+   *
+   * <p>This operation updates the collection quantities based on the figurines recorded in the
+   * purchase. The purchase remains unchanged as historical data.
+   *
+   * @param jwt authenticated collector token
+   * @param purchaseId identifier of the purchase used as synchronization source
+   * @param collectionId identifier of the target collection
+   * @return HTTP {@code 202 Accepted} when synchronization is requested successfully
+   */
   @PutMapping("/{purchaseId}/collections/{collectionId}/sync-total")
   @PreAuthorize("hasAuthority('purchases:update')")
   public ResponseEntity<Void> syncPurchaseFigurineTotals(
@@ -182,6 +193,15 @@ public class CollectorPurchaseController {
     return ResponseEntity.accepted().build();
   }
 
+  /**
+   * Synchronizes figurine quantities from all purchases associated with a collector collection.
+   *
+   * <p>This operation recalculates collection quantities based on purchase history records.
+   *
+   * @param jwt authenticated collector token
+   * @param collectionId identifier of the target collection
+   * @return HTTP {@code 202 Accepted} when synchronization is requested successfully
+   */
   @PutMapping("/collections/{collectionId}/sync-total")
   @PreAuthorize("hasAuthority('purchases:update')")
   public ResponseEntity<Void> syncAllPurchaseFigurineTotals(

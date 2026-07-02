@@ -121,6 +121,16 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Retrieves all figurines assigned to a specific collector collection.
+   *
+   * <p>The collection must belong to the authenticated collector. Access requires the {@code
+   * collections:figurines:read} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param collectionId unique identifier of the collector collection
+   * @return list of figurines assigned to the collection
+   */
   @GetMapping("/{collectionId}/figurines")
   @PreAuthorize("hasAuthority('collections:figurines:read')")
   public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(
@@ -128,6 +138,17 @@ public class CollectorCollectionFigurineController {
     return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId);
   }
 
+  /**
+   * Retrieves detailed information about a specific figurine within a collector collection.
+   *
+   * <p>The figurine must be assigned to the specified collection owned by the authenticated
+   * collector. Access requires the {@code collections:figurines:read} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param collectionId unique identifier of the collector collection
+   * @param figurineId unique identifier of the figurine
+   * @return detailed figurine collection information
+   */
   @GetMapping("/{collectionId}/figurines/{figurineId}")
   @PreAuthorize("hasAuthority('collections:figurines:read')")
   public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(
@@ -135,6 +156,28 @@ public class CollectorCollectionFigurineController {
       @Positive @PathVariable Long collectionId,
       @Positive @PathVariable Long figurineId) {
     return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
+  }
+
+  /**
+   * Deletes a specific figurine from a collector collection.
+   *
+   * <p>The figurine must be assigned to the specified collection owned by the authenticated
+   * collector. Access requires the {@code collections:figurines:delete} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param collectionId unique identifier of the collector collection
+   * @param figurineId unique identifier of the figurine to delete
+   * @return an empty response with HTTP {@code 204 No Content} when deletion succeeds
+   */
+  @DeleteMapping("/{collectionId}/figurines/{figurineId}")
+  @PreAuthorize("hasAuthority('collections:figurines:delete')")
+  public ResponseEntity<Void> deleteCollectionFigurine(
+      @AuthenticationPrincipal Jwt jwt,
+      @Positive @PathVariable Long collectionId,
+      @Positive @PathVariable Long figurineId) {
+    log.info("Delete collection figurine {}", figurineId);
+    service.deleteCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
+    return ResponseEntity.noContent().build();
   }
 
   /**
@@ -152,6 +195,18 @@ public class CollectorCollectionFigurineController {
     return service.retrieveCollections(getCollectorId(jwt));
   }
 
+  /**
+   * Deletes an existing collector collection.
+   *
+   * <p>The collection must belong to the authenticated collector. Deleting a collection may also
+   * remove its associated figurine assignments depending on the configured persistence behavior.
+   *
+   * <p>This operation requires the {@code collections:delete} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param id unique identifier of the collection to delete
+   * @return an empty response with HTTP {@code 204 No Content} when deletion succeeds
+   */
   @DeleteMapping("/{id}")
   @PreAuthorize("hasAuthority('collections:delete')")
   public ResponseEntity<Void> deleteCollection(
@@ -160,6 +215,19 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Updates an existing collector collection.
+   *
+   * <p>The collection must belong to the authenticated collector. Only the provided collection
+   * fields are updated according to the request payload.
+   *
+   * <p>This operation requires the {@code collections:update} authority.
+   *
+   * @param jwt authenticated collector's JWT token containing identity information
+   * @param id unique identifier of the collection to update
+   * @param request collection update information
+   * @return the updated collector collection
+   */
   @PutMapping("/{id}")
   @PreAuthorize("hasAuthority('collections:update')")
   public ResponseEntity<CollectorCollectionResp> updateCollection(
@@ -170,6 +238,12 @@ public class CollectorCollectionFigurineController {
     return ResponseEntity.ok(updated);
   }
 
+  /**
+   * Extracts the authenticated collector identifier from the JWT subject claim.
+   *
+   * @param jwt authenticated collector JWT token
+   * @return collector identifier
+   */
   private Long getCollectorId(Jwt jwt) {
     return Long.valueOf(jwt.getSubject());
   }

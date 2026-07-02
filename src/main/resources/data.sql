@@ -100,6 +100,7 @@ INSERT INTO permissions (description) VALUES ('catalogs:write');
 
 INSERT INTO permissions (description) VALUES ('collections:figurines:add');
 INSERT INTO permissions (description) VALUES ('collections:figurines:read');
+INSERT INTO permissions (description) VALUES ('collections:figurines:delete');
 INSERT INTO permissions (description) VALUES ('collections:read');
 INSERT INTO permissions (description) VALUES ('collections:delete');
 INSERT INTO permissions (description) VALUES ('collections:update');

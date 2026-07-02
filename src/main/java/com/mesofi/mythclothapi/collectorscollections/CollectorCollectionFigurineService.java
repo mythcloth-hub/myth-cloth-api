@@ -82,9 +82,12 @@ public class CollectorCollectionFigurineService {
   /**
    * Adds a single figurine to a specific collection.
    *
-   * <p>This method is deprecated because it only supports assigning one figurine to one collection.
-   * Use {@link #assignFigurinesToCollections(Long, AssignFigurinesReq)} instead, which provides a
-   * unified workflow supporting multiple figurines, multiple collections, and collection creation
+   * <p>If the figurine already exists in the collection, this method does not create a duplicate
+   * relationship.
+   *
+   * <p>This method is deprecated because it only supports a single figurine and collection
+   * assignment. Use {@link #assignFigurinesToCollections(Long, AssignFigurinesReq)} instead, which
+   * supports multiple figurines, multiple collections, quantity updates, and collection creation
    * strategies.
    *
    * @param collectionId identifier of the target collection
@@ -125,11 +128,11 @@ public class CollectorCollectionFigurineService {
    * <p>This method:
    *
    * <ul>
-   *   <li>Retrieves and validates all requested figurines.
-   *   <li>Retrieves existing collections or creates a new collection depending on the assignment
+   *   <li>Validates that all requested figurines exist.
+   *   <li>Retrieves existing collections or creates new collections depending on the assignment
    *       mode.
    *   <li>Creates missing figurine-collection relationships.
-   *   <li>Updates existing relationships when the figurine is already assigned.
+   *   <li>Increases the quantity when the figurine already exists in a collection.
    * </ul>
    *
    * @param collectorId identifier of the collector performing the assignment
@@ -179,6 +182,21 @@ public class CollectorCollectionFigurineService {
     }
   }
 
+  /**
+   * Retrieves all figurines available for a collector collection.
+   *
+   * <p>The response includes figurine information together with collection-specific ownership data,
+   * such as whether the figurine exists in the collection and the owned quantity.
+   *
+   * <p>The collection must belong to the authenticated collector.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the collection
+   * @return list of figurines with collection ownership details
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
+   *     collector
+   */
   @Transactional(readOnly = true)
   public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(
       @Positive Long collectorId, @Positive Long collectionId) {
@@ -233,17 +251,94 @@ public class CollectorCollectionFigurineService {
         .toList();
   }
 
+  /**
+   * Retrieves detailed information about a specific figurine assigned to a collection.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the collection
+   * @param figurineId identifier of the figurine
+   * @return detailed figurine information
+   * @throws FigurineNotFoundException if the figurine does not exist
+   */
   @Transactional(readOnly = true)
   public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(
       @Positive Long collectorId, @Positive Long collectionId, @Positive Long figurineId) {
 
-    var existing =
+    var collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    var collectionFound =
+        collectorCollectionRepository
+            .findById(collectionId)
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    // make sure this collector owns the collection to be retrieved.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    var figurineFound =
         figurineRepository
             .findById(figurineId)
             .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
     return collectorMapper.toCollectorCollectionFigurineDetailResp(
-        existing, figurineService::createDisplayableName);
+        figurineFound,
+        figurineService::createDisplayableName,
+        figurineService::calculatePriceWithTax);
+  }
+
+  /**
+   * Deletes a collector collection and all figurine assignments associated with it.
+   *
+   * <p>The collection must belong to the specified collector.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the collection to delete
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
+   *     collector
+   */
+  @Transactional
+  public void deleteCollectionFigurine(
+      @Positive Long collectorId, @Positive Long collectionId, @Positive Long figurineId) {
+
+    var collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    var collectionFound =
+        collectorCollectionRepository
+            .findById(collectionId)
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    // make sure this collector owns the collection to be deleted.
+    collectorFound.getCollections().stream()
+        .filter(c -> c.getId().equals(collectionId))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    var figurineFound =
+        figurineRepository
+            .findById(figurineId)
+            .orElseThrow(() -> new FigurineNotFoundException(figurineId));
+
+    collectorCollectionFigurineRepository
+        .findByCollectionAndFigurine(collectionFound, figurineFound)
+        .ifPresent(
+            ccf -> {
+              collectorCollectionFigurineRepository.delete(ccf);
+              log.info(
+                  "Deleted figurine [{}] - '{}' from collection [{}] - '{}'",
+                  figurineFound.getId(),
+                  figurineFound.getNormalizedName(),
+                  collectionFound.getId(),
+                  collectionFound.getName());
+            });
   }
 
   /**
@@ -293,6 +388,19 @@ public class CollectorCollectionFigurineService {
     log.info("{} items deleted in collection with id {}", deletedCount, collectionId);
   }
 
+  /**
+   * Updates the metadata of an existing collector collection.
+   *
+   * <p>The collection ownership is validated before applying updates.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the collection to update
+   * @param request updated collection information
+   * @return updated collection response
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
+   *     collector
+   */
   @Transactional
   public CollectorCollectionResp updateCollection(
       @Positive Long collectorId,
@@ -369,13 +477,13 @@ public class CollectorCollectionFigurineService {
   /**
    * Creates a new collection for the specified collector.
    *
-   * <p>The collection name must be unique. If another collection already exists with the same name,
-   * the operation fails.
+   * <p>The collection name must be unique across collections. If another collection already exists
+   * with the same name, creation fails.
    *
    * @param collectorId identifier of the collector owning the collection
    * @param name collection name
    * @param description optional collection description
-   * @return the created collection entity
+   * @return newly created collection entity
    * @throws CollectorNotFoundException if the collector does not exist
    * @throws CollectionAlreadyExistsException if a collection with the same name already exists
    */
