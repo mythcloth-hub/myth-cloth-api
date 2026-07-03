@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -515,5 +516,29 @@ class CollectorCollectionFigurineControllerTest {
 
     verify(service)
         .updateCollection(123L, 2L, new CollectorCollectionReq("Updated", "Updated desc"));
+  }
+
+  @Test
+  void duplicateCollection_shouldReturnUnauthorized_whenJwtTokenIsMissing() throws Exception {
+    mockMvc.perform(post("/collections/2/duplicate")).andExpect(status().isUnauthorized());
+    verifyNoInteractions(service);
+  }
+
+  @Test
+  void duplicateCollection_shouldReturnCreatedWithLocation_whenRequestIsAuthenticated()
+      throws Exception {
+    when(service.duplicateCollection(123L, 2L)).thenReturn(77L);
+
+    mockMvc
+        .perform(
+            post("/collections/2/duplicate")
+                .with(
+                    jwt()
+                        .jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:update"))))
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", "/collections/77"));
+
+    verify(service).duplicateCollection(123L, 2L);
   }
 }

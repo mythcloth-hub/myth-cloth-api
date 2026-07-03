@@ -5,6 +5,7 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -252,12 +253,19 @@ public class CollectorCollectionFigurineService {
   }
 
   /**
-   * Retrieves detailed information about a specific figurine assigned to a collection.
+   * Retrieves detailed information about a specific figurine within a collector-owned collection
+   * context.
+   *
+   * <p>This operation validates that the collection exists and belongs to the provided collector
+   * before retrieving figurine details.
    *
    * @param collectorId identifier of the collector
    * @param collectionId identifier of the collection
    * @param figurineId identifier of the figurine
    * @return detailed figurine information
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
+   *     collector
    * @throws FigurineNotFoundException if the figurine does not exist
    */
   @Transactional(readOnly = true)
@@ -269,10 +277,9 @@ public class CollectorCollectionFigurineService {
             .findById(collectorId)
             .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-    var collectionFound =
-        collectorCollectionRepository
-            .findById(collectionId)
-            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+    collectorCollectionRepository
+        .findById(collectionId)
+        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
     // make sure this collector owns the collection to be retrieved.
     collectorFound.getCollections().stream()
@@ -292,15 +299,18 @@ public class CollectorCollectionFigurineService {
   }
 
   /**
-   * Deletes a collector collection and all figurine assignments associated with it.
+   * Deletes a figurine assignment from a collector collection.
    *
-   * <p>The collection must belong to the specified collector.
+   * <p>The collection must belong to the specified collector. If the figurine is not currently
+   * assigned to the collection, no deletion is performed.
    *
    * @param collectorId identifier of the collector
-   * @param collectionId identifier of the collection to delete
+   * @param collectionId identifier of the collection
+   * @param figurineId identifier of the figurine to unassign
    * @throws CollectorNotFoundException if the collector does not exist
    * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
    *     collector
+   * @throws FigurineNotFoundException if the figurine does not exist
    */
   @Transactional
   public void deleteCollectionFigurine(
@@ -361,6 +371,18 @@ public class CollectorCollectionFigurineService {
     return collectorCollection.stream().map(collectorMapper::toCollectorCollectionResp).toList();
   }
 
+  /**
+   * Deletes a collector collection and its associated figurine assignments.
+   *
+   * <p>The collection must belong to the specified collector. Existing collection-figurine rows are
+   * removed before deleting the collection entity.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the collection to delete
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the collection does not exist or does not belong to the
+   *     collector
+   */
   @Transactional
   public void deleteCollection(Long collectorId, Long collectionId) {
     Collector collectorFound =
@@ -407,21 +429,29 @@ public class CollectorCollectionFigurineService {
       @Positive Long collectionId,
       @NotNull @Valid CollectorCollectionReq request) {
     log.info("Updating collection with id '{}'. New name: '{}'", collectionId, request.name());
+
     Collector collectorFound =
         collectorRepository
             .findById(collectorId)
             .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-    // make sure this collection owns the collection to be removed.
-    collectorFound.getCollections().stream()
-        .filter(c -> c.getId().equals(collectionId))
-        .findFirst()
-        .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+    List<CollectorCollection> collectorCollections = collectorFound.getCollections();
 
+    // make sure this collector owns the collection to be updated.
     var existing =
-        collectorCollectionRepository
-            .findById(collectionId)
+        collectorCollections.stream()
+            .filter(c -> c.getId().equals(collectionId))
+            .findFirst()
             .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    // is there any collection that contains the same name?
+    collectorCollections.stream()
+        .filter(cc -> cc.getName().equals(request.name()))
+        .findFirst()
+        .ifPresent(
+            cc -> {
+              throw new CollectionAlreadyExistsException(cc.getName());
+            });
 
     // No need to use MapStruct when properties are too simple. Just update them directly.
     existing.setName(request.name());
@@ -433,6 +463,81 @@ public class CollectorCollectionFigurineService {
         updated.getId(), updated.getName(), updated.getDescription(), 0, List.of());
   }
 
+  /**
+   * Duplicates an existing collector collection, including its assigned figurines.
+   *
+   * <p>The source collection must belong to the provided collector. The duplicate uses the original
+   * name and description with a {@code " copy"} suffix and carries over figurine quantity and
+   * condition values.
+   *
+   * @param collectorId identifier of the collector
+   * @param collectionId identifier of the source collection to duplicate
+   * @return identifier of the newly created collection
+   * @throws CollectorNotFoundException if the collector does not exist
+   * @throws CollectionNotFoundException if the source collection does not exist or is not owned by
+   *     the collector
+   * @throws CollectionAlreadyExistsException if the generated duplicate name already exists
+   */
+  @Transactional
+  public long duplicateCollection(@Positive Long collectorId, @Positive Long collectionId) {
+    log.info("Duplicating collection with id '{}' for collector '{}'", collectionId, collectorId);
+
+    var collectorFound =
+        collectorRepository
+            .findById(collectorId)
+            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+    // Finds all collections belonging to the collector.
+    List<CollectorCollection> collectorCollection =
+        collectorCollectionRepository.findByCollector(collectorFound);
+
+    CollectorCollection owningCollection =
+        collectorCollection.stream()
+            .filter(cc -> cc.getId().equals(collectionId))
+            .findFirst()
+            .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+
+    String newName = owningCollection.getName() + " copy";
+    String newDescription =
+        owningCollection.getDescription() != null
+            ? owningCollection.getDescription() + " copy"
+            : null;
+
+    CollectorCollection duplicateCollection =
+        createCollection(collectorId, newName, newDescription);
+
+    duplicateCollection.setFigurines(
+        owningCollection.getFigurines().stream()
+            .map(
+                figurine -> {
+                  CollectorCollectionFigurine newFigurine = new CollectorCollectionFigurine();
+                  newFigurine.setCollection(duplicateCollection);
+                  newFigurine.setFigurine(figurine.getFigurine());
+                  newFigurine.setQuantity(figurine.getQuantity());
+                  newFigurine.setCondition(figurine.getCondition());
+                  return newFigurine;
+                })
+            .collect(Collectors.toCollection(ArrayList::new)));
+
+    collectorCollection.add(duplicateCollection); // the new collection is added
+
+    List<CollectorCollection> savedCollections =
+        collectorCollectionRepository.saveAllAndFlush(collectorCollection);
+
+    return savedCollections.stream()
+        .filter(sc -> sc.getName().equals(newName))
+        .findFirst()
+        .orElseThrow(() -> new CollectionNotFoundException(0L))
+        .getId();
+  }
+
+  /**
+   * Resolves all requested figurine identifiers to existing figurine entities.
+   *
+   * @param figurineIds figurine identifiers to resolve
+   * @return list of existing figurines matching the provided identifiers
+   * @throws FigurineNotFoundException if any identifier does not correspond to an existing figurine
+   */
   private List<Figurine> retrieveExistingFigurines(List<Long> figurineIds) {
     // if any of the passed figurineIds, then report it.
     return figurineIds.stream()
@@ -444,6 +549,19 @@ public class CollectorCollectionFigurineService {
         .toList();
   }
 
+  /**
+   * Resolves target collections according to the requested assignment mode.
+   *
+   * @param mode assignment mode driving how collections are resolved
+   * @param collectorId identifier of the collector
+   * @param collectionIds existing collection identifiers used in {@code EXISTING} mode
+   * @param collectionReq collection payload used in {@code CREATE} mode
+   * @return list of resolved collections
+   * @throws CollectorNotFoundException if collector lookup is required and fails
+   * @throws CollectionNotFoundException if an existing collection id cannot be found
+   * @throws CollectionAlreadyExistsException if creating a collection conflicts by name
+   * @throws IllegalArgumentException if the mode is unsupported
+   */
   private List<CollectorCollection> retrieveExistingCollections(
       CollectionAssignmentMode mode,
       Long collectorId,
@@ -470,6 +588,12 @@ public class CollectorCollectionFigurineService {
     return existingCollections;
   }
 
+  /**
+   * Retrieves or creates the collector default collection.
+   *
+   * @param collectorId identifier of the collector
+   * @return collector default collection
+   */
   private CollectorCollection createDefaultCollection(Long collectorId) {
     return createCollection(collectorId, "My Myth Collection", null);
   }
@@ -508,6 +632,13 @@ public class CollectorCollectionFigurineService {
     return collectorCollectionRepository.save(collectorCollection);
   }
 
+  /**
+   * Creates a collection-figurine association entity.
+   *
+   * @param collection owning collection
+   * @param figurine associated figurine
+   * @return new collection-figurine association
+   */
   private CollectorCollectionFigurine buildCollectionFigurine(
       CollectorCollection collection, Figurine figurine) {
     CollectorCollectionFigurine collectorCollectionFigurine = new CollectorCollectionFigurine();

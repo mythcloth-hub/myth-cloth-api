@@ -35,6 +35,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
+import com.mesofi.mythclothapi.collectorscollections.model.Condition;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
@@ -716,18 +717,193 @@ class CollectorCollectionFigurineServiceTest {
   }
 
   @Test
-  void updateCollection_shouldThrowCollectionNotFoundException_whenCollectionMissingInRepository() {
+  void updateCollection_shouldThrowCollectionAlreadyExistsException_whenNameAlreadyExists() {
     Collector collector = collectorWithCollections(1L);
-    collector.setCollections(
-        new ArrayList<>(List.of(collection(20L, collector, "Old", "Old desc"))));
+    CollectorCollection existing = collection(20L, collector, "Old", "Old desc");
+    CollectorCollection duplicateName = collection(21L, collector, "New", "New desc");
+    collector.setCollections(new ArrayList<>(List.of(existing, duplicateName)));
 
     when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
-    when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(
             () -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
+        .isInstanceOf(CollectionAlreadyExistsException.class)
+        .hasMessage("Collection with name 'New' already exists");
+  }
+
+  @Test
+  void duplicateCollection_shouldReturnDuplicatedCollectionId_whenCollectionExists() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection source = collection(20L, collector, "Bronze Saints", "Classic bronze");
+    Figurine seiya = figurine(10L);
+    CollectorCollectionFigurine sourceLink = link(source, seiya);
+    sourceLink.setQuantity(3);
+    sourceLink.setCondition(Condition.SEALED);
+    source.setFigurines(new ArrayList<>(List.of(sourceLink)));
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(new ArrayList<>(List.of(source)));
+    when(collectorCollectionRepository.findByName("Bronze Saints copy"))
+        .thenReturn(Optional.empty());
+    when(collectorCollectionRepository.save(any(CollectorCollection.class)))
+        .thenAnswer(
+            invocation -> {
+              CollectorCollection toSave = invocation.getArgument(0);
+              toSave.setId(77L);
+              return toSave;
+            });
+    when(collectorCollectionRepository.saveAllAndFlush(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    long duplicatedId = service.duplicateCollection(1L, 20L);
+
+    assertThat(duplicatedId).isEqualTo(77L);
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<CollectorCollection>> collectionsCaptor =
+        ArgumentCaptor.forClass(List.class);
+    verify(collectorCollectionRepository).saveAllAndFlush(collectionsCaptor.capture());
+
+    CollectorCollection duplicated =
+        collectionsCaptor.getValue().stream()
+            .filter(collection -> "Bronze Saints copy".equals(collection.getName()))
+            .findFirst()
+            .orElseThrow();
+
+    assertThat(duplicated.getDescription()).isEqualTo("Classic bronze copy");
+    assertThat(duplicated.getFigurines()).hasSize(1);
+    assertThat(duplicated.getFigurines().getFirst().getCollection()).isSameAs(duplicated);
+    assertThat(duplicated.getFigurines().getFirst().getFigurine()).isSameAs(seiya);
+    assertThat(duplicated.getFigurines().getFirst().getQuantity()).isEqualTo(3);
+    assertThat(duplicated.getFigurines().getFirst().getCondition()).isEqualTo(Condition.SEALED);
+  }
+
+  @Test
+  void duplicateCollection_shouldKeepDescriptionNull_whenSourceDescriptionIsNull() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection source = collection(20L, collector, "Bronze Saints", null);
+    source.setFigurines(new ArrayList<>());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(new ArrayList<>(List.of(source)));
+    when(collectorCollectionRepository.findByName("Bronze Saints copy"))
+        .thenReturn(Optional.empty());
+    when(collectorCollectionRepository.save(any(CollectorCollection.class)))
+        .thenAnswer(
+            invocation -> {
+              CollectorCollection toSave = invocation.getArgument(0);
+              toSave.setId(88L);
+              return toSave;
+            });
+    when(collectorCollectionRepository.saveAllAndFlush(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    long duplicatedId = service.duplicateCollection(1L, 20L);
+
+    assertThat(duplicatedId).isEqualTo(88L);
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<CollectorCollection>> collectionsCaptor =
+        ArgumentCaptor.forClass(List.class);
+    verify(collectorCollectionRepository).saveAllAndFlush(collectionsCaptor.capture());
+
+    CollectorCollection duplicated =
+        collectionsCaptor.getValue().stream()
+            .filter(collection -> "Bronze Saints copy".equals(collection.getName()))
+            .findFirst()
+            .orElseThrow();
+    assertThat(duplicated.getDescription()).isNull();
+  }
+
+  @Test
+  void duplicateCollection_shouldThrowCollectorNotFoundException_whenCollectorMissing() {
+    when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
+        .isInstanceOf(CollectorNotFoundException.class)
+        .hasMessage("Collector with id 1 was not found");
+  }
+
+  @Test
+  void
+      duplicateCollection_shouldThrowCollectionNotFoundException_whenCollectorDoesNotOwnCollection() {
+    Collector collector = collectorWithCollections(1L);
+    collector.setCollections(new ArrayList<>());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector)).thenReturn(new ArrayList<>());
+
+    assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
         .isInstanceOf(CollectionNotFoundException.class)
         .hasMessage("Collection with id 20 was not found");
+  }
+
+  @Test
+  void duplicateCollection_shouldThrowCollectionAlreadyExistsException_whenDuplicateNameExists() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection source = collection(20L, collector, "Bronze Saints", "Classic bronze");
+    CollectorCollection duplicateName = collection(21L, collector, "Bronze Saints copy", "Another");
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(new ArrayList<>(List.of(source)));
+    when(collectorCollectionRepository.findByName("Bronze Saints copy"))
+        .thenReturn(Optional.of(duplicateName));
+
+    assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
+        .isInstanceOf(CollectionAlreadyExistsException.class)
+        .hasMessage("Collection with name 'Bronze Saints copy' already exists");
+  }
+
+  @Test
+  void duplicateCollection_shouldUseRequestedCollectionId_whenTargetCollectionIsNotFirst() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection anotherCollection = collection(19L, collector, "Silver Saints", "Alt");
+    CollectorCollection targetCollection =
+        collection(20L, collector, "Bronze Saints", "Classic bronze");
+    targetCollection.setFigurines(new ArrayList<>());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(new ArrayList<>(List.of(anotherCollection, targetCollection)));
+    when(collectorCollectionRepository.findByName("Bronze Saints copy"))
+        .thenReturn(Optional.empty());
+    when(collectorCollectionRepository.save(any(CollectorCollection.class)))
+        .thenAnswer(
+            invocation -> {
+              CollectorCollection toSave = invocation.getArgument(0);
+              toSave.setId("Bronze Saints copy".equals(toSave.getName()) ? 77L : 66L);
+              return toSave;
+            });
+    when(collectorCollectionRepository.saveAllAndFlush(any()))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    long duplicatedId = service.duplicateCollection(1L, 20L);
+
+    assertThat(duplicatedId).isEqualTo(77L);
+  }
+
+  @Test
+  void
+      duplicateCollection_shouldThrowCollectionNotFoundException_whenSavedDuplicateCannotBeResolved() {
+    Collector collector = collectorWithCollections(1L);
+    CollectorCollection source = collection(20L, collector, "Bronze Saints", "Classic bronze");
+    source.setFigurines(new ArrayList<>());
+
+    when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+    when(collectorCollectionRepository.findByCollector(collector))
+        .thenReturn(new ArrayList<>(List.of(source)));
+    when(collectorCollectionRepository.findByName("Bronze Saints copy"))
+        .thenReturn(Optional.empty());
+    when(collectorCollectionRepository.save(any(CollectorCollection.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+    when(collectorCollectionRepository.saveAllAndFlush(any())).thenReturn(List.of(source));
+
+    assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
+        .isInstanceOf(CollectionNotFoundException.class)
+        .hasMessage("Collection with id 0 was not found");
   }
 
   private Figurine figurine(Long id) {
