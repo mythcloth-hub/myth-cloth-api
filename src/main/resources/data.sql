@@ -76,17 +76,6 @@ INSERT INTO permissions (description) VALUES ('roles:read');
 INSERT INTO permissions (description) VALUES ('roles:update');
 INSERT INTO permissions (description) VALUES ('roles:write');
 
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 1);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 2);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 3);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 4);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 5);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 6);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 7);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 8);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 9);
-INSERT INTO role_permission (role_id, permission_id) VALUES (1, 10);
-
 -- ========================= ADDED REST OF PERMISSIONS TO ADMIN ========================================
 INSERT INTO permissions (description) VALUES ('anniversaries:delete');
 INSERT INTO permissions (description) VALUES ('anniversaries:read');
@@ -128,6 +117,16 @@ INSERT INTO permissions (description) VALUES ('purchases:delete');
 
 INSERT INTO permissions (description) VALUES ('stats:read');
 
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 1);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 2);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 3);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 4);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 5);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 6);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 7);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 8);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 9);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 10);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 11);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 12);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 13);
@@ -160,3 +159,4 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 39);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 40);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 41);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 42);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 43);
