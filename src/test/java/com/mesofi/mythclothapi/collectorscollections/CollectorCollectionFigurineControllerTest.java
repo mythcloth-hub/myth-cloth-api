@@ -109,7 +109,7 @@ class CollectorCollectionFigurineControllerTest {
         .andExpect(status().isNoContent());
 
     AssignFigurinesReq req =
-        new AssignFigurinesReq(List.of(9L), CollectionAssignmentMode.AUTO, List.of(2L), null);
+        new AssignFigurinesReq(List.of(9L), CollectionAssignmentMode.EXISTING, List.of(2L), null);
 
     verify(service).assignFigurinesToCollections(123L, req);
   }

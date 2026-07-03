@@ -78,9 +78,7 @@ public class CollectorCollectionFigurineController {
    * @param collectionId unique identifier of the target collector collection
    * @param figurineId unique identifier of the figurine to assign
    * @return an empty response with HTTP {@code 204 No Content} when the assignment succeeds
-   * @deprecated Use {@link #assignFigurinesToCollections(Jwt, AssignFigurinesReq)} instead.
    */
-  @Deprecated
   @PostMapping("/{collectionId}/figurines/{figurineId}")
   @PreAuthorize("hasAuthority('collections:figurines:add')")
   public ResponseEntity<Void> addFigurineToCollection(
@@ -91,8 +89,13 @@ public class CollectorCollectionFigurineController {
 
     AssignFigurinesReq request =
         new AssignFigurinesReq(
-            List.of(figurineId), CollectionAssignmentMode.AUTO, List.of(collectionId), null);
+            List.of(figurineId), CollectionAssignmentMode.EXISTING, List.of(collectionId), null);
     service.assignFigurinesToCollections(getCollectorId(jwt), request);
+    log.info(
+        "Current assignment request: figurines {} to collections {} with mode {}",
+        request.figurineIds(),
+        request.collectionIds(),
+        request.collectionMode());
 
     return ResponseEntity.noContent().build();
   }
