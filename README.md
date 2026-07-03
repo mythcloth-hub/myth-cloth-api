@@ -1,70 +1,166 @@
-# 📦 Myth Cloth API
+# Myth Cloth API
 
-Core backend API powering the **Myth Cloth Collection Manager** app.
-This service handles data persistence, search, and management of **Saint
-Seiya Cloth figurines**.
+Backend API for the Myth Cloth Collection Manager app.  
+It manages Saint Seiya figurines, catalogs, distributors, collector collections, purchases, and security/permissions.
 
-## 🚀 Features
+## Project overview
 
--   Manage Myth Cloth figurines and related metadata
--   REST API built with **Spring Boot**
--   Persistence using **PostgreSQL**
--   Includes **Docker Compose** setup for local development
--   Supports expansion for distributors, catalogs, and more
+- **Framework**: Spring Boot (Java 21)
+- **Database**: PostgreSQL
+- **Build tool**: Gradle Wrapper (`./gradlew`)
+- **API base URL**: `http://localhost:9090/api/v1`
+- **OpenAPI/Swagger**:
+  - `http://localhost:9090/api/v1/swagger-ui.html`
+  - `http://localhost:9090/api/v1/swagger.yaml`
 
-## 🛠️ Tech Stack
+---
 
--   **Java 21+**
--   **Spring Boot**
--   **Spring Data JPA**
--   **PostgreSQL**
--   **Docker / Docker Compose**
--   **Gradle**
+## Local setup (new machine) - step by step
 
-## 🐳 Running PostgreSQL using Docker Compose
+### 1. Install prerequisites
 
-### Start the database
+Install these first:
 
-``` sh
+1. **Git**
+2. **Java 21** (JDK, not JRE)
+3. **Docker Desktop** (or Docker Engine + Compose plugin)
+
+Check versions:
+
+```sh
+git --version
+java -version
+docker --version
+docker compose version
+```
+
+### 2. Clone the repository
+
+```sh
+git clone https://github.com/mythcloth-hub/myth-cloth-api.git
+cd myth-cloth-api
+```
+
+### 3. Start PostgreSQL with Docker Compose
+
+This project already includes `docker-compose.yml` with:
+- DB host: `localhost`
+- Port: `5432`
+- DB name: `mythclothlocal`
+- User: `postgres`
+- Password: `postgres`
+
+Start DB:
+
+```sh
 docker compose up -d
 ```
 
-### Stop the database
+Verify DB container:
 
-``` sh
-docker compose down
+```sh
+docker compose ps
+docker compose logs -f postgres
 ```
 
-### View logs
+### 4. Run the API
 
-``` sh
-docker compose logs -f
-```
-
-### Check running containers
-
-``` sh
-docker ps
-```
-
-## ▶️ Running the Application
-
-``` sh
+```sh
 ./gradlew bootRun
 ```
 
-## 🧪 Running Tests
+When startup is complete, API runs at:
 
-``` sh
+`http://localhost:9090/api/v1`
+
+### 5. Verify it is running
+
+Open Swagger UI:
+
+`http://localhost:9090/api/v1/swagger-ui.html`
+
+Or call the OpenAPI file:
+
+```sh
+curl http://localhost:9090/api/v1/swagger.yaml
+```
+
+### 6. (Optional) Run tests locally
+
+Unit tests:
+
+```sh
 ./gradlew test
 ```
 
-## 📄 API Documentation
+Full check pipeline (includes integration tests + PIT mutation tests):
 
-After starting the app, open:
+```sh
+./gradlew check
+```
 
-- `http://localhost:9090/api/v1/swagger-ui.html`
+---
 
-Raw OpenAPI file:
+## Important local behavior
 
-- `http://localhost:9090/api/v1/swagger.yaml`
+- `spring.jpa.hibernate.ddl-auto` is set to **`create-drop`** in `application.yaml`.
+- On each app restart, schema is recreated and seeded again from `src/main/resources/data.sql`.
+- This is fine for local development but means local DB data is not persistent across app restarts.
+
+---
+
+## Authentication notes for local testing
+
+- Public endpoints include:
+  - `GET /figurines/**`
+  - `GET /catalogs/{catalogType}/**`
+  - `GET /anniversaries/**`
+  - `POST /collectors/auth/{provider}`
+- Most other endpoints require Bearer JWT with role/permission claims.
+
+If you need authenticated testing, use the social login endpoint:
+
+`POST /api/v1/collectors/auth/{provider}` (e.g. `google`, `facebook`)
+
+Request body shape:
+
+```json
+{
+  "idToken": "provider-id-token",
+  "accessToken": "provider-access-token"
+}
+```
+
+---
+
+## Useful local commands
+
+Start DB:
+
+```sh
+docker compose up -d
+```
+
+Stop DB:
+
+```sh
+docker compose down
+```
+
+Stop DB and delete volume (full local reset):
+
+```sh
+docker compose down -v
+```
+
+Run app:
+
+```sh
+./gradlew bootRun
+```
+
+Run a clean build:
+
+```sh
+./gradlew clean build
+```
