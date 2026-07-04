@@ -5,7 +5,7 @@ It manages Saint Seiya figurines, catalogs, distributors, collector collections,
 
 ## Project overview
 
-- **Framework**: Spring Boot (Java 21)
+- **Framework**: Spring Boot (Java 25)
 - **Database**: PostgreSQL
 - **Build tool**: Gradle Wrapper (`./gradlew`)
 - **API base URL**: `http://localhost:9090/api/v1`
@@ -17,13 +17,41 @@ It manages Saint Seiya figurines, catalogs, distributors, collector collections,
 
 ## Local setup (new machine) - step by step
 
-### 1. Install prerequisites
+### 1. Install prerequisites on a fresh Ubuntu-based distro
 
-Install these first:
+This project now targets **Java 25**.
 
-1. **Git**
-2. **Java 21** (JDK, not JRE)
-3. **Docker Desktop** (or Docker Engine + Compose plugin)
+Run these commands in order:
+
+```sh
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y ca-certificates curl gnupg lsb-release git
+```
+
+Install Java 25:
+
+```sh
+sudo apt install -y openjdk-25-jdk
+```
+
+Install Docker Engine and the Compose plugin from Docker's official APT repository:
+
+```sh
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo ${VERSION_CODENAME}) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"
+```
+
+Log out and log back in after adding your user to the `docker` group, or run:
+
+```sh
+newgrp docker
+```
 
 Check versions:
 
@@ -32,6 +60,12 @@ git --version
 java -version
 docker --version
 docker compose version
+```
+
+Verify the installed JDK points to Java 25:
+
+```sh
+java -version
 ```
 
 ### 2. Clone the repository
