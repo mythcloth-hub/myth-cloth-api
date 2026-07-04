@@ -14,15 +14,14 @@ import com.mesofi.mythclothapi.security.JwtProperties;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 /**
- * Spring configuration that exposes the JWT encoder used to sign tokens with the configured shared
- * secret.
+ * Spring configuration that exposes the JWT encoder used to sign tokens with
+ * the configured shared secret.
  */
 @Configuration
 public class JwtConfig {
-  @Bean
-  JwtEncoder jwtEncoder(JwtProperties props) {
-    SecretKey key =
-        new SecretKeySpec(props.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-    return new NimbusJwtEncoder(new ImmutableSecret<>(key));
-  }
+	@Bean
+	JwtEncoder jwtEncoder(JwtProperties props) {
+		SecretKey key = new SecretKeySpec(props.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+		return new NimbusJwtEncoder(new ImmutableSecret<>(key));
+	}
 }

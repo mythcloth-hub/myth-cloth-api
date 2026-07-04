@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 
 @Repository("distributions")
-public interface DistributionRepository extends IdDescRepository<Distribution, Long> {}
+public interface DistributionRepository extends IdDescRepository<Distribution, Long> {
+}

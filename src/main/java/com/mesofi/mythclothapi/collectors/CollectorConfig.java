@@ -6,7 +6,11 @@ import org.springframework.context.annotation.Configuration;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 
-/** Registers provider credential properties required by collector social-auth services. */
+/**
+ * Registers provider credential properties required by collector social-auth
+ * services.
+ */
 @Configuration
 @EnableConfigurationProperties({FcCredentialsProperties.class, GoogleCredentialsProperties.class})
-public class CollectorConfig {}
+public class CollectorConfig {
+}

@@ -22,6 +22,6 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = true, exclude = "figurines")
 public class LineUp extends Descriptive {
 
-  @OneToMany(mappedBy = "lineup", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Figurine> figurines = new ArrayList<>();
+	@OneToMany(mappedBy = "lineup", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Figurine> figurines = new ArrayList<>();
 }

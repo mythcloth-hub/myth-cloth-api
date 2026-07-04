@@ -21,119 +21,98 @@ import com.mesofi.mythclothapi.integration.ServiceName;
 
 class GoogleApiClientTest {
 
-  private TestContext context() {
-    GoogleApiClient client = new GoogleApiClient();
-    RestClient.Builder restClientBuilder =
-        RestClient.builder().baseUrl("https://oauth2.googleapis.com");
-    MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
+	private TestContext context() {
+		GoogleApiClient client = new GoogleApiClient();
+		RestClient.Builder restClientBuilder = RestClient.builder().baseUrl("https://oauth2.googleapis.com");
+		MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
 
-    ReflectionTestUtils.setField(client, "restClient", restClientBuilder.build());
-    return new TestContext(client, server);
-  }
+		ReflectionTestUtils.setField(client, "restClient", restClientBuilder.build());
+		return new TestContext(client, server);
+	}
 
-  private record TestContext(GoogleApiClient client, MockRestServiceServer server) {}
+	private record TestContext(GoogleApiClient client, MockRestServiceServer server) {
+	}
 
-  @Test
-  void validateIdToken_shouldReturnTokenInfo_whenPayloadIsPresent() {
-    TestContext context = context();
+	@Test
+	void validateIdToken_shouldReturnTokenInfo_whenPayloadIsPresent() {
+		TestContext context = context();
 
-    context
-        .server()
-        .expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
-        .andExpect(method(HttpMethod.GET))
-        .andRespond(
-            withSuccess(
-                """
-                {
-                  "iss": "https://accounts.google.com",
-                  "aud": "client-id",
-                  "sub": "sub-123",
-                  "email": "seiya@example.com",
-                  "email_verified": "true",
-                  "name": "Seiya",
-                  "picture": "https://img/seiya.jpg",
-                  "exp": "1735689600"
-                }
-                """,
-                APPLICATION_JSON));
+		context.server().expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
+				.andExpect(method(HttpMethod.GET)).andRespond(withSuccess("""
+						{
+						  "iss": "https://accounts.google.com",
+						  "aud": "client-id",
+						  "sub": "sub-123",
+						  "email": "seiya@example.com",
+						  "email_verified": "true",
+						  "name": "Seiya",
+						  "picture": "https://img/seiya.jpg",
+						  "exp": "1735689600"
+						}
+						""", APPLICATION_JSON));
 
-    GoogleTokenInfoResponse response = context.client().validateIdToken("google-id-token");
+		GoogleTokenInfoResponse response = context.client().validateIdToken("google-id-token");
 
-    context.server().verify();
+		context.server().verify();
 
-    assertThat(response.iss()).isEqualTo("https://accounts.google.com");
-    assertThat(response.aud()).isEqualTo("client-id");
-    assertThat(response.sub()).isEqualTo("sub-123");
-    assertThat(response.email()).isEqualTo("seiya@example.com");
-    assertThat(response.emailVerified()).isTrue();
-    assertThat(response.name()).isEqualTo("Seiya");
-    assertThat(response.picture()).isEqualTo("https://img/seiya.jpg");
-    assertThat(response.exp()).isEqualTo("1735689600");
-  }
+		assertThat(response.iss()).isEqualTo("https://accounts.google.com");
+		assertThat(response.aud()).isEqualTo("client-id");
+		assertThat(response.sub()).isEqualTo("sub-123");
+		assertThat(response.email()).isEqualTo("seiya@example.com");
+		assertThat(response.emailVerified()).isTrue();
+		assertThat(response.name()).isEqualTo("Seiya");
+		assertThat(response.picture()).isEqualTo("https://img/seiya.jpg");
+		assertThat(response.exp()).isEqualTo("1735689600");
+	}
 
-  @Test
-  void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsClientError() {
-    TestContext context = context();
+	@Test
+	void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsClientError() {
+		TestContext context = context();
 
-    context
-        .server()
-        .expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
-        .andExpect(method(HttpMethod.GET))
-        .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+		context.server().expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
+				.andExpect(method(HttpMethod.GET)).andRespond(withStatus(HttpStatus.BAD_REQUEST));
 
-    assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
-        .isInstanceOfSatisfying(
-            IntegrationException.class,
-            ex -> {
-              assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
-              assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
-              assertThat(ex.getMessage()).isEqualTo("Google API client error.");
-            });
+		assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
+				.isInstanceOfSatisfying(IntegrationException.class, ex -> {
+					assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
+					assertThat(ex.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+					assertThat(ex.getMessage()).isEqualTo("Google API client error.");
+				});
 
-    context.server().verify();
-  }
+		context.server().verify();
+	}
 
-  @Test
-  void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsServerError() {
-    TestContext context = context();
+	@Test
+	void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsServerError() {
+		TestContext context = context();
 
-    context
-        .server()
-        .expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
-        .andExpect(method(HttpMethod.GET))
-        .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+		context.server().expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
+				.andExpect(method(HttpMethod.GET)).andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
-    assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
-        .isInstanceOfSatisfying(
-            IntegrationException.class,
-            ex -> {
-              assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
-              assertThat(ex.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-              assertThat(ex.getMessage()).isEqualTo("Google servers are down.");
-            });
+		assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
+				.isInstanceOfSatisfying(IntegrationException.class, ex -> {
+					assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
+					assertThat(ex.getStatus()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+					assertThat(ex.getMessage()).isEqualTo("Google servers are down.");
+				});
 
-    context.server().verify();
-  }
+		context.server().verify();
+	}
 
-  @Test
-  void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsEmptyBody() {
-    TestContext context = context();
+	@Test
+	void validateIdToken_shouldThrowIntegrationException_whenGoogleReturnsEmptyBody() {
+		TestContext context = context();
 
-    context
-        .server()
-        .expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
-        .andExpect(method(HttpMethod.GET))
-        .andRespond(withNoContent());
+		context.server().expect(requestTo("https://oauth2.googleapis.com/tokeninfo?id_token=google-id-token"))
+				.andExpect(method(HttpMethod.GET)).andRespond(withNoContent());
 
-    assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
-        .isInstanceOfSatisfying(
-            IntegrationException.class,
-            ex -> {
-              assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
-              assertThat(ex.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-              assertThat(ex.getMessage()).isEqualTo("Google returned an empty response.");
-            });
+		assertThatThrownBy(() -> context.client().validateIdToken("google-id-token"))
+				.isInstanceOfSatisfying(IntegrationException.class, ex -> {
+					assertThat(ex.getServiceName()).isEqualTo(ServiceName.GOOGLE);
+					assertThat(ex.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+					assertThat(ex.getMessage()).isEqualTo("Google returned an empty response.");
+				});
 
-    context.server().verify();
-  }
+		context.server().verify();
+	}
 }

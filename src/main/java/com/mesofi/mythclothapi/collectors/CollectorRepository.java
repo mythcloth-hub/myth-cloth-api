@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 
 /** Repository for managing {@link Collector} persistence operations. */
 @Repository
-public interface CollectorRepository extends JpaRepository<Collector, Long> {}
+public interface CollectorRepository extends JpaRepository<Collector, Long> {
+}

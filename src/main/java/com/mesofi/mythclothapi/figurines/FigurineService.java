@@ -68,26 +68,29 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Service layer responsible for managing {@link Figurine} lifecycle operations.
  *
- * <p>This service encapsulates:
+ * <p>
+ * This service encapsulates:
  *
  * <ul>
- *   <li>Importing figurines from a public Google Drive CSV file
- *   <li>Creating and updating figurines
- *   <li>Resolving catalog references (series, groups, distributors, etc.)
- *   <li>Creating default timeline events (announcement, preorder, release)
- *   <li>Calculating region-aware prices and taxes
+ * <li>Importing figurines from a public Google Drive CSV file
+ * <li>Creating and updating figurines
+ * <li>Resolving catalog references (series, groups, distributors, etc.)
+ * <li>Creating default timeline events (announcement, preorder, release)
+ * <li>Calculating region-aware prices and taxes
  * </ul>
  *
- * <p>The service acts as the orchestration layer between:
+ * <p>
+ * The service acts as the orchestration layer between:
  *
  * <ul>
- *   <li>CSV / API input DTOs
- *   <li>Domain entities
- *   <li>Catalog repositories
+ * <li>CSV / API input DTOs
+ * <li>Domain entities
+ * <li>Catalog repositories
  * </ul>
  *
- * <p>All persistence-related operations are transactional to ensure consistency across figurines,
- * distributors, and events.
+ * <p>
+ * All persistence-related operations are transactional to ensure consistency
+ * across figurines, distributors, and events.
  */
 @Slf4j
 @Service
@@ -95,855 +98,816 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
-  private final FigurineMapper mapper;
-  private final FigurineCsvSource csvSource;
-
-  private final DistributorRepository distributorRepository;
-  private final DistributionRepository distributionRepository;
-  private final LineUpRepository lineUpRepository;
-  private final SeriesRepository seriesRepository;
-  private final GroupRepository groupRepository;
-  private final AnniversaryRepository anniversaryRepository;
-  private final FigurineRepository repository;
-  private final CurrencyRegionResolver currencyRegionResolver;
-  private final CollectorRepository collectorRepository;
-  private final CollectorCollectionRepository collectorCollectionRepository;
-
-  private final String ANN_MSG = "First announced as a possible future release.";
-  private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
-  private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
-
-  private static final Map<String, String> ddNames = new HashMap<>();
-
-  static {
-    ddNames.put("gemini", "{name} -the Pope's Chamber-");
-    ddNames.put("pegasus", "{name} -Pegasus Meteor Punches-");
-    ddNames.put("virgo", "{name} -The Temple of the Maiden-");
-    ddNames.put("phoenix", "{name} -Flying Phoenix-");
-    ddNames.put("leo", "Lightning in the Palace of the Lion -{name}-");
-    ddNames.put("cancer", "Desperate Battle in the Palace of the Giant Crab -{name}-");
-    ddNames.put("dragon", "Rozan Rising Dragon Blow -{name}-");
-    ddNames.put(
-        "sagittarius", "Commitment of Aiolos’ Spirit in the Palace of the Centaur -{name}-");
-    ddNames.put("athena", "Golden Zodiac extension set Fire clock of the Sanctuary -{name}-");
-    ddNames.put("capricorn", "Glittering Excalibur in the Palace of the Rock Goat -{name}-");
-    ddNames.put("andromeda", "Nebula Chain -{name}-");
-    ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
-    ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
-  }
-
-  @Transactional
-  public void importFromPublicDrive() {
-    CatalogContext catalogContext = loadCatalogs();
-
-    try (Reader reader = csvSource.openReader()) {
-      List<FigurineCsv> csvRows =
-          new CsvToBeanBuilder<FigurineCsv>(reader)
-              .withType(FigurineCsv.class)
-              .withIgnoreLeadingWhiteSpace(true)
-              .build()
-              .parse();
-
-      List<Figurine> figurines =
-          csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext)).toList();
-
-      List<Figurine> saved = repository.saveAllAndFlush(figurines);
-      log.info("{} figurines have been inserted", saved.size());
-    } catch (IOException ex) {
-      throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
-    }
-  }
-
-  /**
-   * Converts a CSV row into a fully prepared {@link Figurine} entity ready for persistence.
-   *
-   * <p>This method performs two steps:
-   *
-   * <ul>
-   *   <li>Maps the incoming {@link FigurineCsv} record into a domain {@link Figurine}
-   *   <li>Applies persistence preparation logic such as creating default events, linking
-   *       bidirectional relationships, and initializing audit timestamps
-   * </ul>
-   *
-   * <p>Used primarily during bulk CSV imports to normalize imported data before saving.
-   *
-   * @param csv source CSV row representing a figurine
-   * @param context preloaded catalog context used to resolve references
-   * @return prepared {@link Figurine} entity ready to be persisted
-   */
-  private Figurine convertAndPrepareFigurine(FigurineCsv csv, CatalogContext context) {
-    // Convert CSV → Incoming entity
-    Figurine figurine = mapper.toFigurine(csv, context);
-
-    prepareForPersistence(figurine);
-    return figurine;
-  }
-
-  /**
-   * Creates a new {@link Figurine} from an API request.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Maps the request into a domain entity
-   *   <li>Resolves all catalog references
-   *   <li>Creates default events and timestamps
-   * </ul>
-   *
-   * @param request validated figurine creation request
-   * @return API response DTO for the created figurine
-   */
-  @Transactional
-  public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
-    log.info("Creating figurine '{}'", request.name());
-
-    CatalogContext catalogContext = loadCatalogs();
-
-    Figurine figurine = mapper.toFigurine(request, catalogContext);
-    prepareForPersistence(figurine);
-
-    var saved = repository.save(figurine);
-    return mapper.toFigurineResp(
-        saved,
-        this::createDisplayableName,
-        this::calculatePriceWithTax,
-        this::calculateReleaseStatus);
-  }
-
-  /**
-   * Retrieves an existing {@link Figurine} by its identifier.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves the figurine by its id
-   *   <li>Ensures the figurine exists before mapping
-   *   <li>Maps the entity to an API response DTO
-   * </ul>
-   *
-   * <p>The operation is executed in a read-only transactional context and includes derived fields
-   * such as display name and region-aware pricing.
-   *
-   * @param id identifier of the figurine to retrieve
-   * @return API response DTO representing the requested figurine
-   * @throws FigurineNotFoundException if no figurine exists with the given id
-   */
-  @Transactional(readOnly = true)
-  public FigurineResp readFigurine(@Positive Long id) {
-    log.info("Reading figurine with id '{}'", id);
-
-    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-    return mapper.toFigurineResp(
-        existing,
-        this::createDisplayableName,
-        this::calculatePriceWithTax,
-        this::calculateReleaseStatus);
-  }
-
-  /**
-   * Retrieves a paginated list of figurines matching the provided filter criteria.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Applies the specified {@link FigurineFilter} to search for figurines
-   *   <li>Returns results in a paginated format using the given page and size parameters
-   *   <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO, including display name,
-   *       price with tax, and release status
-   * </ul>
-   *
-   * @param filter the filter criteria to apply when searching for figurines
-   * @param page the page number to retrieve (zero-based)
-   * @param size the number of items per page
-   * @return a page of {@link FigurineResp} objects matching the filter
-   */
-  @Transactional(readOnly = true)
-  public CollectablePageImpl<FigurineResp> filterFigurines(
-      @NotNull FigurineFilter filter, @PositiveOrZero int page, @Positive int size) {
-    log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
-
-    CollectablePageImpl<Figurine> figurines =
-        repository.findPaginated(filter, PageRequest.of(page, size));
-
-    List<FigurineResp> list =
-        figurines.getContent().stream()
-            .map(
-                figurine ->
-                    mapper.toFigurineResp(
-                        figurine,
-                        this::createDisplayableName,
-                        this::calculatePriceWithTax,
-                        this::calculateReleaseStatus))
-            .toList();
-
-    return new CollectablePageImpl<>(
-        list,
-        figurines.getPageable(),
-        figurines.getTotalElements(),
-        figurines.getTotalCollectables());
-  }
-
-  public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
-    if (collectionId == null) {
-      return List.of();
-    }
-
-    Collector collectorFound =
-        collectorRepository
-            .findById(collectorId)
-            .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-    List<CollectorCollection> collectorCollection =
-        collectorCollectionRepository.findByCollector(collectorFound);
-
-    return collectorCollection.stream()
-        .filter(cc -> cc.getId().equals(collectionId))
-        .findFirst()
-        .map(
-            collection ->
-                collection.getFigurines().stream()
-                    .map(CollectorCollectionFigurine::getFigurine)
-                    .map(BaseId::getId)
-                    .toList())
-        .orElseGet(List::of);
-  }
-
-  public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
-    return repository.findAll(filter).stream()
-        .filter(
-            figurine -> {
-              ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
-              return releaseStatus == ANNOUNCED || releaseStatus == RELEASED;
-            })
-        .map(BaseId::getId)
-        .toList();
-  }
-
-  /**
-   * Updates an existing {@link Figurine} with new data provided via an API request.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves the existing figurine by its identifier
-   *   <li>Maps mutable fields from the request onto the existing entity
-   *   <li>Resolves and re-links catalog references as needed
-   *   <li>Persists the updated entity within a transactional boundary
-   * </ul>
-   *
-   * <p>Fields not present in the request are preserved according to the mapper configuration.
-   *
-   * @param id identifier of the figurine to update
-   * @param request validated figurine update request
-   * @return API response DTO representing the updated figurine
-   * @throws FigurineNotFoundException if no figurine exists with the given id
-   */
-  @Transactional
-  public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
-    log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
-    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-
-    // Ask MapStruct to update fields
-    Figurine incoming = mapper.toFigurine(request, loadCatalogs());
-    mapper.updateFigurine(existing, incoming);
-
-    // update the distributors' info.
-    updateDistributors(existing, incoming.getDistributors());
-
-    // update the events in case it was updated.
-    existing.getDistributors().stream()
-        .findFirst()
-        .ifPresent(
-            fd -> {
-              existing.getEvents().stream()
-                  .sorted(Comparator.comparing(FigurineEvent::getEventDate))
-                  .filter(e -> e.getType() == ANNOUNCEMENT)
-                  .findFirst()
-                  .ifPresentOrElse(
-                      e -> e.setEventDate(fd.getAnnouncementDate()),
-                      () -> {
-                        if (Objects.nonNull(fd.getAnnouncementDate())) {
-                          addDefaultEvent(
-                              ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
-                        }
-                      });
-
-              existing.getEvents().stream()
-                  .filter(e -> e.getType() == PREORDER_OPEN)
-                  .findFirst()
-                  .ifPresentOrElse(
-                      e -> e.setEventDate(fd.getPreorderDate()),
-                      () -> {
-                        if (Objects.nonNull(fd.getPreorderDate())) {
-                          addDefaultEvent(
-                              PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
-                        }
-                      });
-
-              existing.getEvents().stream()
-                  .filter(e -> e.getType() == RELEASE)
-                  .findFirst()
-                  .ifPresentOrElse(
-                      e -> {
-                        e.setEventDate(fd.getReleaseDate());
-                        e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
-                      },
-                      () -> {
-                        if (Objects.nonNull(fd.getReleaseDate())) {
-                          addDefaultEvent(
-                              RELEASE_DATE_MSG,
-                              fd.getReleaseDate(),
-                              fd.isReleaseDateConfirmed(),
-                              RELEASE,
-                              existing);
-                        }
-                      });
-
-              existing.getEvents().forEach(e -> e.setFigurine(existing));
-            });
-
-    var updated = repository.save(existing);
-    return mapper.toFigurineResp(
-        updated,
-        this::createDisplayableName,
-        this::calculatePriceWithTax,
-        this::calculateReleaseStatus);
-  }
-
-  /**
-   * Deletes an existing {@link Figurine} by its identifier.
-   *
-   * <p>This method:
-   *
-   * <ul>
-   *   <li>Retrieves the figurine by its id
-   *   <li>Ensures the figurine exists before deletion
-   *   <li>Removes the figurine from persistence
-   * </ul>
-   *
-   * <p>The operation is logged for traceability. Any associated relationships are handled according
-   * to the configured JPA cascade rules.
-   *
-   * @param id identifier of the figurine to delete
-   * @throws FigurineNotFoundException if no figurine exists with the given id
-   */
-  @Transactional
-  public void deleteFigurine(@Positive Long id) {
-    log.info("Deleting figurine with id '{}'", id);
-    var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-
-    repository.delete(existing);
-  }
-
-  /**
-   * Synchronizes distributor entries of a figurine using incoming distributor data.
-   *
-   * <p>This method performs a currency-based merge between existing and incoming {@link
-   * FigurineDistributor} entries:
-   *
-   * <ul>
-   *   <li>If a distributor with the same {@link CurrencyCode} already exists, its mutable fields
-   *       are updated
-   *   <li>If no matching distributor exists, the incoming entry is linked to the figurine and added
-   *       to the collection
-   * </ul>
-   *
-   * <p>Distributor identity is determined exclusively by currency. This method * does not handle
-   * removal of existing distributors.
-   *
-   * @param existing the owning figurine
-   * @param incomingDistributors distributor entries provided by the update request
-   */
-  private void updateDistributors(
-      Figurine existing, List<FigurineDistributor> incomingDistributors) {
-    List<FigurineDistributor> existingDistributors = existing.getDistributors();
-
-    if (Objects.isNull(incomingDistributors)) {
-      return;
-    }
-
-    for (FigurineDistributor incomingFigurineDist : incomingDistributors) {
-      CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
-
-      existingDistributors.stream()
-          .filter(existingFd -> existingFd.getCurrency().equals(incomingCurrency))
-          .findFirst()
-          .ifPresentOrElse(
-              existingFd -> mapper.updateFigurineDistributor(existingFd, incomingFigurineDist),
-              () -> {
-                incomingFigurineDist.setFigurine(existing);
-                existingDistributors.add(incomingFigurineDist);
-              });
-    }
-  }
-
-  /**
-   * Builds a human-readable display name for a figurine.
-   *
-   * @param figurine figurine entity
-   * @return displayable name
-   */
-  public String createDisplayableName(Figurine figurine) {
-
-    String name = figurine.getNormalizedName();
-
-    String lineUpString = Optional.ofNullable(figurine.getLineup().getDescription()).orElse("");
-    String seriesString = Optional.ofNullable(figurine.getSeries().getDescription()).orElse("");
-    String groupString =
-        Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription).orElse("");
-    String distribution =
-        Optional.ofNullable(figurine.getDistribution()).map(Descriptive::getDescription).orElse("");
-    int year =
-        Optional.ofNullable(figurine.getDistributors())
-            .map(list -> list.isEmpty() ? null : list.getFirst().getReleaseDate())
-            .map(LocalDate::getYear)
-            .orElse(0);
-
-    boolean oce = Optional.ofNullable(figurine.getOce()).orElse(false);
-    boolean revival = Optional.ofNullable(figurine.getRevival()).orElse(false);
-    boolean golden = Optional.ofNullable(figurine.getGolden()).orElse(false);
-    boolean gold = Optional.ofNullable(figurine.getGold()).orElse(false);
-    boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
-    boolean manga = Optional.ofNullable(figurine.getManga()).orElse(false);
-    boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
-    boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
-    boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
-    boolean anniversary = Optional.ofNullable(figurine.getAnniversary()).isPresent();
-    boolean anniversary15 = isAnniversaryEdition(figurine.getAnniversary(), 15);
-    boolean anniversary10 = isAnniversaryEdition(figurine.getAnniversary(), 10);
-    boolean anniversary40 = isAnniversaryEdition(figurine.getAnniversary(), 40);
-
-    // Figuarts Zero
-    if (lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
-      return "Figuarts Zero Touche Métallique " + name;
-    }
-    // DD Panoramation
-    if (lineUpString.equalsIgnoreCase("DD Panoramation")) {
-      final String simpleName = name.toLowerCase();
-
-      return ddNames.keySet().stream()
-          .filter(simpleName::contains)
-          .findFirst()
-          .map(key -> ddNames.get(key).replace("{name}", figurine.getNormalizedName()))
-          .orElse(name);
-    }
-
-    // Myth Cloth EX
-    if (lineUpString.equalsIgnoreCase("Myth Cloth EX")) {
-      if (seriesString.equalsIgnoreCase("Saint Seiya Legend Of Sanctuary")) {
-        return name + " ~Legend of Sanctuary Edition~";
-      }
-      if (seriesString.equalsIgnoreCase("Saintia Sho")) {
-        return name + " Saintia Sho Color Edition";
-      }
-      if (seriesString.equalsIgnoreCase("Soul of Gold")) {
-        if (groupString.equalsIgnoreCase("God Robe")) {
-          return name + " God Robe";
-        } else {
-          if (groupString.equalsIgnoreCase("Accessories")) {
-            return name + " Set";
-          } else {
-            name += " (God Cloth)";
-            if (set) {
-              name += " Saga Saga Premium Set";
-            }
-            return name;
-          }
-        }
-      }
-      if (gold) {
-        return name + " Gold 24";
-      }
-      if (seriesString.equalsIgnoreCase("Saint Seiya The Beginning")) {
-        return name + " -Knights of the Zodiac-";
-      }
-      if (groupString.equalsIgnoreCase("God") && anniversary && set) {
-        return name + " -Divine Saga Premium Set-";
-      }
-      if (groupString.equalsIgnoreCase("Gold Inheritor")) {
-        return name + " ~Inheritor of the Gold Cloth~";
-      }
-      if (groupString.equalsIgnoreCase("God Robe")) {
-        if (anniversary40) {
-          return name + " 40th Anniversary Ver.";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Poseidon Scale")) {
-        if (oce) {
-          return name + " ~Original Color Edition~";
-        }
-        if (name.toLowerCase().contains("sorrento") && !metal && year == 2021) {
-          return name + " <Asgard Final Battle Ver.>";
-        }
-        if (set) {
-          return name + " Imperial Throne Set";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Judge")) {
-        if (oce) {
-          return name + " -Original Color Edition-";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
-        return name + " (Initial Bronze Cloth)";
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
-        if (golden) {
-          return name + " (New Bronze Cloth) ~Golden Limited Edition~";
-        } else if (revival) {
-          return name + " [New Bronze Cloth] <Revival Ver.>";
-        } else if (oce) {
-          if (anniversary) {
-            return name + " ~(New Bronze Cloth) 40th Anniversary Edition~";
-          } else {
-            return name + " ~Original Color Edition~";
-          }
-        } else {
-          return name + " (New Bronze Cloth)";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
-        name += " [Final Bronze Cloth]";
-        if (oce) {
-          name += " ~Original Color Edition~";
-        } else if (golden) {
-          name += " ~Golden Limited Edition~";
-        }
-        return name;
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
-        return name + " [God Cloth]";
-      }
-      if (groupString.equalsIgnoreCase("God")) {
-        if (oce) {
-          return name + " ~Original Color Edition~";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Gold Saint")) {
-        if (oce) {
-          return name + " ~Original Color Edition~";
-        }
-        if (revival && anniversary) {
-          return name + " <20th Revival Ver.>";
-        }
-        if (revival) {
-          return name + " <Revival Ver.>";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Surplice Saint") && !set) {
-        name += " (Surplice)";
-        if (revival) {
-          name += " <20th Revival Ver.>";
-        }
-        return name;
-      }
-      if (groupString.equalsIgnoreCase("Surplice Saint") && set) {
-        return name + " Set";
-      }
-    }
-
-    // Myth Cloth
-    if (lineUpString.equalsIgnoreCase("Myth Cloth")) {
-      if (name.toLowerCase().contains("hilda") && distribution.toLowerCase().contains("stores")) {
-        return name + " -The Earth Representative of Odin-";
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
-        if (manga) {
-          return name + " Comic Ver.";
-        }
-        if (anniversary && !oce) {
-          return name + " 20th Anniversary Ver.";
-        }
-        if (revival) {
-          return name + " Early Bronze Cloth <Revival Ver.>";
-        }
-        if (golden) {
-          return name + " ~Limited Gold~";
-        }
-        if (oce) {
-          return name + " ~Original Color Edition~";
-        }
-        if (!seriesString.equalsIgnoreCase("The Lost Canvas")) {
-          return name + " (Initial Bronze Cloth)";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
-        if (golden) {
-          return name + " Power of Gold";
-        }
-        if (broken) {
-          return name + " ~Broken Version~";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
-        if (gold) {
-          return name + " Golden Genealogy";
-        }
-        if (!oce) {
-          return name + " (Final Bronze Cloth)";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
-        if (anniversary10) {
-          return name + " (God Cloth) -10th Anniversary Edition-";
-        }
-        name += " God Cloth";
-        if (oce) {
-          return name + " ~Original Color Edition~";
-        }
-      }
-      if (groupString.equalsIgnoreCase("Surplice Saint") && !oce) {
-        return name + " (Surplice)";
-      }
-      if (groupString.equalsIgnoreCase("Specter")) {
-        if (set) {
-          return name + " Complete Set";
-        }
-      }
-      if (revival) {
-        return name + " <Revival Ver.>";
-      }
-      if (groupString.equalsIgnoreCase("Bronze Saint V5")) {
-        return name + " (Heaven Chapter)";
-      }
-      if (anniversary15) {
-        return name + " 15th Anniversary Ver.";
-      }
-
-      if (oce) {
-        return name + " ~Original Color Edition~";
-      }
-    }
-    // Appendix
-    if (lineUpString.equalsIgnoreCase("Appendix")) {
-      if (oce) {
-        return name + " ~Original Color Edition~";
-      }
-      if (plainCloth) {
-        return name + " (Plain Cloth)";
-      }
-    }
-
-    return name;
-  }
-
-  private boolean isAnniversaryEdition(Anniversary anniversary, int year) {
-    return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
-  }
-
-  /**
-   * Calculates the final price including regional taxes based on currency.
-   *
-   * <p>If price or distributor information is missing, {@code null} is returned.
-   *
-   * @param figurineDistributor distributor pricing information
-   * @return price including applicable tax, or {@code null}
-   */
-  public Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
-    if (figurineDistributor == null
-        || figurineDistributor.getPrice() == null
-        || figurineDistributor.getPrice() <= 0) {
-      return null;
-    }
-
-    return switch (figurineDistributor.getCurrency()) {
-      case JPY ->
-          calculateJapanesePriceWithTax(
-              figurineDistributor.getPrice(), figurineDistributor.getReleaseDate());
-      case MXN -> figurineDistributor.getPrice() * 1.16; // example IVA
-      case USD -> figurineDistributor.getPrice(); // no VAT by default
-      default -> figurineDistributor.getPrice();
-    };
-  }
-
-  /**
-   * Determines the {@link ReleaseStatus} of a figurine based on its distributor data and dates.
-   *
-   * <p>The status is resolved using the following rules:
-   *
-   * <ul>
-   *   <li>{@link ReleaseStatus#RUMORED} – no Japanese distributor ({@code JPY}) is found
-   *   <li>{@link ReleaseStatus#PROTOTYPE} – announced but not yet released, and the announcement is
-   *       less than 5 years ago
-   *   <li>{@link ReleaseStatus#UNRELEASED} – announced but not yet released, and the announcement
-   *       is 5 or more years ago
-   *   <li>{@link ReleaseStatus#ANNOUNCED} – has a release date that is in the future (not yet
-   *       released)
-   *   <li>{@link ReleaseStatus#RELEASED} – has a release date that is today or in the past (already
-   *       released)
-   * </ul>
-   *
-   * @param figurine the figurine whose release status is to be determined
-   * @return the computed {@link ReleaseStatus}
-   */
-  public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
-    List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
-
-    Optional<FigurineDistributor> jp =
-        Objects.isNull(figurineDistributors)
-            ? Optional.empty()
-            : figurineDistributors.stream().findFirst();
-
-    if (jp.isEmpty()) {
-      return RUMORED;
-    } else {
-      FigurineDistributor fd = jp.get();
-      LocalDate relDate = fd.getReleaseDate();
-      LocalDate annDate = fd.getAnnouncementDate();
-
-      if (Objects.isNull(relDate) && Objects.isNull(annDate)) {
-        return RUMORED;
-      }
-
-      if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
-        return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
-      } else {
-        return relDate.isAfter(LocalDate.now()) ? ANNOUNCED : RELEASED;
-      }
-    }
-  }
-
-  /**
-   * Calculates Japanese consumption tax based on historical tax rates.
-   *
-   * @param price base price
-   * @param releaseDate official release date
-   * @return price including Japanese tax
-   */
-  private Double calculateJapanesePriceWithTax(Double price, LocalDate releaseDate) {
-    if (releaseDate == null) {
-      return price; // fallback: unknown tax date
-    }
-
-    double taxRate;
-
-    if (releaseDate.isBefore(LocalDate.of(1997, 4, 1))) {
-      taxRate = 0.03;
-    } else if (releaseDate.isBefore(LocalDate.of(2014, 4, 1))) {
-      taxRate = 0.05;
-    } else if (releaseDate.isBefore(LocalDate.of(2019, 10, 1))) {
-      taxRate = 0.08;
-    } else {
-      taxRate = 0.10;
-    }
-
-    return price * (1 + taxRate);
-  }
-
-  /**
-   * Prepares a figurine entity for persistence.
-   *
-   * <p>This includes:
-   *
-   * <ul>
-   *   <li>Creating default events
-   *   <li>Linking bidirectional relationships
-   *   <li>Initializing audit timestamps
-   * </ul>
-   *
-   * @param figurine figurine to prepare
-   */
-  private void prepareForPersistence(Figurine figurine) {
-    createDefaultEvents(figurine);
-    linkReferences(figurine);
-
-    Instant localDateTime = Instant.now();
-    figurine.setCreationDate(localDateTime);
-    figurine.setUpdateDate(localDateTime);
-  }
-
-  /**
-   * Creates default timeline events (announcement, preorder, release) based on distributor-provided
-   * dates.
-   *
-   * @param figurine target figurine
-   */
-  private void createDefaultEvents(Figurine figurine) {
-    // creates the default events ...
-    if (Objects.isNull(figurine.getDistributors()) || figurine.getDistributors().isEmpty()) {
-      log.warn(
-          "Figurine '{}' has no distributors, skipping default event creation",
-          figurine.getLegacyName());
-      return;
-    }
-
-    FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
-
-    Optional.ofNullable(figurineDistributor.getAnnouncementDate())
-        .ifPresent(
-            announcementDate ->
-                addDefaultEvent(ANN_MSG, announcementDate, true, ANNOUNCEMENT, figurine));
-    Optional.ofNullable(figurineDistributor.getPreorderDate())
-        .ifPresent(
-            preorderDate ->
-                addDefaultEvent(PRE_ORDER_MSG, preorderDate, true, PREORDER_OPEN, figurine));
-    Optional.ofNullable(figurineDistributor.getReleaseDate())
-        .ifPresent(
-            releaseDate ->
-                addDefaultEvent(
-                    RELEASE_DATE_MSG,
-                    releaseDate,
-                    figurineDistributor.isReleaseDateConfirmed(),
-                    RELEASE,
-                    figurine));
-  }
-
-  /**
-   * Adds a default {@link FigurineEvent} to a figurine.
-   *
-   * <p>The event region is resolved from the distributor currency.
-   *
-   * @param description event description
-   * @param date event date
-   * @param dateConfirmed whether the event date is confirmed or tentative
-   * @param type event type
-   * @param figurine target figurine
-   */
-  private void addDefaultEvent(
-      String description,
-      LocalDate date,
-      boolean dateConfirmed,
-      FigurineEventType type,
-      Figurine figurine) {
-
-    FigurineEvent event = new FigurineEvent();
-    event.setDescription(description);
-    event.setEventDate(date);
-    event.setEventDateConfirmed(dateConfirmed);
-    event.setType(type);
-    FigurineDistributor figurineDistributor =
-        figurine.getDistributors().stream().findFirst().orElseThrow();
-    CurrencyCode currencyCode = figurineDistributor.getCurrency();
-
-    event.setRegion(currencyRegionResolver.resolveCountry(currencyCode));
-
-    figurine.getEvents().add(event);
-  }
-
-  /**
-   * Ensures all bidirectional relationships are properly linked before persistence.
-   *
-   * @param figurine target figurine
-   */
-  private void linkReferences(Figurine figurine) {
-    if (Objects.nonNull(figurine.getDistributors())) {
-      figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
-    }
-    figurine.getEvents().forEach(e -> e.setFigurine(figurine));
-  }
-
-  /**
-   * Loads all catalog entities into memory to optimize lookup during import and creation flows.
-   *
-   * @return populated {@link CatalogContext}
-   */
-  private CatalogContext loadCatalogs() {
-    return new CatalogContext(
-        distributorRepository.findAll(),
-        distributionRepository.findAll(),
-        lineUpRepository.findAll(),
-        seriesRepository.findAll(),
-        groupRepository.findAll(),
-        anniversaryRepository.findAll());
-  }
+	private final FigurineMapper mapper;
+	private final FigurineCsvSource csvSource;
+
+	private final DistributorRepository distributorRepository;
+	private final DistributionRepository distributionRepository;
+	private final LineUpRepository lineUpRepository;
+	private final SeriesRepository seriesRepository;
+	private final GroupRepository groupRepository;
+	private final AnniversaryRepository anniversaryRepository;
+	private final FigurineRepository repository;
+	private final CurrencyRegionResolver currencyRegionResolver;
+	private final CollectorRepository collectorRepository;
+	private final CollectorCollectionRepository collectorCollectionRepository;
+
+	private final String ANN_MSG = "First announced as a possible future release.";
+	private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
+	private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
+
+	private static final Map<String, String> ddNames = new HashMap<>();
+
+	static {
+		ddNames.put("gemini", "{name} -the Pope's Chamber-");
+		ddNames.put("pegasus", "{name} -Pegasus Meteor Punches-");
+		ddNames.put("virgo", "{name} -The Temple of the Maiden-");
+		ddNames.put("phoenix", "{name} -Flying Phoenix-");
+		ddNames.put("leo", "Lightning in the Palace of the Lion -{name}-");
+		ddNames.put("cancer", "Desperate Battle in the Palace of the Giant Crab -{name}-");
+		ddNames.put("dragon", "Rozan Rising Dragon Blow -{name}-");
+		ddNames.put("sagittarius", "Commitment of Aiolos’ Spirit in the Palace of the Centaur -{name}-");
+		ddNames.put("athena", "Golden Zodiac extension set Fire clock of the Sanctuary -{name}-");
+		ddNames.put("capricorn", "Glittering Excalibur in the Palace of the Rock Goat -{name}-");
+		ddNames.put("andromeda", "Nebula Chain -{name}-");
+		ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
+		ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
+	}
+
+	@Transactional
+	public void importFromPublicDrive() {
+		CatalogContext catalogContext = loadCatalogs();
+
+		try (Reader reader = csvSource.openReader()) {
+			List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
+					.withIgnoreLeadingWhiteSpace(true).build().parse();
+
+			List<Figurine> figurines = csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext))
+					.toList();
+
+			List<Figurine> saved = repository.saveAllAndFlush(figurines);
+			log.info("{} figurines have been inserted", saved.size());
+		} catch (IOException ex) {
+			throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
+		}
+	}
+
+	/**
+	 * Converts a CSV row into a fully prepared {@link Figurine} entity ready for
+	 * persistence.
+	 *
+	 * <p>
+	 * This method performs two steps:
+	 *
+	 * <ul>
+	 * <li>Maps the incoming {@link FigurineCsv} record into a domain
+	 * {@link Figurine}
+	 * <li>Applies persistence preparation logic such as creating default events,
+	 * linking bidirectional relationships, and initializing audit timestamps
+	 * </ul>
+	 *
+	 * <p>
+	 * Used primarily during bulk CSV imports to normalize imported data before
+	 * saving.
+	 *
+	 * @param csv
+	 *            source CSV row representing a figurine
+	 * @param context
+	 *            preloaded catalog context used to resolve references
+	 * @return prepared {@link Figurine} entity ready to be persisted
+	 */
+	private Figurine convertAndPrepareFigurine(FigurineCsv csv, CatalogContext context) {
+		// Convert CSV → Incoming entity
+		Figurine figurine = mapper.toFigurine(csv, context);
+
+		prepareForPersistence(figurine);
+		return figurine;
+	}
+
+	/**
+	 * Creates a new {@link Figurine} from an API request.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Maps the request into a domain entity
+	 * <li>Resolves all catalog references
+	 * <li>Creates default events and timestamps
+	 * </ul>
+	 *
+	 * @param request
+	 *            validated figurine creation request
+	 * @return API response DTO for the created figurine
+	 */
+	@Transactional
+	public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
+		log.info("Creating figurine '{}'", request.name());
+
+		CatalogContext catalogContext = loadCatalogs();
+
+		Figurine figurine = mapper.toFigurine(request, catalogContext);
+		prepareForPersistence(figurine);
+
+		var saved = repository.save(figurine);
+		return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax,
+				this::calculateReleaseStatus);
+	}
+
+	/**
+	 * Retrieves an existing {@link Figurine} by its identifier.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Retrieves the figurine by its id
+	 * <li>Ensures the figurine exists before mapping
+	 * <li>Maps the entity to an API response DTO
+	 * </ul>
+	 *
+	 * <p>
+	 * The operation is executed in a read-only transactional context and includes
+	 * derived fields such as display name and region-aware pricing.
+	 *
+	 * @param id
+	 *            identifier of the figurine to retrieve
+	 * @return API response DTO representing the requested figurine
+	 * @throws FigurineNotFoundException
+	 *             if no figurine exists with the given id
+	 */
+	@Transactional(readOnly = true)
+	public FigurineResp readFigurine(@Positive Long id) {
+		log.info("Reading figurine with id '{}'", id);
+
+		var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+		return mapper.toFigurineResp(existing, this::createDisplayableName, this::calculatePriceWithTax,
+				this::calculateReleaseStatus);
+	}
+
+	/**
+	 * Retrieves a paginated list of figurines matching the provided filter
+	 * criteria.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Applies the specified {@link FigurineFilter} to search for figurines
+	 * <li>Returns results in a paginated format using the given page and size
+	 * parameters
+	 * <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO,
+	 * including display name, price with tax, and release status
+	 * </ul>
+	 *
+	 * @param filter
+	 *            the filter criteria to apply when searching for figurines
+	 * @param page
+	 *            the page number to retrieve (zero-based)
+	 * @param size
+	 *            the number of items per page
+	 * @return a page of {@link FigurineResp} objects matching the filter
+	 */
+	@Transactional(readOnly = true)
+	public CollectablePageImpl<FigurineResp> filterFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
+			@Positive int size) {
+		log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
+
+		CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
+
+		List<FigurineResp> list = figurines.getContent().stream().map(figurine -> mapper.toFigurineResp(figurine,
+				this::createDisplayableName, this::calculatePriceWithTax, this::calculateReleaseStatus)).toList();
+
+		return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
+				figurines.getTotalCollectables());
+	}
+
+	public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
+		if (collectionId == null) {
+			return List.of();
+		}
+
+		Collector collectorFound = collectorRepository.findById(collectorId)
+				.orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+		List<CollectorCollection> collectorCollection = collectorCollectionRepository.findByCollector(collectorFound);
+
+		return collectorCollection.stream().filter(cc -> cc.getId().equals(collectionId)).findFirst()
+				.map(collection -> collection.getFigurines().stream().map(CollectorCollectionFigurine::getFigurine)
+						.map(BaseId::getId).toList())
+				.orElseGet(List::of);
+	}
+
+	public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
+		return repository.findAll(filter).stream().filter(figurine -> {
+			ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
+			return releaseStatus == ANNOUNCED || releaseStatus == RELEASED;
+		}).map(BaseId::getId).toList();
+	}
+
+	/**
+	 * Updates an existing {@link Figurine} with new data provided via an API
+	 * request.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Retrieves the existing figurine by its identifier
+	 * <li>Maps mutable fields from the request onto the existing entity
+	 * <li>Resolves and re-links catalog references as needed
+	 * <li>Persists the updated entity within a transactional boundary
+	 * </ul>
+	 *
+	 * <p>
+	 * Fields not present in the request are preserved according to the mapper
+	 * configuration.
+	 *
+	 * @param id
+	 *            identifier of the figurine to update
+	 * @param request
+	 *            validated figurine update request
+	 * @return API response DTO representing the updated figurine
+	 * @throws FigurineNotFoundException
+	 *             if no figurine exists with the given id
+	 */
+	@Transactional
+	public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
+		log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
+		var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+		// Ask MapStruct to update fields
+		Figurine incoming = mapper.toFigurine(request, loadCatalogs());
+		mapper.updateFigurine(existing, incoming);
+
+		// update the distributors' info.
+		updateDistributors(existing, incoming.getDistributors());
+
+		// update the events in case it was updated.
+		existing.getDistributors().stream().findFirst().ifPresent(fd -> {
+			existing.getEvents().stream().sorted(Comparator.comparing(FigurineEvent::getEventDate))
+					.filter(e -> e.getType() == ANNOUNCEMENT).findFirst()
+					.ifPresentOrElse(e -> e.setEventDate(fd.getAnnouncementDate()), () -> {
+						if (Objects.nonNull(fd.getAnnouncementDate())) {
+							addDefaultEvent(ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
+						}
+					});
+
+			existing.getEvents().stream().filter(e -> e.getType() == PREORDER_OPEN).findFirst()
+					.ifPresentOrElse(e -> e.setEventDate(fd.getPreorderDate()), () -> {
+						if (Objects.nonNull(fd.getPreorderDate())) {
+							addDefaultEvent(PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
+						}
+					});
+
+			existing.getEvents().stream().filter(e -> e.getType() == RELEASE).findFirst().ifPresentOrElse(e -> {
+				e.setEventDate(fd.getReleaseDate());
+				e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
+			}, () -> {
+				if (Objects.nonNull(fd.getReleaseDate())) {
+					addDefaultEvent(RELEASE_DATE_MSG, fd.getReleaseDate(), fd.isReleaseDateConfirmed(), RELEASE,
+							existing);
+				}
+			});
+
+			existing.getEvents().forEach(e -> e.setFigurine(existing));
+		});
+
+		var updated = repository.save(existing);
+		return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax,
+				this::calculateReleaseStatus);
+	}
+
+	/**
+	 * Deletes an existing {@link Figurine} by its identifier.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Retrieves the figurine by its id
+	 * <li>Ensures the figurine exists before deletion
+	 * <li>Removes the figurine from persistence
+	 * </ul>
+	 *
+	 * <p>
+	 * The operation is logged for traceability. Any associated relationships are
+	 * handled according to the configured JPA cascade rules.
+	 *
+	 * @param id
+	 *            identifier of the figurine to delete
+	 * @throws FigurineNotFoundException
+	 *             if no figurine exists with the given id
+	 */
+	@Transactional
+	public void deleteFigurine(@Positive Long id) {
+		log.info("Deleting figurine with id '{}'", id);
+		var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+
+		repository.delete(existing);
+	}
+
+	/**
+	 * Synchronizes distributor entries of a figurine using incoming distributor
+	 * data.
+	 *
+	 * <p>
+	 * This method performs a currency-based merge between existing and incoming
+	 * {@link FigurineDistributor} entries:
+	 *
+	 * <ul>
+	 * <li>If a distributor with the same {@link CurrencyCode} already exists, its
+	 * mutable fields are updated
+	 * <li>If no matching distributor exists, the incoming entry is linked to the
+	 * figurine and added to the collection
+	 * </ul>
+	 *
+	 * <p>
+	 * Distributor identity is determined exclusively by currency. This method *
+	 * does not handle removal of existing distributors.
+	 *
+	 * @param existing
+	 *            the owning figurine
+	 * @param incomingDistributors
+	 *            distributor entries provided by the update request
+	 */
+	private void updateDistributors(Figurine existing, List<FigurineDistributor> incomingDistributors) {
+		List<FigurineDistributor> existingDistributors = existing.getDistributors();
+
+		if (Objects.isNull(incomingDistributors)) {
+			return;
+		}
+
+		for (FigurineDistributor incomingFigurineDist : incomingDistributors) {
+			CurrencyCode incomingCurrency = incomingFigurineDist.getCurrency();
+
+			existingDistributors.stream().filter(existingFd -> existingFd.getCurrency().equals(incomingCurrency))
+					.findFirst().ifPresentOrElse(
+							existingFd -> mapper.updateFigurineDistributor(existingFd, incomingFigurineDist), () -> {
+								incomingFigurineDist.setFigurine(existing);
+								existingDistributors.add(incomingFigurineDist);
+							});
+		}
+	}
+
+	/**
+	 * Builds a human-readable display name for a figurine.
+	 *
+	 * @param figurine
+	 *            figurine entity
+	 * @return displayable name
+	 */
+	public String createDisplayableName(Figurine figurine) {
+
+		String name = figurine.getNormalizedName();
+
+		String lineUpString = Optional.ofNullable(figurine.getLineup().getDescription()).orElse("");
+		String seriesString = Optional.ofNullable(figurine.getSeries().getDescription()).orElse("");
+		String groupString = Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription).orElse("");
+		String distribution = Optional.ofNullable(figurine.getDistribution()).map(Descriptive::getDescription)
+				.orElse("");
+		int year = Optional.ofNullable(figurine.getDistributors())
+				.map(list -> list.isEmpty() ? null : list.getFirst().getReleaseDate()).map(LocalDate::getYear)
+				.orElse(0);
+
+		boolean oce = Optional.ofNullable(figurine.getOce()).orElse(false);
+		boolean revival = Optional.ofNullable(figurine.getRevival()).orElse(false);
+		boolean golden = Optional.ofNullable(figurine.getGolden()).orElse(false);
+		boolean gold = Optional.ofNullable(figurine.getGold()).orElse(false);
+		boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
+		boolean manga = Optional.ofNullable(figurine.getManga()).orElse(false);
+		boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
+		boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
+		boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
+		boolean anniversary = Optional.ofNullable(figurine.getAnniversary()).isPresent();
+		boolean anniversary15 = isAnniversaryEdition(figurine.getAnniversary(), 15);
+		boolean anniversary10 = isAnniversaryEdition(figurine.getAnniversary(), 10);
+		boolean anniversary40 = isAnniversaryEdition(figurine.getAnniversary(), 40);
+
+		// Figuarts Zero
+		if (lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
+			return "Figuarts Zero Touche Métallique " + name;
+		}
+		// DD Panoramation
+		if (lineUpString.equalsIgnoreCase("DD Panoramation")) {
+			final String simpleName = name.toLowerCase();
+
+			return ddNames.keySet().stream().filter(simpleName::contains).findFirst()
+					.map(key -> ddNames.get(key).replace("{name}", figurine.getNormalizedName())).orElse(name);
+		}
+
+		// Myth Cloth EX
+		if (lineUpString.equalsIgnoreCase("Myth Cloth EX")) {
+			if (seriesString.equalsIgnoreCase("Saint Seiya Legend Of Sanctuary")) {
+				return name + " ~Legend of Sanctuary Edition~";
+			}
+			if (seriesString.equalsIgnoreCase("Saintia Sho")) {
+				return name + " Saintia Sho Color Edition";
+			}
+			if (seriesString.equalsIgnoreCase("Soul of Gold")) {
+				if (groupString.equalsIgnoreCase("God Robe")) {
+					return name + " God Robe";
+				} else {
+					if (groupString.equalsIgnoreCase("Accessories")) {
+						return name + " Set";
+					} else {
+						name += " (God Cloth)";
+						if (set) {
+							name += " Saga Saga Premium Set";
+						}
+						return name;
+					}
+				}
+			}
+			if (gold) {
+				return name + " Gold 24";
+			}
+			if (seriesString.equalsIgnoreCase("Saint Seiya The Beginning")) {
+				return name + " -Knights of the Zodiac-";
+			}
+			if (groupString.equalsIgnoreCase("God") && anniversary && set) {
+				return name + " -Divine Saga Premium Set-";
+			}
+			if (groupString.equalsIgnoreCase("Gold Inheritor")) {
+				return name + " ~Inheritor of the Gold Cloth~";
+			}
+			if (groupString.equalsIgnoreCase("God Robe")) {
+				if (anniversary40) {
+					return name + " 40th Anniversary Ver.";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Poseidon Scale")) {
+				if (oce) {
+					return name + " ~Original Color Edition~";
+				}
+				if (name.toLowerCase().contains("sorrento") && !metal && year == 2021) {
+					return name + " <Asgard Final Battle Ver.>";
+				}
+				if (set) {
+					return name + " Imperial Throne Set";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Judge")) {
+				if (oce) {
+					return name + " -Original Color Edition-";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
+				return name + " (Initial Bronze Cloth)";
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
+				if (golden) {
+					return name + " (New Bronze Cloth) ~Golden Limited Edition~";
+				} else if (revival) {
+					return name + " [New Bronze Cloth] <Revival Ver.>";
+				} else if (oce) {
+					if (anniversary) {
+						return name + " ~(New Bronze Cloth) 40th Anniversary Edition~";
+					} else {
+						return name + " ~Original Color Edition~";
+					}
+				} else {
+					return name + " (New Bronze Cloth)";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
+				name += " [Final Bronze Cloth]";
+				if (oce) {
+					name += " ~Original Color Edition~";
+				} else if (golden) {
+					name += " ~Golden Limited Edition~";
+				}
+				return name;
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
+				return name + " [God Cloth]";
+			}
+			if (groupString.equalsIgnoreCase("God")) {
+				if (oce) {
+					return name + " ~Original Color Edition~";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Gold Saint")) {
+				if (oce) {
+					return name + " ~Original Color Edition~";
+				}
+				if (revival && anniversary) {
+					return name + " <20th Revival Ver.>";
+				}
+				if (revival) {
+					return name + " <Revival Ver.>";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Surplice Saint") && !set) {
+				name += " (Surplice)";
+				if (revival) {
+					name += " <20th Revival Ver.>";
+				}
+				return name;
+			}
+			if (groupString.equalsIgnoreCase("Surplice Saint") && set) {
+				return name + " Set";
+			}
+		}
+
+		// Myth Cloth
+		if (lineUpString.equalsIgnoreCase("Myth Cloth")) {
+			if (name.toLowerCase().contains("hilda") && distribution.toLowerCase().contains("stores")) {
+				return name + " -The Earth Representative of Odin-";
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
+				if (manga) {
+					return name + " Comic Ver.";
+				}
+				if (anniversary && !oce) {
+					return name + " 20th Anniversary Ver.";
+				}
+				if (revival) {
+					return name + " Early Bronze Cloth <Revival Ver.>";
+				}
+				if (golden) {
+					return name + " ~Limited Gold~";
+				}
+				if (oce) {
+					return name + " ~Original Color Edition~";
+				}
+				if (!seriesString.equalsIgnoreCase("The Lost Canvas")) {
+					return name + " (Initial Bronze Cloth)";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
+				if (golden) {
+					return name + " Power of Gold";
+				}
+				if (broken) {
+					return name + " ~Broken Version~";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
+				if (gold) {
+					return name + " Golden Genealogy";
+				}
+				if (!oce) {
+					return name + " (Final Bronze Cloth)";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
+				if (anniversary10) {
+					return name + " (God Cloth) -10th Anniversary Edition-";
+				}
+				name += " God Cloth";
+				if (oce) {
+					return name + " ~Original Color Edition~";
+				}
+			}
+			if (groupString.equalsIgnoreCase("Surplice Saint") && !oce) {
+				return name + " (Surplice)";
+			}
+			if (groupString.equalsIgnoreCase("Specter")) {
+				if (set) {
+					return name + " Complete Set";
+				}
+			}
+			if (revival) {
+				return name + " <Revival Ver.>";
+			}
+			if (groupString.equalsIgnoreCase("Bronze Saint V5")) {
+				return name + " (Heaven Chapter)";
+			}
+			if (anniversary15) {
+				return name + " 15th Anniversary Ver.";
+			}
+
+			if (oce) {
+				return name + " ~Original Color Edition~";
+			}
+		}
+		// Appendix
+		if (lineUpString.equalsIgnoreCase("Appendix")) {
+			if (oce) {
+				return name + " ~Original Color Edition~";
+			}
+			if (plainCloth) {
+				return name + " (Plain Cloth)";
+			}
+		}
+
+		return name;
+	}
+
+	private boolean isAnniversaryEdition(Anniversary anniversary, int year) {
+		return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
+	}
+
+	/**
+	 * Calculates the final price including regional taxes based on currency.
+	 *
+	 * <p>
+	 * If price or distributor information is missing, {@code null} is returned.
+	 *
+	 * @param figurineDistributor
+	 *            distributor pricing information
+	 * @return price including applicable tax, or {@code null}
+	 */
+	public Double calculatePriceWithTax(FigurineDistributor figurineDistributor) {
+		if (figurineDistributor == null || figurineDistributor.getPrice() == null
+				|| figurineDistributor.getPrice() <= 0) {
+			return null;
+		}
+
+		return switch (figurineDistributor.getCurrency()) {
+			case JPY ->
+				calculateJapanesePriceWithTax(figurineDistributor.getPrice(), figurineDistributor.getReleaseDate());
+			case MXN -> figurineDistributor.getPrice() * 1.16; // example IVA
+			case USD -> figurineDistributor.getPrice(); // no VAT by default
+			default -> figurineDistributor.getPrice();
+		};
+	}
+
+	/**
+	 * Determines the {@link ReleaseStatus} of a figurine based on its distributor
+	 * data and dates.
+	 *
+	 * <p>
+	 * The status is resolved using the following rules:
+	 *
+	 * <ul>
+	 * <li>{@link ReleaseStatus#RUMORED} – no Japanese distributor ({@code JPY}) is
+	 * found
+	 * <li>{@link ReleaseStatus#PROTOTYPE} – announced but not yet released, and the
+	 * announcement is less than 5 years ago
+	 * <li>{@link ReleaseStatus#UNRELEASED} – announced but not yet released, and
+	 * the announcement is 5 or more years ago
+	 * <li>{@link ReleaseStatus#ANNOUNCED} – has a release date that is in the
+	 * future (not yet released)
+	 * <li>{@link ReleaseStatus#RELEASED} – has a release date that is today or in
+	 * the past (already released)
+	 * </ul>
+	 *
+	 * @param figurine
+	 *            the figurine whose release status is to be determined
+	 * @return the computed {@link ReleaseStatus}
+	 */
+	public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
+		List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
+
+		Optional<FigurineDistributor> jp = Objects.isNull(figurineDistributors)
+				? Optional.empty()
+				: figurineDistributors.stream().findFirst();
+
+		if (jp.isEmpty()) {
+			return RUMORED;
+		} else {
+			FigurineDistributor fd = jp.get();
+			LocalDate relDate = fd.getReleaseDate();
+			LocalDate annDate = fd.getAnnouncementDate();
+
+			if (Objects.isNull(relDate) && Objects.isNull(annDate)) {
+				return RUMORED;
+			}
+
+			if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
+				return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
+			} else {
+				return relDate.isAfter(LocalDate.now()) ? ANNOUNCED : RELEASED;
+			}
+		}
+	}
+
+	/**
+	 * Calculates Japanese consumption tax based on historical tax rates.
+	 *
+	 * @param price
+	 *            base price
+	 * @param releaseDate
+	 *            official release date
+	 * @return price including Japanese tax
+	 */
+	private Double calculateJapanesePriceWithTax(Double price, LocalDate releaseDate) {
+		if (releaseDate == null) {
+			return price; // fallback: unknown tax date
+		}
+
+		double taxRate;
+
+		if (releaseDate.isBefore(LocalDate.of(1997, 4, 1))) {
+			taxRate = 0.03;
+		} else if (releaseDate.isBefore(LocalDate.of(2014, 4, 1))) {
+			taxRate = 0.05;
+		} else if (releaseDate.isBefore(LocalDate.of(2019, 10, 1))) {
+			taxRate = 0.08;
+		} else {
+			taxRate = 0.10;
+		}
+
+		return price * (1 + taxRate);
+	}
+
+	/**
+	 * Prepares a figurine entity for persistence.
+	 *
+	 * <p>
+	 * This includes:
+	 *
+	 * <ul>
+	 * <li>Creating default events
+	 * <li>Linking bidirectional relationships
+	 * <li>Initializing audit timestamps
+	 * </ul>
+	 *
+	 * @param figurine
+	 *            figurine to prepare
+	 */
+	private void prepareForPersistence(Figurine figurine) {
+		createDefaultEvents(figurine);
+		linkReferences(figurine);
+
+		Instant localDateTime = Instant.now();
+		figurine.setCreationDate(localDateTime);
+		figurine.setUpdateDate(localDateTime);
+	}
+
+	/**
+	 * Creates default timeline events (announcement, preorder, release) based on
+	 * distributor-provided dates.
+	 *
+	 * @param figurine
+	 *            target figurine
+	 */
+	private void createDefaultEvents(Figurine figurine) {
+		// creates the default events ...
+		if (Objects.isNull(figurine.getDistributors()) || figurine.getDistributors().isEmpty()) {
+			log.warn("Figurine '{}' has no distributors, skipping default event creation", figurine.getLegacyName());
+			return;
+		}
+
+		FigurineDistributor figurineDistributor = figurine.getDistributors().getFirst();
+
+		Optional.ofNullable(figurineDistributor.getAnnouncementDate()).ifPresent(
+				announcementDate -> addDefaultEvent(ANN_MSG, announcementDate, true, ANNOUNCEMENT, figurine));
+		Optional.ofNullable(figurineDistributor.getPreorderDate())
+				.ifPresent(preorderDate -> addDefaultEvent(PRE_ORDER_MSG, preorderDate, true, PREORDER_OPEN, figurine));
+		Optional.ofNullable(figurineDistributor.getReleaseDate())
+				.ifPresent(releaseDate -> addDefaultEvent(RELEASE_DATE_MSG, releaseDate,
+						figurineDistributor.isReleaseDateConfirmed(), RELEASE, figurine));
+	}
+
+	/**
+	 * Adds a default {@link FigurineEvent} to a figurine.
+	 *
+	 * <p>
+	 * The event region is resolved from the distributor currency.
+	 *
+	 * @param description
+	 *            event description
+	 * @param date
+	 *            event date
+	 * @param dateConfirmed
+	 *            whether the event date is confirmed or tentative
+	 * @param type
+	 *            event type
+	 * @param figurine
+	 *            target figurine
+	 */
+	private void addDefaultEvent(String description, LocalDate date, boolean dateConfirmed, FigurineEventType type,
+			Figurine figurine) {
+
+		FigurineEvent event = new FigurineEvent();
+		event.setDescription(description);
+		event.setEventDate(date);
+		event.setEventDateConfirmed(dateConfirmed);
+		event.setType(type);
+		FigurineDistributor figurineDistributor = figurine.getDistributors().stream().findFirst().orElseThrow();
+		CurrencyCode currencyCode = figurineDistributor.getCurrency();
+
+		event.setRegion(currencyRegionResolver.resolveCountry(currencyCode));
+
+		figurine.getEvents().add(event);
+	}
+
+	/**
+	 * Ensures all bidirectional relationships are properly linked before
+	 * persistence.
+	 *
+	 * @param figurine
+	 *            target figurine
+	 */
+	private void linkReferences(Figurine figurine) {
+		if (Objects.nonNull(figurine.getDistributors())) {
+			figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
+		}
+		figurine.getEvents().forEach(e -> e.setFigurine(figurine));
+	}
+
+	/**
+	 * Loads all catalog entities into memory to optimize lookup during import and
+	 * creation flows.
+	 *
+	 * @return populated {@link CatalogContext}
+	 */
+	private CatalogContext loadCatalogs() {
+		return new CatalogContext(distributorRepository.findAll(), distributionRepository.findAll(),
+				lineUpRepository.findAll(), seriesRepository.findAll(), groupRepository.findAll(),
+				anniversaryRepository.findAll());
+	}
 }

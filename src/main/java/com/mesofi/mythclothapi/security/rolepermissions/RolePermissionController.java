@@ -33,34 +33,34 @@ import lombok.extern.slf4j.Slf4j;
 @PreAuthorize("hasRole('ADMIN')")
 public class RolePermissionController {
 
-  private final RoleService service;
-  private final RolePermissionSyncService syncService;
+	private final RoleService service;
+	private final RolePermissionSyncService syncService;
 
-  @PostMapping
-  @PreAuthorize("hasAuthority('roles:permissions:assign')")
-  public ResponseEntity<Void> addPermissionToRole(
-      @PathVariable Long roleId, @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
-    service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
-    // Standard REST practice: Return 204 No Content for a successful association
-    // with no new resource entity to return.
-    return ResponseEntity.noContent().build();
-  }
+	@PostMapping
+	@PreAuthorize("hasAuthority('roles:permissions:assign')")
+	public ResponseEntity<Void> addPermissionToRole(@PathVariable Long roleId,
+			@Valid @RequestBody RolePermissionReq rolePermissionRequest) {
+		service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
+		// Standard REST practice: Return 204 No Content for a successful association
+		// with no new resource entity to return.
+		return ResponseEntity.noContent().build();
+	}
 
-  @GetMapping
-  @PreAuthorize("hasAuthority('roles:permissions:read')")
-  public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
-    return service.retrievePermissionsByRoleId(roleId);
-  }
+	@GetMapping
+	@PreAuthorize("hasAuthority('roles:permissions:read')")
+	public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
+		return service.retrievePermissionsByRoleId(roleId);
+	}
 
-  @PutMapping
-  @PreAuthorize("hasAuthority('roles:permissions:sync')")
-  public ResponseEntity<Void> syncRolePermissions(
-      @PathVariable Long roleId, @Valid @RequestBody SyncPermissionsReq request) {
+	@PutMapping
+	@PreAuthorize("hasAuthority('roles:permissions:sync')")
+	public ResponseEntity<Void> syncRolePermissions(@PathVariable Long roleId,
+			@Valid @RequestBody SyncPermissionsReq request) {
 
-    syncService.syncPermissions(roleId, request);
+		syncService.syncPermissions(roleId, request);
 
-    // 204 No Content is the standard REST response for successful updates
-    // when no body content needs to accompany the confirmation.
-    return ResponseEntity.noContent().build();
-  }
+		// 204 No Content is the standard REST response for successful updates
+		// when no body content needs to accompany the confirmation.
+		return ResponseEntity.noContent().build();
+	}
 }

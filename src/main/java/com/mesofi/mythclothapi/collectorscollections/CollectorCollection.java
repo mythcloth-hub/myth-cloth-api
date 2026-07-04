@@ -22,23 +22,19 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(
-    name = "collector_collections",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "uk_collection_collector_name",
-            columnNames = {"collector_id", "description"}))
+@Table(name = "collector_collections", uniqueConstraints = @UniqueConstraint(name = "uk_collection_collector_name", columnNames = {
+		"collector_id", "description"}))
 public class CollectorCollection extends BaseId {
 
-  @Column(nullable = false, length = 200)
-  private String name;
+	@Column(nullable = false, length = 200)
+	private String name;
 
-  @Column(length = 200)
-  private String description;
+	@Column(length = 200)
+	private String description;
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  private Collector collector;
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	private Collector collector;
 
-  @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CollectorCollectionFigurine> figurines = new ArrayList<>();
+	@OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<CollectorCollectionFigurine> figurines = new ArrayList<>();
 }

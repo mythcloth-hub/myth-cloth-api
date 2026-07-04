@@ -34,46 +34,43 @@ import lombok.extern.slf4j.Slf4j;
 @PreAuthorize("hasRole('ADMIN')")
 public class PermissionController {
 
-  private final PermissionService service;
+	private final PermissionService service;
 
-  @PostMapping
-  @PreAuthorize("hasAuthority('permissions:write')")
-  public ResponseEntity<PermissionResp> createPermission(
-      @Valid @RequestBody PermissionReq permissionRequest) {
-    PermissionResp response = service.createPermission(permissionRequest);
-    URI location =
-        ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/permissions
-            .path("/{id}") // append /{id}
-            .buildAndExpand(response.id())
-            .toUri();
+	@PostMapping
+	@PreAuthorize("hasAuthority('permissions:write')")
+	public ResponseEntity<PermissionResp> createPermission(@Valid @RequestBody PermissionReq permissionRequest) {
+		PermissionResp response = service.createPermission(permissionRequest);
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/permissions
+				.path("/{id}") // append /{id}
+				.buildAndExpand(response.id()).toUri();
 
-    return ResponseEntity.created(location).body(response);
-  }
+		return ResponseEntity.created(location).body(response);
+	}
 
-  @GetMapping("/{id}")
-  @PreAuthorize("hasAuthority('permissions:read')")
-  public PermissionResp retrievePermission(@PathVariable Long id) {
-    return service.retrievePermission(id);
-  }
+	@GetMapping("/{id}")
+	@PreAuthorize("hasAuthority('permissions:read')")
+	public PermissionResp retrievePermission(@PathVariable Long id) {
+		return service.retrievePermission(id);
+	}
 
-  @GetMapping
-  @PreAuthorize("hasAuthority('permissions:read')")
-  public List<PermissionResp> retrievePermissions() {
-    return service.retrievePermissions();
-  }
+	@GetMapping
+	@PreAuthorize("hasAuthority('permissions:read')")
+	public List<PermissionResp> retrievePermissions() {
+		return service.retrievePermissions();
+	}
 
-  @PutMapping("/{id}")
-  @PreAuthorize("hasAuthority('permissions:update')")
-  public ResponseEntity<PermissionResp> updatePermission(
-      @PathVariable Long id, @Valid @RequestBody PermissionReq permissionRequest) {
-    PermissionResp updated = service.updatePermission(id, permissionRequest);
-    return ResponseEntity.ok(updated);
-  }
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAuthority('permissions:update')")
+	public ResponseEntity<PermissionResp> updatePermission(@PathVariable Long id,
+			@Valid @RequestBody PermissionReq permissionRequest) {
+		PermissionResp updated = service.updatePermission(id, permissionRequest);
+		return ResponseEntity.ok(updated);
+	}
 
-  @DeleteMapping("/{id}")
-  @PreAuthorize("hasAuthority('permissions:delete')")
-  public ResponseEntity<?> removePermission(@PathVariable Long id) {
-    service.removePermission(id);
-    return ResponseEntity.noContent().build();
-  }
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasAuthority('permissions:delete')")
+	public ResponseEntity<?> removePermission(@PathVariable Long id) {
+		service.removePermission(id);
+		return ResponseEntity.noContent().build();
+	}
 }

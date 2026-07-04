@@ -22,47 +22,44 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entity that links a {@link com.mesofi.mythclothapi.collectors.Collector} to an external
- * authentication provider identity.
+ * Entity that links a {@link com.mesofi.mythclothapi.collectors.Collector} to
+ * an external authentication provider identity.
  *
- * <p>Each record is unique by provider and provider user id.
+ * <p>
+ * Each record is unique by provider and provider user id.
  */
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(
-    name = "collector_providers",
-    uniqueConstraints = {
-      @UniqueConstraint(
-          name = "uk_provider_collector",
-          columnNames = {"provider", "provider_user_id"})
-    })
+@Table(name = "collector_providers", uniqueConstraints = {
+		@UniqueConstraint(name = "uk_provider_collector", columnNames = {"provider", "provider_user_id"})})
 public class CollectorAuthProvider extends BaseId {
 
-  @Enumerated(EnumType.STRING)
-  @Column(nullable = false, length = 50)
-  private ProviderType provider;
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	private ProviderType provider;
 
-  @Column(nullable = false)
-  private String providerUserId;
+	@Column(nullable = false)
+	private String providerUserId;
 
-  @Column(length = 254)
-  private String email;
+	@Column(length = 254)
+	private String email;
 
-  @Column private Boolean emailVerified;
+	@Column
+	private Boolean emailVerified;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "collector_id", nullable = false)
-  private Collector collector;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "collector_id", nullable = false)
+	private Collector collector;
 
-  @Column(nullable = false)
-  private Instant creationDate;
+	@Column(nullable = false)
+	private Instant creationDate;
 
-  /** Sets the creation timestamp when the entity is first persisted. */
-  @PrePersist
-  public void prePersist() {
-    creationDate = Instant.now();
-  }
+	/** Sets the creation timestamp when the entity is first persisted. */
+	@PrePersist
+	public void prePersist() {
+		creationDate = Instant.now();
+	}
 }

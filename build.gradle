@@ -1,12 +1,12 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.0.4'
+    id 'org.springframework.boot' version '4.1.0'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.diffplug.spotless' version '8.8.0'
 
     // --- Coverage & Mutation Testing ---
     id 'jacoco'
-    id 'info.solidsoft.pitest' version '1.19.0-rc.2'
+    id 'info.solidsoft.pitest' version '1.19.0'
 }
 
 group = 'com.mesofi'
@@ -15,13 +15,13 @@ description = 'Myth Cloth API'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 spotless {
     java {
-        googleJavaFormat()
+        eclipse()
         removeUnusedImports()
         importOrder 'java', 'javax', 'jakarta', 'org', 'com'
         target 'src/**/*.java'
@@ -42,7 +42,7 @@ spotless {
     // Optional: format Gradle files too
     format 'gradle', {
         target '*.gradle'
-        indentWithSpaces(4)
+        leadingTabsToSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
     }
@@ -115,11 +115,11 @@ dependencies {
 }
 
 jacoco {
-    toolVersion = "0.8.11"
+    toolVersion = "0.8.15"
 }
 
 pitest {
-    pitestVersion = '1.15.0'
+    pitestVersion = '1.25.5'
     targetClasses = ['com.mesofi.mythclothapi.*']
     targetTests = ['com.mesofi.mythclothapi.*']
     junit5PluginVersion = '1.2.1'

@@ -41,382 +41,245 @@ import tools.jackson.databind.ObjectMapper;
 @Import(SecurityConfig.class)
 class DistributorControllerTest {
 
-  @Autowired private MockMvc mockMvc;
+	@Autowired
+	private MockMvc mockMvc;
 
-  @MockitoBean private DistributorService service;
+	@MockitoBean
+	private DistributorService service;
 
-  @Autowired private ObjectMapper objectMapper;
+	@Autowired
+	private ObjectMapper objectMapper;
 
-  @MockitoBean private JwtDecoder jwtDecoder;
+	@MockitoBean
+	private JwtDecoder jwtDecoder;
 
-  @Test
-  void createDistributor_shouldReturn400_whenRequestBodyIsMissing() throws Exception {
+	@Test
+	void createDistributor_shouldReturn400_whenRequestBodyIsMissing() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:write"))))
-        .andExpect(status().isBadRequest())
-        .andExpect(
-            jsonPath("$.detail")
-                .value(
-                    "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.distributors.dto.DistributorResp> com.mesofi.mythclothapi.distributors.DistributorController.createDistributor(org.springframework.security.oauth2.jwt.Jwt,com.mesofi.mythclothapi.distributors.dto.DistributorReq)"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Invalid body"))
-        .andExpect(jsonPath("$.timestamp").exists());
-  }
+		mockMvc.perform(
+				post("/distributors").with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write"))))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value(
+						"Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.distributors.dto.DistributorResp> com.mesofi.mythclothapi.distributors.DistributorController.createDistributor(org.springframework.security.oauth2.jwt.Jwt,com.mesofi.mythclothapi.distributors.dto.DistributorReq)"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
+				.andExpect(jsonPath("$.title").value("Invalid body")).andExpect(jsonPath("$.timestamp").exists());
+	}
 
-  @Test
-  void createDistributor_shouldReturn415_whenContentTypeIsMissing() throws Exception {
+	@Test
+	void createDistributor_shouldReturn415_whenContentTypeIsMissing() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
-                .content("{}"))
-        .andExpect(status().isUnsupportedMediaType())
-        .andExpect(
-            jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("415"))
-        .andExpect(jsonPath("$.title").value("Unsupported Media Type"))
-        .andExpect(jsonPath("$.timestamp").exists());
-  }
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+				.content("{}")).andExpect(status().isUnsupportedMediaType())
+				.andExpect(jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("415"))
+				.andExpect(jsonPath("$.title").value("Unsupported Media Type"))
+				.andExpect(jsonPath("$.timestamp").exists());
+	}
 
-  @Test
-  void createDistributor_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
+	@Test
+	void createDistributor_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Validation Failed"))
-        .andExpect(jsonPath("$.timestamp").exists())
-        .andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"))
-        .andExpect(jsonPath("$.errors.name").value("name must not be blank"));
-  }
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+				.contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
+				.andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+				.andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"))
+				.andExpect(jsonPath("$.errors.name").value("name must not be blank"));
+	}
 
-  @Test
-  void createDistributor_shouldReturn400_whenCountryValueIsInvalid() throws Exception {
+	@Test
+	void createDistributor_shouldReturn400_whenCountryValueIsInvalid() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"countryCode\":\"-\"}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(
-            jsonPath("$.detail")
-                .value(
-                    "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.CountryCode` from String \"-\": not one of the values accepted for Enum class: [CN, JP, MX, US, ES]"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Invalid body"))
-        .andExpect(jsonPath("$.timestamp").exists());
-  }
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+				.contentType(MediaType.APPLICATION_JSON).content("{\"countryCode\":\"-\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value(
+						"JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.CountryCode` from String \"-\": not one of the values accepted for Enum class: [CN, JP, MX, US, ES]"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
+				.andExpect(jsonPath("$.title").value("Invalid body")).andExpect(jsonPath("$.timestamp").exists());
+	}
 
-  @Test
-  void createDistributor_shouldReturn400_whenNameIsBlank() throws Exception {
+	@Test
+	void createDistributor_shouldReturn400_whenNameIsBlank() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"country\":\"JP\"}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Validation Failed"))
-        .andExpect(jsonPath("$.timestamp").exists())
-        .andExpect(jsonPath("$.errors.name").value("name must not be blank"));
-  }
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+				.contentType(MediaType.APPLICATION_JSON).content("{\"country\":\"JP\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
+				.andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+				.andExpect(jsonPath("$.errors.name").value("name must not be blank"));
+	}
 
-  @Test
-  void createDistributor_shouldReturn400_whenNameIsInvalid() throws Exception {
+	@Test
+	void createDistributor_shouldReturn400_whenNameIsInvalid() throws Exception {
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"country\":\"JP\", \"name\": \"Test\"}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(
-            jsonPath("$.detail")
-                .value(
-                    "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.DistributorName` from String \"Test\": not one of the values accepted for Enum class: [DAM, BANDAI_CHINA, BLUE_FIN, BANDAI, DS_DISTRIBUTIONS, DTM]"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Invalid body"))
-        .andExpect(jsonPath("$.timestamp").exists());
-  }
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+				.contentType(MediaType.APPLICATION_JSON).content("{\"country\":\"JP\", \"name\": \"Test\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value(
+						"JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.distributors.model.DistributorName` from String \"Test\": not one of the values accepted for Enum class: [DAM, BANDAI_CHINA, BLUE_FIN, BANDAI, DS_DISTRIBUTIONS, DTM]"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
+				.andExpect(jsonPath("$.title").value("Invalid body")).andExpect(jsonPath("$.timestamp").exists());
+	}
 
-  @Test
-  void createDistributor_shouldReturn201AndLocationHeader() throws Exception {
-    DistributorReq request =
-        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
-    DistributorResp response =
-        new DistributorResp(1L, "BANDAI", "Tamashii Nations", "JP", "www.google.com");
+	@Test
+	void createDistributor_shouldReturn201AndLocationHeader() throws Exception {
+		DistributorReq request = new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
+		DistributorResp response = new DistributorResp(1L, "BANDAI", "Tamashii Nations", "JP", "www.google.com");
 
-    when(service.createDistributor(request)).thenReturn(response);
+		when(service.createDistributor(request)).thenReturn(response);
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isCreated())
-        .andExpect(header().string("Location", endsWith("/distributors/1")))
-        .andExpect(jsonPath("$.id").value(1L))
-        .andExpect(jsonPath("$.name").value("BANDAI"))
-        .andExpect(jsonPath("$.description").value("Tamashii Nations"))
-        .andExpect(jsonPath("$.countryCode").value("JP"))
-        .andExpect(jsonPath("$.website").value("www.google.com"));
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write")))
+				.contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isCreated()).andExpect(header().string("Location", endsWith("/distributors/1")))
+				.andExpect(jsonPath("$.id").value(1L)).andExpect(jsonPath("$.name").value("BANDAI"))
+				.andExpect(jsonPath("$.description").value("Tamashii Nations"))
+				.andExpect(jsonPath("$.countryCode").value("JP"))
+				.andExpect(jsonPath("$.website").value("www.google.com"));
 
-    verify(service).createDistributor(request);
-  }
+		verify(service).createDistributor(request);
+	}
 
-  @Test
-  void createDistributor_shouldReturn409WhenDistributorAlreadyExists() throws Exception {
-    DistributorReq request =
-        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
+	@Test
+	void createDistributor_shouldReturn409WhenDistributorAlreadyExists() throws Exception {
+		DistributorReq request = new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "www.google.com");
 
-    when(service.createDistributor(request))
-        .thenThrow(
-            new DistributorAlreadyExistsException(
-                request.name().toString(), request.countryCode().toString()));
+		when(service.createDistributor(request)).thenThrow(
+				new DistributorAlreadyExistsException(request.name().toString(), request.countryCode().toString()));
 
-    mockMvc
-        .perform(
-            post("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:write")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isConflict())
-        .andExpect(jsonPath("$.detail").value("Distributor already exists: BANDAI - JP"))
-        .andExpect(jsonPath("$.instance").value("/distributors"))
-        .andExpect(jsonPath("$.status").value("409"))
-        .andExpect(jsonPath("$.title").value("Distributor already exists"))
-        .andExpect(jsonPath("$.timestamp").exists());
+		mockMvc.perform(post("/distributors")
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write")))
+				.contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("Distributor already exists: BANDAI - JP"))
+				.andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("409"))
+				.andExpect(jsonPath("$.title").value("Distributor already exists"))
+				.andExpect(jsonPath("$.timestamp").exists());
 
-    verify(service).createDistributor(request);
-  }
+		verify(service).createDistributor(request);
+	}
 
-  @Test
-  void retrieveDistributor_shouldReturn404WhenDistributorDoesNotExist() throws Exception {
+	@Test
+	void retrieveDistributor_shouldReturn404WhenDistributorDoesNotExist() throws Exception {
 
-    when(service.retrieveDistributor(0L)).thenThrow(new DistributorNotFoundException(-1L));
+		when(service.retrieveDistributor(0L)).thenThrow(new DistributorNotFoundException(-1L));
 
-    mockMvc
-        .perform(
-            get("/distributors/{id}", 0L)
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:read"))))
-        .andExpect(status().isNotFound())
-        .andExpect(jsonPath("$.detail").value("Distributor not found"))
-        .andExpect(jsonPath("$.instance").value("/distributors/0"))
-        .andExpect(jsonPath("$.status").value("404"))
-        .andExpect(jsonPath("$.title").value("Distributor not found"))
-        .andExpect(jsonPath("$.timestamp").exists());
+		mockMvc.perform(get("/distributors/{id}", 0L)
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:read"))))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.detail").value("Distributor not found"))
+				.andExpect(jsonPath("$.instance").value("/distributors/0")).andExpect(jsonPath("$.status").value("404"))
+				.andExpect(jsonPath("$.title").value("Distributor not found"))
+				.andExpect(jsonPath("$.timestamp").exists());
 
-    verify(service).retrieveDistributor(0L);
-  }
+		verify(service).retrieveDistributor(0L);
+	}
 
-  @Test
-  void retrieveDistributor_shouldReturn200_whenDistributorExists() throws Exception {
-    DistributorResp response = createResponse(5L, DistributorName.BLUE_FIN, CountryCode.US, null);
+	@Test
+	void retrieveDistributor_shouldReturn200_whenDistributorExists() throws Exception {
+		DistributorResp response = createResponse(5L, DistributorName.BLUE_FIN, CountryCode.US, null);
 
-    when(service.retrieveDistributor(5L)).thenReturn(response);
+		when(service.retrieveDistributor(5L)).thenReturn(response);
 
-    mockMvc
-        .perform(
-            get("/distributors/{id}", 5L)
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:read"))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(5L))
-        .andExpect(jsonPath("$.name").value(DistributorName.BLUE_FIN.toString()))
-        .andExpect(jsonPath("$.countryCode").value(CountryCode.US.toString()));
+		mockMvc.perform(get("/distributors/{id}", 5L)
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:read"))))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.id").value(5L))
+				.andExpect(jsonPath("$.name").value(DistributorName.BLUE_FIN.toString()))
+				.andExpect(jsonPath("$.countryCode").value(CountryCode.US.toString()));
 
-    verify(service).retrieveDistributor(5L);
-  }
+		verify(service).retrieveDistributor(5L);
+	}
 
-  @Test
-  void retrieveDistributors_shouldReturnList_whenDistributorsExist() throws Exception {
-    when(service.retrieveDistributors())
-        .thenReturn(
-            List.of(
-                createResponse(1L, DistributorName.BANDAI, CountryCode.JP, null),
-                createResponse(2L, DistributorName.DAM, CountryCode.MX, "https://dam.com")));
+	@Test
+	void retrieveDistributors_shouldReturnList_whenDistributorsExist() throws Exception {
+		when(service.retrieveDistributors())
+				.thenReturn(List.of(createResponse(1L, DistributorName.BANDAI, CountryCode.JP, null),
+						createResponse(2L, DistributorName.DAM, CountryCode.MX, "https://dam.com")));
 
-    mockMvc
-        .perform(
-            get("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:read"))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(2))
-        .andExpect(jsonPath("$[0].id").value(1L))
-        .andExpect(jsonPath("$[0].name").value(DistributorName.BANDAI.toString()))
-        .andExpect(jsonPath("$[1].id").value(2L))
-        .andExpect(jsonPath("$[1].website").value("https://dam.com"));
+		mockMvc.perform(
+				get("/distributors").with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:read"))))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
+				.andExpect(jsonPath("$[0].id").value(1L))
+				.andExpect(jsonPath("$[0].name").value(DistributorName.BANDAI.toString()))
+				.andExpect(jsonPath("$[1].id").value(2L)).andExpect(jsonPath("$[1].website").value("https://dam.com"));
 
-    verify(service).retrieveDistributors();
-  }
+		verify(service).retrieveDistributors();
+	}
 
-  @Test
-  void retrieveDistributors_shouldReturnEmptyList_whenNoDistributorsExist() throws Exception {
-    when(service.retrieveDistributors()).thenReturn(List.of());
+	@Test
+	void retrieveDistributors_shouldReturnEmptyList_whenNoDistributorsExist() throws Exception {
+		when(service.retrieveDistributors()).thenReturn(List.of());
 
-    mockMvc
-        .perform(
-            get("/distributors")
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:read"))))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(0));
+		mockMvc.perform(
+				get("/distributors").with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:read"))))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
 
-    verify(service).retrieveDistributors();
-  }
+		verify(service).retrieveDistributors();
+	}
 
-  @Test
-  void updateDistributor_shouldReturn200_whenRequestIsValid() throws Exception {
-    DistributorReq request =
-        new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "https://bandai.com");
-    DistributorResp response =
-        createResponse(3L, DistributorName.BANDAI, CountryCode.JP, "https://bandai.com");
+	@Test
+	void updateDistributor_shouldReturn200_whenRequestIsValid() throws Exception {
+		DistributorReq request = new DistributorReq(DistributorName.BANDAI, CountryCode.JP, "https://bandai.com");
+		DistributorResp response = createResponse(3L, DistributorName.BANDAI, CountryCode.JP, "https://bandai.com");
 
-    when(service.updateDistributor(eq(3L), any())).thenReturn(response);
+		when(service.updateDistributor(eq(3L), any())).thenReturn(response);
 
-    mockMvc
-        .perform(
-            put("/distributors/{id}", 3L)
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:update")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.id").value(3L))
-        .andExpect(jsonPath("$.name").value(DistributorName.BANDAI.toString()))
-        .andExpect(jsonPath("$.website").value("https://bandai.com"));
+		mockMvc.perform(put("/distributors/{id}", 3L)
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:update")))
+				.contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.id").value(3L))
+				.andExpect(jsonPath("$.name").value(DistributorName.BANDAI.toString()))
+				.andExpect(jsonPath("$.website").value("https://bandai.com"));
 
-    verify(service).updateDistributor(eq(3L), any());
-  }
+		verify(service).updateDistributor(eq(3L), any());
+	}
 
-  @Test
-  void updateDistributor_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
+	@Test
+	void updateDistributor_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
 
-    mockMvc
-        .perform(
-            put("/distributors/{id}", 1L)
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("catalogs:update")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-        .andExpect(jsonPath("$.status").value("400"))
-        .andExpect(jsonPath("$.title").value("Validation Failed"))
-        .andExpect(jsonPath("$.errors.name").value("name must not be blank"))
-        .andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"));
+		mockMvc.perform(put("/distributors/{id}", 1L)
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:update")))
+				.contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+				.andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+				.andExpect(jsonPath("$.errors.name").value("name must not be blank"))
+				.andExpect(jsonPath("$.errors.countryCode").value("countryCode is required"));
 
-    verifyNoInteractions(service);
-  }
+		verifyNoInteractions(service);
+	}
 
-  @Test
-  void removeDistributor_shouldReturn204_whenDistributorExists() throws Exception {
-    mockMvc
-        .perform(
-            delete("/distributors/{id}", 1L)
-                .with(
-                    jwt()
-                        .jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(
-                            new SimpleGrantedAuthority("ROLE_ADMIN"),
-                            new SimpleGrantedAuthority("distributors:delete"))))
-        .andExpect(status().isNoContent());
+	@Test
+	void removeDistributor_shouldReturn204_whenDistributorExists() throws Exception {
+		mockMvc.perform(delete("/distributors/{id}", 1L)
+				.with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
+						new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:delete"))))
+				.andExpect(status().isNoContent());
 
-    verify(service).removeDistributor(1L);
-  }
+		verify(service).removeDistributor(1L);
+	}
 
-  private DistributorResp createResponse(
-      long id, DistributorName name, CountryCode country, String website) {
-    return new DistributorResp(
-        id, name.toString(), name.getDescription(), country.toString(), website);
-  }
+	private DistributorResp createResponse(long id, DistributorName name, CountryCode country, String website) {
+		return new DistributorResp(id, name.toString(), name.getDescription(), country.toString(), website);
+	}
 }

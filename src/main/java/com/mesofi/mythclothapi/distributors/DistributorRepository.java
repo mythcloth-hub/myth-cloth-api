@@ -9,17 +9,20 @@ import com.mesofi.mythclothapi.distributors.model.DistributorName;
 /**
  * Repository interface for managing {@link Distributor} persistence operations.
  *
- * <p>Extends {@link JpaRepository} to provide basic CRUD functionality and adds custom query
- * methods for application-specific needs.
+ * <p>
+ * Extends {@link JpaRepository} to provide basic CRUD functionality and adds
+ * custom query methods for application-specific needs.
  */
 public interface DistributorRepository extends JpaRepository<Distributor, Long> {
-  /**
-   * Checks whether a distributor exists with the given name and country.
-   *
-   * @param name the distributor's name to check
-   * @param country the country associated with the distributor
-   * @return {@code true} if a distributor exists with the provided name and country, {@code false}
-   *     otherwise
-   */
-  boolean existsByNameAndCountry(DistributorName name, CountryCode country);
+	/**
+	 * Checks whether a distributor exists with the given name and country.
+	 *
+	 * @param name
+	 *            the distributor's name to check
+	 * @param country
+	 *            the country associated with the distributor
+	 * @return {@code true} if a distributor exists with the provided name and
+	 *         country, {@code false} otherwise
+	 */
+	boolean existsByNameAndCountry(DistributorName name, CountryCode country);
 }

@@ -23,13 +23,13 @@ import lombok.Setter;
 @Table(name = "anniversaries")
 public class Anniversary extends Descriptive {
 
-  @OneToMany(mappedBy = "anniversary", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Figurine> figurines = new ArrayList<>();
+	@OneToMany(mappedBy = "anniversary", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Figurine> figurines = new ArrayList<>();
 
-  @Column(name = "anniversary_year", nullable = false)
-  private int year;
+	@Column(name = "anniversary_year", nullable = false)
+	private int year;
 
-  @Column(name = "anniversary_type")
-  @Enumerated(EnumType.STRING)
-  private AnniversaryType type;
+	@Column(name = "anniversary_type")
+	@Enumerated(EnumType.STRING)
+	private AnniversaryType type;
 }
