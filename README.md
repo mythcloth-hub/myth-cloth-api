@@ -34,24 +34,50 @@ Install Java 25:
 ```sh
 sudo apt install -y openjdk-25-jdk
 ```
-
-Install Docker Engine and the Compose plugin from Docker's official APT repository:
-
+Because Linux Mint is based on Ubuntu, we will configure it to use the correct upstream Ubuntu repositories.
+Step 1: Install Prerequisites
 ```sh
-sudo install -m 0755 -d /etc/apt/keyrings
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg
+```
+Add Docker's Official GPG Key
+Create the directory for repository keys and download Docker's security key so your system trusts the downloads:
+```sh
+sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo ${VERSION_CODENAME}) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+Set Up the Docker Repository
+Because Linux Mint uses its own codenames (like wilma or virginia), standard Ubuntu commands fail. We must explicitly tell the system to use the UBUNTU_CODENAME:
+Bash
+```sh
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo ${UBUNTU_CODENAME}) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+Install Docker & Docker Compose
+Now, refresh your package database to include the new Docker repository and install everything at once:
+```sh
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker "$USER"
 ```
-
-Log out and log back in after adding your user to the `docker` group, or run:
-
+Enable Non-Root Access
+By default, Docker requires sudo for every command. To allow your current user account to run Docker commands without root privileges, add yourself to the docker group:
 ```sh
-newgrp docker
+sudo usermod -aG docker $USER
 ```
+    ⚠️ Crucial Step: For this group change to take effect, you must log out of Linux Mint and log back in (or restart your computer). Alternatively, you can apply the changes instantly to your current terminal window by running: newgrp docker.
+
+Verify Everything Works
+
+To confirm that both Docker and Docker Compose installed perfectly, run these two verification commands:
+```sh
+# Test the Docker Engine
+docker run hello-world
+
+# Test Docker Compose
+docker compose version
+```
+
+Note: Docker Compose is now integrated directly into the Docker CLI as a plugin. You invoke it using a space (docker compose) rather than a hyphen (docker-compose).
 
 Check versions:
 
