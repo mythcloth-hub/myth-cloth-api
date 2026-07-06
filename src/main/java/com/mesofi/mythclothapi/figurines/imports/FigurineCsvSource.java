@@ -5,5 +5,5 @@ import java.io.Reader;
 
 @FunctionalInterface
 public interface FigurineCsvSource {
-  Reader openReader() throws IOException;
+	Reader openReader() throws IOException;
 }

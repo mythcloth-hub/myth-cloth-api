@@ -16,13 +16,14 @@ import org.springframework.test.context.ActiveProfiles;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class AdminTokenGeneratorIT {
 
-  private static final Logger log = LoggerFactory.getLogger(AdminTokenGeneratorIT.class);
+	private static final Logger log = LoggerFactory.getLogger(AdminTokenGeneratorIT.class);
 
-  @Autowired private JwtEncoder jwtEncoder;
+	@Autowired
+	private JwtEncoder jwtEncoder;
 
-  @Test
-  void generateAdminToken() {
-    String adminToken = new TestJwtFactory(jwtEncoder).createAdminToken();
-    log.info("\n===> DummyTokenForTesting: {}", adminToken);
-  }
+	@Test
+	void generateAdminToken() {
+		String adminToken = new TestJwtFactory(jwtEncoder).createAdminToken();
+		log.info("\n===> DummyTokenForTesting: {}", adminToken);
+	}
 }

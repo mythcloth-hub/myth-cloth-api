@@ -39,360 +39,298 @@ import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class FigurineRepositoryTest {
 
-  @Autowired FigurineRepository repository;
-  @Autowired LineUpRepository lineUpRepository;
-  @Autowired SeriesRepository seriesRepository;
-  @Autowired DistributorRepository distributorRepository;
+	@Autowired
+	FigurineRepository repository;
+	@Autowired
+	LineUpRepository lineUpRepository;
+	@Autowired
+	SeriesRepository seriesRepository;
+	@Autowired
+	DistributorRepository distributorRepository;
 
-  @PersistenceContext EntityManager em;
+	@PersistenceContext
+	EntityManager em;
 
-  private LineUp savedLineUp;
-  private Series savedSeries;
-  private Distributor savedDistributor;
+	private LineUp savedLineUp;
+	private Series savedSeries;
+	private Distributor savedDistributor;
 
-  @BeforeEach
-  void setUp() {
-    LineUp lineUp = new LineUp();
-    lineUp.setDescription("Myth Cloth EX");
-    savedLineUp = lineUpRepository.saveAndFlush(lineUp);
+	@BeforeEach
+	void setUp() {
+		LineUp lineUp = new LineUp();
+		lineUp.setDescription("Myth Cloth EX");
+		savedLineUp = lineUpRepository.saveAndFlush(lineUp);
 
-    Series series = new Series();
-    series.setDescription("Saint Seiya");
-    savedSeries = seriesRepository.saveAndFlush(series);
+		Series series = new Series();
+		series.setDescription("Saint Seiya");
+		savedSeries = seriesRepository.saveAndFlush(series);
 
-    Distributor distributor = new Distributor();
-    distributor.setName(DistributorName.BANDAI);
-    distributor.setCountry(CountryCode.JP);
-    savedDistributor = distributorRepository.saveAndFlush(distributor);
-  }
+		Distributor distributor = new Distributor();
+		distributor.setName(DistributorName.BANDAI);
+		distributor.setCountry(CountryCode.JP);
+		savedDistributor = distributorRepository.saveAndFlush(distributor);
+	}
 
-  // ─── Primary Key ──────────────────────────────────────────────────────────
+	// ─── Primary Key ──────────────────────────────────────────────────────────
 
-  @Test
-  void save_shouldGeneratePrimaryKey_whenAllRequiredFieldsAreProvided() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+	@Test
+	void save_shouldGeneratePrimaryKey_whenAllRequiredFieldsAreProvided() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
 
-    // Act
-    Figurine saved = repository.saveAndFlush(figurine);
+		// Act
+		Figurine saved = repository.saveAndFlush(figurine);
 
-    // Assert
-    assertThat(saved.getId()).isNotNull().isPositive();
-  }
+		// Assert
+		assertThat(saved.getId()).isNotNull().isPositive();
+	}
 
-  // ─── NOT NULL constraints ──────────────────────────────────────────────────
+	// ─── NOT NULL constraints ──────────────────────────────────────────────────
 
-  @Test
-  void save_shouldThrowException_whenCreationDateIsNull() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
-    figurine.setCreationDate(null);
+	@Test
+	void save_shouldThrowException_whenCreationDateIsNull() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+		figurine.setCreationDate(null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("NULL not allowed for column \"CREATION_DATE\"");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(figurine)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("NULL not allowed for column \"CREATION_DATE\"");
+	}
 
-  @Test
-  void save_shouldThrowException_whenUpdateDateIsNull() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
-    figurine.setUpdateDate(null);
+	@Test
+	void save_shouldThrowException_whenUpdateDateIsNull() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+		figurine.setUpdateDate(null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("NULL not allowed for column \"UPDATE_DATE\"");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(figurine)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("NULL not allowed for column \"UPDATE_DATE\"");
+	}
 
-  @Test
-  void save_shouldThrowException_whenNormalizedNameIsNull() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
-    figurine.setNormalizedName(null);
+	@Test
+	void save_shouldThrowException_whenNormalizedNameIsNull() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+		figurine.setNormalizedName(null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("NULL not allowed for column \"NORMALIZED_NAME\"");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(figurine)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("NULL not allowed for column \"NORMALIZED_NAME\"");
+	}
 
-  @Test
-  void save_shouldThrowException_whenLineupIsNull() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
-    figurine.setLineup(null);
+	@Test
+	void save_shouldThrowException_whenLineupIsNull() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+		figurine.setLineup(null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("NULL not allowed for column \"LINEUP_ID\"");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(figurine)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("NULL not allowed for column \"LINEUP_ID\"");
+	}
 
-  @Test
-  void save_shouldThrowException_whenSeriesIsNull() {
-    // Arrange
-    Figurine figurine = createValidFigurine("Pegasus Seiya EX");
-    figurine.setSeries(null);
+	@Test
+	void save_shouldThrowException_whenSeriesIsNull() {
+		// Arrange
+		Figurine figurine = createValidFigurine("Pegasus Seiya EX");
+		figurine.setSeries(null);
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(figurine))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("NULL not allowed for column \"SERIES_ID\"");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(figurine)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("NULL not allowed for column \"SERIES_ID\"");
+	}
 
-  // ─── Unique constraint ────────────────────────────────────────────────────
+	// ─── Unique constraint ────────────────────────────────────────────────────
 
-  @Test
-  void save_shouldThrowException_whenLegacyNameIsDuplicated() {
-    // Arrange
-    repository.saveAndFlush(createValidFigurine("Pegasus Seiya EX"));
-    Figurine duplicate = createValidFigurine("Pegasus Seiya EX"); // same legacyName
+	@Test
+	void save_shouldThrowException_whenLegacyNameIsDuplicated() {
+		// Arrange
+		repository.saveAndFlush(createValidFigurine("Pegasus Seiya EX"));
+		Figurine duplicate = createValidFigurine("Pegasus Seiya EX"); // same legacyName
 
-    // Act + Assert
-    assertThatThrownBy(() -> repository.saveAndFlush(duplicate))
-        .isInstanceOf(DataIntegrityViolationException.class)
-        .hasMessageContaining("Unique index or primary key violation");
-  }
+		// Act + Assert
+		assertThatThrownBy(() -> repository.saveAndFlush(duplicate)).isInstanceOf(DataIntegrityViolationException.class)
+				.hasMessageContaining("Unique index or primary key violation");
+	}
 
-  @Test
-  void save_shouldAllowMultipleFigurinesWithNullLegacyName() {
-    // Arrange – legacyName is nullable, so two nulls must be accepted
-    Figurine first = createValidFigurine(null);
-    Figurine second = createValidFigurine(null);
+	@Test
+	void save_shouldAllowMultipleFigurinesWithNullLegacyName() {
+		// Arrange – legacyName is nullable, so two nulls must be accepted
+		Figurine first = createValidFigurine(null);
+		Figurine second = createValidFigurine(null);
 
-    // Act + Assert – no exception expected
-    repository.saveAndFlush(first);
-    repository.saveAndFlush(second);
-    assertThat(repository.count()).isGreaterThanOrEqualTo(2);
-  }
+		// Act + Assert – no exception expected
+		repository.saveAndFlush(first);
+		repository.saveAndFlush(second);
+		assertThat(repository.count()).isGreaterThanOrEqualTo(2);
+	}
 
-  @Test
-  void search_shouldReturnMatchingFigurines() {
-    Figurine figurine1 = createValidFigurine("Pegasus Seiya EX");
-    figurine1.setNormalizedName("Pegasus Seiya");
-    repository.saveAndFlush(figurine1);
+	@Test
+	void search_shouldReturnMatchingFigurines() {
+		Figurine figurine1 = createValidFigurine("Pegasus Seiya EX");
+		figurine1.setNormalizedName("Pegasus Seiya");
+		repository.saveAndFlush(figurine1);
 
-    Figurine figurine2 = createValidFigurine("Dragon Shiryu EX");
-    figurine2.setNormalizedName("Dragon Shiryu");
-    repository.saveAndFlush(figurine2);
+		Figurine figurine2 = createValidFigurine("Dragon Shiryu EX");
+		figurine2.setNormalizedName("Dragon Shiryu");
+		repository.saveAndFlush(figurine2);
 
-    var filter =
-        new FigurineFilter(
-            null, "seiya", null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null);
-    var page =
-        repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
-    assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
-    assertThat(page.getContent())
-        .extracting(Figurine::getNormalizedName)
-        .doesNotContain("Dragon Shiryu");
-  }
+		var filter = new FigurineFilter(null, "seiya", null, null, null, null, null, null, null, null, null, null, null,
+				null, null, null, null);
+		var page = repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
+		assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("Pegasus Seiya");
+		assertThat(page.getContent()).extracting(Figurine::getNormalizedName).doesNotContain("Dragon Shiryu");
+	}
 
-  @Test
-  void search_shouldReturnEmpty_whenNoMatch() {
-    var filter =
-        new FigurineFilter(
-            null, "xyz", null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null);
-    var page =
-        repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
-    assertThat(page.getContent()).isEmpty();
-  }
+	@Test
+	void search_shouldReturnEmpty_whenNoMatch() {
+		var filter = new FigurineFilter(null, "xyz", null, null, null, null, null, null, null, null, null, null, null,
+				null, null, null, null);
+		var page = repository.findPaginated(filter, org.springframework.data.domain.PageRequest.of(0, 10));
+		assertThat(page.getContent()).isEmpty();
+	}
 
-  @Test
-  void search_shouldFilterByAllBooleans() {
-    Figurine figurine = createValidFigurine("BooleanTest");
-    figurine.setMetalBody(true);
-    figurine.setOce(true);
-    figurine.setRevival(true);
-    figurine.setPlainCloth(true);
-    figurine.setBroken(true);
-    figurine.setGolden(true);
-    figurine.setGold(true);
-    figurine.setManga(true);
-    figurine.setSet(true);
-    figurine.setArticulable(true);
-    repository.saveAndFlush(figurine);
+	@Test
+	void search_shouldFilterByAllBooleans() {
+		Figurine figurine = createValidFigurine("BooleanTest");
+		figurine.setMetalBody(true);
+		figurine.setOce(true);
+		figurine.setRevival(true);
+		figurine.setPlainCloth(true);
+		figurine.setBroken(true);
+		figurine.setGolden(true);
+		figurine.setGold(true);
+		figurine.setManga(true);
+		figurine.setSet(true);
+		figurine.setArticulable(true);
+		repository.saveAndFlush(figurine);
 
-    FigurineFilter filter =
-        new FigurineFilter(
-            null, // figurineIds
-            null, // name
-            null, // lineUpId
-            null, // seriesId
-            null, // groupId
-            null, // anniversaryId
-            true, // metalBody
-            true, // oce
-            true, // revival
-            true, // plainCloth
-            true, // broken
-            true, // golden
-            true, // gold
-            true, // manga
-            true, // set
-            true, // articulable
-            null // releaseStatus
-            );
-    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-    assertThat(page.getContent())
-        .extracting(Figurine::getNormalizedName)
-        .contains("pegasus-seiya-ex");
-  }
+		FigurineFilter filter = new FigurineFilter(null, // figurineIds
+				null, // name
+				null, // lineUpId
+				null, // seriesId
+				null, // groupId
+				null, // anniversaryId
+				true, // metalBody
+				true, // oce
+				true, // revival
+				true, // plainCloth
+				true, // broken
+				true, // golden
+				true, // gold
+				true, // manga
+				true, // set
+				true, // articulable
+				null // releaseStatus
+		);
+		var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+		assertThat(page.getContent()).extracting(Figurine::getNormalizedName).contains("pegasus-seiya-ex");
+	}
 
-  @Test
-  void search_shouldFilterByLineUpId() {
-    Figurine figurine = createValidFigurine("LineUpTest");
-    repository.saveAndFlush(figurine);
-    FigurineFilter filter =
-        new FigurineFilter(
-            null,
-            null,
-            savedLineUp.getId(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-    assertThat(page.getContent()).isNotEmpty();
-  }
+	@Test
+	void search_shouldFilterByLineUpId() {
+		Figurine figurine = createValidFigurine("LineUpTest");
+		repository.saveAndFlush(figurine);
+		FigurineFilter filter = new FigurineFilter(null, null, savedLineUp.getId(), null, null, null, null, null, null,
+				null, null, null, null, null, null, null, null);
+		var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+		assertThat(page.getContent()).isNotEmpty();
+	}
 
-  @Test
-  void search_shouldFilterBySeriesId() {
-    Figurine figurine = createValidFigurine("SeriesTest");
-    repository.saveAndFlush(figurine);
-    FigurineFilter filter =
-        new FigurineFilter(
-            null,
-            null,
-            null,
-            savedSeries.getId(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
-    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-    assertThat(page.getContent()).isNotEmpty();
-  }
+	@Test
+	void search_shouldFilterBySeriesId() {
+		Figurine figurine = createValidFigurine("SeriesTest");
+		repository.saveAndFlush(figurine);
+		FigurineFilter filter = new FigurineFilter(null, null, null, savedSeries.getId(), null, null, null, null, null,
+				null, null, null, null, null, null, null, null);
+		var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+		assertThat(page.getContent()).isNotEmpty();
+	}
 
-  @Test
-  void search_shouldReturnCorrectReleaseStatus() {
-    // RUMORED: no announcement_date, no release_date
-    Figurine rumored = createValidFigurine("Rumored");
-    repository.saveAndFlush(rumored);
-    // PROTOTYPE: announcement_date set, release_date null
-    Figurine prototype = createValidFigurine("Prototype");
-    repository.saveAndFlush(prototype);
-    em.createNativeQuery(
-            "UPDATE figurine_distributor SET announcement_date = ? WHERE figurine_id = ?")
-        .setParameter(1, LocalDate.now())
-        .setParameter(2, prototype.getId())
-        .executeUpdate();
-    // ANNOUNCED: release_date in future
-    Figurine announced = createValidFigurine("Announced");
-    repository.saveAndFlush(announced);
-    em.createNativeQuery("UPDATE figurine_distributor SET release_date = ? WHERE figurine_id = ?")
-        .setParameter(1, LocalDate.now().plusDays(10))
-        .setParameter(2, announced.getId())
-        .executeUpdate();
-    // RELEASED: release_date in past
-    Figurine released = createValidFigurine("Released");
-    repository.saveAndFlush(released);
-    em.createNativeQuery("UPDATE figurine_distributor SET release_date = ? WHERE figurine_id = ?")
-        .setParameter(1, LocalDate.now().minusDays(10))
-        .setParameter(2, released.getId())
-        .executeUpdate();
-    // Test each status
-    for (String status : List.of("RUMORED", "PROTOTYPE", "ANNOUNCED", "RELEASED")) {
-      FigurineFilter filter =
-          new FigurineFilter(
-              null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-              null, null, status);
-      var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-      assertThat(page.getContent()).isNotEmpty();
-    }
-  }
+	@Test
+	void search_shouldReturnCorrectReleaseStatus() {
+		// RUMORED: no announcement_date, no release_date
+		Figurine rumored = createValidFigurine("Rumored");
+		repository.saveAndFlush(rumored);
+		// PROTOTYPE: announcement_date set, release_date null
+		Figurine prototype = createValidFigurine("Prototype");
+		repository.saveAndFlush(prototype);
+		em.createNativeQuery("UPDATE figurine_distributor SET announcement_date = ? WHERE figurine_id = ?")
+				.setParameter(1, LocalDate.now()).setParameter(2, prototype.getId()).executeUpdate();
+		// ANNOUNCED: release_date in future
+		Figurine announced = createValidFigurine("Announced");
+		repository.saveAndFlush(announced);
+		em.createNativeQuery("UPDATE figurine_distributor SET release_date = ? WHERE figurine_id = ?")
+				.setParameter(1, LocalDate.now().plusDays(10)).setParameter(2, announced.getId()).executeUpdate();
+		// RELEASED: release_date in past
+		Figurine released = createValidFigurine("Released");
+		repository.saveAndFlush(released);
+		em.createNativeQuery("UPDATE figurine_distributor SET release_date = ? WHERE figurine_id = ?")
+				.setParameter(1, LocalDate.now().minusDays(10)).setParameter(2, released.getId()).executeUpdate();
+		// Test each status
+		for (String status : List.of("RUMORED", "PROTOTYPE", "ANNOUNCED", "RELEASED")) {
+			FigurineFilter filter = new FigurineFilter(null, null, null, null, null, null, null, null, null, null, null,
+					null, null, null, null, null, status);
+			var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+			assertThat(page.getContent()).isNotEmpty();
+		}
+	}
 
-  @Test
-  void search_shouldSupportPagination() {
-    for (int i = 0; i < 15; i++) {
-      Figurine figurine = createValidFigurine("Paginate" + i);
-      figurine.setNormalizedName("Paginate" + i);
-      repository.saveAndFlush(figurine);
-    }
-    var filter =
-        new FigurineFilter(
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null);
-    var page1 = repository.findPaginated(filter, PageRequest.of(0, 5));
-    var page2 = repository.findPaginated(filter, PageRequest.of(1, 5));
-    assertThat(page1.getContent()).hasSize(5);
-    assertThat(page2.getContent()).hasSize(5);
-  }
+	@Test
+	void search_shouldSupportPagination() {
+		for (int i = 0; i < 15; i++) {
+			Figurine figurine = createValidFigurine("Paginate" + i);
+			figurine.setNormalizedName("Paginate" + i);
+			repository.saveAndFlush(figurine);
+		}
+		var filter = new FigurineFilter(null, null, null, null, null, null, null, null, null, null, null, null, null,
+				null, null, null, null);
+		var page1 = repository.findPaginated(filter, PageRequest.of(0, 5));
+		var page2 = repository.findPaginated(filter, PageRequest.of(1, 5));
+		assertThat(page1.getContent()).hasSize(5);
+		assertThat(page2.getContent()).hasSize(5);
+	}
 
-  @Test
-  void search_shouldReturnAll_whenAllFiltersNull() {
-    Figurine figurine = createValidFigurine("AllNull");
-    repository.saveAndFlush(figurine);
-    var filter =
-        new FigurineFilter(
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null);
-    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-    assertThat(page.getContent()).isNotEmpty();
-  }
+	@Test
+	void search_shouldReturnAll_whenAllFiltersNull() {
+		Figurine figurine = createValidFigurine("AllNull");
+		repository.saveAndFlush(figurine);
+		var filter = new FigurineFilter(null, null, null, null, null, null, null, null, null, null, null, null, null,
+				null, null, null, null);
+		var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+		assertThat(page.getContent()).isNotEmpty();
+	}
 
-  @Test
-  void search_shouldReturnEmpty_whenDatabaseIsEmpty() {
-    repository.deleteAll();
-    var filter =
-        new FigurineFilter(
-            null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-            null, null, null);
-    var page = repository.findPaginated(filter, PageRequest.of(0, 10));
-    assertThat(page.getContent()).isEmpty();
-  }
+	@Test
+	void search_shouldReturnEmpty_whenDatabaseIsEmpty() {
+		repository.deleteAll();
+		var filter = new FigurineFilter(null, null, null, null, null, null, null, null, null, null, null, null, null,
+				null, null, null, null);
+		var page = repository.findPaginated(filter, PageRequest.of(0, 10));
+		assertThat(page.getContent()).isEmpty();
+	}
 
-  // ─── Helper ───────────────────────────────────────────────────────────────
+	// ─── Helper ───────────────────────────────────────────────────────────────
 
-  private Figurine createValidFigurine(String legacyName) {
-    Figurine figurine = new Figurine();
-    figurine.setLegacyName(legacyName);
-    figurine.setNormalizedName("pegasus-seiya-ex");
-    figurine.setLineup(savedLineUp);
-    figurine.setSeries(savedSeries);
-    figurine.setCreationDate(Instant.now());
-    figurine.setUpdateDate(Instant.now());
+	private Figurine createValidFigurine(String legacyName) {
+		Figurine figurine = new Figurine();
+		figurine.setLegacyName(legacyName);
+		figurine.setNormalizedName("pegasus-seiya-ex");
+		figurine.setLineup(savedLineUp);
+		figurine.setSeries(savedSeries);
+		figurine.setCreationDate(Instant.now());
+		figurine.setUpdateDate(Instant.now());
 
-    // Add a valid distributor (required for release status logic)
-    FigurineDistributor distributor = new FigurineDistributor();
-    distributor.setFigurine(figurine);
-    distributor.setDistributor(savedDistributor);
-    distributor.setCurrency(CurrencyCode.JPY);
-    distributor.setReleaseDateConfirmed(false);
-    figurine.getDistributors().add(distributor);
+		// Add a valid distributor (required for release status logic)
+		FigurineDistributor distributor = new FigurineDistributor();
+		distributor.setFigurine(figurine);
+		distributor.setDistributor(savedDistributor);
+		distributor.setCurrency(CurrencyCode.JPY);
+		distributor.setReleaseDateConfirmed(false);
+		figurine.getDistributors().add(distributor);
 
-    return figurine;
-  }
+		return figurine;
+	}
 }

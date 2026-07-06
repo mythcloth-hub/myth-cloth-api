@@ -7,32 +7,35 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Mutable accumulator model for release-price statistics during yearly aggregation.
+ * Mutable accumulator model for release-price statistics during yearly
+ * aggregation.
  *
- * <p>Stores running totals and tracked figurines for highest and lowest release prices.
+ * <p>
+ * Stores running totals and tracked figurines for highest and lowest release
+ * prices.
  */
 @Getter
 @Setter
 @Builder
 public class ReleasePrices {
-  /** Running average release price for the current aggregation window. */
-  private Double average;
+	/** Running average release price for the current aggregation window. */
+	private Double average;
 
-  /** Highest observed release price for the current aggregation window. */
-  private Double highest;
+	/** Highest observed release price for the current aggregation window. */
+	private Double highest;
 
-  /** Lowest observed release price for the current aggregation window. */
-  private Double lowest;
+	/** Lowest observed release price for the current aggregation window. */
+	private Double lowest;
 
-  /** Figurine associated with {@link #highest}. */
-  Figurine highestPriceFigurine;
+	/** Figurine associated with {@link #highest}. */
+	Figurine highestPriceFigurine;
 
-  /** Figurine associated with {@link #lowest}. */
-  Figurine lowestPriceFigurine;
+	/** Figurine associated with {@link #lowest}. */
+	Figurine lowestPriceFigurine;
 
-  /** Running sum of all observed release prices. */
-  private Double total;
+	/** Running sum of all observed release prices. */
+	private Double total;
 
-  /** Number of releases included in the aggregation. */
-  private int count;
+	/** Number of releases included in the aggregation. */
+	private int count;
 }

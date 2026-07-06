@@ -20,15 +20,19 @@ import lombok.Setter;
 /**
  * Entity representing a collector purchase transaction.
  *
- * <p>This entity stores the historical information of a purchase made by a collector, including
- * order details, payment information, shipping status, and delivery information.
+ * <p>
+ * This entity stores the historical information of a purchase made by a
+ * collector, including order details, payment information, shipping status, and
+ * delivery information.
  *
- * <p>A collector purchase is independent from the collector's current collection state. It
- * represents what was purchased at a specific point in time, preserving transaction history such as
- * quantity acquired and price paid.
+ * <p>
+ * A collector purchase is independent from the collector's current collection
+ * state. It represents what was purchased at a specific point in time,
+ * preserving transaction history such as quantity acquired and price paid.
  *
- * <p>Individual purchased figurines are stored separately through {@link CollectorPurchaseFigurine}
- * entities associated with this purchase.
+ * <p>
+ * Individual purchased figurines are stored separately through
+ * {@link CollectorPurchaseFigurine} entities associated with this purchase.
  */
 @Entity
 @Getter
@@ -36,29 +40,29 @@ import lombok.Setter;
 @Table(name = "collector_purchases")
 public class CollectorPurchase extends BaseId {
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  private Collector collector;
+	@ManyToOne(optional = false, fetch = FetchType.LAZY)
+	private Collector collector;
 
-  private LocalDate orderDate;
+	private LocalDate orderDate;
 
-  private String store;
+	private String store;
 
-  private String orderNumber;
+	private String orderNumber;
 
-  private CurrencyCode currency; // MXN, JPY, USD, etc
+	private CurrencyCode currency; // MXN, JPY, USD, etc
 
-  private BigDecimal totalAmount;
+	private BigDecimal totalAmount;
 
-  private Integer totalFigurines;
+	private Integer totalFigurines;
 
-  @Enumerated(EnumType.STRING)
-  private ShippingStatus shippingStatus;
+	@Enumerated(EnumType.STRING)
+	private ShippingStatus shippingStatus;
 
-  private String trackingNumber;
+	private String trackingNumber;
 
-  private String carrier;
+	private String carrier;
 
-  private LocalDate shippedDate;
+	private LocalDate shippedDate;
 
-  private LocalDate deliveredDate;
+	private LocalDate deliveredDate;
 }

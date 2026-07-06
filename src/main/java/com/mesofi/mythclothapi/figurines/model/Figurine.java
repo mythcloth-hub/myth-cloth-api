@@ -37,95 +37,93 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(
-    name = "figurines",
-    indexes = @Index(name = "idx_figurine_unique_name", columnList = "legacyName"))
+@Table(name = "figurines", indexes = @Index(name = "idx_figurine_unique_name", columnList = "legacyName"))
 public class Figurine extends BaseId {
 
-  @Column(unique = true, length = 200)
-  private String legacyName;
+	@Column(unique = true, length = 200)
+	private String legacyName;
 
-  @Column(nullable = false, length = 100)
-  private String normalizedName;
+	@Column(nullable = false, length = 100)
+	private String normalizedName;
 
-  // FigurineDistributor.figurine
-  @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<FigurineDistributor> distributors = new ArrayList<>();
+	// FigurineDistributor.figurine
+	@OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<FigurineDistributor> distributors = new ArrayList<>();
 
-  @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<CollectorCollectionFigurine> collections = new ArrayList<>();
+	@OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<CollectorCollectionFigurine> collections = new ArrayList<>();
 
-  @Column(length = 50)
-  private String tamashiiUrl;
+	@Column(length = 50)
+	private String tamashiiUrl;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  private Distribution distribution;
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Distribution distribution;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(nullable = false)
-  private LineUp lineup;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(nullable = false)
+	private LineUp lineup;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(nullable = false)
-  private Series series;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(nullable = false)
+	private Series series;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  private Group group;
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Group group;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  private Anniversary anniversary;
+	@ManyToOne(fetch = FetchType.LAZY)
+	private Anniversary anniversary;
 
-  @Column(name = "is_metal_body")
-  private Boolean metalBody;
+	@Column(name = "is_metal_body")
+	private Boolean metalBody;
 
-  @Column(name = "is_oce")
-  private Boolean oce;
+	@Column(name = "is_oce")
+	private Boolean oce;
 
-  @Column(name = "is_revival")
-  private Boolean revival;
+	@Column(name = "is_revival")
+	private Boolean revival;
 
-  @Column(name = "is_plain_cloth")
-  private Boolean plainCloth;
+	@Column(name = "is_plain_cloth")
+	private Boolean plainCloth;
 
-  @Column(name = "is_broken")
-  private Boolean broken;
+	@Column(name = "is_broken")
+	private Boolean broken;
 
-  @Column(name = "is_golden")
-  private Boolean golden;
+	@Column(name = "is_golden")
+	private Boolean golden;
 
-  @Column(name = "is_gold")
-  private Boolean gold;
+	@Column(name = "is_gold")
+	private Boolean gold;
 
-  @Column(name = "is_manga")
-  private Boolean manga;
+	@Column(name = "is_manga")
+	private Boolean manga;
 
-  @Column(name = "is_surplice")
-  private Boolean surplice;
+	@Column(name = "is_surplice")
+	private Boolean surplice;
 
-  @Column(name = "is_set")
-  private Boolean set;
+	@Column(name = "is_set")
+	private Boolean set;
 
-  @Column(name = "is_articulable")
-  private Boolean articulable;
+	@Column(name = "is_articulable")
+	private Boolean articulable;
 
-  @Column(length = 1500)
-  private String remarks;
+	@Column(length = 1500)
+	private String remarks;
 
-  @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
-  @OrderBy("eventDate DESC")
-  private List<FigurineEvent> events = new ArrayList<>();
+	@OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OrderBy("eventDate DESC")
+	private List<FigurineEvent> events = new ArrayList<>();
 
-  @ElementCollection
-  @CollectionTable(name = "official_images", joinColumns = @JoinColumn(name = "figurine_id"))
-  private List<String> officialImages;
+	@ElementCollection
+	@CollectionTable(name = "official_images", joinColumns = @JoinColumn(name = "figurine_id"))
+	private List<String> officialImages;
 
-  @ElementCollection
-  @CollectionTable(name = "non_official_images", joinColumns = @JoinColumn(name = "figurine_id"))
-  private List<String> nonOfficialImages;
+	@ElementCollection
+	@CollectionTable(name = "non_official_images", joinColumns = @JoinColumn(name = "figurine_id"))
+	private List<String> nonOfficialImages;
 
-  @Column(nullable = false)
-  private Instant creationDate;
+	@Column(nullable = false)
+	private Instant creationDate;
 
-  @Column(nullable = false)
-  private Instant updateDate;
+	@Column(nullable = false)
+	private Instant updateDate;
 }

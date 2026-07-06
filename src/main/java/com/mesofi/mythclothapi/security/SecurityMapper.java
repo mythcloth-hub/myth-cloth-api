@@ -14,17 +14,17 @@ import com.mesofi.mythclothapi.security.roles.model.Role;
 @Mapper(componentModel = "spring")
 public interface SecurityMapper {
 
-  // Roles
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "permissions", ignore = true)
-  Role toRole(RoleReq request);
+	// Roles
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "permissions", ignore = true)
+	Role toRole(RoleReq request);
 
-  RoleResp toRoleResp(Descriptive descriptiveEntity);
+	RoleResp toRoleResp(Descriptive descriptiveEntity);
 
-  // Permission
-  @Mapping(target = "id", ignore = true)
-  @Mapping(target = "roles", ignore = true)
-  Permission toPermission(PermissionReq request);
+	// Permission
+	@Mapping(target = "id", ignore = true)
+	@Mapping(target = "roles", ignore = true)
+	Permission toPermission(PermissionReq request);
 
-  PermissionResp toPermissionResp(Descriptive descriptiveEntity);
+	PermissionResp toPermissionResp(Descriptive descriptiveEntity);
 }

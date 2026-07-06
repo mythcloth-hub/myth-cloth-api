@@ -33,38 +33,35 @@ import lombok.extern.slf4j.Slf4j;
 @PreAuthorize("hasRole('ADMIN')")
 public class RoleController {
 
-  private final RoleService service;
+	private final RoleService service;
 
-  @PostMapping
-  @PreAuthorize("hasAuthority('roles:write')")
-  public ResponseEntity<RoleResp> createRole(@Valid @RequestBody RoleReq roleRequest) {
-    RoleResp response = service.createRole(roleRequest);
-    URI location =
-        ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/roles
-            .path("/{id}") // append /{id}
-            .buildAndExpand(response.id())
-            .toUri();
+	@PostMapping
+	@PreAuthorize("hasAuthority('roles:write')")
+	public ResponseEntity<RoleResp> createRole(@Valid @RequestBody RoleReq roleRequest) {
+		RoleResp response = service.createRole(roleRequest);
+		URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/roles
+				.path("/{id}") // append /{id}
+				.buildAndExpand(response.id()).toUri();
 
-    return ResponseEntity.created(location).body(response);
-  }
+		return ResponseEntity.created(location).body(response);
+	}
 
-  @GetMapping("/{id}")
-  @PreAuthorize("hasAuthority('roles:read')")
-  public RoleResp retrieveRole(@PathVariable Long id) {
-    return service.retrieveRole(id);
-  }
+	@GetMapping("/{id}")
+	@PreAuthorize("hasAuthority('roles:read')")
+	public RoleResp retrieveRole(@PathVariable Long id) {
+		return service.retrieveRole(id);
+	}
 
-  @GetMapping
-  @PreAuthorize("hasAuthority('roles:read')")
-  public List<RoleResp> retrieveRoles() {
-    return service.retrieveRoles();
-  }
+	@GetMapping
+	@PreAuthorize("hasAuthority('roles:read')")
+	public List<RoleResp> retrieveRoles() {
+		return service.retrieveRoles();
+	}
 
-  @PutMapping("/{id}")
-  @PreAuthorize("hasAuthority('roles:update')")
-  public ResponseEntity<RoleResp> updateRole(
-      @PathVariable Long id, @Valid @RequestBody RoleReq roleRequest) {
-    RoleResp updated = service.updateRole(id, roleRequest);
-    return ResponseEntity.ok(updated);
-  }
+	@PutMapping("/{id}")
+	@PreAuthorize("hasAuthority('roles:update')")
+	public ResponseEntity<RoleResp> updateRole(@PathVariable Long id, @Valid @RequestBody RoleReq roleRequest) {
+		RoleResp updated = service.updateRole(id, roleRequest);
+		return ResponseEntity.ok(updated);
+	}
 }

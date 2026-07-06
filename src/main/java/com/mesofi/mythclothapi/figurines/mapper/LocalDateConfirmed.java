@@ -8,6 +8,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class LocalDateConfirmed {
-  private LocalDate date;
-  private boolean confirmed;
+	private LocalDate date;
+	private boolean confirmed;
 }

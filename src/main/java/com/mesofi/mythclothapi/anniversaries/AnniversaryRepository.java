@@ -6,4 +6,5 @@ import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 
 @Repository("anniversaries")
-public interface AnniversaryRepository extends IdDescRepository<Anniversary, Long> {}
+public interface AnniversaryRepository extends IdDescRepository<Anniversary, Long> {
+}

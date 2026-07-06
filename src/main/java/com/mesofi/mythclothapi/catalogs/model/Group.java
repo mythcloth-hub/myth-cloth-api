@@ -20,6 +20,6 @@ import lombok.Setter;
 @Table(name = "groups")
 public class Group extends Descriptive {
 
-  @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<Figurine> figurines = new ArrayList<>();
+	@OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Figurine> figurines = new ArrayList<>();
 }

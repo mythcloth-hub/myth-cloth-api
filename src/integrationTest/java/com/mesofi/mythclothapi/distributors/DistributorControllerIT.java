@@ -21,70 +21,69 @@ import com.mesofi.mythclothapi.it.ControllerBaseIT;
 @Sql(scripts = "/cleanup-distributor-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class DistributorControllerIT extends ControllerBaseIT {
 
-  private static final String DISTRIBUTORS = "/distributors";
+	private static final String DISTRIBUTORS = "/distributors";
 
-  @Test
-  @DisplayName("Test flow to create and process distributors")
-  void fullCrudDistributorFlow() {
+	@Test
+	@DisplayName("Test flow to create and process distributors")
+	void fullCrudDistributorFlow() {
 
-    DistributorReq reqBandai = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
-    DistributorReq reqDam = new DistributorReq(DAM, MX, "https://animexico-online.com/");
+		DistributorReq reqBandai = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
+		DistributorReq reqDam = new DistributorReq(DAM, MX, "https://animexico-online.com/");
 
-    // CREATE
-    Long idBandai = createDistributor(reqBandai);
-    Long idDam = createDistributor(reqDam);
+		// CREATE
+		Long idBandai = createDistributor(reqBandai);
+		Long idDam = createDistributor(reqDam);
 
-    // READ
-    assertThat(readDistributor(idBandai)).isEqualTo(idBandai);
-    assertThat(readDistributor(idDam)).isEqualTo(idDam);
+		// READ
+		assertThat(readDistributor(idBandai)).isEqualTo(idBandai);
+		assertThat(readDistributor(idDam)).isEqualTo(idDam);
 
-    // READ ALL
-    readAll();
+		// READ ALL
+		readAll();
 
-    // UPDATE
-    updateDistributor(idBandai, new DistributorReq(BANDAI, MX, "https://tamashiiweb.com/"));
+		// UPDATE
+		updateDistributor(idBandai, new DistributorReq(BANDAI, MX, "https://tamashiiweb.com/"));
 
-    // VERIFY UPDATE
-    assertThat(readDistributor(idBandai)).isEqualTo(idBandai);
+		// VERIFY UPDATE
+		assertThat(readDistributor(idBandai)).isEqualTo(idBandai);
 
-    // DELETE
-    deleteDistributor(idBandai);
-    deleteDistributor(idDam);
-  }
+		// DELETE
+		deleteDistributor(idBandai);
+		deleteDistributor(idDam);
+	}
 
-  private void updateDistributor(Long id, DistributorReq request) {
-    rest.put().uri(DISTRIBUTORS + "/" + id).body(request).retrieve().toBodilessEntity();
-  }
+	private void updateDistributor(Long id, DistributorReq request) {
+		rest.put().uri(DISTRIBUTORS + "/" + id).body(request).retrieve().toBodilessEntity();
+	}
 
-  private Long createDistributor(DistributorReq request) {
-    ResponseEntity<DistributorResp> response =
-        rest.post().uri(DISTRIBUTORS).body(request).retrieve().toEntity(DistributorResp.class);
+	private Long createDistributor(DistributorReq request) {
+		ResponseEntity<DistributorResp> response = rest.post().uri(DISTRIBUTORS).body(request).retrieve()
+				.toEntity(DistributorResp.class);
 
-    assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    assertThat(response.getBody()).isNotNull();
+		assertThat(response.getStatusCode()).isEqualTo(CREATED);
+		assertThat(response.getBody()).isNotNull();
 
-    return response.getBody().id();
-  }
+		return response.getBody().id();
+	}
 
-  private Long readDistributor(Long id) {
-    ResponseEntity<DistributorResp> response =
-        rest.get().uri(DISTRIBUTORS + "/" + id).retrieve().toEntity(DistributorResp.class);
+	private Long readDistributor(Long id) {
+		ResponseEntity<DistributorResp> response = rest.get().uri(DISTRIBUTORS + "/" + id).retrieve()
+				.toEntity(DistributorResp.class);
 
-    assertThat(response.getStatusCode()).isEqualTo(OK);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().id()).isEqualTo(id);
+		assertThat(response.getStatusCode()).isEqualTo(OK);
+		assertThat(response.getBody()).isNotNull();
+		assertThat(response.getBody().id()).isEqualTo(id);
 
-    return response.getBody().id();
-  }
+		return response.getBody().id();
+	}
 
-  private void readAll() {
-    ResponseEntity<Distributor[]> response =
-        rest.get().uri(DISTRIBUTORS).retrieve().toEntity(Distributor[].class);
+	private void readAll() {
+		ResponseEntity<Distributor[]> response = rest.get().uri(DISTRIBUTORS).retrieve().toEntity(Distributor[].class);
 
-    assertThat(response.getBody()).hasSize(2);
-  }
+		assertThat(response.getBody()).hasSize(2);
+	}
 
-  private void deleteDistributor(Long id) {
-    rest.delete().uri(DISTRIBUTORS + "/" + id).retrieve().toBodilessEntity();
-  }
+	private void deleteDistributor(Long id) {
+		rest.delete().uri(DISTRIBUTORS + "/" + id).retrieve().toBodilessEntity();
+	}
 }

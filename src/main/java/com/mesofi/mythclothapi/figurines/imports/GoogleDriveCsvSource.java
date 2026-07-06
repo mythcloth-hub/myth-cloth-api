@@ -15,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GoogleDriveCsvSource implements FigurineCsvSource {
 
-  private final FigurineImportProperties properties;
+	private final FigurineImportProperties properties;
 
-  @Override
-  public Reader openReader() throws IOException {
-    String url = properties.buildUrl();
-    return new InputStreamReader(URI.create(url).toURL().openStream());
-  }
+	@Override
+	public Reader openReader() throws IOException {
+		String url = properties.buildUrl();
+		return new InputStreamReader(URI.create(url).toURL().openStream());
+	}
 }

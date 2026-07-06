@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 
 @Repository("groups")
-public interface GroupRepository extends IdDescRepository<Group, Long> {}
+public interface GroupRepository extends IdDescRepository<Group, Long> {
+}

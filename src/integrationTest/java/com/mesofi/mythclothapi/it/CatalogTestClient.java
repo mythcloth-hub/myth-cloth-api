@@ -26,111 +26,85 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 
 public class CatalogTestClient {
-  /** Base endpoint path for catalog-related operations. */
-  protected static final String CATALOGS = "/catalogs/{type}";
+	/** Base endpoint path for catalog-related operations. */
+	protected static final String CATALOGS = "/catalogs/{type}";
 
-  /** Endpoint path for deleting a catalog by type and ID. */
-  protected static final String CATALOGS_DELETE = CATALOGS + "/{id}";
+	/** Endpoint path for deleting a catalog by type and ID. */
+	protected static final String CATALOGS_DELETE = CATALOGS + "/{id}";
 
-  /** Base endpoint path for distributor-related operations. */
-  protected static final String DISTRIBUTORS = "/distributors";
+	/** Base endpoint path for distributor-related operations. */
+	protected static final String DISTRIBUTORS = "/distributors";
 
-  /** Endpoint path for deleting a distributor by ID. */
-  protected static final String DISTRIBUTORS_DELETE = DISTRIBUTORS + "/{id}";
+	/** Endpoint path for deleting a distributor by ID. */
+	protected static final String DISTRIBUTORS_DELETE = DISTRIBUTORS + "/{id}";
 
-  /** Base endpoint path for anniversary-related operations. */
-  protected static final String ANNIVERSARY = "/anniversaries";
+	/** Base endpoint path for anniversary-related operations. */
+	protected static final String ANNIVERSARY = "/anniversaries";
 
-  /** Endpoint path for deleting an anniversary by ID. */
-  protected static final String ANNIVERSARY_DELETE = ANNIVERSARY + "/{id}";
+	/** Endpoint path for deleting an anniversary by ID. */
+	protected static final String ANNIVERSARY_DELETE = ANNIVERSARY + "/{id}";
 
-  private final RestClient rest;
+	private final RestClient rest;
 
-  public CatalogTestClient(RestClient rest) {
-    this.rest = rest;
-  }
+	public CatalogTestClient(RestClient rest) {
+		this.rest = rest;
+	}
 
-  public List<DistributorResp> createDistributors() {
-    return Stream.of(
-            new DistributorReq(BANDAI, JP, "https://tamashii.jp/"),
-            new DistributorReq(DAM, MX, "https://animexico-online.com/"),
-            new DistributorReq(DTM, MX, null),
-            new DistributorReq(BANDAI_CHINA, CN, null))
-        .map(req -> postAndAssertCreated(DISTRIBUTORS, req, DistributorResp.class))
-        .toList();
-  }
+	public List<DistributorResp> createDistributors() {
+		return Stream
+				.of(new DistributorReq(BANDAI, JP, "https://tamashii.jp/"),
+						new DistributorReq(DAM, MX, "https://animexico-online.com/"), new DistributorReq(DTM, MX, null),
+						new DistributorReq(BANDAI_CHINA, CN, null))
+				.map(req -> postAndAssertCreated(DISTRIBUTORS, req, DistributorResp.class)).toList();
+	}
 
-  public void deleteDistributor(long id) {
-    deleteAndAssertNoContent(DISTRIBUTORS_DELETE, id);
-  }
+	public void deleteDistributor(long id) {
+		deleteAndAssertNoContent(DISTRIBUTORS_DELETE, id);
+	}
 
-  public List<CatalogResp> createCatalogs(CatalogType type) {
+	public List<CatalogResp> createCatalogs(CatalogType type) {
 
-    List<String> names =
-        switch (type) {
-          case distributions ->
-              List.of(
-                  "Stores",
-                  "Tamashii Web Shop",
-                  "Tamashii Nations",
-                  "Other Limited Edition",
-                  "Tamashii Store");
-          case groups ->
-              List.of(
-                  "Bronze Saint V1",
-                  "Bronze Saint V2",
-                  "Bronze Saint V3",
-                  "Bronze Saint V4",
-                  "Silver Saint",
-                  "Gold Saint",
-                  "Gold Inheritor",
-                  "Steel",
-                  "God",
-                  "Judge");
-          case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
-          case lineups ->
-              List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation", "Figuarts");
-        };
+		List<String> names = switch (type) {
+			case distributions ->
+				List.of("Stores", "Tamashii Web Shop", "Tamashii Nations", "Other Limited Edition", "Tamashii Store");
+			case groups -> List.of("Bronze Saint V1", "Bronze Saint V2", "Bronze Saint V3", "Bronze Saint V4",
+					"Silver Saint", "Gold Saint", "Gold Inheritor", "Steel", "God", "Judge");
+			case series -> List.of("Saint Seiya", "Saintia Sho", "Soul of Gold");
+			case lineups -> List.of("Myth Cloth EX", "Myth Cloth", "Appendix", "DD Panoramation", "Figuarts");
+		};
 
-    return names.stream()
-        .map(
-            description ->
-                postAndAssertCreated(
-                    CATALOGS, new CatalogReq(description), CatalogResp.class, type.name()))
-        .toList();
-  }
+		return names.stream().map(description -> postAndAssertCreated(CATALOGS, new CatalogReq(description),
+				CatalogResp.class, type.name())).toList();
+	}
 
-  public void deleteCatalog(CatalogType catalogType, long id) {
-    deleteAndAssertNoContent(CATALOGS_DELETE, catalogType, id);
-  }
+	public void deleteCatalog(CatalogType catalogType, long id) {
+		deleteAndAssertNoContent(CATALOGS_DELETE, catalogType, id);
+	}
 
-  public List<AnniversaryResp> createAnniversaries() {
-    return Stream.of(
-            new AnniversaryReq("Masami Kurumada 40th Anniversary", 40, null),
-            new AnniversaryReq("20th Anniversary", 20, null))
-        .map(req -> postAndAssertCreated(ANNIVERSARY, req, AnniversaryResp.class))
-        .toList();
-  }
+	public List<AnniversaryResp> createAnniversaries() {
+		return Stream
+				.of(new AnniversaryReq("Masami Kurumada 40th Anniversary", 40, null),
+						new AnniversaryReq("20th Anniversary", 20, null))
+				.map(req -> postAndAssertCreated(ANNIVERSARY, req, AnniversaryResp.class)).toList();
+	}
 
-  public void deleteAnniversary(long id) {
-    deleteAndAssertNoContent(ANNIVERSARY_DELETE, id);
-  }
+	public void deleteAnniversary(long id) {
+		deleteAndAssertNoContent(ANNIVERSARY_DELETE, id);
+	}
 
-  private <T> T postAndAssertCreated(
-      String url, Object request, Class<T> responseType, Object... uriVars) {
+	private <T> T postAndAssertCreated(String url, Object request, Class<T> responseType, Object... uriVars) {
 
-    ResponseEntity<T> response =
-        rest.post().uri(url, uriVars).body(request).retrieve().toEntity(responseType);
+		ResponseEntity<T> response = rest.post().uri(url, uriVars).body(request).retrieve().toEntity(responseType);
 
-    assertThat(response.getStatusCode()).isEqualTo(CREATED);
-    assertThat(response.getBody()).isNotNull();
+		assertThat(response.getStatusCode()).isEqualTo(CREATED);
+		assertThat(response.getBody()).isNotNull();
 
-    return response.getBody();
-  }
+		return response.getBody();
+	}
 
-  private void deleteAndAssertNoContent(String url, Object... uriVars) {
-    ResponseEntity<Void> response = rest.delete().uri(url, uriVars).retrieve().toEntity(Void.class);
+	private void deleteAndAssertNoContent(String url, Object... uriVars) {
+		ResponseEntity<Void> response = rest.delete().uri(url, uriVars).retrieve().toEntity(Void.class);
 
-    assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
-  }
+		assertThat(response.getStatusCode()).isEqualTo(NO_CONTENT);
+	}
 }

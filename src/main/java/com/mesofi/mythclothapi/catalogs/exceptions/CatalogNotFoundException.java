@@ -11,16 +11,17 @@ import lombok.Getter;
 @Getter
 public class CatalogNotFoundException extends ApiException {
 
-  @Serial private static final long serialVersionUID = -7007970083830745467L;
-  private final String name;
+	@Serial
+	private static final long serialVersionUID = -7007970083830745467L;
+	private final String name;
 
-  public CatalogNotFoundException(String name) {
-    super("Catalog not found: " + name);
-    this.name = name;
-  }
+	public CatalogNotFoundException(String name) {
+		super("Catalog not found: " + name);
+		this.name = name;
+	}
 
-  @Override
-  public HttpStatus getStatus() {
-    return HttpStatus.NOT_FOUND;
-  }
+	@Override
+	public HttpStatus getStatus() {
+		return HttpStatus.NOT_FOUND;
+	}
 }
