@@ -38,9 +38,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: false   # <- Pretty-print SQL
+        format_sql: true   # <- Pretty-print SQL
         show_sql: false     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
+        highlight_sql: true        # ANSI colors (Hibernate 6+)
 
   sql:
     init:
