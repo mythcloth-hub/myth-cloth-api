@@ -13,6 +13,9 @@ It manages Saint Seiya figurines, catalogs, distributors, collector collections,
   - `http://localhost:9090/api/v1/swagger-ui.html`
   - `http://localhost:9090/api/v1/swagger.yaml`
 
+Swagger is generated at runtime from the controller mappings and DTO metadata, so it stays in sync with API changes.
+The build also exports a YAML snapshot to `build/generated/openapi/swagger.yaml`.
+
 ---
 
 ## Local setup (new machine) - step by step
@@ -175,6 +178,8 @@ Full check pipeline (includes integration tests + PIT mutation tests):
   - `GET /figurines/**`
   - `GET /catalogs/{catalogType}/**`
   - `GET /anniversaries/**`
+  - `GET /swagger-ui.html`
+  - `GET /swagger.yaml`
   - `POST /collectors/auth/{provider}`
 - Most other endpoints require Bearer JWT with role/permission claims.
 

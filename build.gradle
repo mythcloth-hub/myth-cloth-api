@@ -78,6 +78,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3'
 
     // --- Utilities ---
     implementation 'com.opencsv:opencsv:5.12.0' // Use the latest stable version
@@ -198,4 +199,20 @@ tasks.named('compileJava') {
 
 tasks.named('bootRun') {
     dependsOn 'spotlessApply'
+}
+
+def generatedOpenApiYaml = layout.buildDirectory.file('generated/openapi/swagger.yaml')
+
+tasks.register('generateOpenApiYaml', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    group = 'documentation'
+    description = 'Generates the OpenAPI YAML export from the current controllers.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.mesofi.mythclothapi.security.OpenApiYamlGenerator'
+    args generatedOpenApiYaml.get().asFile.absolutePath
+    outputs.file generatedOpenApiYaml
+}
+
+tasks.named('build') {
+    dependsOn tasks.named('generateOpenApiYaml')
 }
