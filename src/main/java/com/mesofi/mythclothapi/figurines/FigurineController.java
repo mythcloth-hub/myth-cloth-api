@@ -64,6 +64,13 @@ public class FigurineController {
 
 	private final FigurineService service;
 
+	@PostMapping("/load")
+	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:load')")
+	public ResponseEntity<Void> loadAllFigurines() {
+		service.importAllFigurinesFromPublicDrive();
+		return ResponseEntity.accepted().build();
+	}
+
 	/**
 	 * Creates a new {@link Figurine} resource.
 	 *

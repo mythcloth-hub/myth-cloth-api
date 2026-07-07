@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,6 +33,7 @@ import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = {CatalogService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 class CatalogServiceTest {
 
