@@ -100,6 +100,7 @@ INSERT INTO permissions (description) VALUES ('distributors:update');
 INSERT INTO permissions (description) VALUES ('distributors:write');
 
 INSERT INTO permissions (description) VALUES ('figurines:delete');
+INSERT INTO permissions (description) VALUES ('figurines:load');
 INSERT INTO permissions (description) VALUES ('figurines:images:add');
 INSERT INTO permissions (description) VALUES ('figurines:images:delete');
 INSERT INTO permissions (description) VALUES ('figurines:images:read');
@@ -160,3 +161,4 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 40);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 41);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 42);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 43);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 44);
