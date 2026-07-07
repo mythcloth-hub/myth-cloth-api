@@ -103,7 +103,9 @@ public class SecurityConfig {
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth.requestMatchers(OPTIONS, "/**").permitAll()
-						.requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**")
+						.requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**",
+								"/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
+								"/v3/api-docs.yaml")
 						.permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**").permitAll().anyRequest()
 						.authenticated())
 				.oauth2ResourceServer(
