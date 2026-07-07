@@ -116,7 +116,8 @@ public class FigurineServiceTest {
 	private CollectorCollectionRepository collectorCollectionRepository;
 
 	@Test
-	void importFromPublicDrive_shouldThrowIllegalStateException_whenCsvSourceOpenFails() throws IOException {
+	void importAllFigurinesFromPublicDrive_shouldThrowIllegalStateException_whenCsvSourceOpenFails()
+			throws IOException {
 		// Arrange
 		mockCatalogRepositories();
 
@@ -124,15 +125,16 @@ public class FigurineServiceTest {
 		when(figurineCsvSource.openReader()).thenThrow(rootCause);
 
 		// Act + Assert
-		assertThatThrownBy(() -> figurineService.importFromPublicDrive()).isInstanceOf(IllegalStateException.class)
-				.hasMessage("Unable to read CSV from Google Drive").hasCause(rootCause);
+		assertThatThrownBy(() -> figurineService.importAllFigurinesFromPublicDrive())
+				.isInstanceOf(IllegalStateException.class).hasMessage("Unable to read CSV from Google Drive")
+				.hasCause(rootCause);
 
 		verifyCatalogRepositoryInteractions();
 		verify(figurineRepository, never()).saveAllAndFlush(any());
 	}
 
 	@Test
-	void importFromPublicDrive_shouldSaveAllFigurines_whenAllFigurinesAreDifferent() throws IOException {
+	void importAllFigurinesFromPublicDrive_shouldSaveAllFigurines_whenAllFigurinesAreDifferent() throws IOException {
 		// Arrange
 		List<Figurine> figurines = new ArrayList<>();
 		for (int i = 0; i < 12; i++) {
@@ -145,7 +147,7 @@ public class FigurineServiceTest {
 		when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
 		// Act
-		figurineService.importFromPublicDrive();
+		figurineService.importAllFigurinesFromPublicDrive();
 
 		// Verify
 		verifyCatalogRepositoryInteractions();
@@ -162,7 +164,7 @@ public class FigurineServiceTest {
 	}
 
 	@Test
-	void importFromPublicDrive_shouldSaveAllFigurines_whenSomeFigurinesAreDuplicates() throws IOException {
+	void importAllFigurinesFromPublicDrive_shouldSaveAllFigurines_whenSomeFigurinesAreDuplicates() throws IOException {
 		// Arrange
 		List<Figurine> figurines = new ArrayList<>();
 		for (int i = 0; i < 3; i++) {
@@ -175,7 +177,7 @@ public class FigurineServiceTest {
 		when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
 		// Act
-		figurineService.importFromPublicDrive();
+		figurineService.importAllFigurinesFromPublicDrive();
 
 		// Verify
 		verifyCatalogRepositoryInteractions();

@@ -57,6 +57,14 @@ class FigurineControllerTest {
 	private ObjectMapper objectMapper;
 
 	@Test
+	void loadAllFigurines_shouldReturn202AndTriggerImport() throws Exception {
+		mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
+				new SimpleGrantedAuthority("figurines:load")))).andExpect(status().isAccepted());
+
+		verify(service).importAllFigurinesFromPublicDrive();
+	}
+
+	@Test
 	void createFigurine_shouldReturn404_whenPostingToRootPath() throws Exception {
 
 		mockMvc.perform(post("/").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),

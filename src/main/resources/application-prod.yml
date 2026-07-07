@@ -1,3 +1,8 @@
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: INFO
+
 myth-cloth:
   facebook:
     app-id: "4393993617525351"
@@ -5,54 +10,31 @@ myth-cloth:
     graph-url: https://graph.facebook.com/
   google:
     client-id: 1068577777042-9ftlmmtq40sbtngopmng5ks2eqq5hef8.apps.googleusercontent.com
+
   security:
     jwt:
-      secret: "sbOHJ60mLNmUpSNiSYiHpR2IgM3kPTVsiAItguC4T7E="
+      secret: "ug5RzW3B4A46J3nrRw6XHgJw1RlGw9oAYOAtdc6bR8c="
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
       issuer: "myth-cloth-api"
       ttl-minutes: 60
-  import:
-    drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
-    file-id: 1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio
+
+server:
+  port: 8080
 
 spring:
-  application:
-    name: myth-cloth-api
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/mythclothlocal
-    username: postgres
-    password: postgres
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     defer-datasource-initialization: true
     hibernate:
-      ddl-auto: create-drop
-      #ddl-auto: update
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true   # <- Pretty-print SQL
         show_sql: true     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
-  sql:
-    init:
-      mode: always   # FORCE data.sql to run
-
-  #security:
-  #  oauth2:
-  #    resourceserver:
-  #      jwt:
-  #        issuer-uri: https://accounts.google.com
-
-server:
-  port: 9090
-  servlet:
-    context-path: /api/v1
-
-logging:
-  level:
-    root: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters

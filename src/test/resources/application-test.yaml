@@ -1,3 +1,11 @@
+myth-cloth:
+  security:
+    jwt:
+      secret: "mQUG5uMuz+nv4pZplUNROMZ7Ewp5feGzYsbV1D6GejU="
+      # Use the following command to generate a new secret:  `openssl rand -base64 32`
+      issuer: "myth-cloth-api"
+      ttl-minutes: 60
+
 spring:
   application:
     name: myth-cloth-api

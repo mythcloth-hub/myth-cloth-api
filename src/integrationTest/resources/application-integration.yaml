@@ -7,6 +7,13 @@ myth-cloth:
     drive-url: http://localhost:8089/test.csv
     file-id: ignored
 
+  security:
+    jwt:
+      secret: "H/Vo0YUJOv69TifL8VMoBPCoFi1UM1PHsldqplij9Dg="
+      # Use the following command to generate a new secret:  `openssl rand -base64 32`
+      issuer: "myth-cloth-api"
+      ttl-minutes: 60
+
 spring:
   application:
     name: myth-cloth-api

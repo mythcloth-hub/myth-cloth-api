@@ -134,8 +134,27 @@ public class FigurineService {
 		ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
 	}
 
+	/**
+	 * Imports all figurines from the public Google Drive CSV source.
+	 *
+	 * <p>
+	 * This method:
+	 *
+	 * <ul>
+	 * <li>Loads all catalog entities required to resolve references
+	 * <li>Reads the public CSV file containing figurine data
+	 * <li>Converts each CSV row into a fully prepared {@link Figurine} entity
+	 * <li>Persists all imported figurines in a single batch
+	 * </ul>
+	 *
+	 * <p>
+	 * If the CSV cannot be read, an {@link IllegalStateException} is thrown.
+	 *
+	 * @throws IllegalStateException
+	 *             if the CSV source cannot be read
+	 */
 	@Transactional
-	public void importFromPublicDrive() {
+	public void importAllFigurinesFromPublicDrive() {
 		CatalogContext catalogContext = loadCatalogs();
 
 		try (Reader reader = csvSource.openReader()) {
@@ -282,6 +301,25 @@ public class FigurineService {
 				figurines.getTotalCollectables());
 	}
 
+	/**
+	 * Retrieves the identifiers of all figurines contained in a collector's
+	 * collection.
+	 *
+	 * <p>
+	 * If the supplied collection identifier is {@code null}, an empty list is
+	 * returned. The collector must exist; otherwise a
+	 * {@link CollectorNotFoundException} is thrown.
+	 *
+	 * @param collectorId
+	 *            identifier of the collector
+	 * @param collectionId
+	 *            identifier of the collection to inspect; may be {@code null}
+	 * @return a list containing the ids of all figurines in the specified
+	 *         collection, or an empty list if the collection does not exist or no
+	 *         collection id was provided
+	 * @throws CollectorNotFoundException
+	 *             if the collector does not exist
+	 */
 	public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
 		if (collectionId == null) {
 			return List.of();
@@ -298,6 +336,19 @@ public class FigurineService {
 				.orElseGet(List::of);
 	}
 
+	/**
+	 * Retrieves the identifiers of figurines that are eligible for selection based
+	 * on the provided filter criteria.
+	 *
+	 * <p>
+	 * Only figurines whose computed {@link ReleaseStatus} is either
+	 * {@link ReleaseStatus#ANNOUNCED} or {@link ReleaseStatus#RELEASED} are
+	 * included in the result.
+	 *
+	 * @param filter
+	 *            filter criteria used to search for figurines
+	 * @return a list containing the identifiers of selectable figurines
+	 */
 	public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
 		return repository.findAll(filter).stream().filter(figurine -> {
 			ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
@@ -695,6 +746,17 @@ public class FigurineService {
 		return name;
 	}
 
+	/**
+	 * Determines whether the supplied anniversary matches the specified edition
+	 * year.
+	 *
+	 * @param anniversary
+	 *            anniversary associated with the figurine; may be {@code null}
+	 * @param year
+	 *            anniversary edition year to verify
+	 * @return {@code true} if the anniversary exists and matches the specified
+	 *         year; {@code false} otherwise
+	 */
 	private boolean isAnniversaryEdition(Anniversary anniversary, int year) {
 		return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
 	}
