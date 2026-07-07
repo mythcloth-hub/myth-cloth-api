@@ -15,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryReq;
@@ -24,6 +25,7 @@ import com.mesofi.mythclothapi.anniversaries.model.AnniversaryType;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = {AnniversaryService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 public class AnniversaryServiceTest {
 

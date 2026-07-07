@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.config.MapperTestConfig;
@@ -32,6 +33,7 @@ import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsExcept
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = {RoleService.class, MapperTestConfig.class})
 public class RoleServiceTest {
 

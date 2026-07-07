@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.config.MapperTestConfig;
@@ -25,6 +26,7 @@ import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlready
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = {PermissionService.class, MapperTestConfig.class})
 public class PermissionServiceTest {
 

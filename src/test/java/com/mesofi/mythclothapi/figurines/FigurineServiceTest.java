@@ -39,6 +39,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
@@ -83,6 +84,7 @@ import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = {FigurineService.class, MapperTestConfig.class, MethodValidationTestConfig.class,
 		TestCsvConfig.class})
 public class FigurineServiceTest {
@@ -124,8 +126,9 @@ public class FigurineServiceTest {
 		when(figurineCsvSource.openReader()).thenThrow(rootCause);
 
 		// Act + Assert
-		assertThatThrownBy(() -> figurineService.importFromPublicDrive()).isInstanceOf(IllegalStateException.class)
-				.hasMessage("Unable to read CSV from Google Drive").hasCause(rootCause);
+		assertThatThrownBy(() -> figurineService.importAllFigurinesFromPublicDrive())
+				.isInstanceOf(IllegalStateException.class).hasMessage("Unable to read CSV from Google Drive")
+				.hasCause(rootCause);
 
 		verifyCatalogRepositoryInteractions();
 		verify(figurineRepository, never()).saveAllAndFlush(any());
@@ -145,7 +148,7 @@ public class FigurineServiceTest {
 		when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
 		// Act
-		figurineService.importFromPublicDrive();
+		figurineService.importAllFigurinesFromPublicDrive();
 
 		// Verify
 		verifyCatalogRepositoryInteractions();
@@ -175,7 +178,7 @@ public class FigurineServiceTest {
 		when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
 		// Act
-		figurineService.importFromPublicDrive();
+		figurineService.importAllFigurinesFromPublicDrive();
 
 		// Verify
 		verifyCatalogRepositoryInteractions();

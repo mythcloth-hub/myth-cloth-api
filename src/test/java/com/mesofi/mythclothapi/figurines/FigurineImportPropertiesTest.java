@@ -6,7 +6,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
+@ActiveProfiles("test")
 @SpringBootTest(classes = FigurineConfig.class, properties = {
 		"myth-cloth.import.drive-url=https://drive.google.com/uc?export=download&id=%s",
 		"myth-cloth.import.file-id=catalog-file-id"})

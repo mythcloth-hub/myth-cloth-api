@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
@@ -26,7 +27,8 @@ import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
-@SpringBootTest(classes = {FigurineImageService.class})
+@ActiveProfiles("test")
+@SpringBootTest(classes = FigurineImageService.class)
 public class FigurineImageServiceTest {
 
 	@Autowired
