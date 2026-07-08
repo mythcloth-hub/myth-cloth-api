@@ -67,6 +67,7 @@ public class FigurineController {
 	@PostMapping("/load")
 	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:load')")
 	public ResponseEntity<Void> loadAllFigurines() {
+		log.info("Loading all figurines ...");
 		service.importAllFigurinesFromPublicDrive();
 		return ResponseEntity.accepted().build();
 	}

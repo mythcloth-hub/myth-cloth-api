@@ -160,6 +160,7 @@ public class FigurineService {
 		try (Reader reader = csvSource.openReader()) {
 			List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
 					.withIgnoreLeadingWhiteSpace(true).build().parse();
+			log.info("Importing {} figurines.", csvRows.size());
 
 			List<Figurine> figurines = csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext))
 					.toList();
