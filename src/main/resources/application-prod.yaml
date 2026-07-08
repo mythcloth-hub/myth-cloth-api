@@ -38,7 +38,6 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true   # <- Pretty-print SQL
         show_sql: false     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
