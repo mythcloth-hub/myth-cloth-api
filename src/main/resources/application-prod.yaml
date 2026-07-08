@@ -6,8 +6,8 @@ logging:
 # Change the app-id and app-secret using new credentials. For now, the app-id and app-secret are for a test Facebook app. If you want to use your own Facebook app, you can create one at https://developers.facebook.com/apps/ and then update the app-id and app-secret here.
 myth-cloth:
   facebook:
-    app-id: "4393993617525351"
-    app-secret: "50f71fa2dbdb2acb02eef826ae10c110"
+    app-id: "26792785000395793"
+    app-secret: "c1ed86ac1d957f5fdb4fc6ba07d17478"
     graph-url: https://graph.facebook.com/
 
   google:
