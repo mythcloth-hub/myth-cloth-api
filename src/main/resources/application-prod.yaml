@@ -3,15 +3,19 @@ logging:
     root: INFO
     org.hibernate.SQL: INFO
     org.hibernate.orm.jdbc.bind: INFO  # <- Shows query parameters
-
+# Change the app-id and app-secret using new credentials. For now, the app-id and app-secret are for a test Facebook app. If you want to use your own Facebook app, you can create one at https://developers.facebook.com/apps/ and then update the app-id and app-secret here.
 myth-cloth:
   facebook:
-    app-id: "??"
-    app-secret: "??"
+    app-id: "4393993617525351"
+    app-secret: "50f71fa2dbdb2acb02eef826ae10c110"
     graph-url: https://graph.facebook.com/
 
   google:
-    client-id: "??"
+    client-id: 1068577777042-9ftlmmtq40sbtngopmng5ks2eqq5hef8.apps.googleusercontent.com
+
+  import:
+    drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
+    file-id: 1TKlCnCAp2o3hjT35kgtVEXpDxkAplIA8HBBPx-kqKio
 
   security:
     jwt:
@@ -38,6 +42,7 @@ spring:
         format_sql: true   # <- Pretty-print SQL
         show_sql: false     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
+        highlight_sql: false        # ANSI colors (Hibernate 6+)
 
   sql:
     init:
