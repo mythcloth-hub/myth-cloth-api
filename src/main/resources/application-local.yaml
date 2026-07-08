@@ -21,7 +21,7 @@ myth-cloth:
     jwt:
       secret: "PnWl3vTbm+d6GaWfNRYwvn1iVE3awpB6rJoxu4dqJvw="
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
-
+    cors-url: "http://localhost:5173"
 server:
   port: 9090
 

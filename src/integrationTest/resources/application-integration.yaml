@@ -13,6 +13,7 @@ myth-cloth:
     jwt:
       secret: "WWOAnyRkezhKw5xeoCJZ1J/0+qy6I7azOjt19SlfC4M="
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
+    cors-url: "http://localhost:5173"
 
 spring:
   sql:

@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class ApiTokenService {
 
 	private final JwtEncoder jwtEncoder;
-	private final JwtProperties props;
+	private final SecurityProperties security;
 
 	/**
 	 * Generates a JWT containing collector and provider identity details.
@@ -45,7 +45,7 @@ public class ApiTokenService {
 		Instant now = Instant.now();
 		Instant exp = now.plusSeconds(ttlSeconds());
 
-		JwtClaimsSet claims = JwtClaimsSet.builder().issuer(props.issuer()).issuedAt(now).expiresAt(exp)
+		JwtClaimsSet claims = JwtClaimsSet.builder().issuer(security.jwt().issuer()).issuedAt(now).expiresAt(exp)
 				.subject(String.valueOf(collector.getId())) // database ID in sub
 				.claim("email", email).claim("name", collector.getDisplayName())
 				.claim("roles", List.of(collector.getRole().getDescription().toUpperCase()))
@@ -61,6 +61,6 @@ public class ApiTokenService {
 
 	/** Returns the configured token time-to-live in seconds. */
 	public long ttlSeconds() {
-		return props.ttlMinutes() * 60;
+		return security.jwt().ttlMinutes() * 60;
 	}
 }
