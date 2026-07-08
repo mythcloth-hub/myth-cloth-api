@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 
-import com.mesofi.mythclothapi.security.JwtProperties;
+import com.mesofi.mythclothapi.security.SecurityProperties;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 
 /**
@@ -19,9 +19,10 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
  */
 @Configuration
 public class JwtConfig {
+
 	@Bean
-	JwtEncoder jwtEncoder(JwtProperties props) {
-		SecretKey key = new SecretKeySpec(props.secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+	JwtEncoder jwtEncoder(SecurityProperties security) {
+		SecretKey key = new SecretKeySpec(security.jwt().secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 		return new NimbusJwtEncoder(new ImmutableSecret<>(key));
 	}
 }

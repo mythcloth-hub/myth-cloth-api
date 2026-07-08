@@ -13,6 +13,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,7 +29,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.mesofi.mythclothapi.security.JwtProperties;
+import com.mesofi.mythclothapi.security.SecurityProperties;
 
 /**
  * Configures application security using Spring Security with JWT-based
@@ -75,7 +76,7 @@ import com.mesofi.mythclothapi.security.JwtProperties;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties(SecurityProperties.class)
 public class SecurityConfig {
 
 	/**
@@ -99,9 +100,9 @@ public class SecurityConfig {
 	 */
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-		http.cors(cors -> cors.configurationSource(corsConfigurationSource())) // must be first
-				.csrf(AbstractHttpConfigurer::disable)
+		http.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.cors(Customizer.withDefaults())
 				.authorizeHttpRequests(auth -> auth.requestMatchers(OPTIONS, "/**").permitAll()
 						.requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**",
 								"/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
@@ -115,28 +116,25 @@ public class SecurityConfig {
 	}
 
 	/**
-	 * Creates the CORS configuration used by the application.
+	 * Creates the CORS configuration source applied by Spring Security.
 	 *
 	 * <p>
-	 * This configuration allows requests from the configured frontend origin and
-	 * enables the HTTP methods required by the API.
-	 *
-	 * <p>
-	 * The current configuration:
+	 * This configuration allows browser requests from both local development and
+	 * the deployed frontend application.
 	 *
 	 * <ul>
-	 * <li>Allows requests from the local frontend development server.
-	 * <li>Allows GET, POST, PUT, DELETE, and OPTIONS requests.
+	 * <li>Allows origins specified in the security properties.
+	 * <li>Allows GET, POST, PUT, DELETE, and OPTIONS methods.
 	 * <li>Allows all request headers.
-	 * <li>Allows credentials to be included in requests.
+	 * <li>Allows credentials in cross-origin requests.
 	 * </ul>
 	 *
 	 * @return the configured CORS source applied to all endpoints
 	 */
 	@Bean
-	public CorsConfigurationSource corsConfigurationSource() {
+	public CorsConfigurationSource corsConfigurationSource(SecurityProperties security) {
 		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(List.of("http://localhost:5173"));
+		config.setAllowedOrigins(List.of(security.corsUrl()));
 		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		config.setAllowedHeaders(List.of("*"));
 		config.setAllowCredentials(true);
@@ -161,13 +159,13 @@ public class SecurityConfig {
 	 * Validation is performed using the application's configured HMAC SHA-256
 	 * secret.
 	 *
-	 * @param properties
+	 * @param security
 	 *            security properties containing the JWT signing secret
 	 * @return a configured JWT decoder
 	 */
 	@Bean
-	JwtDecoder jwtDecoder(JwtProperties properties) {
-		SecretKey key = new SecretKeySpec(properties.secret().getBytes(), "HmacSHA256");
+	JwtDecoder jwtDecoder(SecurityProperties security) {
+		SecretKey key = new SecretKeySpec(security.jwt().secret().getBytes(), "HmacSHA256");
 
 		return NimbusJwtDecoder.withSecretKey(key).build();
 	}

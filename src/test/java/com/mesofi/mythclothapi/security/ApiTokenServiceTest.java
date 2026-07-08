@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,11 +31,18 @@ class ApiTokenServiceTest {
 	@Mock
 	private JwtEncoder jwtEncoder;
 	@Mock
-	private JwtProperties props;
+	private SecurityProperties security;
+	@Mock
+	private JwtProperties jwt;
+
+	@BeforeEach
+	void setUp() {
+		when(security.jwt()).thenReturn(jwt);
+	}
 
 	@Test
 	void ttlSeconds_shouldReturnTtlMinutesInSeconds() {
-		when(props.ttlMinutes()).thenReturn(15L);
+		when(jwt.ttlMinutes()).thenReturn(15L);
 
 		long result = service.ttlSeconds();
 
@@ -43,8 +51,8 @@ class ApiTokenServiceTest {
 
 	@Test
 	void generateToken_shouldBuildExpectedHeaderAndClaimsAndReturnTokenValue() {
-		when(props.issuer()).thenReturn("myth-cloth-api");
-		when(props.ttlMinutes()).thenReturn(30L);
+		when(jwt.issuer()).thenReturn("myth-cloth-api");
+		when(jwt.ttlMinutes()).thenReturn(30L);
 
 		Jwt encodedJwt = org.mockito.Mockito.mock(Jwt.class);
 		when(encodedJwt.getTokenValue()).thenReturn("signed-jwt-token");
