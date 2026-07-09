@@ -16,6 +16,44 @@ It manages Saint Seiya figurines, catalogs, distributors, collector collections,
 Swagger is generated at runtime from the controller mappings and DTO metadata, so it stays in sync with API changes.
 The build also exports a YAML snapshot to `build/generated/openapi/swagger.yaml`.
 
+## Environment variables
+
+The API now reads sensitive/runtime config from environment variables.
+
+### Required in production
+
+| Variable | Purpose |
+| --- | --- |
+| `FACEBOOK_APP_ID` | Facebook app id for social login |
+| `FACEBOOK_APP_SECRET` | Facebook app secret |
+| `GOOGLE_CLIENT_ID` | Google OAuth client id |
+| `JWT_SECRET` | JWT signing secret |
+| `DATABASE_URL` | PostgreSQL JDBC URL |
+| `DB_USERNAME` | PostgreSQL username |
+| `DB_PASSWORD` | PostgreSQL password |
+| `PORT` | Server port (Render usually injects this) |
+
+### Local development notes
+
+- The base config (`application.yaml`) expects these variables to be present:
+  - `FACEBOOK_APP_ID`
+  - `FACEBOOK_APP_SECRET`
+  - `GOOGLE_CLIENT_ID`
+  - `JWT_SECRET`
+  - `DATABASE_URL`
+  - `DB_USERNAME`
+  - `DB_PASSWORD`
+- `application-local.yaml` adds local overrides for:
+  - `server.servlet.context-path=/api/v1`
+  - `myth-cloth.security.jwt.issuer=myth-cloth-api`
+  - `myth-cloth.security.jwt.ttl-minutes=60`
+
+### Profiles used by this project
+
+- `local`: enables local API context path (`/api/v1`) and JWT issuer/TTL defaults.
+- `prod`: overrides DB/JPA/logging/CORS values from `application-prod.yaml`.
+- No profile: only `application.yaml` is loaded.
+
 ---
 
 ## Local setup (new machine) - step by step
@@ -128,8 +166,22 @@ docker compose logs -f postgres
 
 ### 4. Run the API
 
+Export env vars (example values for local):
+
 ```sh
-./gradlew bootRun
+export FACEBOOK_APP_ID="your-facebook-app-id"
+export FACEBOOK_APP_SECRET="your-facebook-app-secret"
+export GOOGLE_CLIENT_ID="your-google-client-id"
+export JWT_SECRET="$(openssl rand -base64 32)"
+export DATABASE_URL="jdbc:postgresql://localhost:5432/mythclothlocal"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="postgres"
+```
+
+Start the app with the local profile:
+
+```sh
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 When startup is complete, API runs at:
@@ -166,9 +218,8 @@ Full check pipeline (includes integration tests + PIT mutation tests):
 
 ## Important local behavior
 
-- `spring.jpa.hibernate.ddl-auto` is set to **`create-drop`** in `application.yaml`.
-- On each app restart, schema is recreated and seeded again from `src/main/resources/data.sql`.
-- This is fine for local development but means local DB data is not persistent across app restarts.
+- With `local` profile, JPA settings come from `application.yaml` (`ddl-auto: update`, `sql.init.mode: never`).
+- With `prod` profile, JPA settings are overridden by `application-prod.yaml` (`ddl-auto: create-drop`, `sql.init.mode: always`).
 
 ---
 
