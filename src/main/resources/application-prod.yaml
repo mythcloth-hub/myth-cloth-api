@@ -6,12 +6,12 @@ logging:
 # Change the app-id and app-secret using new credentials. For now, the app-id and app-secret are for a test Facebook app. If you want to use your own Facebook app, you can create one at https://developers.facebook.com/apps/ and then update the app-id and app-secret here.
 myth-cloth:
   facebook:
-    app-id: "26792785000395793"
-    app-secret: "c1ed86ac1d957f5fdb4fc6ba07d17478"
+    app-id: ${FACEBOOK_APP_ID}
+    app-secret: ${FACEBOOK_APP_SECRET}
     graph-url: https://graph.facebook.com/
 
   google:
-    client-id: 1068577777042-hv9euam7dtr72cl9rqdvbk822h4mhip5.apps.googleusercontent.com
+    client-id: ${GOOGLE_CLIENT_ID}
 
   import:
     drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
@@ -19,7 +19,7 @@ myth-cloth:
 
   security:
     jwt:
-      secret: "BOGdxpyZM5GftkuYzhFyQYxSJR0Aoi5e17nhn+MWm84="
+      secret: ${JWT_SECRET}
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
     cors-url: "https://myth-cloth-ui.onrender.com"
 
