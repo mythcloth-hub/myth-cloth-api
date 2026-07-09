@@ -11,7 +11,7 @@ myth-cloth:
     graph-url: https://graph.facebook.com/
 
   google:
-    client-id: 1068577777042-9ftlmmtq40sbtngopmng5ks2eqq5hef8.apps.googleusercontent.com
+    client-id: 1068577777042-hv9euam7dtr72cl9rqdvbk822h4mhip5.apps.googleusercontent.com
 
   import:
     drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv
