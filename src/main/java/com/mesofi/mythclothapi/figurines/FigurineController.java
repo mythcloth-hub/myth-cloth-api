@@ -155,6 +155,7 @@ public class FigurineController {
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
             @RequestParam(required = false) String releaseStatus, @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        log.info("Retrieving figurines ...");
         CollectablePageImpl<FigurineResp> result;
 
         List<Long> figurineIds = new ArrayList<>();
@@ -167,6 +168,7 @@ public class FigurineController {
 
         result = service.filterFigurines(figurineFilter, page, size);
 
+        log.info("Total figurines retrieved: {}", result.getContent().size());
         return ResponseEntity.ok(new PaginatedResponse(result.getContent(), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalCollectables(), result.getTotalPages()));
     }
