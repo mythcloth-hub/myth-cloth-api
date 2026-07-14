@@ -1,5 +1,4 @@
 package com.mesofi.mythclothapi.figurines;
-
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
@@ -62,6 +61,7 @@ import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
 
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -289,6 +289,7 @@ public class FigurineService {
      * @return a page of {@link FigurineResp} objects matching the filter
      */
     @Transactional(readOnly = true)
+    @Timed(value = "figurine.search", description = "Time spent searching figurines")
     public CollectablePageImpl<FigurineResp> filterFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
             @Positive int size) {
         log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
