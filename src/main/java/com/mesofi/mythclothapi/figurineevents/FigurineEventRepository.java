@@ -18,27 +18,27 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
  */
 @Repository
 public interface FigurineEventRepository extends JpaRepository<FigurineEvent, Long> {
-	/**
-	 * Retrieves all figurine events associated with the given figurine ID.
-	 *
-	 * @param figurineId
-	 *            the ID of the figurine whose events should be fetched
-	 * @return a list of {@link FigurineEvent} linked to the specified figurine ID
-	 */
-	List<FigurineEvent> findAllByFigurineId(Long figurineId);
+    /**
+     * Retrieves all figurine events associated with the given figurine ID.
+     *
+     * @param figurineId
+     *            the ID of the figurine whose events should be fetched
+     * @return a list of {@link FigurineEvent} linked to the specified figurine ID
+     */
+    List<FigurineEvent> findAllByFigurineId(Long figurineId);
 
-	/**
-	 * Retrieves a figurine event by its event ID and associated figurine ID.
-	 *
-	 * <p>
-	 * Useful for ensuring the event belongs to the expected figurine.
-	 *
-	 * @param eventId
-	 *            the ID of the figurine event
-	 * @param figurineId
-	 *            the ID of the figurine to which the event should belong
-	 * @return an {@link Optional} containing the matching {@link FigurineEvent}, or
-	 *         empty if not found
-	 */
-	Optional<FigurineEvent> findByIdAndFigurineId(Long eventId, Long figurineId);
+    /**
+     * Retrieves a figurine event by its event ID and associated figurine ID.
+     *
+     * <p>
+     * Useful for ensuring the event belongs to the expected figurine.
+     *
+     * @param eventId
+     *            the ID of the figurine event
+     * @param figurineId
+     *            the ID of the figurine to which the event should belong
+     * @return an {@link Optional} containing the matching {@link FigurineEvent}, or
+     *         empty if not found
+     */
+    Optional<FigurineEvent> findByIdAndFigurineId(Long eventId, Long figurineId);
 }

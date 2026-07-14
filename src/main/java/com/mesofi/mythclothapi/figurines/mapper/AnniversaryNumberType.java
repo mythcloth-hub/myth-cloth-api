@@ -8,6 +8,6 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class AnniversaryNumberType {
-	private AnniversaryType anniversaryType;
-	private int anniversaryNumber;
+    private AnniversaryType anniversaryType;
+    private int anniversaryNumber;
 }

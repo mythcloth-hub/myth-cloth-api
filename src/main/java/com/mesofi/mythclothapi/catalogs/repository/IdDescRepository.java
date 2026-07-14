@@ -8,5 +8,5 @@ import org.springframework.data.repository.NoRepositoryBean;
 @SuppressWarnings("hiding")
 @NoRepositoryBean
 public interface IdDescRepository<T, Long> extends JpaRepository<T, Long> {
-	Optional<T> findByDescription(String description);
+    Optional<T> findByDescription(String description);
 }

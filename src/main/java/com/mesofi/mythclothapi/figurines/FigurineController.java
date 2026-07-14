@@ -62,194 +62,194 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "*")
 public class FigurineController {
 
-	private final FigurineService service;
+    private final FigurineService service;
 
-	@PostMapping("/load")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:load')")
-	public ResponseEntity<Void> loadAllFigurines() {
-		log.info("Loading all figurines ...");
-		service.importAllFigurinesFromPublicDrive();
-		return ResponseEntity.accepted().build();
-	}
+    @PostMapping("/load")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:load')")
+    public ResponseEntity<Void> loadAllFigurines() {
+        log.info("Loading all figurines ...");
+        service.importAllFigurinesFromPublicDrive();
+        return ResponseEntity.accepted().build();
+    }
 
-	/**
-	 * Creates a new {@link Figurine} resource.
-	 *
-	 * <p>
-	 * This endpoint:
-	 *
-	 * <ul>
-	 * <li>Validates the incoming request payload
-	 * <li>Delegates figurine creation to the service layer
-	 * <li>Returns the created resource representation
-	 * <li>Includes a {@code Location} header pointing to the newly created resource
-	 * </ul>
-	 *
-	 * @param figurineRequest
-	 *            validated figurine creation request
-	 * @return {@link ResponseEntity} with status {@code 201 Created}, the created
-	 *         figurine in the body, and a {@code Location} header referencing the
-	 *         new resource
-	 */
-	@PostMapping
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
-	public ResponseEntity<FigurineResp> createFigurine(@RequestBody @Valid FigurineReq figurineRequest) {
+    /**
+     * Creates a new {@link Figurine} resource.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Validates the incoming request payload
+     * <li>Delegates figurine creation to the service layer
+     * <li>Returns the created resource representation
+     * <li>Includes a {@code Location} header pointing to the newly created resource
+     * </ul>
+     *
+     * @param figurineRequest
+     *            validated figurine creation request
+     * @return {@link ResponseEntity} with status {@code 201 Created}, the created
+     *         figurine in the body, and a {@code Location} header referencing the
+     *         new resource
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
+    public ResponseEntity<FigurineResp> createFigurine(@RequestBody @Valid FigurineReq figurineRequest) {
 
-		FigurineResp response = service.createFigurine(figurineRequest);
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}") // append /{id}
-				.buildAndExpand(response.id()).toUri();
+        FigurineResp response = service.createFigurine(figurineRequest);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}") // append /{id}
+                .buildAndExpand(response.id()).toUri();
 
-		return ResponseEntity.created(location).body(response);
-	}
+        return ResponseEntity.created(location).body(response);
+    }
 
-	/**
-	 * Retrieves an existing {@link Figurine} resource by its identifier.
-	 *
-	 * <p>
-	 * This endpoint:
-	 *
-	 * <ul>
-	 * <li>Identifies the target figurine using the path variable
-	 * <li>Delegates the read operation to the service layer
-	 * <li>Returns the resource representation
-	 * </ul>
-	 *
-	 * <p>
-	 * If the figurine does not exist, an exception from the service layer is
-	 * expected to be translated into an appropriate HTTP error response (e.g.,
-	 * {@code 404 Not Found}).
-	 *
-	 * @param id
-	 *            identifier of the figurine to retrieve
-	 * @return API response DTO representing the requested figurine
-	 */
-	@GetMapping("/{id}")
-	public FigurineResp retrieveFigurine(@PathVariable Long id) {
-		return service.readFigurine(id);
-	}
+    /**
+     * Retrieves an existing {@link Figurine} resource by its identifier.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Identifies the target figurine using the path variable
+     * <li>Delegates the read operation to the service layer
+     * <li>Returns the resource representation
+     * </ul>
+     *
+     * <p>
+     * If the figurine does not exist, an exception from the service layer is
+     * expected to be translated into an appropriate HTTP error response (e.g.,
+     * {@code 404 Not Found}).
+     *
+     * @param id
+     *            identifier of the figurine to retrieve
+     * @return API response DTO representing the requested figurine
+     */
+    @GetMapping("/{id}")
+    public FigurineResp retrieveFigurine(@PathVariable Long id) {
+        return service.readFigurine(id);
+    }
 
-	/**
-	 * Retrieves a paginated list of figurines, optionally filtered by name.
-	 *
-	 * <p>
-	 * If the 'name' parameter is provided and at least 3 characters, performs a
-	 * paginated search by name. Otherwise, returns all figurines paginated.
-	 *
-	 * @param name
-	 *            optional name filter (min 3 chars to trigger search)
-	 * @param page
-	 *            zero-based page index (must be 0 or greater)
-	 * @param size
-	 *            number of elements per page (must be between 1 and 100)
-	 * @return a {@link ResponseEntity} containing a {@link PaginatedResponse}
-	 */
-	@GetMapping
-	public ResponseEntity<PaginatedResponse> retrieveFigurines(Authentication authentication,
-			@RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
-			@RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-			@RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-			@RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-			@RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-			@RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-			@RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-			@RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-			@RequestParam(required = false) String releaseStatus, @RequestParam(defaultValue = "0") @Min(0) int page,
-			@RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-		CollectablePageImpl<FigurineResp> result;
+    /**
+     * Retrieves a paginated list of figurines, optionally filtered by name.
+     *
+     * <p>
+     * If the 'name' parameter is provided and at least 3 characters, performs a
+     * paginated search by name. Otherwise, returns all figurines paginated.
+     *
+     * @param name
+     *            optional name filter (min 3 chars to trigger search)
+     * @param page
+     *            zero-based page index (must be 0 or greater)
+     * @param size
+     *            number of elements per page (must be between 1 and 100)
+     * @return a {@link ResponseEntity} containing a {@link PaginatedResponse}
+     */
+    @GetMapping
+    public ResponseEntity<PaginatedResponse> retrieveFigurines(Authentication authentication,
+            @RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
+            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
+            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
+            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
+            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
+            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
+            @RequestParam(required = false) String releaseStatus, @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        CollectablePageImpl<FigurineResp> result;
 
-		List<Long> figurineIds = new ArrayList<>();
-		getCollectorId(authentication).ifPresent(
-				collectorId -> figurineIds.addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId)));
+        List<Long> figurineIds = new ArrayList<>();
+        getCollectorId(authentication).ifPresent(
+                collectorId -> figurineIds.addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId)));
 
-		FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
-				anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-				releaseStatus);
+        FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
+                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
+                releaseStatus);
 
-		result = service.filterFigurines(figurineFilter, page, size);
+        result = service.filterFigurines(figurineFilter, page, size);
 
-		return ResponseEntity.ok(new PaginatedResponse(result.getContent(), result.getNumber(), result.getSize(),
-				result.getTotalElements(), result.getTotalCollectables(), result.getTotalPages()));
-	}
+        return ResponseEntity.ok(new PaginatedResponse(result.getContent(), result.getNumber(), result.getSize(),
+                result.getTotalElements(), result.getTotalCollectables(), result.getTotalPages()));
+    }
 
-	private Optional<Long> getCollectorId(Authentication authentication) {
-		if (authentication != null && authentication.isAuthenticated()) {
-			if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-				return Optional.of(Long.valueOf(jwtAuth.getToken().getSubject()));
-			}
-		}
-		return Optional.empty();
-	}
+    private Optional<Long> getCollectorId(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                return Optional.of(Long.valueOf(jwtAuth.getToken().getSubject()));
+            }
+        }
+        return Optional.empty();
+    }
 
-	@GetMapping("/selectable-ids")
-	public List<Long> retrieveSelectableFigurines(@RequestParam(required = false) String name,
-			@RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-			@RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-			@RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-			@RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-			@RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-			@RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-			@RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-			@RequestParam(required = false) String releaseStatus) {
+    @GetMapping("/selectable-ids")
+    public List<Long> retrieveSelectableFigurines(@RequestParam(required = false) String name,
+            @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
+            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
+            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
+            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
+            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
+            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
+            @RequestParam(required = false) String releaseStatus) {
 
-		FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-				anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-				releaseStatus);
-		return service.retrieveSelectableFigurines(figurineFilter);
-	}
+        FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
+                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
+                releaseStatus);
+        return service.retrieveSelectableFigurines(figurineFilter);
+    }
 
-	/**
-	 * Updates an existing {@link Figurine} resource.
-	 *
-	 * <p>
-	 * This endpoint:
-	 *
-	 * <ul>
-	 * <li>Validates the incoming request payload
-	 * <li>Identifies the target figurine using the path variable
-	 * <li>Delegates the update operation to the service layer
-	 * <li>Returns the updated resource representation
-	 * </ul>
-	 *
-	 * @param id
-	 *            identifier of the figurine to update
-	 * @param figurineRequest
-	 *            validated figurine update request
-	 * @return {@link ResponseEntity} containing the updated figurine with status
-	 *         {@code 200 OK}
-	 */
-	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
-	public ResponseEntity<FigurineResp> updateFigurine(@PathVariable Long id,
-			@RequestBody @Valid FigurineReq figurineRequest) {
-		FigurineResp updated = service.updateFigurine(id, figurineRequest);
-		return ResponseEntity.ok(updated);
-	}
+    /**
+     * Updates an existing {@link Figurine} resource.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Validates the incoming request payload
+     * <li>Identifies the target figurine using the path variable
+     * <li>Delegates the update operation to the service layer
+     * <li>Returns the updated resource representation
+     * </ul>
+     *
+     * @param id
+     *            identifier of the figurine to update
+     * @param figurineRequest
+     *            validated figurine update request
+     * @return {@link ResponseEntity} containing the updated figurine with status
+     *         {@code 200 OK}
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
+    public ResponseEntity<FigurineResp> updateFigurine(@PathVariable Long id,
+            @RequestBody @Valid FigurineReq figurineRequest) {
+        FigurineResp updated = service.updateFigurine(id, figurineRequest);
+        return ResponseEntity.ok(updated);
+    }
 
-	/**
-	 * Deletes an existing {@link Figurine} resource.
-	 *
-	 * <p>
-	 * This endpoint:
-	 *
-	 * <ul>
-	 * <li>Identifies the target figurine using the path variable
-	 * <li>Delegates the deletion operation to the service layer
-	 * <li>Returns an empty response with {@code 204 No Content} status
-	 * </ul>
-	 *
-	 * <p>
-	 * If the figurine does not exist, an exception from the service layer is
-	 * expected to be translated into an appropriate HTTP error response (e.g.,
-	 * {@code 404 Not Found}).
-	 *
-	 * @param id
-	 *            identifier of the figurine to delete
-	 * @return {@link ResponseEntity} with no content
-	 */
-	@DeleteMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
-	public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
-		service.deleteFigurine(id);
-		return ResponseEntity.noContent().build();
-	}
+    /**
+     * Deletes an existing {@link Figurine} resource.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Identifies the target figurine using the path variable
+     * <li>Delegates the deletion operation to the service layer
+     * <li>Returns an empty response with {@code 204 No Content} status
+     * </ul>
+     *
+     * <p>
+     * If the figurine does not exist, an exception from the service layer is
+     * expected to be translated into an appropriate HTTP error response (e.g.,
+     * {@code 404 Not Found}).
+     *
+     * @param id
+     *            identifier of the figurine to delete
+     * @return {@link ResponseEntity} with no content
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
+    public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
+        service.deleteFigurine(id);
+        return ResponseEntity.noContent().build();
+    }
 }

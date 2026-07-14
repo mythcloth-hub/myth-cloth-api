@@ -19,36 +19,36 @@ import com.mesofi.mythclothapi.figurines.FigurineImportProperties;
 
 class GoogleDriveCsvSourceTest {
 
-	@Test
-	void openReader_shouldReturnReaderForResolvedUrl() throws IOException {
-		// Arrange
-		FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
-		GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
-		Path csvPath = Files.createTempFile("google-drive-csv-source", ".csv");
-		Files.writeString(csvPath, "id,name\n1,Aiolos", StandardCharsets.UTF_8);
-		when(properties.buildUrl()).thenReturn(csvPath.toUri().toString());
+    @Test
+    void openReader_shouldReturnReaderForResolvedUrl() throws IOException {
+        // Arrange
+        FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
+        GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
+        Path csvPath = Files.createTempFile("google-drive-csv-source", ".csv");
+        Files.writeString(csvPath, "id,name\n1,Aiolos", StandardCharsets.UTF_8);
+        when(properties.buildUrl()).thenReturn(csvPath.toUri().toString());
 
-		// Act
-		try (var reader = source.openReader(); var bufferedReader = new BufferedReader(reader)) {
-			String content = bufferedReader.lines().collect(Collectors.joining("\n"));
+        // Act
+        try (var reader = source.openReader(); var bufferedReader = new BufferedReader(reader)) {
+            String content = bufferedReader.lines().collect(Collectors.joining("\n"));
 
-			// Assert
-			assertThat(content).isEqualTo("id,name\n1,Aiolos");
-			verify(properties).buildUrl();
-		} finally {
-			Files.deleteIfExists(csvPath);
-		}
-	}
+            // Assert
+            assertThat(content).isEqualTo("id,name\n1,Aiolos");
+            verify(properties).buildUrl();
+        } finally {
+            Files.deleteIfExists(csvPath);
+        }
+    }
 
-	@Test
-	void openReader_shouldPropagateIOException_whenUrlCannotBeOpened() {
-		// Arrange
-		FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
-		GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
-		when(properties.buildUrl()).thenReturn("file:///path/that/does/not/exist.csv");
+    @Test
+    void openReader_shouldPropagateIOException_whenUrlCannotBeOpened() {
+        // Arrange
+        FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
+        GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
+        when(properties.buildUrl()).thenReturn("file:///path/that/does/not/exist.csv");
 
-		// Act + Assert
-		assertThatThrownBy(source::openReader).isInstanceOf(IOException.class);
-		verify(properties).buildUrl();
-	}
+        // Act + Assert
+        assertThatThrownBy(source::openReader).isInstanceOf(IOException.class);
+        verify(properties).buildUrl();
+    }
 }

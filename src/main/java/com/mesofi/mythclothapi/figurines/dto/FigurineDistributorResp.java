@@ -8,6 +8,6 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record FigurineDistributorResp(DistributorResp distributor, CurrencyCode currency, Double price,
-		Double priceWithTax, LocalDate announcedAt, LocalDate preorderOpensAt, LocalDate releaseDate,
-		boolean releaseDateConfirmed) {
+        Double priceWithTax, LocalDate announcedAt, LocalDate preorderOpensAt, LocalDate releaseDate,
+        boolean releaseDateConfirmed) {
 }

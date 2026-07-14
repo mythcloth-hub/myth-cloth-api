@@ -36,53 +36,53 @@ import lombok.extern.slf4j.Slf4j;
 @PreAuthorize("hasRole('ADMIN')")
 public class DistributorController {
 
-	private final DistributorService service;
+    private final DistributorService service;
 
-	@PostMapping
-	@PreAuthorize("hasAuthority('distributors:write')")
-	public ResponseEntity<DistributorResp> createDistributor(@AuthenticationPrincipal Jwt jwt,
-			@Valid @RequestBody DistributorReq distributorRequest) {
-		log.info("Creating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
-				jwt.getClaimAsString("name"), distributorRequest);
+    @PostMapping
+    @PreAuthorize("hasAuthority('distributors:write')")
+    public ResponseEntity<DistributorResp> createDistributor(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody DistributorReq distributorRequest) {
+        log.info("Creating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
+                jwt.getClaimAsString("name"), distributorRequest);
 
-		DistributorResp response = service.createDistributor(distributorRequest);
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
-				.path("/{id}") // append /{id}
-				.buildAndExpand(response.id()).toUri();
+        DistributorResp response = service.createDistributor(distributorRequest);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
+                .path("/{id}") // append /{id}
+                .buildAndExpand(response.id()).toUri();
 
-		return ResponseEntity.created(location).body(response);
-	}
+        return ResponseEntity.created(location).body(response);
+    }
 
-	@GetMapping("/{id}")
-	@PreAuthorize("hasAuthority('distributors:read')")
-	public DistributorResp retrieveDistributor(@PathVariable Long id) {
-		return service.retrieveDistributor(id);
-	}
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('distributors:read')")
+    public DistributorResp retrieveDistributor(@PathVariable Long id) {
+        return service.retrieveDistributor(id);
+    }
 
-	@GetMapping
-	@PreAuthorize("hasAuthority('distributors:read')")
-	public List<DistributorResp> retrieveDistributors() {
-		return service.retrieveDistributors();
-	}
+    @GetMapping
+    @PreAuthorize("hasAuthority('distributors:read')")
+    public List<DistributorResp> retrieveDistributors() {
+        return service.retrieveDistributors();
+    }
 
-	@PutMapping("/{id}")
-	@PreAuthorize("hasAuthority('distributors:update')")
-	public ResponseEntity<DistributorResp> updateDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
-			@Valid @RequestBody DistributorReq distributorRequest) {
-		log.info("Updating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
-				jwt.getClaimAsString("name"), distributorRequest);
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('distributors:update')")
+    public ResponseEntity<DistributorResp> updateDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
+            @Valid @RequestBody DistributorReq distributorRequest) {
+        log.info("Updating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
+                jwt.getClaimAsString("name"), distributorRequest);
 
-		DistributorResp updated = service.updateDistributor(id, distributorRequest);
-		return ResponseEntity.ok(updated);
-	}
+        DistributorResp updated = service.updateDistributor(id, distributorRequest);
+        return ResponseEntity.ok(updated);
+    }
 
-	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAuthority('distributors:delete')")
-	public ResponseEntity<?> removeDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
-		log.info("Deleting distributor. UserId: {}, User: {}, id: {}", jwt.getSubject(), jwt.getClaimAsString("name"),
-				id);
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('distributors:delete')")
+    public ResponseEntity<?> removeDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        log.info("Deleting distributor. UserId: {}, User: {}, id: {}", jwt.getSubject(), jwt.getClaimAsString("name"),
+                id);
 
-		service.removeDistributor(id);
-		return ResponseEntity.noContent().build();
-	}
+        service.removeDistributor(id);
+        return ResponseEntity.noContent().build();
+    }
 }

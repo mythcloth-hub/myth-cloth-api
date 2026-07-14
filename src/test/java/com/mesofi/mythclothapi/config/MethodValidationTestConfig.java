@@ -12,25 +12,25 @@ import org.springframework.validation.beanvalidation.MethodValidationPostProcess
 @TestConfiguration
 public class MethodValidationTestConfig {
 
-	/**
-	 * Creates the validator used by method-level validation in tests.
-	 *
-	 * @return validator factory bean for test contexts
-	 */
-	@Bean
-	public LocalValidatorFactoryBean validator() {
-		return new LocalValidatorFactoryBean();
-	}
+    /**
+     * Creates the validator used by method-level validation in tests.
+     *
+     * @return validator factory bean for test contexts
+     */
+    @Bean
+    public LocalValidatorFactoryBean validator() {
+        return new LocalValidatorFactoryBean();
+    }
 
-	/**
-	 * Registers the post processor that applies validation to method invocations.
-	 *
-	 * @return method validation post processor wired to the test validator
-	 */
-	@Bean
-	public MethodValidationPostProcessor methodValidationPostProcessor() {
-		MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
-		processor.setValidator(validator());
-		return processor;
-	}
+    /**
+     * Registers the post processor that applies validation to method invocations.
+     *
+     * @return method validation post processor wired to the test validator
+     */
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor() {
+        MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
+        processor.setValidator(validator());
+        return processor;
+    }
 }

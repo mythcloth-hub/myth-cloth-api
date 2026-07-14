@@ -15,15 +15,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 @Controller
 class OpenApiController {
 
-	private final OpenApiWebMvcResource openApiResource;
+    private final OpenApiWebMvcResource openApiResource;
 
-	OpenApiController(OpenApiWebMvcResource openApiResource) {
-		this.openApiResource = openApiResource;
-	}
+    OpenApiController(OpenApiWebMvcResource openApiResource) {
+        this.openApiResource = openApiResource;
+    }
 
-	@GetMapping(value = "/swagger.yaml", produces = {"application/yaml", "text/yaml", "application/x-yaml"})
-	ResponseEntity<byte[]> swaggerYaml(HttpServletRequest request, Locale locale) throws JsonProcessingException {
-		byte[] body = openApiResource.openapiYaml(request, "/swagger.yaml", locale);
-		return ResponseEntity.ok().contentType(MediaType.valueOf("application/yaml")).body(body);
-	}
+    @GetMapping(value = "/swagger.yaml", produces = {"application/yaml", "text/yaml", "application/x-yaml"})
+    ResponseEntity<byte[]> swaggerYaml(HttpServletRequest request, Locale locale) throws JsonProcessingException {
+        byte[] body = openApiResource.openapiYaml(request, "/swagger.yaml", locale);
+        return ResponseEntity.ok().contentType(MediaType.valueOf("application/yaml")).body(body);
+    }
 }

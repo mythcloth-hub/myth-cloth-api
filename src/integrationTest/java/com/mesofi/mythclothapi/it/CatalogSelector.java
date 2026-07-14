@@ -29,42 +29,42 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 public @interface CatalogSelector {
-	/**
-	 * Distribution channel associated with the scenario (e.g. "Stores", "Tamashii
-	 * Web Shop").
-	 *
-	 * @return distribution description
-	 */
-	String distribution() default "";
+    /**
+     * Distribution channel associated with the scenario (e.g. "Stores", "Tamashii
+     * Web Shop").
+     *
+     * @return distribution description
+     */
+    String distribution() default "";
 
-	/**
-	 * Product line-up associated with the scenario (e.g. "Myth Cloth EX").
-	 *
-	 * @return line-up description
-	 */
-	String lineUp();
+    /**
+     * Product line-up associated with the scenario (e.g. "Myth Cloth EX").
+     *
+     * @return line-up description
+     */
+    String lineUp();
 
-	/**
-	 * Series associated with the scenario (e.g. "Saint Seiya").
-	 *
-	 * @return series description
-	 */
-	String series();
+    /**
+     * Series associated with the scenario (e.g. "Saint Seiya").
+     *
+     * @return series description
+     */
+    String series();
 
-	/**
-	 * Product group associated with the scenario (e.g. "Gold Saint").
-	 *
-	 * @return group description
-	 */
-	String group();
+    /**
+     * Product group associated with the scenario (e.g. "Gold Saint").
+     *
+     * @return group description
+     */
+    String group();
 
-	/**
-	 * Anniversary year used to resolve anniversary catalog entries.
-	 *
-	 * <p>
-	 * A value of {@code 0} indicates that no anniversary should be applied.
-	 *
-	 * @return anniversary year
-	 */
-	int anniversary() default 0;
+    /**
+     * Anniversary year used to resolve anniversary catalog entries.
+     *
+     * <p>
+     * A value of {@code 0} indicates that no anniversary should be applied.
+     *
+     * @return anniversary year
+     */
+    int anniversary() default 0;
 }

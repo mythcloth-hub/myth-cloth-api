@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *            Facebook user identifier
  */
 public record FbTokenData(@JsonProperty("app_id") String appId, String type, String application,
-		@JsonProperty("data_access_expires_at") Long dataAccessExpiresAt, @JsonProperty("expires_at") Long expiresAt,
-		@JsonProperty("is_valid") boolean valid, String[] scopes, @JsonProperty("user_id") String userId,
-		FbTokenError error) {
+        @JsonProperty("data_access_expires_at") Long dataAccessExpiresAt, @JsonProperty("expires_at") Long expiresAt,
+        @JsonProperty("is_valid") boolean valid, String[] scopes, @JsonProperty("user_id") String userId,
+        FbTokenError error) {
 }

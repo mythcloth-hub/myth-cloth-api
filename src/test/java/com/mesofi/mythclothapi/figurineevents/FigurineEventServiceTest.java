@@ -37,251 +37,251 @@ import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 @SpringBootTest(classes = {FigurineEventService.class, MapperTestConfig.class, MethodValidationTestConfig.class})
 public class FigurineEventServiceTest {
 
-	@Autowired
-	private FigurineEventService figurineEventService;
+    @Autowired
+    private FigurineEventService figurineEventService;
 
-	@MockitoBean
-	private FigurineRepository figurineRepository;
-	@MockitoBean
-	private FigurineEventRepository figurineEventRepository;
+    @MockitoBean
+    private FigurineRepository figurineRepository;
+    @MockitoBean
+    private FigurineEventRepository figurineEventRepository;
 
-	@Test
-	void createFigurineEvent_shouldThrowException_whenRequestIsNull() {
-		assertThatThrownBy(() -> figurineEventService.createFigurineEvent(null))
-				.isInstanceOf(ConstraintViolationException.class).hasMessageContaining("createFigurineEvent.request")
-				.hasMessageContaining("must not be null");
-	}
+    @Test
+    void createFigurineEvent_shouldThrowException_whenRequestIsNull() {
+        assertThatThrownBy(() -> figurineEventService.createFigurineEvent(null))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("createFigurineEvent.request")
+                .hasMessageContaining("must not be null");
+    }
 
-	@Test
-	void createFigurineEvent_shouldThrowException_whenFigurineIsNotFound() {
-		// Arrange
-		FigurineEventReq request = createRequest(40L, "Event details", LocalDate.of(2025, 1, 1), false);
-		when(figurineRepository.findById(40L)).thenReturn(Optional.empty());
+    @Test
+    void createFigurineEvent_shouldThrowException_whenFigurineIsNotFound() {
+        // Arrange
+        FigurineEventReq request = createRequest(40L, "Event details", LocalDate.of(2025, 1, 1), false);
+        when(figurineRepository.findById(40L)).thenReturn(Optional.empty());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.createFigurineEvent(request))
-				.isInstanceOf(FigurineNotFoundException.class)
-				.extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(40L);
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.createFigurineEvent(request))
+                .isInstanceOf(FigurineNotFoundException.class)
+                .extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(40L);
 
-		verify(figurineRepository).findById(40L);
-	}
+        verify(figurineRepository).findById(40L);
+    }
 
-	@Test
-	void createFigurineEvent_shouldPersistAndReturnResponse_whenRequestIsValid() {
-		// Arrange
-		Figurine figurine = createFigurine(7L);
-		FigurineEventReq request = createRequest(7L, "Tamashii event", LocalDate.of(2025, 1, 1), true);
+    @Test
+    void createFigurineEvent_shouldPersistAndReturnResponse_whenRequestIsValid() {
+        // Arrange
+        Figurine figurine = createFigurine(7L);
+        FigurineEventReq request = createRequest(7L, "Tamashii event", LocalDate.of(2025, 1, 1), true);
 
-		when(figurineRepository.findById(7L)).thenReturn(Optional.of(figurine));
-		when(figurineEventRepository.save(any(FigurineEvent.class))).thenAnswer(invocation -> {
-			FigurineEvent event = invocation.getArgument(0);
-			event.setId(99L);
-			return event;
-		});
+        when(figurineRepository.findById(7L)).thenReturn(Optional.of(figurine));
+        when(figurineEventRepository.save(any(FigurineEvent.class))).thenAnswer(invocation -> {
+            FigurineEvent event = invocation.getArgument(0);
+            event.setId(99L);
+            return event;
+        });
 
-		// Act
-		FigurineEventResp response = figurineEventService.createFigurineEvent(request);
+        // Act
+        FigurineEventResp response = figurineEventService.createFigurineEvent(request);
 
-		// Assert
-		assertThat(response).isNotNull().extracting(FigurineEventResp::id, FigurineEventResp::description)
-				.containsExactly(99L, "Tamashii event");
+        // Assert
+        assertThat(response).isNotNull().extracting(FigurineEventResp::id, FigurineEventResp::description)
+                .containsExactly(99L, "Tamashii event");
 
-		ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
-		verify(figurineEventRepository).save(eventCaptor.capture());
+        ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
+        verify(figurineEventRepository).save(eventCaptor.capture());
 
-		FigurineEvent savedEvent = eventCaptor.getValue();
-		assertThat(savedEvent.getFigurine()).isSameAs(figurine);
-		assertThat(savedEvent.getDescription()).isEqualTo("Tamashii event");
-		assertThat(savedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
-	}
+        FigurineEvent savedEvent = eventCaptor.getValue();
+        assertThat(savedEvent.getFigurine()).isSameAs(figurine);
+        assertThat(savedEvent.getDescription()).isEqualTo("Tamashii event");
+        assertThat(savedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+    }
 
-	@Test
-	void retrieveFigurineEvent_shouldThrowException_whenEventIsMissing() {
-		// Arrange
-		when(figurineEventRepository.findByIdAndFigurineId(60L, 20L)).thenReturn(Optional.empty());
+    @Test
+    void retrieveFigurineEvent_shouldThrowException_whenEventIsMissing() {
+        // Arrange
+        when(figurineEventRepository.findByIdAndFigurineId(60L, 20L)).thenReturn(Optional.empty());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvent(20L, 60L))
-				.isInstanceOf(FigurineEventNotFoundException.class)
-				.extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(60L);
-	}
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvent(20L, 60L))
+                .isInstanceOf(FigurineEventNotFoundException.class)
+                .extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(60L);
+    }
 
-	@Test
-	void retrieveFigurineEvent_shouldReturnResponse_whenEventExists() {
-		// Arrange
-		FigurineEvent event = createEvent(18L, LocalDate.of(2024, 1, 1), "Found event", JP, createFigurine(11L));
-		when(figurineEventRepository.findByIdAndFigurineId(18L, 11L)).thenReturn(Optional.of(event));
+    @Test
+    void retrieveFigurineEvent_shouldReturnResponse_whenEventExists() {
+        // Arrange
+        FigurineEvent event = createEvent(18L, LocalDate.of(2024, 1, 1), "Found event", JP, createFigurine(11L));
+        when(figurineEventRepository.findByIdAndFigurineId(18L, 11L)).thenReturn(Optional.of(event));
 
-		// Act
-		FigurineEventResp response = figurineEventService.retrieveFigurineEvent(11L, 18L);
+        // Act
+        FigurineEventResp response = figurineEventService.retrieveFigurineEvent(11L, 18L);
 
-		// Assert
-		assertThat(response).isNotNull()
-				.extracting(FigurineEventResp::id, FigurineEventResp::description, FigurineEventResp::region)
-				.containsExactly(18L, "Found event", JP);
-	}
+        // Assert
+        assertThat(response).isNotNull()
+                .extracting(FigurineEventResp::id, FigurineEventResp::description, FigurineEventResp::region)
+                .containsExactly(18L, "Found event", JP);
+    }
 
-	@Test
-	void retrieveFigurineEvents_shouldThrowException_whenEventsListIsEmpty() {
-		// Arrange
-		when(figurineEventRepository.findAllByFigurineId(33L)).thenReturn(List.of());
+    @Test
+    void retrieveFigurineEvents_shouldThrowException_whenEventsListIsEmpty() {
+        // Arrange
+        when(figurineEventRepository.findAllByFigurineId(33L)).thenReturn(List.of());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvents(33L))
-				.isInstanceOf(FigurineNotFoundException.class)
-				.extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(33L);
-	}
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvents(33L))
+                .isInstanceOf(FigurineNotFoundException.class)
+                .extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(33L);
+    }
 
-	@Test
-	void retrieveFigurineEvents_shouldReturnResponses_whenEventsExist() {
-		// Arrange
-		Figurine figurine = createFigurine(12L);
-		FigurineEvent event1 = createEvent(1L, LocalDate.of(2024, 1, 1), "Announcement", JP, figurine);
-		FigurineEvent event2 = createEvent(2L, LocalDate.of(2024, 2, 2), "Release", JP, figurine);
-		when(figurineEventRepository.findAllByFigurineId(12L)).thenReturn(List.of(event1, event2));
+    @Test
+    void retrieveFigurineEvents_shouldReturnResponses_whenEventsExist() {
+        // Arrange
+        Figurine figurine = createFigurine(12L);
+        FigurineEvent event1 = createEvent(1L, LocalDate.of(2024, 1, 1), "Announcement", JP, figurine);
+        FigurineEvent event2 = createEvent(2L, LocalDate.of(2024, 2, 2), "Release", JP, figurine);
+        when(figurineEventRepository.findAllByFigurineId(12L)).thenReturn(List.of(event1, event2));
 
-		// Act
-		List<FigurineEventResp> response = figurineEventService.retrieveFigurineEvents(12L);
+        // Act
+        List<FigurineEventResp> response = figurineEventService.retrieveFigurineEvents(12L);
 
-		// Assert
-		assertThat(response.size()).isEqualTo(2);
-		assertThat(response.getFirst().description()).isEqualTo("Announcement");
-		assertThat(response.get(1).description()).isEqualTo("Release");
-	}
+        // Assert
+        assertThat(response.size()).isEqualTo(2);
+        assertThat(response.getFirst().description()).isEqualTo("Announcement");
+        assertThat(response.get(1).description()).isEqualTo("Release");
+    }
 
-	@Test
-	void updateFigurineEvent_shouldThrowException_whenEventIsMissing() {
-		// Arrange
-		FigurineEventReq request = createRequest(10L, "Updated", LocalDate.of(2025, 1, 1), true);
-		when(figurineEventRepository.findByIdAndFigurineId(50L, 10L)).thenReturn(Optional.empty());
+    @Test
+    void updateFigurineEvent_shouldThrowException_whenEventIsMissing() {
+        // Arrange
+        FigurineEventReq request = createRequest(10L, "Updated", LocalDate.of(2025, 1, 1), true);
+        when(figurineEventRepository.findByIdAndFigurineId(50L, 10L)).thenReturn(Optional.empty());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, 50L, request))
-				.isInstanceOf(FigurineEventNotFoundException.class)
-				.extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(50L);
-	}
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, 50L, request))
+                .isInstanceOf(FigurineEventNotFoundException.class)
+                .extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(50L);
+    }
 
-	@Test
-	void updateFigurineEvent_shouldThrowException_whenNewFigurineIsMissing() {
-		// Arrange
-		FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, createFigurine(10L));
-		FigurineEventReq request = createRequest(30L, "Updated", LocalDate.of(2025, 1, 1), true);
+    @Test
+    void updateFigurineEvent_shouldThrowException_whenNewFigurineIsMissing() {
+        // Arrange
+        FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, createFigurine(10L));
+        FigurineEventReq request = createRequest(30L, "Updated", LocalDate.of(2025, 1, 1), true);
 
-		when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
-		when(figurineRepository.findById(30L)).thenReturn(Optional.empty());
+        when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
+        when(figurineRepository.findById(30L)).thenReturn(Optional.empty());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, 6L, request))
-				.isInstanceOf(FigurineNotFoundException.class)
-				.extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(30L);
-	}
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, 6L, request))
+                .isInstanceOf(FigurineNotFoundException.class)
+                .extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(30L);
+    }
 
-	@Test
-	void updateFigurineEvent_shouldUpdateDetailsWithoutReassigning_whenFigurineIdIsTheSame() {
-		// Arrange
-		Figurine sameFigurine = createFigurine(10L);
-		FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", MX, sameFigurine);
-		FigurineEventReq request = createRequest(10L, "Updated description", LocalDate.of(2025, 1, 1), true);
+    @Test
+    void updateFigurineEvent_shouldUpdateDetailsWithoutReassigning_whenFigurineIdIsTheSame() {
+        // Arrange
+        Figurine sameFigurine = createFigurine(10L);
+        FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", MX, sameFigurine);
+        FigurineEventReq request = createRequest(10L, "Updated description", LocalDate.of(2025, 1, 1), true);
 
-		when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
-		when(figurineRepository.findById(10L)).thenReturn(Optional.of(sameFigurine));
-		when(figurineEventRepository.save(any(FigurineEvent.class)))
-				.thenAnswer(invocation -> invocation.getArgument(0));
+        when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
+        when(figurineRepository.findById(10L)).thenReturn(Optional.of(sameFigurine));
+        when(figurineEventRepository.save(any(FigurineEvent.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-		// Act
-		FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
+        // Act
+        FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
 
-		// Assert
-		assertThat(response).isNotNull().extracting(FigurineEventResp::description).isEqualTo("Updated description");
+        // Assert
+        assertThat(response).isNotNull().extracting(FigurineEventResp::description).isEqualTo("Updated description");
 
-		ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
-		verify(figurineEventRepository).save(eventCaptor.capture());
+        ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
+        verify(figurineEventRepository).save(eventCaptor.capture());
 
-		FigurineEvent updatedEvent = eventCaptor.getValue();
-		assertThat(updatedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
-		assertThat(updatedEvent.isEventDateConfirmed()).isTrue();
-		assertThat(updatedEvent.getType()).isEqualTo(ANNOUNCEMENT);
-		assertThat(updatedEvent.getRegion()).isEqualTo(JP);
-		assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
-		assertThat(updatedEvent.getFigurine()).isSameAs(sameFigurine);
-	}
+        FigurineEvent updatedEvent = eventCaptor.getValue();
+        assertThat(updatedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(updatedEvent.isEventDateConfirmed()).isTrue();
+        assertThat(updatedEvent.getType()).isEqualTo(ANNOUNCEMENT);
+        assertThat(updatedEvent.getRegion()).isEqualTo(JP);
+        assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
+        assertThat(updatedEvent.getFigurine()).isSameAs(sameFigurine);
+    }
 
-	@Test
-	void updateFigurineEvent_shouldReassignFigurine_whenFigurineIdChanges() {
-		// Arrange
-		Figurine originalFigurine = createFigurine(10L);
-		Figurine newFigurine = createFigurine(44L);
-		FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, originalFigurine);
-		FigurineEventReq request = createRequest(44L, "Moved event", LocalDate.of(2025, 1, 1), true);
+    @Test
+    void updateFigurineEvent_shouldReassignFigurine_whenFigurineIdChanges() {
+        // Arrange
+        Figurine originalFigurine = createFigurine(10L);
+        Figurine newFigurine = createFigurine(44L);
+        FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, originalFigurine);
+        FigurineEventReq request = createRequest(44L, "Moved event", LocalDate.of(2025, 1, 1), true);
 
-		when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
-		when(figurineRepository.findById(44L)).thenReturn(Optional.of(newFigurine));
-		when(figurineEventRepository.save(any(FigurineEvent.class)))
-				.thenAnswer(invocation -> invocation.getArgument(0));
+        when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
+        when(figurineRepository.findById(44L)).thenReturn(Optional.of(newFigurine));
+        when(figurineEventRepository.save(any(FigurineEvent.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-		// Act
-		FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
+        // Act
+        FigurineEventResp response = figurineEventService.updateFigurineEvent(10L, 6L, request);
 
-		// Assert
-		assertThat(response).isNotNull().extracting(FigurineEventResp::description).isEqualTo("Moved event");
+        // Assert
+        assertThat(response).isNotNull().extracting(FigurineEventResp::description).isEqualTo("Moved event");
 
-		ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
-		verify(figurineEventRepository).save(eventCaptor.capture());
-		assertThat(eventCaptor.getValue().getFigurine()).isSameAs(newFigurine);
-	}
+        ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
+        verify(figurineEventRepository).save(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getFigurine()).isSameAs(newFigurine);
+    }
 
-	@Test
-	void removeFigurineEvent_shouldThrowException_whenEventIsMissing() {
-		// Arrange
-		when(figurineEventRepository.findByIdAndFigurineId(90L, 19L)).thenReturn(Optional.empty());
+    @Test
+    void removeFigurineEvent_shouldThrowException_whenEventIsMissing() {
+        // Arrange
+        when(figurineEventRepository.findByIdAndFigurineId(90L, 19L)).thenReturn(Optional.empty());
 
-		// Act + Assert
-		assertThatThrownBy(() -> figurineEventService.removeFigurineEvent(19L, 90L))
-				.isInstanceOf(FigurineEventNotFoundException.class)
-				.extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(90L);
+        // Act + Assert
+        assertThatThrownBy(() -> figurineEventService.removeFigurineEvent(19L, 90L))
+                .isInstanceOf(FigurineEventNotFoundException.class)
+                .extracting(ex -> ((FigurineEventNotFoundException) ex).getId()).isEqualTo(90L);
 
-		verify(figurineEventRepository, never()).delete(any(FigurineEvent.class));
-	}
+        verify(figurineEventRepository, never()).delete(any(FigurineEvent.class));
+    }
 
-	@Test
-	void removeFigurineEvent_shouldDeleteEvent_whenEventExists() {
-		// Arrange
-		FigurineEvent existing = createEvent(90L, LocalDate.of(2024, 1, 1), "Remove me", JP, createFigurine(19L));
-		when(figurineEventRepository.findByIdAndFigurineId(90L, 19L)).thenReturn(Optional.of(existing));
+    @Test
+    void removeFigurineEvent_shouldDeleteEvent_whenEventExists() {
+        // Arrange
+        FigurineEvent existing = createEvent(90L, LocalDate.of(2024, 1, 1), "Remove me", JP, createFigurine(19L));
+        when(figurineEventRepository.findByIdAndFigurineId(90L, 19L)).thenReturn(Optional.of(existing));
 
-		// Act
-		figurineEventService.removeFigurineEvent(19L, 90L);
+        // Act
+        figurineEventService.removeFigurineEvent(19L, 90L);
 
-		// Assert
-		verify(figurineEventRepository).delete(existing);
-	}
+        // Assert
+        verify(figurineEventRepository).delete(existing);
+    }
 
-	private FigurineEventReq createRequest(Long figurineId, String description, LocalDate eventDate,
-			boolean eventConfirmed) {
-		FigurineEventReq request = new FigurineEventReq();
-		request.setFigurineId(figurineId);
-		request.setDescription(description);
-		request.setDate(eventDate);
-		request.setDateConfirmed(eventConfirmed);
-		request.setRegion(JP);
-		request.setType(ANNOUNCEMENT);
-		return request;
-	}
+    private FigurineEventReq createRequest(Long figurineId, String description, LocalDate eventDate,
+            boolean eventConfirmed) {
+        FigurineEventReq request = new FigurineEventReq();
+        request.setFigurineId(figurineId);
+        request.setDescription(description);
+        request.setDate(eventDate);
+        request.setDateConfirmed(eventConfirmed);
+        request.setRegion(JP);
+        request.setType(ANNOUNCEMENT);
+        return request;
+    }
 
-	private Figurine createFigurine(Long id) {
-		Figurine figurine = new Figurine();
-		figurine.setId(id);
-		return figurine;
-	}
+    private Figurine createFigurine(Long id) {
+        Figurine figurine = new Figurine();
+        figurine.setId(id);
+        return figurine;
+    }
 
-	private FigurineEvent createEvent(Long id, LocalDate date, String description, CountryCode region,
-			Figurine figurine) {
-		FigurineEvent event = new FigurineEvent();
-		event.setId(id);
-		event.setEventDate(date);
-		event.setDescription(description);
-		event.setFigurine(figurine);
-		event.setRegion(region);
-		return event;
-	}
+    private FigurineEvent createEvent(Long id, LocalDate date, String description, CountryCode region,
+            Figurine figurine) {
+        FigurineEvent event = new FigurineEvent();
+        event.setId(id);
+        event.setEventDate(date);
+        event.setDescription(description);
+        event.setFigurine(figurine);
+        event.setRegion(region);
+        return event;
+    }
 }

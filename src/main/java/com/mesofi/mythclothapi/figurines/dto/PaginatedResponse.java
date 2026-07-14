@@ -36,5 +36,5 @@ import java.util.List;
  *            total number of pages available based on the requested page size
  */
 public record PaginatedResponse(List<FigurineResp> content, int page, int size, long totalElements,
-		long totalCollectableElements, int totalPages) {
+        long totalCollectableElements, int totalPages) {
 }

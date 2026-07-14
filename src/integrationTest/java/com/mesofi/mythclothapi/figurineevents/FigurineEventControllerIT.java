@@ -31,92 +31,92 @@ import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 @Sql(scripts = "/cleanup-figurine-event-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineEventControllerIT extends ControllerBaseIT {
 
-	private static final String EVENTS_BY_FIGURINE = "/figurines/{figurineId}/events";
-	private static final String EVENTS_BY_ID = EVENTS_BY_FIGURINE + "/{id}";
+    private static final String EVENTS_BY_FIGURINE = "/figurines/{figurineId}/events";
+    private static final String EVENTS_BY_ID = EVENTS_BY_FIGURINE + "/{id}";
 
-	@Test
-	@DisplayName("Test flow to create and process figurine events")
-	void fullCrudFigurineEventFlow() {
+    @Test
+    @DisplayName("Test flow to create and process figurine events")
+    void fullCrudFigurineEventFlow() {
 
-		FigurineIdentifiers figIds = createBasicFigurine(rest);
+        FigurineIdentifiers figIds = createBasicFigurine(rest);
 
-		// CREATE
-		Long eventId1 = createFigurineEvent(figIds.id(), "First appearance on events", ANNOUNCEMENT);
-		Long eventId2 = createFigurineEvent(figIds.id(), "Preorders open", PREORDER_OPEN);
-		Long eventId3 = createFigurineEvent(figIds.id(), "Released", RELEASE);
+        // CREATE
+        Long eventId1 = createFigurineEvent(figIds.id(), "First appearance on events", ANNOUNCEMENT);
+        Long eventId2 = createFigurineEvent(figIds.id(), "Preorders open", PREORDER_OPEN);
+        Long eventId3 = createFigurineEvent(figIds.id(), "Released", RELEASE);
 
-		// READ
-		assertThat(readFigurineEvent(figIds.id(), eventId1)).isEqualTo(eventId1);
-		assertThat(readFigurineEvent(figIds.id(), eventId2)).isEqualTo(eventId2);
-		assertThat(readFigurineEvent(figIds.id(), eventId3)).isEqualTo(eventId3);
+        // READ
+        assertThat(readFigurineEvent(figIds.id(), eventId1)).isEqualTo(eventId1);
+        assertThat(readFigurineEvent(figIds.id(), eventId2)).isEqualTo(eventId2);
+        assertThat(readFigurineEvent(figIds.id(), eventId3)).isEqualTo(eventId3);
 
-		// READ ALL
-		readAll(figIds.id());
+        // READ ALL
+        readAll(figIds.id());
 
-		// UPDATE
-		FigurineEventReq toUpdateFigurineEventReq = createFigurineEventReq(figIds.id(), "New Event", ANNOUNCEMENT);
-		updateFigurineEvent(figIds.id(), eventId2, toUpdateFigurineEventReq);
+        // UPDATE
+        FigurineEventReq toUpdateFigurineEventReq = createFigurineEventReq(figIds.id(), "New Event", ANNOUNCEMENT);
+        updateFigurineEvent(figIds.id(), eventId2, toUpdateFigurineEventReq);
 
-		// DELETE
-		removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId1);
-		removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId2);
-		removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId3);
+        // DELETE
+        removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId1);
+        removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId2);
+        removeResource(rest, EVENTS_BY_ID, figIds.id(), eventId3);
 
-		removeResource(rest, FIGURINES_DEL, figIds.id());
-		removeResource(rest, DISTRIBUTORS_DEL, figIds.distributorId());
-		removeResource(rest, GROUPS_DEL, figIds.groupId());
-		removeResource(rest, SERIES_DEL, figIds.seriesId());
-		removeResource(rest, LINE_UP_DEL, figIds.lineUpId());
-	}
+        removeResource(rest, FIGURINES_DEL, figIds.id());
+        removeResource(rest, DISTRIBUTORS_DEL, figIds.distributorId());
+        removeResource(rest, GROUPS_DEL, figIds.groupId());
+        removeResource(rest, SERIES_DEL, figIds.seriesId());
+        removeResource(rest, LINE_UP_DEL, figIds.lineUpId());
+    }
 
-	private void updateFigurineEvent(Long figurineId, Long id, FigurineEventReq toUpdateFigurineEventReq) {
-		ResponseEntity<FigurineEventResp> response = rest.put().uri(EVENTS_BY_ID, figurineId, id)
-				.body(toUpdateFigurineEventReq).retrieve().toEntity(FigurineEventResp.class);
+    private void updateFigurineEvent(Long figurineId, Long id, FigurineEventReq toUpdateFigurineEventReq) {
+        ResponseEntity<FigurineEventResp> response = rest.put().uri(EVENTS_BY_ID, figurineId, id)
+                .body(toUpdateFigurineEventReq).retrieve().toEntity(FigurineEventResp.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(OK);
-		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getBody().id()).isEqualTo(id);
-		assertThat(response.getBody().description().equals(toUpdateFigurineEventReq.getDescription()));
-	}
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(id);
+        assertThat(response.getBody().description().equals(toUpdateFigurineEventReq.getDescription()));
+    }
 
-	private void readAll(Long id) {
-		ResponseEntity<FigurineEventResp[]> response = rest.get().uri(EVENTS_BY_FIGURINE, id).retrieve()
-				.toEntity(FigurineEventResp[].class);
+    private void readAll(Long id) {
+        ResponseEntity<FigurineEventResp[]> response = rest.get().uri(EVENTS_BY_FIGURINE, id).retrieve()
+                .toEntity(FigurineEventResp[].class);
 
-		assertThat(response.getBody()).hasSize(3);
-	}
+        assertThat(response.getBody()).hasSize(3);
+    }
 
-	private Long readFigurineEvent(Long figurineId, Long id) {
-		ResponseEntity<FigurineEventResp> response = rest.get().uri(EVENTS_BY_ID, figurineId, id).retrieve()
-				.toEntity(FigurineEventResp.class);
+    private Long readFigurineEvent(Long figurineId, Long id) {
+        ResponseEntity<FigurineEventResp> response = rest.get().uri(EVENTS_BY_ID, figurineId, id).retrieve()
+                .toEntity(FigurineEventResp.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(OK);
-		assertThat(response.getBody()).isNotNull();
-		assertThat(response.getBody().id()).isEqualTo(id);
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().id()).isEqualTo(id);
 
-		return response.getBody().id();
-	}
+        return response.getBody().id();
+    }
 
-	private Long createFigurineEvent(Long figurineId, String description, FigurineEventType type) {
-		FigurineEventReq figurineEventReq = createFigurineEventReq(figurineId, description, type);
+    private Long createFigurineEvent(Long figurineId, String description, FigurineEventType type) {
+        FigurineEventReq figurineEventReq = createFigurineEventReq(figurineId, description, type);
 
-		ResponseEntity<FigurineEventResp> response = rest.post().uri(EVENTS_BY_FIGURINE, figurineId)
-				.body(figurineEventReq).retrieve().toEntity(FigurineEventResp.class);
+        ResponseEntity<FigurineEventResp> response = rest.post().uri(EVENTS_BY_FIGURINE, figurineId)
+                .body(figurineEventReq).retrieve().toEntity(FigurineEventResp.class);
 
-		assertThat(response.getStatusCode()).isEqualTo(CREATED);
-		assertThat(response.getBody()).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(CREATED);
+        assertThat(response.getBody()).isNotNull();
 
-		return response.getBody().id();
-	}
+        return response.getBody().id();
+    }
 
-	private FigurineEventReq createFigurineEventReq(Long figurineId, String description, FigurineEventType type) {
-		FigurineEventReq figurineEventReq = new FigurineEventReq();
-		figurineEventReq.setDescription(description);
-		figurineEventReq.setDate(LocalDate.of(2024, 6, 1));
-		figurineEventReq.setRegion(CountryCode.MX);
-		figurineEventReq.setType(type);
-		figurineEventReq.setFigurineId(figurineId);
+    private FigurineEventReq createFigurineEventReq(Long figurineId, String description, FigurineEventType type) {
+        FigurineEventReq figurineEventReq = new FigurineEventReq();
+        figurineEventReq.setDescription(description);
+        figurineEventReq.setDate(LocalDate.of(2024, 6, 1));
+        figurineEventReq.setRegion(CountryCode.MX);
+        figurineEventReq.setType(type);
+        figurineEventReq.setFigurineId(figurineId);
 
-		return figurineEventReq;
-	}
+        return figurineEventReq;
+    }
 }

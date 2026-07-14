@@ -25,6 +25,8 @@ spotless {
         removeUnusedImports()
         importOrder 'java', 'javax', 'jakarta', 'org', 'com'
         target 'src/**/*.java'
+        // Run after eclipse() so tabs introduced by formatter are converted to spaces.
+        leadingTabsToSpaces(4)
 
         // Enforce no wildcard imports (ignore SQL and string usages)
         custom 'No wildcard imports', { String source ->

@@ -8,15 +8,15 @@ import org.junit.jupiter.api.Test;
 
 class PipeListStringConverterTest {
 
-	private final PipeListStringConverter converter = new PipeListStringConverter();
+    private final PipeListStringConverter converter = new PipeListStringConverter();
 
-	@Test
-	void getDelimiter_shouldReturnPipeRegex() {
-		assertThat(converter.getDelimiter()).isEqualTo("\\|");
-	}
+    @Test
+    void getDelimiter_shouldReturnPipeRegex() {
+        assertThat(converter.getDelimiter()).isEqualTo("\\|");
+    }
 
-	@Test
-	void convert_shouldUsePipeDelimiter() {
-		assertThat(converter.convert("alpha| beta|| gamma ")).isEqualTo(List.of("alpha", "beta", "gamma"));
-	}
+    @Test
+    void convert_shouldUsePipeDelimiter() {
+        assertThat(converter.convert("alpha| beta|| gamma ")).isEqualTo(List.of("alpha", "beta", "gamma"));
+    }
 }

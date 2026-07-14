@@ -21,23 +21,23 @@ import lombok.Getter;
  */
 @Getter
 public class CollectablePageImpl<T> extends PageImpl<T> {
-	/** Total number of collectable items available. */
-	private final long totalCollectables;
+    /** Total number of collectable items available. */
+    private final long totalCollectables;
 
-	/**
-	 * Creates a new {@code CollectablePageImpl} instance.
-	 *
-	 * @param content
-	 *            the list of items contained in the current page
-	 * @param pageable
-	 *            pagination information, including page number and size
-	 * @param total
-	 *            total number of items available across all pages
-	 * @param totalCollectables
-	 *            total number of items considered collectable
-	 */
-	public CollectablePageImpl(List<T> content, Pageable pageable, long total, long totalCollectables) {
-		super(content, pageable, total);
-		this.totalCollectables = totalCollectables;
-	}
+    /**
+     * Creates a new {@code CollectablePageImpl} instance.
+     *
+     * @param content
+     *            the list of items contained in the current page
+     * @param pageable
+     *            pagination information, including page number and size
+     * @param total
+     *            total number of items available across all pages
+     * @param totalCollectables
+     *            total number of items considered collectable
+     */
+    public CollectablePageImpl(List<T> content, Pageable pageable, long total, long totalCollectables) {
+        super(content, pageable, total);
+        this.totalCollectables = totalCollectables;
+    }
 }

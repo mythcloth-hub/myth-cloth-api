@@ -49,70 +49,70 @@ import lombok.Setter;
 @Table(name = "figurine_events")
 public class FigurineEvent extends Descriptive {
 
-	/**
-	 * The date on which the event occurred.
-	 *
-	 * <p>
-	 * This field is mandatory and cannot be {@code null}. It represents the
-	 * effective date of the event (e.g., release date, purchase date, arrival
-	 * date).
-	 */
-	@Column(nullable = false)
-	private LocalDate eventDate;
+    /**
+     * The date on which the event occurred.
+     *
+     * <p>
+     * This field is mandatory and cannot be {@code null}. It represents the
+     * effective date of the event (e.g., release date, purchase date, arrival
+     * date).
+     */
+    @Column(nullable = false)
+    private LocalDate eventDate;
 
-	/**
-	 * Indicates whether the {@link #eventDate} has been officially confirmed.
-	 *
-	 * <p>
-	 * This flag distinguishes tentative or estimated dates from dates that have
-	 * been formally announced by the manufacturer, distributor, or other
-	 * authoritative source.
-	 *
-	 * <p>
-	 * A value of {@code true} means the event date is confirmed, while
-	 * {@code false} means it is still provisional.
-	 */
-	@Column(nullable = false)
-	private boolean eventDateConfirmed;
+    /**
+     * Indicates whether the {@link #eventDate} has been officially confirmed.
+     *
+     * <p>
+     * This flag distinguishes tentative or estimated dates from dates that have
+     * been formally announced by the manufacturer, distributor, or other
+     * authoritative source.
+     *
+     * <p>
+     * A value of {@code true} means the event date is confirmed, while
+     * {@code false} means it is still provisional.
+     */
+    @Column(nullable = false)
+    private boolean eventDateConfirmed;
 
-	/**
-	 * The region (country) associated with this event.
-	 *
-	 * <p>
-	 * This typically represents the market or location where the event is
-	 * applicable, such as the country of release or purchase.
-	 *
-	 * <p>
-	 * This field is mandatory and cannot be {@code null}.
-	 */
-	@Column(nullable = false)
-	private CountryCode region;
+    /**
+     * The region (country) associated with this event.
+     *
+     * <p>
+     * This typically represents the market or location where the event is
+     * applicable, such as the country of release or purchase.
+     *
+     * <p>
+     * This field is mandatory and cannot be {@code null}.
+     */
+    @Column(nullable = false)
+    private CountryCode region;
 
-	/**
-	 * The type of event being recorded.
-	 *
-	 * <p>
-	 * Defines the nature of the event (e.g., PRE_ORDER, RELEASE, ARRIVAL,
-	 * PURCHASE).
-	 *
-	 * <p>
-	 * This field is mandatory and cannot be {@code null}.
-	 */
-	@Column(nullable = false)
-	private FigurineEventType type;
+    /**
+     * The type of event being recorded.
+     *
+     * <p>
+     * Defines the nature of the event (e.g., PRE_ORDER, RELEASE, ARRIVAL,
+     * PURCHASE).
+     *
+     * <p>
+     * This field is mandatory and cannot be {@code null}.
+     */
+    @Column(nullable = false)
+    private FigurineEventType type;
 
-	/**
-	 * The figurine to which this event belongs.
-	 *
-	 * <p>
-	 * Defined as a {@code ManyToOne} relationship since a single figurine can have
-	 * multiple associated events throughout its lifecycle.
-	 *
-	 * <p>
-	 * Uses lazy loading to avoid unnecessary data retrieval unless the figurine
-	 * reference is explicitly accessed.
-	 */
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "figurine_id", nullable = false)
-	private Figurine figurine;
+    /**
+     * The figurine to which this event belongs.
+     *
+     * <p>
+     * Defined as a {@code ManyToOne} relationship since a single figurine can have
+     * multiple associated events throughout its lifecycle.
+     *
+     * <p>
+     * Uses lazy loading to avoid unnecessary data retrieval unless the figurine
+     * reference is explicitly accessed.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "figurine_id", nullable = false)
+    private Figurine figurine;
 }

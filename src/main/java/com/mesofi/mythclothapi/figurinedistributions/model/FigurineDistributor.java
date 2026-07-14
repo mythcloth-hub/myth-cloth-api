@@ -18,25 +18,25 @@ import lombok.Setter;
 @Setter
 public class FigurineDistributor extends BaseId {
 
-	// Many figurines → many distributions
+    // Many figurines → many distributions
 
-	@ManyToOne(optional = false)
-	private Figurine figurine;
+    @ManyToOne(optional = false)
+    private Figurine figurine;
 
-	@ManyToOne(optional = false)
-	private Distributor distributor;
+    @ManyToOne(optional = false)
+    private Distributor distributor;
 
-	// Many figurines → many distributions
+    // Many figurines → many distributions
 
-	@Column(nullable = false)
-	private CurrencyCode currency; // MXN, JPY, USD, etc
+    @Column(nullable = false)
+    private CurrencyCode currency; // MXN, JPY, USD, etc
 
-	private Double price; // Price for that distributor
+    private Double price; // Price for that distributor
 
-	private LocalDate announcementDate;
-	private LocalDate preorderDate;
-	private LocalDate releaseDate;
+    private LocalDate announcementDate;
+    private LocalDate preorderDate;
+    private LocalDate releaseDate;
 
-	@Column(nullable = false)
-	private boolean releaseDateConfirmed;
+    @Column(nullable = false)
+    private boolean releaseDateConfirmed;
 }

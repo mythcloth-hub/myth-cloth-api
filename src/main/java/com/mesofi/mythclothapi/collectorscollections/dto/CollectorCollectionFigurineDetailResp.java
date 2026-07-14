@@ -8,5 +8,5 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record CollectorCollectionFigurineDetailResp(String displayableName, List<FigurineDistributorResp> distributors,
-		String tamashiiUrl, CatalogResp lineUp, String lineUpUrl) {
+        String tamashiiUrl, CatalogResp lineUp, String lineUpUrl) {
 }

@@ -10,114 +10,114 @@ import com.opencsv.bean.AbstractBeanField;
 
 class TrueFalseConverterTest {
 
-	@Test
-	void convert_shouldReturnTrue_whenValueIsTrueIgnoringCaseForRegularField() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+    @Test
+    void convert_shouldReturnTrue_whenValueIsTrueIgnoringCaseForRegularField() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
 
-		// Act
-		Boolean converted = converter.convertValue("TrUe");
+        // Act
+        Boolean converted = converter.convertValue("TrUe");
 
-		// Assert
-		assertThat(converted).isTrue();
-	}
+        // Assert
+        assertThat(converted).isTrue();
+    }
 
-	@Test
-	void convert_shouldReturnFalse_whenValueIsFalseForRegularField() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+    @Test
+    void convert_shouldReturnFalse_whenValueIsFalseForRegularField() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
 
-		// Act
-		Boolean converted = converter.convertValue("FALSE");
+        // Act
+        Boolean converted = converter.convertValue("FALSE");
 
-		// Assert
-		assertThat(converted).isFalse();
-	}
+        // Assert
+        assertThat(converted).isFalse();
+    }
 
-	@Test
-	void convert_shouldReturnFalse_whenValueIsNullForRegularField() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+    @Test
+    void convert_shouldReturnFalse_whenValueIsNullForRegularField() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
 
-		// Act
-		Boolean converted = converter.convertValue(null);
+        // Act
+        Boolean converted = converter.convertValue(null);
 
-		// Assert
-		assertThat(converted).isFalse();
-	}
+        // Assert
+        assertThat(converted).isFalse();
+    }
 
-	@Test
-	void convert_shouldReturnFalse_whenValueIsNotTrueForRegularField() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+    @Test
+    void convert_shouldReturnFalse_whenValueIsNotTrueForRegularField() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
 
-		// Act
-		Boolean converted = converter.convertValue("yes");
+        // Act
+        Boolean converted = converter.convertValue("yes");
 
-		// Assert
-		assertThat(converted).isFalse();
-	}
+        // Assert
+        assertThat(converted).isFalse();
+    }
 
-	@Test
-	void convert_shouldReturnFalse_whenValueContainsWhitespaceForRegularField() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
+    @Test
+    void convert_shouldReturnFalse_whenValueContainsWhitespaceForRegularField() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("metalBody");
 
-		// Act
-		Boolean converted = converter.convertValue(" TRUE ");
+        // Act
+        Boolean converted = converter.convertValue(" TRUE ");
 
-		// Assert
-		assertThat(converted).isFalse();
-	}
+        // Assert
+        assertThat(converted).isFalse();
+    }
 
-	@Test
-	void convert_shouldInvertResult_whenFieldIsArticulableAndValueIsTrue() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("articulable");
+    @Test
+    void convert_shouldInvertResult_whenFieldIsArticulableAndValueIsTrue() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("articulable");
 
-		// Act
-		Boolean converted = converter.convertValue("TRUE");
+        // Act
+        Boolean converted = converter.convertValue("TRUE");
 
-		// Assert
-		assertThat(converted).isFalse();
-	}
+        // Assert
+        assertThat(converted).isFalse();
+    }
 
-	@Test
-	void convert_shouldInvertResult_whenFieldIsArticulableAndValueIsNotTrue() {
-		// Arrange
-		ExposedTrueFalseConverter converter = newConverterBoundTo("articulable");
+    @Test
+    void convert_shouldInvertResult_whenFieldIsArticulableAndValueIsNotTrue() {
+        // Arrange
+        ExposedTrueFalseConverter converter = newConverterBoundTo("articulable");
 
-		// Act
-		Boolean converted = converter.convertValue("");
+        // Act
+        Boolean converted = converter.convertValue("");
 
-		// Assert
-		assertThat(converted).isTrue();
-	}
+        // Assert
+        assertThat(converted).isTrue();
+    }
 
-	private ExposedTrueFalseConverter newConverterBoundTo(String fieldName) {
-		try {
-			ExposedTrueFalseConverter converter = new ExposedTrueFalseConverter();
-			Field beanField = CsvBindingTarget.class.getDeclaredField(fieldName);
-			Field abstractBeanFieldField = AbstractBeanField.class.getDeclaredField("field");
-			abstractBeanFieldField.setAccessible(true);
-			abstractBeanFieldField.set(converter, beanField);
-			return converter;
-		} catch (ReflectiveOperationException exception) {
-			throw new RuntimeException(exception);
-		}
-	}
+    private ExposedTrueFalseConverter newConverterBoundTo(String fieldName) {
+        try {
+            ExposedTrueFalseConverter converter = new ExposedTrueFalseConverter();
+            Field beanField = CsvBindingTarget.class.getDeclaredField(fieldName);
+            Field abstractBeanFieldField = AbstractBeanField.class.getDeclaredField("field");
+            abstractBeanFieldField.setAccessible(true);
+            abstractBeanFieldField.set(converter, beanField);
+            return converter;
+        } catch (ReflectiveOperationException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
 
-	private static final class ExposedTrueFalseConverter extends TrueFalseConverter {
-		private Boolean convertValue(String value) {
-			return super.convert(value);
-		}
-	}
+    private static final class ExposedTrueFalseConverter extends TrueFalseConverter {
+        private Boolean convertValue(String value) {
+            return super.convert(value);
+        }
+    }
 
-	private static final class CsvBindingTarget {
-		@SuppressWarnings("unused")
-		private boolean articulable;
+    private static final class CsvBindingTarget {
+        @SuppressWarnings("unused")
+        private boolean articulable;
 
-		@SuppressWarnings("unused")
-		private boolean metalBody;
-	}
+        @SuppressWarnings("unused")
+        private boolean metalBody;
+    }
 }

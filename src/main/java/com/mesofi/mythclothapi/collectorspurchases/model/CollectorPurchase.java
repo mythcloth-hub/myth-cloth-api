@@ -40,29 +40,29 @@ import lombok.Setter;
 @Table(name = "collector_purchases")
 public class CollectorPurchase extends BaseId {
 
-	@ManyToOne(optional = false, fetch = FetchType.LAZY)
-	private Collector collector;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Collector collector;
 
-	private LocalDate orderDate;
+    private LocalDate orderDate;
 
-	private String store;
+    private String store;
 
-	private String orderNumber;
+    private String orderNumber;
 
-	private CurrencyCode currency; // MXN, JPY, USD, etc
+    private CurrencyCode currency; // MXN, JPY, USD, etc
 
-	private BigDecimal totalAmount;
+    private BigDecimal totalAmount;
 
-	private Integer totalFigurines;
+    private Integer totalFigurines;
 
-	@Enumerated(EnumType.STRING)
-	private ShippingStatus shippingStatus;
+    @Enumerated(EnumType.STRING)
+    private ShippingStatus shippingStatus;
 
-	private String trackingNumber;
+    private String trackingNumber;
 
-	private String carrier;
+    private String carrier;
 
-	private LocalDate shippedDate;
+    private LocalDate shippedDate;
 
-	private LocalDate deliveredDate;
+    private LocalDate deliveredDate;
 }

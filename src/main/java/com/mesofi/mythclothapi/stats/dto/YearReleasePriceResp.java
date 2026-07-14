@@ -21,6 +21,6 @@ import java.math.BigDecimal;
  *            number of releases included in the aggregation
  */
 public record YearReleasePriceResp(int year, BigDecimal averageReleasePrice, BigDecimal highestReleasePrice,
-		BigDecimal lowestReleasePrice, FigurinePriceResp highestPriceFigurines, FigurinePriceResp lowestPriceFigurines,
-		int releaseCount) {
+        BigDecimal lowestReleasePrice, FigurinePriceResp highestPriceFigurines, FigurinePriceResp lowestPriceFigurines,
+        int releaseCount) {
 }

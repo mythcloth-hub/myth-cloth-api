@@ -20,96 +20,96 @@ import lombok.Setter;
 @Setter
 public class FigurineCsv {
 
-	@CsvBindByName(column = "Myth Cloth Original Name")
-	private String originalName;
+    @CsvBindByName(column = "Myth Cloth Original Name")
+    private String originalName;
 
-	@CsvBindByName(column = "Base Name", required = true)
-	private String baseName;
+    @CsvBindByName(column = "Base Name", required = true)
+    private String baseName;
 
-	@CsvCustomBindByName(column = "Price (JPY)", converter = AmountConverter.class)
-	private Double priceJPY;
+    @CsvCustomBindByName(column = "Price (JPY)", converter = AmountConverter.class)
+    private Double priceJPY;
 
-	@CsvCustomBindByName(column = "Announcement (JPY)", converter = LocalDateConverter.class)
-	private LocalDate announcementJPY;
+    @CsvCustomBindByName(column = "Announcement (JPY)", converter = LocalDateConverter.class)
+    private LocalDate announcementJPY;
 
-	@CsvCustomBindByName(column = "Preorder (JPY)", converter = LocalDateConverter.class)
-	private LocalDate preorderJPY;
+    @CsvCustomBindByName(column = "Preorder (JPY)", converter = LocalDateConverter.class)
+    private LocalDate preorderJPY;
 
-	@CsvCustomBindByName(column = "Release (JPY)", converter = LocalDateConfirmedConverter.class)
-	private LocalDateConfirmed releaseJPY;
+    @CsvCustomBindByName(column = "Release (JPY)", converter = LocalDateConfirmedConverter.class)
+    private LocalDateConfirmed releaseJPY;
 
-	@CsvCustomBindByName(column = "Price (MXN)", converter = AmountConverter.class)
-	private Double priceMXN;
+    @CsvCustomBindByName(column = "Price (MXN)", converter = AmountConverter.class)
+    private Double priceMXN;
 
-	@CsvCustomBindByName(column = "Preorder (MXN)", converter = LocalDateConverter.class)
-	private LocalDate preorderMXN;
+    @CsvCustomBindByName(column = "Preorder (MXN)", converter = LocalDateConverter.class)
+    private LocalDate preorderMXN;
 
-	@CsvCustomBindByName(column = "Release (MXN)", converter = LocalDateConfirmedConverter.class)
-	private LocalDateConfirmed releaseMXN;
+    @CsvCustomBindByName(column = "Release (MXN)", converter = LocalDateConfirmedConverter.class)
+    private LocalDateConfirmed releaseMXN;
 
-	@CsvBindByName(column = "Link")
-	private String tamashiiUrl;
+    @CsvBindByName(column = "Link")
+    private String tamashiiUrl;
 
-	@CsvBindByName(column = "Distribution")
-	private String distributionString;
+    @CsvBindByName(column = "Distribution")
+    private String distributionString;
 
-	@CsvBindByName(column = "LineUp")
-	private String lineupString;
+    @CsvBindByName(column = "LineUp")
+    private String lineupString;
 
-	@CsvBindByName(column = "Series")
-	private String seriesString;
+    @CsvBindByName(column = "Series")
+    private String seriesString;
 
-	@CsvBindByName(column = "Group")
-	private String groupString;
+    @CsvBindByName(column = "Group")
+    private String groupString;
 
-	@CsvCustomBindByName(column = "Anniversary", converter = AnniversaryNumberTypeConverter.class)
-	private AnniversaryNumberType anniversaryNumberType;
+    @CsvCustomBindByName(column = "Anniversary", converter = AnniversaryNumberTypeConverter.class)
+    private AnniversaryNumberType anniversaryNumberType;
 
-	@CsvCustomBindByName(column = "Metal", converter = TrueFalseConverter.class)
-	private boolean metalBody;
+    @CsvCustomBindByName(column = "Metal", converter = TrueFalseConverter.class)
+    private boolean metalBody;
 
-	@CsvCustomBindByName(column = "OCE", converter = TrueFalseConverter.class)
-	private boolean oce;
+    @CsvCustomBindByName(column = "OCE", converter = TrueFalseConverter.class)
+    private boolean oce;
 
-	@CsvCustomBindByName(column = "Revival", converter = TrueFalseConverter.class)
-	private boolean revival;
+    @CsvCustomBindByName(column = "Revival", converter = TrueFalseConverter.class)
+    private boolean revival;
 
-	@CsvCustomBindByName(column = "PlainCloth", converter = TrueFalseConverter.class)
-	private boolean plainCloth;
+    @CsvCustomBindByName(column = "PlainCloth", converter = TrueFalseConverter.class)
+    private boolean plainCloth;
 
-	@CsvCustomBindByName(column = "Broken", converter = TrueFalseConverter.class)
-	private boolean broken;
+    @CsvCustomBindByName(column = "Broken", converter = TrueFalseConverter.class)
+    private boolean broken;
 
-	@CsvCustomBindByName(column = "Golden", converter = TrueFalseConverter.class)
-	private boolean golden;
+    @CsvCustomBindByName(column = "Golden", converter = TrueFalseConverter.class)
+    private boolean golden;
 
-	@CsvCustomBindByName(column = "Gold", converter = TrueFalseConverter.class)
-	private boolean gold;
+    @CsvCustomBindByName(column = "Gold", converter = TrueFalseConverter.class)
+    private boolean gold;
 
-	@CsvCustomBindByName(column = "HK", converter = TrueFalseConverter.class)
-	private boolean hk;
+    @CsvCustomBindByName(column = "HK", converter = TrueFalseConverter.class)
+    private boolean hk;
 
-	@CsvCustomBindByName(column = "Manga", converter = TrueFalseConverter.class)
-	private boolean manga;
+    @CsvCustomBindByName(column = "Manga", converter = TrueFalseConverter.class)
+    private boolean manga;
 
-	@CsvCustomBindByName(column = "Surplice", converter = TrueFalseConverter.class)
-	private boolean surplice;
+    @CsvCustomBindByName(column = "Surplice", converter = TrueFalseConverter.class)
+    private boolean surplice;
 
-	@CsvCustomBindByName(column = "Set", converter = TrueFalseConverter.class)
-	private boolean set;
+    @CsvCustomBindByName(column = "Set", converter = TrueFalseConverter.class)
+    private boolean set;
 
-	@CsvCustomBindByName(column = "Static", converter = TrueFalseConverter.class)
-	private boolean articulable;
+    @CsvCustomBindByName(column = "Static", converter = TrueFalseConverter.class)
+    private boolean articulable;
 
-	@CsvBindByName(column = "Remarks")
-	private String remarks;
+    @CsvBindByName(column = "Remarks")
+    private String remarks;
 
-	@CsvCustomBindByName(column = "Events", converter = PipeListStringConverter.class)
-	private List<String> events;
+    @CsvCustomBindByName(column = "Events", converter = PipeListStringConverter.class)
+    private List<String> events;
 
-	@CsvCustomBindByName(column = "Official Images", converter = CommaListStringConverter.class)
-	private List<String> officialImages;
+    @CsvCustomBindByName(column = "Official Images", converter = CommaListStringConverter.class)
+    private List<String> officialImages;
 
-	@CsvCustomBindByName(column = "Other Images", converter = CommaListStringConverter.class)
-	private List<String> nonOfficialImages;
+    @CsvCustomBindByName(column = "Other Images", converter = CommaListStringConverter.class)
+    private List<String> nonOfficialImages;
 }

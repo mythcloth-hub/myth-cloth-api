@@ -35,19 +35,19 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "collector_purchase_figurines", uniqueConstraints = @UniqueConstraint(name = "uk_purchase_figurine_pair", columnNames = {
-		"purchase_id", "figurine_id"}))
+        "purchase_id", "figurine_id"}))
 public class CollectorPurchaseFigurine extends BaseId {
 
-	@ManyToOne(optional = false, fetch = FetchType.LAZY)
-	private CollectorPurchase purchase;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private CollectorPurchase purchase;
 
-	@ManyToOne(optional = false, fetch = FetchType.LAZY)
-	private Figurine figurine;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Figurine figurine;
 
-	private Integer quantity;
+    private Integer quantity;
 
-	private BigDecimal pricePaid;
+    private BigDecimal pricePaid;
 
-	@Enumerated(EnumType.STRING)
-	private PurchaseType purchaseType;
+    @Enumerated(EnumType.STRING)
+    private PurchaseType purchaseType;
 }

@@ -6,5 +6,5 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record CollectorCollectionResp(long id, String name, String description, int totalFigurines,
-		List<Long> figurineIds) {
+        List<Long> figurineIds) {
 }

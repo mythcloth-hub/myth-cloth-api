@@ -15,14 +15,14 @@ import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 @Repository
 public interface CollectorAuthProviderRepository extends JpaRepository<CollectorAuthProvider, Long> {
 
-	/**
-	 * Finds a provider link by provider type and provider-specific user id.
-	 *
-	 * @param providerType
-	 *            authentication provider type
-	 * @param subject
-	 *            provider-specific user identifier (subject)
-	 * @return matching provider link when it exists
-	 */
-	Optional<CollectorAuthProvider> findByProviderAndProviderUserId(ProviderType providerType, String subject);
+    /**
+     * Finds a provider link by provider type and provider-specific user id.
+     *
+     * @param providerType
+     *            authentication provider type
+     * @param subject
+     *            provider-specific user identifier (subject)
+     * @return matching provider link when it exists
+     */
+    Optional<CollectorAuthProvider> findByProviderAndProviderUserId(ProviderType providerType, String subject);
 }

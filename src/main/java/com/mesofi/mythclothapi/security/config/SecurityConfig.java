@@ -79,151 +79,151 @@ import com.mesofi.mythclothapi.security.SecurityProperties;
 @EnableConfigurationProperties(SecurityProperties.class)
 public class SecurityConfig {
 
-	/**
-	 * Creates the application's security filter chain.
-	 *
-	 * <p>
-	 * The configuration:
-	 *
-	 * <ul>
-	 * <li>Disables CSRF protection for the stateless REST API.
-	 * <li>Configures stateless session management.
-	 * <li>Allows CORS requests from configured origins.
-	 * <li>Allows unauthenticated access to public endpoints.
-	 * <li>Requires authentication for all protected endpoints.
-	 * <li>Enables JWT Bearer authentication through Spring OAuth2 Resource Server.
-	 * </ul>
-	 *
-	 * @param http
-	 *            the HTTP security builder used to configure application security
-	 * @return the configured security filter chain
-	 */
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-		http.csrf(AbstractHttpConfigurer::disable)
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.cors(Customizer.withDefaults())
-				.authorizeHttpRequests(auth -> auth.requestMatchers(OPTIONS, "/**").permitAll()
-						.requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**",
-								"/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
-								"/v3/api-docs.yaml")
-						.permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**").permitAll().anyRequest()
-						.authenticated())
-				.oauth2ResourceServer(
-						oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+    /**
+     * Creates the application's security filter chain.
+     *
+     * <p>
+     * The configuration:
+     *
+     * <ul>
+     * <li>Disables CSRF protection for the stateless REST API.
+     * <li>Configures stateless session management.
+     * <li>Allows CORS requests from configured origins.
+     * <li>Allows unauthenticated access to public endpoints.
+     * <li>Requires authentication for all protected endpoints.
+     * <li>Enables JWT Bearer authentication through Spring OAuth2 Resource Server.
+     * </ul>
+     *
+     * @param http
+     *            the HTTP security builder used to configure application security
+     * @return the configured security filter chain
+     */
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        http.csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(Customizer.withDefaults())
+                .authorizeHttpRequests(auth -> auth.requestMatchers(OPTIONS, "/**").permitAll()
+                        .requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**",
+                                "/demos/**", "/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
+                                "/v3/api-docs.yaml")
+                        .permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**").permitAll().anyRequest()
+                        .authenticated())
+                .oauth2ResourceServer(
+                        oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
-		return http.build();
-	}
+        return http.build();
+    }
 
-	/**
-	 * Creates the CORS configuration source applied by Spring Security.
-	 *
-	 * <p>
-	 * This configuration allows browser requests from both local development and
-	 * the deployed frontend application.
-	 *
-	 * <ul>
-	 * <li>Allows origins specified in the security properties.
-	 * <li>Allows GET, POST, PUT, DELETE, and OPTIONS methods.
-	 * <li>Allows all request headers.
-	 * <li>Allows credentials in cross-origin requests.
-	 * </ul>
-	 *
-	 * @return the configured CORS source applied to all endpoints
-	 */
-	@Bean
-	public CorsConfigurationSource corsConfigurationSource(SecurityProperties security) {
-		CorsConfiguration config = new CorsConfiguration();
-		config.setAllowedOrigins(List.of(security.corsUrl()));
-		config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-		config.setAllowedHeaders(List.of("*"));
-		config.setAllowCredentials(true);
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", config);
-		return source;
-	}
+    /**
+     * Creates the CORS configuration source applied by Spring Security.
+     *
+     * <p>
+     * This configuration allows browser requests from both local development and
+     * the deployed frontend application.
+     *
+     * <ul>
+     * <li>Allows origins specified in the security properties.
+     * <li>Allows GET, POST, PUT, DELETE, and OPTIONS methods.
+     * <li>Allows all request headers.
+     * <li>Allows credentials in cross-origin requests.
+     * </ul>
+     *
+     * @return the configured CORS source applied to all endpoints
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource(SecurityProperties security) {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of(security.corsUrl()));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
-	/**
-	 * Creates the JWT decoder responsible for validating incoming access tokens.
-	 *
-	 * <p>
-	 * The decoder verifies:
-	 *
-	 * <ul>
-	 * <li>Token signature.
-	 * <li>Token expiration.
-	 * <li>JWT structure and integrity.
-	 * </ul>
-	 *
-	 * <p>
-	 * Validation is performed using the application's configured HMAC SHA-256
-	 * secret.
-	 *
-	 * @param security
-	 *            security properties containing the JWT signing secret
-	 * @return a configured JWT decoder
-	 */
-	@Bean
-	JwtDecoder jwtDecoder(SecurityProperties security) {
-		SecretKey key = new SecretKeySpec(security.jwt().secret().getBytes(), "HmacSHA256");
+    /**
+     * Creates the JWT decoder responsible for validating incoming access tokens.
+     *
+     * <p>
+     * The decoder verifies:
+     *
+     * <ul>
+     * <li>Token signature.
+     * <li>Token expiration.
+     * <li>JWT structure and integrity.
+     * </ul>
+     *
+     * <p>
+     * Validation is performed using the application's configured HMAC SHA-256
+     * secret.
+     *
+     * @param security
+     *            security properties containing the JWT signing secret
+     * @return a configured JWT decoder
+     */
+    @Bean
+    JwtDecoder jwtDecoder(SecurityProperties security) {
+        SecretKey key = new SecretKeySpec(security.jwt().secret().getBytes(), "HmacSHA256");
 
-		return NimbusJwtDecoder.withSecretKey(key).build();
-	}
+        return NimbusJwtDecoder.withSecretKey(key).build();
+    }
 
-	/**
-	 * Creates a converter that transforms JWT permission and role claims into
-	 * Spring Security authorities.
-	 *
-	 * <p>
-	 * Given a token containing:
-	 *
-	 * <pre>{@code { "roles": [ "ADMIN" ], "permissions": [ "catalogs:read",
-	 * "catalogs:write" ] } }</pre>
-	 *
-	 * <p>
-	 * The converter produces the following authorities:
-	 *
-	 * <pre>{@code new SimpleGrantedAuthority("ROLE_ADMIN") new
-	 * SimpleGrantedAuthority("catalogs:read") new
-	 * SimpleGrantedAuthority("catalogs:write") }</pre>
-	 *
-	 * <p>
-	 * Role values are prefixed with {@code ROLE_} to support Spring Security's
-	 * {@code hasRole(...)} expressions, while permission values are mapped directly
-	 * to authorities for use with {@code hasAuthority(...)} expressions.
-	 *
-	 * <p>
-	 * The resulting authorities can be used by authorization rules such as:
-	 *
-	 * <pre>{@code @PreAuthorize("hasRole('ADMIN')") @PreAuthorize("hasAuthority('catalogs:write')") @PreAuthorize(
-	 * "hasRole('ADMIN') and hasAuthority('catalogs:write')") }</pre>
-	 *
-	 * @return a JWT authentication converter that maps role and permission claims
-	 *         to Spring Security authorities
-	 */
-	@Bean
-	JwtAuthenticationConverter jwtAuthenticationConverter() {
+    /**
+     * Creates a converter that transforms JWT permission and role claims into
+     * Spring Security authorities.
+     *
+     * <p>
+     * Given a token containing:
+     *
+     * <pre>{@code { "roles": [ "ADMIN" ], "permissions": [ "catalogs:read",
+     * "catalogs:write" ] } }</pre>
+     *
+     * <p>
+     * The converter produces the following authorities:
+     *
+     * <pre>{@code new SimpleGrantedAuthority("ROLE_ADMIN") new
+     * SimpleGrantedAuthority("catalogs:read") new
+     * SimpleGrantedAuthority("catalogs:write") }</pre>
+     *
+     * <p>
+     * Role values are prefixed with {@code ROLE_} to support Spring Security's
+     * {@code hasRole(...)} expressions, while permission values are mapped directly
+     * to authorities for use with {@code hasAuthority(...)} expressions.
+     *
+     * <p>
+     * The resulting authorities can be used by authorization rules such as:
+     *
+     * <pre>{@code @PreAuthorize("hasRole('ADMIN')") @PreAuthorize("hasAuthority('catalogs:write')") @PreAuthorize(
+     * "hasRole('ADMIN') and hasAuthority('catalogs:write')") }</pre>
+     *
+     * @return a JWT authentication converter that maps role and permission claims
+     *         to Spring Security authorities
+     */
+    @Bean
+    JwtAuthenticationConverter jwtAuthenticationConverter() {
 
-		JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
-		converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-			List<GrantedAuthority> authorities = new ArrayList<>();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            List<GrantedAuthority> authorities = new ArrayList<>();
 
-			List<String> permissions = jwt.getClaimAsStringList("permissions");
+            List<String> permissions = jwt.getClaimAsStringList("permissions");
 
-			if (permissions != null) {
-				authorities.addAll(permissions.stream().map(SimpleGrantedAuthority::new).toList());
-			}
+            if (permissions != null) {
+                authorities.addAll(permissions.stream().map(SimpleGrantedAuthority::new).toList());
+            }
 
-			List<String> roles = jwt.getClaimAsStringList("roles");
+            List<String> roles = jwt.getClaimAsStringList("roles");
 
-			if (roles != null) {
-				authorities.addAll(roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList());
-			}
+            if (roles != null) {
+                authorities.addAll(roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList());
+            }
 
-			return authorities;
-		});
+            return authorities;
+        });
 
-		return converter;
-	}
+        return converter;
+    }
 }

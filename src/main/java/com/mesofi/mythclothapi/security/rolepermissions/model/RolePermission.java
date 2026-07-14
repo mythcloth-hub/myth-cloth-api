@@ -19,13 +19,13 @@ import lombok.Setter;
 @Table(uniqueConstraints = @UniqueConstraint(name = "uk_role_permission", columnNames = {"role_id", "permission_id"}))
 public class RolePermission extends BaseId {
 
-	// Many roles → many permissions
+    // Many roles → many permissions
 
-	@ManyToOne(optional = false)
-	private Role role;
+    @ManyToOne(optional = false)
+    private Role role;
 
-	@ManyToOne(optional = false)
-	private Permission permission;
+    @ManyToOne(optional = false)
+    private Permission permission;
 
-	// Many roles → many permissions
+    // Many roles → many permissions
 }

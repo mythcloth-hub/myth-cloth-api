@@ -22,7 +22,7 @@ import lombok.Setter;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 public class Permission extends Descriptive {
 
-	// RolePermission.permission
-	@OneToMany(mappedBy = "permission", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<RolePermission> roles = new ArrayList<>();
+    // RolePermission.permission
+    @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RolePermission> roles = new ArrayList<>();
 }

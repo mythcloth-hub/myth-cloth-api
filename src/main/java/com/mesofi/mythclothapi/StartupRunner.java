@@ -11,12 +11,12 @@ import com.mesofi.mythclothapi.figurines.FigurineService;
 @Component
 @Profile("local")
 public class StartupRunner {
-	@Autowired
-	private FigurineService figurineService;
+    @Autowired
+    private FigurineService figurineService;
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void init() {
+    @EventListener(ApplicationReadyEvent.class)
+    public void init() {
 
-		figurineService.importAllFigurinesFromPublicDrive();
-	}
+        figurineService.importAllFigurinesFromPublicDrive();
+    }
 }

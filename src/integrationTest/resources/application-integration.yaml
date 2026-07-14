@@ -5,6 +5,12 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
 
 myth-cloth:
+  demo:
+    enabled: false
+    provider-user-id: 11111
+    name: "Demo Integration"
+    email: "demo.integration@mythcollection.com"
+
   facebook:
     app-id: "0000"
     app-secret: "1111"

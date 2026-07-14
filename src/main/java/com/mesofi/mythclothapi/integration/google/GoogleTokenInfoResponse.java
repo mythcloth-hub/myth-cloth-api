@@ -23,25 +23,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *            token expiration epoch-seconds represented as a string
  */
 public record GoogleTokenInfoResponse(String iss, String aud, String sub, String email,
-		@JsonProperty("email_verified") String emailVerifiedRaw, String name, String picture, String exp) {
+        @JsonProperty("email_verified") String emailVerifiedRaw, String name, String picture, String exp) {
 
-	/**
-	 * Indicates whether Google reported the email claim as verified.
-	 *
-	 * @return true when email verification claim is true
-	 */
-	public boolean emailVerified() {
-		return Boolean.parseBoolean(emailVerifiedRaw);
-	}
+    /**
+     * Indicates whether Google reported the email claim as verified.
+     *
+     * @return true when email verification claim is true
+     */
+    public boolean emailVerified() {
+        return Boolean.parseBoolean(emailVerifiedRaw);
+    }
 
-	/**
-	 * Parses the token expiration time claim as epoch seconds.
-	 *
-	 * @return expiration time in epoch seconds
-	 * @throws NumberFormatException
-	 *             if {@code exp} is not numeric
-	 */
-	public long expiresAtEpochSecond() {
-		return Long.parseLong(exp);
-	}
+    /**
+     * Parses the token expiration time claim as epoch seconds.
+     *
+     * @return expiration time in epoch seconds
+     * @throws NumberFormatException
+     *             if {@code exp} is not numeric
+     */
+    public long expiresAtEpochSecond() {
+        return Long.parseLong(exp);
+    }
 }

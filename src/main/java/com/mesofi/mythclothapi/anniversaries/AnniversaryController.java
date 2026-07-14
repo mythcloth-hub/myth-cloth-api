@@ -33,42 +33,42 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "*")
 public class AnniversaryController {
 
-	private final AnniversaryService service;
+    private final AnniversaryService service;
 
-	@PostMapping
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:write')")
-	public ResponseEntity<AnniversaryResp> createAnniversary(@Valid @RequestBody AnniversaryReq anniversaryRequest) {
-		AnniversaryResp response = service.createAnniversary(anniversaryRequest);
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/anniversaries
-				.path("/{id}") // append /{id}
-				.buildAndExpand(response.id()).toUri();
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:write')")
+    public ResponseEntity<AnniversaryResp> createAnniversary(@Valid @RequestBody AnniversaryReq anniversaryRequest) {
+        AnniversaryResp response = service.createAnniversary(anniversaryRequest);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/anniversaries
+                .path("/{id}") // append /{id}
+                .buildAndExpand(response.id()).toUri();
 
-		return ResponseEntity.created(location).body(response);
-	}
+        return ResponseEntity.created(location).body(response);
+    }
 
-	@GetMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:read')")
-	public AnniversaryResp retrieveAnniversary(@PathVariable Long id) {
-		return service.retrieveAnniversary(id);
-	}
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:read')")
+    public AnniversaryResp retrieveAnniversary(@PathVariable Long id) {
+        return service.retrieveAnniversary(id);
+    }
 
-	@GetMapping
-	public List<AnniversaryResp> retrieveAnniversaries() {
-		return service.retrieveAnniversaries();
-	}
+    @GetMapping
+    public List<AnniversaryResp> retrieveAnniversaries() {
+        return service.retrieveAnniversaries();
+    }
 
-	@PutMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:update')")
-	public ResponseEntity<AnniversaryResp> updateAnniversary(@PathVariable Long id,
-			@Valid @RequestBody AnniversaryReq anniversaryRequest) {
-		AnniversaryResp updated = service.updateAnniversary(id, anniversaryRequest);
-		return ResponseEntity.ok(updated);
-	}
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:update')")
+    public ResponseEntity<AnniversaryResp> updateAnniversary(@PathVariable Long id,
+            @Valid @RequestBody AnniversaryReq anniversaryRequest) {
+        AnniversaryResp updated = service.updateAnniversary(id, anniversaryRequest);
+        return ResponseEntity.ok(updated);
+    }
 
-	@DeleteMapping("/{id}")
-	@PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:delete')")
-	public ResponseEntity<?> removeAnniversary(@PathVariable Long id) {
-		service.removeAnniversary(id);
-		return ResponseEntity.noContent().build();
-	}
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:delete')")
+    public ResponseEntity<?> removeAnniversary(@PathVariable Long id) {
+        service.removeAnniversary(id);
+        return ResponseEntity.noContent().build();
+    }
 }
