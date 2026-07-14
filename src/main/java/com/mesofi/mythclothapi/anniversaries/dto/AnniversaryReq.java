@@ -17,6 +17,6 @@ import com.mesofi.mythclothapi.anniversaries.model.AnniversaryType;
  *            anniversary classification
  */
 public record AnniversaryReq(
-		@NotNull(message = "description must not be blank") @Size(max = 100, message = "description must not exceed 100 characters") String description,
-		@NotNull @Positive Integer year, AnniversaryType type) {
+        @NotNull(message = "description must not be blank") @Size(max = 100, message = "description must not exceed 100 characters") String description,
+        @NotNull @Positive Integer year, AnniversaryType type) {
 }

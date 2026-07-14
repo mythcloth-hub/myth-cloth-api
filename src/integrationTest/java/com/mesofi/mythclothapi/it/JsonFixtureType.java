@@ -10,24 +10,24 @@ package com.mesofi.mythclothapi.it;
  */
 public enum JsonFixtureType {
 
-	/** JSON fixture representing an HTTP request payload. */
-	REQUEST("request"),
+    /** JSON fixture representing an HTTP request payload. */
+    REQUEST("request"),
 
-	/** JSON fixture representing an expected HTTP response payload. */
-	RESPONSE("response");
+    /** JSON fixture representing an expected HTTP response payload. */
+    RESPONSE("response");
 
-	private final String folder;
+    private final String folder;
 
-	JsonFixtureType(String folder) {
-		this.folder = folder;
-	}
+    JsonFixtureType(String folder) {
+        this.folder = folder;
+    }
 
-	/**
-	 * Returns the folder name associated with this fixture type.
-	 *
-	 * @return fixture folder name
-	 */
-	public String folder() {
-		return folder;
-	}
+    /**
+     * Returns the folder name associated with this fixture type.
+     *
+     * @return fixture folder name
+     */
+    public String folder() {
+        return folder;
+    }
 }

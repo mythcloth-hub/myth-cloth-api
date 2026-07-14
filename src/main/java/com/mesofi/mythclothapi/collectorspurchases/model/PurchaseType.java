@@ -10,12 +10,12 @@ package com.mesofi.mythclothapi.collectorspurchases.model;
  */
 public enum PurchaseType {
 
-	/** Figurine purchased as a new item directly from a retail seller. */
-	RETAIL,
+    /** Figurine purchased as a new item directly from a retail seller. */
+    RETAIL,
 
-	/** Figurine purchased before official release or availability. */
-	PREORDER,
+    /** Figurine purchased before official release or availability. */
+    PREORDER,
 
-	/** Figurine purchased from a previous owner or secondary market. */
-	SECOND_HAND,
+    /** Figurine purchased from a previous owner or secondary market. */
+    SECOND_HAND,
 }

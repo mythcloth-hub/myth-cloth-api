@@ -11,5 +11,5 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @Repository
 public interface FigurineDistributorRepository extends JpaRepository<FigurineDistributor, Long> {
-	Optional<FigurineDistributor> findByFigurineAndDistributor(Figurine figurine, Distributor distributor);
+    Optional<FigurineDistributor> findByFigurineAndDistributor(Figurine figurine, Distributor distributor);
 }

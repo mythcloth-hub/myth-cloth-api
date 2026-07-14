@@ -18,25 +18,25 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 class SwaggerPublicAccessTest {
 
-	@Autowired
-	private WebApplicationContext context;
+    @Autowired
+    private WebApplicationContext context;
 
-	private MockMvc mockMvc;
+    private MockMvc mockMvc;
 
-	@BeforeEach
-	void setUp() {
-		mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-	}
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    }
 
-	@Test
-	void swaggerUiShouldBePublic() throws Exception {
-		mockMvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
-	}
+    @Test
+    void swaggerUiShouldBePublic() throws Exception {
+        mockMvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
+    }
 
-	@Test
-	void swaggerFileShouldBePublic() throws Exception {
-		mockMvc.perform(get("/swagger.yaml")).andExpect(status().isOk())
-				.andExpect(content().string(containsString("openapi: 3")))
-				.andExpect(content().string(containsString("/figurines")));
-	}
+    @Test
+    void swaggerFileShouldBePublic() throws Exception {
+        mockMvc.perform(get("/swagger.yaml")).andExpect(status().isOk())
+                .andExpect(content().string(containsString("openapi: 3")))
+                .andExpect(content().string(containsString("/figurines")));
+    }
 }

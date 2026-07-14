@@ -28,38 +28,38 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
  * @see FigurineFilter
  */
 public interface FigurineRepositoryCustom {
-	/**
-	 * Retrieves a paginated list of figurines matching the provided filter
-	 * criteria.
-	 *
-	 * <p>
-	 * The returned page includes standard pagination information plus the total
-	 * number of collectable figurines.
-	 *
-	 * @param filter
-	 *            filtering criteria used to restrict the figurine search
-	 * @param pageable
-	 *            pagination information including page number, size, and sorting
-	 * @return a paginated result containing figurines and collectable count
-	 *         information
-	 */
-	CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable);
+    /**
+     * Retrieves a paginated list of figurines matching the provided filter
+     * criteria.
+     *
+     * <p>
+     * The returned page includes standard pagination information plus the total
+     * number of collectable figurines.
+     *
+     * @param filter
+     *            filtering criteria used to restrict the figurine search
+     * @param pageable
+     *            pagination information including page number, size, and sorting
+     * @return a paginated result containing figurines and collectable count
+     *         information
+     */
+    CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable);
 
-	/**
-	 * Retrieves a list of figurines matching the provided filter criteria.
-	 *
-	 * @param filter
-	 *            filtering criteria used to restrict the figurine search
-	 * @return a list of figurines matching the filter criteria
-	 */
-	List<Figurine> findAll(FigurineFilter filter);
+    /**
+     * Retrieves a list of figurines matching the provided filter criteria.
+     *
+     * @param filter
+     *            filtering criteria used to restrict the figurine search
+     * @return a list of figurines matching the filter criteria
+     */
+    List<Figurine> findAll(FigurineFilter filter);
 
-	/**
-	 * Retrieves a list of figurines released within the specified year.
-	 *
-	 * @param year
-	 *            the year to filter figurines by release date
-	 * @return a list of figurines released in the specified year
-	 */
-	List<Figurine> findAllByYear(int year);
+    /**
+     * Retrieves a list of figurines released within the specified year.
+     *
+     * @param year
+     *            the year to filter figurines by release date
+     * @return a list of figurines released in the specified year
+     */
+    List<Figurine> findAllByYear(int year);
 }

@@ -27,173 +27,173 @@ import com.mesofi.mythclothapi.common.Descriptive;
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CatalogRepositoryTest {
-	@Autowired
-	Map<String, IdDescRepository<?, Long>> repositories;
+    @Autowired
+    Map<String, IdDescRepository<?, Long>> repositories;
 
-	/**
-	 * Matches catalog name to an empty **new instance** of its entity, so no
-	 * casting and no accidental reuse of the same object instance.
-	 */
-	Descriptive newCatalogFor(String name) {
-		return switch (name) {
-			case "anniversaries" -> new Anniversary();
-			case "distributions" -> new Distribution();
-			case "groups" -> new Group();
-			case "lineups" -> new LineUp();
-			case "series" -> new Series();
-			default -> throw new IllegalArgumentException("Unknown catalog name: " + name);
-		};
-	}
+    /**
+     * Matches catalog name to an empty **new instance** of its entity, so no
+     * casting and no accidental reuse of the same object instance.
+     */
+    Descriptive newCatalogFor(String name) {
+        return switch (name) {
+            case "anniversaries" -> new Anniversary();
+            case "distributions" -> new Distribution();
+            case "groups" -> new Group();
+            case "lineups" -> new LineUp();
+            case "series" -> new Series();
+            default -> throw new IllegalArgumentException("Unknown catalog name: " + name);
+        };
+    }
 
-	Stream<Arguments> repositoryProvider() {
-		return repositories.entrySet().stream().map(e -> Arguments.of(e.getKey(), e.getValue()));
-	}
+    Stream<Arguments> repositoryProvider() {
+        return repositories.entrySet().stream().map(e -> Arguments.of(e.getKey(), e.getValue()));
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void shouldThrowException_whenDescriptionIsNull(String catalogName, IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive entity = newCatalogFor(catalogName);
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void shouldThrowException_whenDescriptionIsNull(String catalogName, IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive entity = newCatalogFor(catalogName);
 
-		// Act + Assert
-		assertThatThrownBy(() -> save(repo, entity)).isInstanceOf(DataIntegrityViolationException.class);
-	}
+        // Act + Assert
+        assertThatThrownBy(() -> save(repo, entity)).isInstanceOf(DataIntegrityViolationException.class);
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void shouldCreateCatalog_whenValidDataProvided(String catalogName, IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive entity = newCatalogFor(catalogName);
-		entity.setDescription("Sample " + catalogName);
-		if (catalogName.equals("anniversaries")) {
-			Anniversary anniversary = (Anniversary) entity;
-			anniversary.setYear(50);
-		}
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void shouldCreateCatalog_whenValidDataProvided(String catalogName, IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive entity = newCatalogFor(catalogName);
+        entity.setDescription("Sample " + catalogName);
+        if (catalogName.equals("anniversaries")) {
+            Anniversary anniversary = (Anniversary) entity;
+            anniversary.setYear(50);
+        }
 
-		// Act
-		Descriptive saved = save(repo, entity);
+        // Act
+        Descriptive saved = save(repo, entity);
 
-		// Assert
-		assertThat(saved).as("Entity should be saved for '%s'", catalogName).isNotNull();
-		assertThat(saved.getId()).as("Generated ID should not be null for '%s'", catalogName).isNotNull();
-	}
+        // Assert
+        assertThat(saved).as("Entity should be saved for '%s'", catalogName).isNotNull();
+        assertThat(saved.getId()).as("Generated ID should not be null for '%s'", catalogName).isNotNull();
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void findById_shouldFindCatalogById_whenExists(String catalogName, IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive descriptiveEntity = createCatalog(catalogName);
-		if (catalogName.equals("anniversaries")) {
-			Anniversary anniversary = (Anniversary) descriptiveEntity;
-			anniversary.setYear(50);
-		}
-		Descriptive saved = save(repo, descriptiveEntity);
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void findById_shouldFindCatalogById_whenExists(String catalogName, IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive descriptiveEntity = createCatalog(catalogName);
+        if (catalogName.equals("anniversaries")) {
+            Anniversary anniversary = (Anniversary) descriptiveEntity;
+            anniversary.setYear(50);
+        }
+        Descriptive saved = save(repo, descriptiveEntity);
 
-		// Act
-		Descriptive found = findById(repo, saved.getId());
+        // Act
+        Descriptive found = findById(repo, saved.getId());
 
-		// Assert
-		assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+        // Assert
+        assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
 
-		assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("The Description");
-	}
+        assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("The Description");
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void findByDescription_shouldFindCatalogByDescription_whenExists(String catalogName,
-			IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive descriptiveEntity = createCatalog(catalogName, "Custom Description");
-		if (catalogName.equals("anniversaries")) {
-			Anniversary anniversary = (Anniversary) descriptiveEntity;
-			anniversary.setYear(50);
-		}
-		Descriptive saved = save(repo, descriptiveEntity);
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void findByDescription_shouldFindCatalogByDescription_whenExists(String catalogName,
+            IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive descriptiveEntity = createCatalog(catalogName, "Custom Description");
+        if (catalogName.equals("anniversaries")) {
+            Anniversary anniversary = (Anniversary) descriptiveEntity;
+            anniversary.setYear(50);
+        }
+        Descriptive saved = save(repo, descriptiveEntity);
 
-		// Act
-		Descriptive found = findByDescription(repo, "Custom Description");
+        // Act
+        Descriptive found = findByDescription(repo, "Custom Description");
 
-		// Assert
-		assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
-		assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("Custom Description");
-	}
+        // Assert
+        assertThat(found.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+        assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("Custom Description");
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void update_shouldUpdateCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive descriptiveEntity = createCatalog(catalogName);
-		if (catalogName.equals("anniversaries")) {
-			Anniversary anniversary = (Anniversary) descriptiveEntity;
-			anniversary.setYear(50);
-		}
-		Descriptive saved = save(repo, descriptiveEntity);
-		Descriptive found = findById(repo, saved.getId());
-		found.setDescription("Updated description");
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void update_shouldUpdateCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive descriptiveEntity = createCatalog(catalogName);
+        if (catalogName.equals("anniversaries")) {
+            Anniversary anniversary = (Anniversary) descriptiveEntity;
+            anniversary.setYear(50);
+        }
+        Descriptive saved = save(repo, descriptiveEntity);
+        Descriptive found = findById(repo, saved.getId());
+        found.setDescription("Updated description");
 
-		// Act
-		Descriptive updated = save(repo, found);
+        // Act
+        Descriptive updated = save(repo, found);
 
-		// Assert
-		assertThat(updated.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
-		assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("Updated description");
-	}
+        // Assert
+        assertThat(updated.getId()).as("Found entity must have same id").isEqualTo(saved.getId());
+        assertThat(found.getDescription()).as("Description must match saved value").isEqualTo("Updated description");
+    }
 
-	@ParameterizedTest
-	@MethodSource("repositoryProvider")
-	void update_shouldDeleteCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
-		// Arrange
-		Descriptive descriptiveEntity = createCatalog(catalogName);
-		if (catalogName.equals("anniversaries")) {
-			Anniversary anniversary = (Anniversary) descriptiveEntity;
-			anniversary.setYear(50);
-		}
-		Descriptive saved = save(repo, descriptiveEntity);
-		Descriptive found = findById(repo, saved.getId());
+    @ParameterizedTest
+    @MethodSource("repositoryProvider")
+    void update_shouldDeleteCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
+        // Arrange
+        Descriptive descriptiveEntity = createCatalog(catalogName);
+        if (catalogName.equals("anniversaries")) {
+            Anniversary anniversary = (Anniversary) descriptiveEntity;
+            anniversary.setYear(50);
+        }
+        Descriptive saved = save(repo, descriptiveEntity);
+        Descriptive found = findById(repo, saved.getId());
 
-		// Act
-		delete(repo, found);
+        // Act
+        delete(repo, found);
 
-		// Assert
-		assertThatThrownBy(() -> findById(repo, saved.getId())).isInstanceOf(IllegalArgumentException.class)
-				.hasMessage("Unable to find entity with id: " + saved.getId());
-	}
+        // Assert
+        assertThatThrownBy(() -> findById(repo, saved.getId())).isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unable to find entity with id: " + saved.getId());
+    }
 
-	private Descriptive createCatalog(String catalogName) {
-		return createCatalog(catalogName, "The Description");
-	}
+    private Descriptive createCatalog(String catalogName) {
+        return createCatalog(catalogName, "The Description");
+    }
 
-	private Descriptive createCatalog(String catalogName, String description) {
-		Descriptive descriptiveEntity = newCatalogFor(catalogName);
-		descriptiveEntity.setDescription(description);
+    private Descriptive createCatalog(String catalogName, String description) {
+        Descriptive descriptiveEntity = newCatalogFor(catalogName);
+        descriptiveEntity.setDescription(description);
 
-		return descriptiveEntity;
-	}
+        return descriptiveEntity;
+    }
 
-	/** Makes the generic type explicit and removes the raw cast noise. */
-	@SuppressWarnings("unchecked")
-	private <T extends Descriptive> T save(IdDescRepository<?, Long> repo, Descriptive e) {
-		return ((IdDescRepository<T, Long>) repo).save((T) e);
-	}
+    /** Makes the generic type explicit and removes the raw cast noise. */
+    @SuppressWarnings("unchecked")
+    private <T extends Descriptive> T save(IdDescRepository<?, Long> repo, Descriptive e) {
+        return ((IdDescRepository<T, Long>) repo).save((T) e);
+    }
 
-	/** Makes the generic type explicit and removes the raw cast noise. */
-	@SuppressWarnings("unchecked")
-	private <T extends Descriptive> T findById(IdDescRepository<?, Long> repo, long id) {
-		IdDescRepository<T, Long> f = (IdDescRepository<T, Long>) repo;
-		return f.findById(id).orElseThrow(() -> new IllegalArgumentException("Unable to find entity with id: " + id));
-	}
+    /** Makes the generic type explicit and removes the raw cast noise. */
+    @SuppressWarnings("unchecked")
+    private <T extends Descriptive> T findById(IdDescRepository<?, Long> repo, long id) {
+        IdDescRepository<T, Long> f = (IdDescRepository<T, Long>) repo;
+        return f.findById(id).orElseThrow(() -> new IllegalArgumentException("Unable to find entity with id: " + id));
+    }
 
-	/** Makes the generic type explicit and removes the raw cast noise. */
-	@SuppressWarnings("unchecked")
-	private <T extends Descriptive> T findByDescription(IdDescRepository<?, Long> repo, String description) {
-		IdDescRepository<T, Long> f = (IdDescRepository<T, Long>) repo;
-		return f.findByDescription(description).orElseThrow(
-				() -> new IllegalArgumentException("Unable to find entity having description: " + description));
-	}
+    /** Makes the generic type explicit and removes the raw cast noise. */
+    @SuppressWarnings("unchecked")
+    private <T extends Descriptive> T findByDescription(IdDescRepository<?, Long> repo, String description) {
+        IdDescRepository<T, Long> f = (IdDescRepository<T, Long>) repo;
+        return f.findByDescription(description).orElseThrow(
+                () -> new IllegalArgumentException("Unable to find entity having description: " + description));
+    }
 
-	/** Makes the generic type explicit and removes the raw cast noise. */
-	@SuppressWarnings("unchecked")
-	private <T extends Descriptive> void delete(IdDescRepository<?, Long> repo, Descriptive e) {
-		((IdDescRepository<T, Long>) repo).delete((T) e);
-	}
+    /** Makes the generic type explicit and removes the raw cast noise. */
+    @SuppressWarnings("unchecked")
+    private <T extends Descriptive> void delete(IdDescRepository<?, Long> repo, Descriptive e) {
+        ((IdDescRepository<T, Long>) repo).delete((T) e);
+    }
 }

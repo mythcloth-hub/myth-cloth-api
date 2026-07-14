@@ -22,16 +22,16 @@ import lombok.Setter;
 @MappedSuperclass
 public abstract class BaseId {
 
-	/**
-	 * The unique identifier for the entity.
-	 *
-	 * <p>
-	 * Annotated with {@code @Id} to mark it as the primary key of the database
-	 * table. Annotated with {@code @GeneratedValue} using strategy
-	 * {@code GenerationType.IDENTITY} to indicate that the persistence provider
-	 * must assign primary keys for the entity using a database identity column.
-	 */
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    /**
+     * The unique identifier for the entity.
+     *
+     * <p>
+     * Annotated with {@code @Id} to mark it as the primary key of the database
+     * table. Annotated with {@code @GeneratedValue} using strategy
+     * {@code GenerationType.IDENTITY} to indicate that the persistence provider
+     * must assign primary keys for the entity using a database identity column.
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 }

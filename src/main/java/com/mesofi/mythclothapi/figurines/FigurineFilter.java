@@ -41,6 +41,6 @@ import java.util.List;
  *            release status to filter by
  */
 public record FigurineFilter(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, Long groupId,
-		Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival, Boolean plainCloth, Boolean broken,
-		Boolean golden, Boolean gold, Boolean manga, Boolean set, Boolean articulable, String releaseStatus) {
+        Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival, Boolean plainCloth, Boolean broken,
+        Boolean golden, Boolean gold, Boolean manga, Boolean set, Boolean articulable, String releaseStatus) {
 }

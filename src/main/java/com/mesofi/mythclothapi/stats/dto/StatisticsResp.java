@@ -22,6 +22,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record StatisticsResp(int totalFigurines, Map<String, Integer> countByLineUp, Map<String, Integer> countBySeries,
-		Map<String, Integer> countByGroup, Map<String, Integer> countByAnniversary,
-		Map<String, Integer> totalByReleaseStatus) {
+        Map<String, Integer> countByGroup, Map<String, Integer> countByAnniversary,
+        Map<String, Integer> totalByReleaseStatus) {
 }

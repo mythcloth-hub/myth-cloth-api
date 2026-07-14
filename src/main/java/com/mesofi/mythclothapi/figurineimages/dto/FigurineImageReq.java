@@ -11,12 +11,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FigurineImageReq {
-	@NotNull(message = "imageUrl must not be blank")
-	private URI imageUrl;
+    @NotNull(message = "imageUrl must not be blank")
+    private URI imageUrl;
 
-	private boolean isOfficialImage = true;
+    private boolean isOfficialImage = true;
 
-	@Positive
-	@NotNull
-	private Long figurineId;
+    @Positive
+    @NotNull
+    private Long figurineId;
 }

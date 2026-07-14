@@ -13,11 +13,11 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 
 @Repository
 public interface CollectorCollectionRepository extends JpaRepository<CollectorCollection, Long> {
-	List<CollectorCollection> findByCollector(Collector collector);
+    List<CollectorCollection> findByCollector(Collector collector);
 
-	Optional<CollectorCollection> findByName(String name);
+    Optional<CollectorCollection> findByName(String name);
 
-	@Modifying
-	@Query("DELETE FROM CollectorCollection cc WHERE cc.id = :id")
-	void deleteCollectionById(Long id);
+    @Modifying
+    @Query("DELETE FROM CollectorCollection cc WHERE cc.id = :id")
+    void deleteCollectionById(Long id);
 }

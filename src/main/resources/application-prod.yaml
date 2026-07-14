@@ -5,6 +5,12 @@ logging:
     org.hibernate.orm.jdbc.bind: INFO  # <- Shows query parameters
 # Change the app-id and app-secret using new credentials. For now, the app-id and app-secret are for a test Facebook app. If you want to use your own Facebook app, you can create one at https://developers.facebook.com/apps/ and then update the app-id and app-secret here.
 myth-cloth:
+  demo:
+    enabled: ${DEMO_MODE:false}
+    provider-user-id: 99999
+    name: "Demo"
+    email: "demo@mythcollection.com"
+
   facebook:
     app-id: ${FACEBOOK_APP_ID}
     app-secret: ${FACEBOOK_APP_SECRET}

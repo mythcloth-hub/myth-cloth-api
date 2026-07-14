@@ -30,5 +30,5 @@ import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record CollectorPurchaseLineItemResp(long lineItemId, long figurineId, Integer quantity, BigDecimal pricePaid,
-		PurchaseType purchaseType) {
+        PurchaseType purchaseType) {
 }

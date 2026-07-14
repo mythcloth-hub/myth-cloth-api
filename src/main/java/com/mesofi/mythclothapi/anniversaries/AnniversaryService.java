@@ -18,49 +18,49 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AnniversaryService {
 
-	private final AnniversaryRepository repository;
-	private final AnniversaryMapper mapper;
+    private final AnniversaryRepository repository;
+    private final AnniversaryMapper mapper;
 
-	@Transactional
-	public AnniversaryResp createAnniversary(AnniversaryReq request) {
-		log.info("Creating anniversary: {} - {}", request.description(), request.year());
+    @Transactional
+    public AnniversaryResp createAnniversary(AnniversaryReq request) {
+        log.info("Creating anniversary: {} - {}", request.description(), request.year());
 
-		Anniversary entity = mapper.toAnniversary(request);
+        Anniversary entity = mapper.toAnniversary(request);
 
-		var saved = repository.save(entity);
-		return mapper.toAnniversaryResp(saved);
-	}
+        var saved = repository.save(entity);
+        return mapper.toAnniversaryResp(saved);
+    }
 
-	@Transactional(readOnly = true)
-	public AnniversaryResp retrieveAnniversary(Long id) {
-		return repository.findById(id).map(mapper::toAnniversaryResp)
-				.orElseThrow(() -> new AnniversaryNotFoundException(id));
-	}
+    @Transactional(readOnly = true)
+    public AnniversaryResp retrieveAnniversary(Long id) {
+        return repository.findById(id).map(mapper::toAnniversaryResp)
+                .orElseThrow(() -> new AnniversaryNotFoundException(id));
+    }
 
-	@Transactional(readOnly = true)
-	public List<AnniversaryResp> retrieveAnniversaries() {
-		return repository.findAll(Sort.by("id")).stream().map(mapper::toAnniversaryResp).toList();
-	}
+    @Transactional(readOnly = true)
+    public List<AnniversaryResp> retrieveAnniversaries() {
+        return repository.findAll(Sort.by("id")).stream().map(mapper::toAnniversaryResp).toList();
+    }
 
-	@Transactional
-	public AnniversaryResp updateAnniversary(Long id, AnniversaryReq request) {
-		log.info("Updating anniversary {} to {}", id, request.description());
-		var existing = repository.findById(id).orElseThrow(() -> new AnniversaryNotFoundException(id));
+    @Transactional
+    public AnniversaryResp updateAnniversary(Long id, AnniversaryReq request) {
+        log.info("Updating anniversary {} to {}", id, request.description());
+        var existing = repository.findById(id).orElseThrow(() -> new AnniversaryNotFoundException(id));
 
-		existing.setDescription(request.description());
-		existing.setYear(request.year());
-		existing.setType(request.type());
+        existing.setDescription(request.description());
+        existing.setYear(request.year());
+        existing.setType(request.type());
 
-		var saved = repository.save(existing);
-		return mapper.toAnniversaryResp(saved);
-	}
+        var saved = repository.save(existing);
+        return mapper.toAnniversaryResp(saved);
+    }
 
-	public void removeAnniversary(Long id) {
-		log.warn("Removing anniversary {}", id);
+    public void removeAnniversary(Long id) {
+        log.warn("Removing anniversary {}", id);
 
-		if (!repository.existsById(id)) {
-			throw new AnniversaryNotFoundException(id);
-		}
-		repository.deleteById(id);
-	}
+        if (!repository.existsById(id)) {
+            throw new AnniversaryNotFoundException(id);
+        }
+        repository.deleteById(id);
+    }
 }

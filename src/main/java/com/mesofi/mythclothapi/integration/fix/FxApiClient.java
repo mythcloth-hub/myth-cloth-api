@@ -16,34 +16,34 @@ import org.springframework.web.client.RestClient;
 @Component
 public class FxApiClient {
 
-	private final RestClient restClient;
+    private final RestClient restClient;
 
-	/** Creates a client configured with the {@code fxapi.app} base URL. */
-	public FxApiClient() {
-		this.restClient = RestClient.builder().baseUrl("https://fxapi.app").build();
-	}
+    /** Creates a client configured with the {@code fxapi.app} base URL. */
+    public FxApiClient() {
+        this.restClient = RestClient.builder().baseUrl("https://fxapi.app").build();
+    }
 
-	/**
-	 * Fetches the latest conversion rate for a currency pair.
-	 *
-	 * @param from
-	 *            source currency code (for example, {@code CNY})
-	 * @param to
-	 *            target currency code (for example, {@code JPY})
-	 * @return the conversion rate to multiply an amount in {@code from} currency to
-	 *         obtain the amount in {@code to} currency
-	 * @throws IllegalStateException
-	 *             if the upstream API responds without a usable rate
-	 */
-	public BigDecimal fetchRate(String from, String to) {
+    /**
+     * Fetches the latest conversion rate for a currency pair.
+     *
+     * @param from
+     *            source currency code (for example, {@code CNY})
+     * @param to
+     *            target currency code (for example, {@code JPY})
+     * @return the conversion rate to multiply an amount in {@code from} currency to
+     *         obtain the amount in {@code to} currency
+     * @throws IllegalStateException
+     *             if the upstream API responds without a usable rate
+     */
+    public BigDecimal fetchRate(String from, String to) {
 
-		FxRateResponse resp = restClient.get().uri("/api/{from}/{to}.json", from.toLowerCase(), to.toLowerCase())
-				.retrieve().body(FxRateResponse.class);
+        FxRateResponse resp = restClient.get().uri("/api/{from}/{to}.json", from.toLowerCase(), to.toLowerCase())
+                .retrieve().body(FxRateResponse.class);
 
-		if (resp == null || resp.rate() == null) {
-			throw new IllegalStateException("FX API returned empty rate");
-		}
+        if (resp == null || resp.rate() == null) {
+            throw new IllegalStateException("FX API returned empty rate");
+        }
 
-		return resp.rate();
-	}
+        return resp.rate();
+    }
 }

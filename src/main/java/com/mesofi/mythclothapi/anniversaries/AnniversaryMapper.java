@@ -10,9 +10,9 @@ import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 @Mapper(componentModel = "spring")
 public interface AnniversaryMapper {
 
-	@Mapping(target = "id", ignore = true)
-	@Mapping(target = "figurines", ignore = true)
-	Anniversary toAnniversary(AnniversaryReq request);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "figurines", ignore = true)
+    Anniversary toAnniversary(AnniversaryReq request);
 
-	AnniversaryResp toAnniversaryResp(Anniversary anniversary);
+    AnniversaryResp toAnniversaryResp(Anniversary anniversary);
 }

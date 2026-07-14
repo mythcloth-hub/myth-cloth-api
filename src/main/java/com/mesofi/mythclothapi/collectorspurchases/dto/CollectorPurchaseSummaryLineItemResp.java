@@ -54,7 +54,7 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record CollectorPurchaseSummaryLineItemResp(long purchaseId, LocalDate orderDate, String store,
-		String orderNumber, CurrencyCode currency, BigDecimal totalAmount, Integer totalFigurines,
-		ShippingStatus shippingStatus, String trackingNumber, String carrier, LocalDate shippedDate,
-		LocalDate deliveredDate, List<CollectorPurchaseLineItemResp> lineItems) {
+        String orderNumber, CurrencyCode currency, BigDecimal totalAmount, Integer totalFigurines,
+        ShippingStatus shippingStatus, String trackingNumber, String carrier, LocalDate shippedDate,
+        LocalDate deliveredDate, List<CollectorPurchaseLineItemResp> lineItems) {
 }

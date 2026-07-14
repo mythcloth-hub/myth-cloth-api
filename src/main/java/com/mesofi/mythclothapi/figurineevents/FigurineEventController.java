@@ -35,45 +35,45 @@ import lombok.extern.slf4j.Slf4j;
 @PreAuthorize("hasRole('ADMIN')")
 public class FigurineEventController {
 
-	private final FigurineEventService service;
+    private final FigurineEventService service;
 
-	@PostMapping
-	@PreAuthorize("hasAuthority('figurines:events:add')")
-	public ResponseEntity<FigurineEventResp> createEvent(@Positive @PathVariable Long figurineId,
-			@Valid @RequestBody FigurineEventReq figurineEventRequest) {
-		figurineEventRequest.setFigurineId(figurineId);
-		FigurineEventResp response = service.createFigurineEvent(figurineEventRequest);
-		URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
-				.path("/figurines/{figurineId}/events/{id}") // append /{id}
-				.buildAndExpand(figurineId, response.id()).toUri();
+    @PostMapping
+    @PreAuthorize("hasAuthority('figurines:events:add')")
+    public ResponseEntity<FigurineEventResp> createEvent(@Positive @PathVariable Long figurineId,
+            @Valid @RequestBody FigurineEventReq figurineEventRequest) {
+        figurineEventRequest.setFigurineId(figurineId);
+        FigurineEventResp response = service.createFigurineEvent(figurineEventRequest);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/distributors
+                .path("/figurines/{figurineId}/events/{id}") // append /{id}
+                .buildAndExpand(figurineId, response.id()).toUri();
 
-		return ResponseEntity.created(location).body(response);
-	}
+        return ResponseEntity.created(location).body(response);
+    }
 
-	@GetMapping("/{id}")
-	@PreAuthorize("hasAuthority('figurines:events:read')")
-	public FigurineEventResp retrieveEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
-		return service.retrieveFigurineEvent(figurineId, id);
-	}
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('figurines:events:read')")
+    public FigurineEventResp retrieveEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
+        return service.retrieveFigurineEvent(figurineId, id);
+    }
 
-	@GetMapping
-	@PreAuthorize("hasAuthority('figurines:events:read')")
-	public List<FigurineEventResp> retrieveEvents(@Positive @PathVariable Long figurineId) {
-		return service.retrieveFigurineEvents(figurineId);
-	}
+    @GetMapping
+    @PreAuthorize("hasAuthority('figurines:events:read')")
+    public List<FigurineEventResp> retrieveEvents(@Positive @PathVariable Long figurineId) {
+        return service.retrieveFigurineEvents(figurineId);
+    }
 
-	@PutMapping("/{id}")
-	@PreAuthorize("hasAuthority('figurines:events:update')")
-	public ResponseEntity<FigurineEventResp> updateEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id,
-			@Valid @RequestBody FigurineEventReq figurineEventRequest) {
-		FigurineEventResp updated = service.updateFigurineEvent(figurineId, id, figurineEventRequest);
-		return ResponseEntity.ok(updated);
-	}
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('figurines:events:update')")
+    public ResponseEntity<FigurineEventResp> updateEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id,
+            @Valid @RequestBody FigurineEventReq figurineEventRequest) {
+        FigurineEventResp updated = service.updateFigurineEvent(figurineId, id, figurineEventRequest);
+        return ResponseEntity.ok(updated);
+    }
 
-	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAuthority('figurines:events:delete')")
-	public ResponseEntity<Void> removeEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
-		service.removeFigurineEvent(figurineId, id);
-		return ResponseEntity.noContent().build();
-	}
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('figurines:events:delete')")
+    public ResponseEntity<Void> removeEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
+        service.removeFigurineEvent(figurineId, id);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -8,15 +8,15 @@ import com.opencsv.bean.AbstractBeanField;
 
 public abstract class ListStringConverter extends AbstractBeanField<List<String>, String> {
 
-	@Override
-	protected List<String> convert(String value) {
-		if (value == null || value.isBlank()) {
-			return null;
-		}
+    @Override
+    protected List<String> convert(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
 
-		return Arrays.stream(value.split(getDelimiter())).map(String::trim).filter(s -> !s.isEmpty())
-				.collect(Collectors.toList());
-	}
+        return Arrays.stream(value.split(getDelimiter())).map(String::trim).filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
 
-	abstract String getDelimiter();
+    abstract String getDelimiter();
 }

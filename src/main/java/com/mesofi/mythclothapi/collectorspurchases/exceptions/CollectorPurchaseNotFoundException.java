@@ -20,26 +20,26 @@ import lombok.Getter;
  */
 @Getter
 public class CollectorPurchaseNotFoundException extends ApiException {
-	@Serial
-	private static final long serialVersionUID = 2115486705785649051L;
+    @Serial
+    private static final long serialVersionUID = 2115486705785649051L;
 
-	/**
-	 * Creates a new exception for a missing collector purchase.
-	 *
-	 * @param id
-	 *            identifier of the purchase that could not be found
-	 */
-	public CollectorPurchaseNotFoundException(Long id) {
-		super("Collector purchase not found for this id: " + id);
-	}
+    /**
+     * Creates a new exception for a missing collector purchase.
+     *
+     * @param id
+     *            identifier of the purchase that could not be found
+     */
+    public CollectorPurchaseNotFoundException(Long id) {
+        super("Collector purchase not found for this id: " + id);
+    }
 
-	/**
-	 * Returns the HTTP status associated with this exception.
-	 *
-	 * @return {@link HttpStatus#NOT_FOUND}
-	 */
-	@Override
-	public HttpStatus getStatus() {
-		return HttpStatus.NOT_FOUND;
-	}
+    /**
+     * Returns the HTTP status associated with this exception.
+     *
+     * @return {@link HttpStatus#NOT_FOUND}
+     */
+    @Override
+    public HttpStatus getStatus() {
+        return HttpStatus.NOT_FOUND;
+    }
 }

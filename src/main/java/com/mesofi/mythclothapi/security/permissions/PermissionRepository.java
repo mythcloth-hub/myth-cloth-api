@@ -10,5 +10,5 @@ import com.mesofi.mythclothapi.security.permissions.model.Permission;
 /** Repository for managing {@link Permission} persistence operations. */
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
-	Optional<Permission> findByDescription(String description);
+    Optional<Permission> findByDescription(String description);
 }

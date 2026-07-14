@@ -29,24 +29,24 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface FigurineScenario {
-	/**
-	 * Human-readable name of the scenario.
-	 *
-	 * <p>
-	 * This value is used for logging and test reporting purposes.
-	 *
-	 * @return scenario name
-	 */
-	String name();
+    /**
+     * Human-readable name of the scenario.
+     *
+     * <p>
+     * This value is used for logging and test reporting purposes.
+     *
+     * @return scenario name
+     */
+    String name();
 
-	/**
-	 * JSON payloads associated with the scenario.
-	 *
-	 * <p>
-	 * Each payload defines a JSON fixture and its role within the scenario (request
-	 * or expected response).
-	 *
-	 * @return scenario payload definitions
-	 */
-	ScenarioRequest[] payloads() default {};
+    /**
+     * JSON payloads associated with the scenario.
+     *
+     * <p>
+     * Each payload defines a JSON fixture and its role within the scenario (request
+     * or expected response).
+     *
+     * @return scenario payload definitions
+     */
+    ScenarioRequest[] payloads() default {};
 }

@@ -29,40 +29,40 @@ import lombok.Setter;
 @Table(name = "collectors")
 public class Collector extends BaseId {
 
-	@Column(length = 254, nullable = false)
-	private String email;
+    @Column(length = 254, nullable = false)
+    private String email;
 
-	@Column(length = 200)
-	private String displayName;
+    @Column(length = 200)
+    private String displayName;
 
-	@Column(length = 200)
-	private String profilePictureUrl;
+    @Column(length = 200)
+    private String profilePictureUrl;
 
-	@OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<CollectorAuthProvider> authProviders = new ArrayList<>();
+    @OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CollectorAuthProvider> authProviders = new ArrayList<>();
 
-	@OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<CollectorCollection> collections = new ArrayList<>();
+    @OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CollectorCollection> collections = new ArrayList<>();
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	private Role role;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Role role;
 
-	@Column(nullable = false)
-	private Instant creationDate;
+    @Column(nullable = false)
+    private Instant creationDate;
 
-	@Column(nullable = false)
-	private Instant updateDate;
+    @Column(nullable = false)
+    private Instant updateDate;
 
-	/** Initializes creation and update timestamps before first persistence. */
-	@PrePersist
-	public void prePersist() {
-		creationDate = Instant.now();
-		updateDate = Instant.now();
-	}
+    /** Initializes creation and update timestamps before first persistence. */
+    @PrePersist
+    public void prePersist() {
+        creationDate = Instant.now();
+        updateDate = Instant.now();
+    }
 
-	/** Refreshes the update timestamp before entity updates. */
-	@PreUpdate
-	public void preUpdate() {
-		updateDate = Instant.now();
-	}
+    /** Refreshes the update timestamp before entity updates. */
+    @PreUpdate
+    public void preUpdate() {
+        updateDate = Instant.now();
+    }
 }

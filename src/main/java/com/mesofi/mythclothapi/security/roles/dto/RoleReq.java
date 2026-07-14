@@ -10,5 +10,5 @@ import jakarta.validation.constraints.Size;
  *            human-readable role description
  */
 public record RoleReq(
-		@NotNull(message = "description must not be blank") @Size(max = 200, message = "description must not exceed 200 characters") String description) {
+        @NotNull(message = "description must not be blank") @Size(max = 200, message = "description must not exceed 200 characters") String description) {
 }

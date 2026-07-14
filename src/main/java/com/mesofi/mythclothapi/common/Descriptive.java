@@ -26,14 +26,14 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = false)
 public abstract class Descriptive extends BaseId {
 
-	/**
-	 * A brief description of the entity.
-	 *
-	 * <p>
-	 * Annotated with {@code @Column(nullable = false, length = 100)} to define the
-	 * constraints at the database level, ensuring the field is never null and
-	 * adheres to the specified maximum length.
-	 */
-	@Column(nullable = false, length = 200)
-	private String description;
+    /**
+     * A brief description of the entity.
+     *
+     * <p>
+     * Annotated with {@code @Column(nullable = false, length = 100)} to define the
+     * constraints at the database level, ensuring the field is never null and
+     * adheres to the specified maximum length.
+     */
+    @Column(nullable = false, length = 200)
+    private String description;
 }
