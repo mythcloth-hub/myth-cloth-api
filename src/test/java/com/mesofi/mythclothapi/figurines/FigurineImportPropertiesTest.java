@@ -7,12 +7,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import io.micrometer.core.aop.TimedAspect;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = FigurineConfig.class, properties = {
         "myth-cloth.import.drive-url=https://drive.google.com/uc?export=download&id=%s",
         "myth-cloth.import.file-id=catalog-file-id"})
 class FigurineImportPropertiesTest {
+
+    @MockitoBean
+    private TimedAspect timedAspect;
 
     @Autowired
     private FigurineImportProperties properties;

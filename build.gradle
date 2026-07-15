@@ -136,7 +136,8 @@ pitest {
     mutators = ['DEFAULTS']
 
     excludedClasses = [
-            '*.config.*',
+            '*Config',
+            '*Properties',
             '*.dto.*',
             '*.entity.*',
             'com.mesofi.mythclothapi.anniversaries.AnniversaryMapperImpl',

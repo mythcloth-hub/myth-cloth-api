@@ -279,6 +279,8 @@ public class FigurineService {
      * parameters
      * <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO,
      * including display name, price with tax, and release status
+     * <li>Stores responses in the {@code figurines} cache using a key derived from
+     * the filter, page, and size
      * </ul>
      *
      * @param filter
