@@ -82,7 +82,7 @@ public class FigurineStoreService {
 
         figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
                 fs -> createPricingIfAbsent(fs, listing.price(), listing.productName(), store.getName()),
-                () -> figurineService.retrieveFigurineByName(listing.lineUp(), listing.productName()).ifPresentOrElse(
+                () -> figurineService.findBestMatchingFigurine(listing.lineUp(), listing.productName()).ifPresentOrElse(
                         figurine -> processMatchedListing(figurine, store, listing),
                         () -> createUnmatchedListing(store, listing)));
     }

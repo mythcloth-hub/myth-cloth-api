@@ -1,10 +1,12 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 /**
@@ -51,4 +53,6 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
      *         match exists
      */
     Optional<Figurine> findByLegacyName(String legacyName);
+
+    List<Figurine> findAllByLineup(LineUp lineUP);
 }

@@ -46,22 +46,16 @@ public class MessageConsumer {
                 productUrl, price, discount, discountedPrice, currency, status, checkedAt);
 
         figurineStoreService.processStorePricing(storeListing);
-
     }
 
     private BigDecimal getBigDecimal(Object number) {
-        if (number == null) {
-            return null;
-        }
-        if (number instanceof Double) {
-            return BigDecimal.valueOf((Double) number);
-        }
-        if (number instanceof Integer) {
-            return new BigDecimal((Integer) number);
-        }
-        if (number instanceof Long) {
-            return new BigDecimal((Long) number);
-        }
-        throw new IllegalArgumentException("Unsupported price type: " + number.getClass());
+        return switch (number) {
+            case null -> null;
+            case Double v -> BigDecimal.valueOf(v);
+            case Integer i -> new BigDecimal(i);
+            case Long l -> new BigDecimal(l);
+            case String s -> new BigDecimal(s);
+            default -> throw new IllegalArgumentException("Unsupported price type: " + number.getClass());
+        };
     }
 }

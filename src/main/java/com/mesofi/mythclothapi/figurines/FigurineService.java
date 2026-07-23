@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.figurines;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
+import static com.mesofi.mythclothapi.figurines.FigurineSimilarityUtils.calculateSimilarity;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
@@ -59,6 +60,7 @@ import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
+import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
@@ -161,6 +163,9 @@ public class FigurineService {
             new FigurineLineUpCacheConf(BY_SAINT_CLOTH_LEGEND_KEY, "Saint Cloth Legend"), LineUP.CROWN,
             new FigurineLineUpCacheConf(BY_CROWN_KEY, "Saint Cloth Crown"), LineUP.SAINT_CLOTH_SERIES,
             new FigurineLineUpCacheConf(BY_SAINT_CLOTH_SERIES_KEY, "Saint Cloth Series"));
+
+    // Is the minimum similarity score required to consider a match valid
+    private static final double MIN_SIMILARITY_THRESHOLD = 0.6;
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
@@ -534,68 +539,87 @@ public class FigurineService {
         }
     }
 
+    /**
+     * Finds the figurine whose display name best matches the provided normalized
+     * name within the specified line up.
+     * <p>
+     * The search is performed by comparing the supplied normalized name against the
+     * display name of every available figurine in the given line up using
+     * {@link FigurineSimilarityUtils#calculateSimilarity(String, String)}. The
+     * figurine with the highest similarity score is returned only if its score
+     * meets or exceeds {@code MIN_SIMILARITY_THRESHOLD}.
+     *
+     * @param lineUp
+     *            the line-up to search within
+     * @param normalizedName
+     *            the normalized figurine name obtained from a store listing
+     * @return an {@link Optional} containing the best matching figurine if a
+     *         suitable match is found; otherwise {@link Optional#empty()}
+     */
     @Transactional(readOnly = true)
-    public Optional<Figurine> retrieveFigurineByName(LineUP lineUp, String figurineName) {
-        List<Figurine> availableFigurines = getAvailableFigurines(lineUp);
-        if (availableFigurines == null) {
+    public Optional<Figurine> findBestMatchingFigurine(LineUP lineUp, String normalizedName) {
+        List<CachedFigurine> availableFigurines = getAvailableFigurinesByLineUp(lineUp);
+
+        if (availableFigurines.isEmpty()) {
             return Optional.empty();
         }
 
-        double min = 0;
-        Figurine bestMatchingFigurine = null;
-        for (Figurine figurine : availableFigurines) {
-            String officialName = figurine.getLegacyName(); // displayable name
-            double result = FigurineSimilarityUtils.calculateSimilarity(officialName, figurineName);
+        double bestSimilarity = MIN_SIMILARITY_THRESHOLD;
+        Long bestMatchId = null;
 
-            if (result > min) {
-                bestMatchingFigurine = figurine;
-                min = result;
+        for (CachedFigurine figurine : availableFigurines) {
+
+            double similarity = calculateSimilarity(figurine.displayName(), normalizedName);
+
+            if (similarity >= bestSimilarity) {
+                bestSimilarity = similarity;
+                bestMatchId = figurine.id();
             }
         }
-        if (min >= 0.5) {
-            return Optional.of(bestMatchingFigurine);
-        } else {
-            return Optional.empty();
-        }
+
+        return Optional.ofNullable(bestMatchId).flatMap(repository::findById);
     }
 
-    private List<Figurine> getAvailableFigurines(LineUP lineUp) {
+    /**
+     * Retrieves all released and announced figurines for the specified line up.
+     * <p>
+     * Results are cached to avoid repeatedly querying the database for the same
+     * line-up. The returned entities are treated as read-only and are never
+     * modified by this service.
+     *
+     * @param lineUp
+     *            the line-up whose figurines should be retrieved
+     * @return the available figurines for the requested line-up, or an empty list
+     *         if the line-up is not configured or cannot be found
+     */
+    private List<CachedFigurine> getAvailableFigurinesByLineUp(LineUP lineUp) {
         Cache cache = Objects.requireNonNull(cacheManager.getCache(FIGURINE_CACHE), "figurines cache not configured");
 
         FigurineLineUpCacheConf config = LINEUP_CONFIG.get(lineUp);
-        if (Objects.isNull(config)) {
+        if (config == null) {
             return List.of();
         }
+
         @SuppressWarnings("unchecked")
-        List<Figurine> figurineList = cache.get(config.cacheKey(), List.class);
+        List<CachedFigurine> figurines = cache.get(config.cacheKey(), List.class);
 
-        if (figurineList == null) {
-            Optional<LineUp> lineUpOptional = lineUpRepository.findByDescription(config.lineUpDescription());
-            if (lineUpOptional.isEmpty()) {
-                log.warn("No line up found for '{}'", config.lineUpDescription());
-                return null;
+        if (figurines == null) {
+            Optional<LineUp> lineUpEntity = lineUpRepository.findByDescription(config.lineUpDescription());
+
+            if (lineUpEntity.isEmpty()) {
+                log.warn("No line up found for '{}'.", config.lineUpDescription());
+                return List.of();
             }
-            LineUp lineUP = lineUpOptional.get();
-            FigurineFilter filter = createFilterUsing(lineUP);
 
-            figurineList = repository.findAll(filter).stream().filter(figurine -> {
-                ReleaseStatus rs = calculateReleaseStatus(figurine);
-                return rs == RELEASED || rs == ANNOUNCED;
-            }).peek(figurine -> {
-                // It's OK to override the legacyName with the displayable name as the
-                // legacyName is not used for this process.
-                figurine.setLegacyName(createDisplayableName(figurine));
-            }).toList();
+            figurines = repository.findAllByLineup(lineUpEntity.get()).stream().filter(figurine -> {
+                ReleaseStatus status = calculateReleaseStatus(figurine);
+                return status == RELEASED || status == ANNOUNCED;
+            }).map(figurine -> new CachedFigurine(figurine.getId(), createDisplayableName(figurine))).toList();
 
-            cache.put(config.cacheKey(), figurineList);
+            cache.put(config.cacheKey(), figurines);
         }
 
-        return figurineList;
-    }
-
-    private FigurineFilter createFilterUsing(LineUp lineUp) {
-        return new FigurineFilter(null, null, lineUp.getId(), null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null);
+        return figurines;
     }
 
     /**
