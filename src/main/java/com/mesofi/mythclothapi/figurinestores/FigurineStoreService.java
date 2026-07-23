@@ -3,11 +3,18 @@ package com.mesofi.mythclothapi.figurinestores;
 
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.List;
+
+import jakarta.validation.constraints.NotNull;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
+import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
 import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
@@ -37,7 +44,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineStoreService {
 
+    private final FigurineStoreMapper figurineStoreMapper;
     private final FigurineService figurineService;
+    private final FigurineRepository figurineRepository;
     private final FigurineStoreRepository figurineStoreRepository;
     private final FigurineStorePricingRepository figurineStorePricingRepository;
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
@@ -64,7 +73,10 @@ public class FigurineStoreService {
      * @param listing
      *            the pricing information retrieved from a store crawler
      */
+    @Transactional
     public void processStorePricing(StoreListing listing) {
+        log.info("Processing StoreListing");
+
         StoreName storeName = listing.store();
         Store store = findOrCreateStore(storeName.name(), storeName.website().toString(), listing.currency());
 
@@ -73,6 +85,48 @@ public class FigurineStoreService {
                 () -> figurineService.retrieveFigurineByName(listing.lineUp(), listing.productName()).ifPresentOrElse(
                         figurine -> processMatchedListing(figurine, store, listing),
                         () -> createUnmatchedListing(store, listing)));
+    }
+
+    /**
+     * Retrieves all unmatched store listings pending manual figurine matching.
+     *
+     * @return unmatched figurine listing responses
+     */
+    @Transactional(readOnly = true)
+    public List<FigurineStoreUnmatchedResp> retrieveUnmatchedFigurineListings() {
+        log.info("Retrieving unmatched figurine listings");
+
+        return unmatchedFigurineListingRepository.findAll().stream()
+                .map(figurineStoreMapper::toFigurineStoreUnmatchedResp).toList();
+    }
+
+    /**
+     * Matches an unmatched store listing to a canonical figurine and removes the
+     * listing from the unmatched queue.
+     *
+     * @param unmatchedFigurineId
+     *            unmatched listing identifier
+     * @param figurineId
+     *            canonical figurine identifier
+     */
+    @Transactional
+    public void matchUnmatchedListingToFigurine(@NotNull Long unmatchedFigurineId, @NotNull Long figurineId) {
+        log.info("Matching unmatched figurine listing {} to figurine {}", unmatchedFigurineId, figurineId);
+
+        UnmatchedFigurineListing unmatched = unmatchedFigurineListingRepository.findById(unmatchedFigurineId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unmatched figurine listing not found for ID: " + unmatchedFigurineId));
+
+        Figurine figurine = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+
+        Store store = unmatched.getStore();
+        StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
+                unmatched.getNormalizedName(), null, null, unmatched.getPrice(), null, null, null, null, null);
+
+        processMatchedListing(figurine, store, listing);
+
+        unmatchedFigurineListingRepository.delete(unmatched);
     }
 
     /**
@@ -122,10 +176,12 @@ public class FigurineStoreService {
                         existing.getOriginalName()), () -> {
                             UnmatchedFigurineListing unmatched = new UnmatchedFigurineListing();
                             unmatched.setStore(store);
+                            unmatched.setLineUP(listing.lineUp());
                             unmatched.setOriginalName(listing.originalProductName());
                             unmatched.setNormalizedName(listing.productName());
                             unmatched.setImageUrl(listing.productImageUrl());
                             unmatched.setProductUrl(listing.productUrl());
+                            unmatched.setPrice(listing.price());
                             unmatchedFigurineListingRepository.save(unmatched);
                             log.info("Created unmatched figurine listing '{}'.", listing.originalProductName());
                         });

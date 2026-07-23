@@ -1,9 +1,12 @@
 package com.mesofi.mythclothapi.figurinestores.model;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
@@ -13,6 +16,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 import lombok.Getter;
@@ -29,6 +33,10 @@ public class UnmatchedFigurineListing extends BaseId {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Store store;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "line_up")
+    private LineUP lineUP;
+
     @Column(nullable = false, length = 300)
     private String originalName;
 
@@ -40,6 +48,9 @@ public class UnmatchedFigurineListing extends BaseId {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String productUrl;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(nullable = false)
     private Instant creationDate;
