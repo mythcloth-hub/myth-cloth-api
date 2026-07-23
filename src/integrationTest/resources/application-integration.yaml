@@ -22,6 +22,11 @@ myth-cloth:
     cors-url: "http://localhost:5173"
 
 spring:
+  rabbitmq:
+    host: localhost
+    username: intg-mythcloth
+    password: intg-mythcloth
+
   sql:
     init:
       mode: never   # FORCE data.sql to run with 'always'

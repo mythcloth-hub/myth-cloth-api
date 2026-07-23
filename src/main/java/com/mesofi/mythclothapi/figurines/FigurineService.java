@@ -24,6 +24,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
@@ -60,6 +63,7 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import io.micrometer.core.annotation.Timed;
@@ -99,6 +103,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
+    private static final String FIGURINE_CACHE = "figurines";
+    private static final String BY_MYTH_CLOTH_EX_KEY = "by-mythcloth-ex";
+    private static final String BY_MYTH_CLOTH_KEY = "by-mythcloth";
+    private static final String BY_APPENDIX_KEY = "by-appendix";
+    private static final String BY_DD_PANORAMATION_KEY = "by-dd-panoramation";
+    private static final String BY_FIGUARTS_ZERO_KEY = "by-figuarts-zero";
+    private static final String BY_FIGUARTS_KEY = "by-figuarts";
+    private static final String BY_SAINT_CLOTH_LEGEND_KEY = "by-saint-cloth-legend";
+    private static final String BY_CROWN_KEY = "by-crown";
+    private static final String BY_SAINT_CLOTH_SERIES_KEY = "by-saint-cloth-series";
+
     private final FigurineMapper mapper;
     private final FigurineCsvSource csvSource;
 
@@ -112,6 +127,7 @@ public class FigurineService {
     private final CurrencyRegionResolver currencyRegionResolver;
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
+    private final CacheManager cacheManager;
 
     private final String ANN_MSG = "First announced as a possible future release.";
     private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
@@ -134,6 +150,17 @@ public class FigurineService {
         ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
         ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
     }
+
+    private static final Map<LineUP, FigurineLineUpCacheConf> LINEUP_CONFIG = Map.of(LineUP.MYTH_CLOTH_EX,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_EX_KEY, "Myth Cloth EX"), LineUP.MYTH_CLOTH,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_KEY, "Myth Cloth"), LineUP.APPENDIX,
+            new FigurineLineUpCacheConf(BY_APPENDIX_KEY, "Appendix"), LineUP.DD_PANORAMATION,
+            new FigurineLineUpCacheConf(BY_DD_PANORAMATION_KEY, "DD Panoramation"), LineUP.FIGUARTS_ZERO,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_ZERO_KEY, "Figuarts Zero Metallic Touch"), LineUP.FIGUARTS,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_KEY, "Figuarts"), LineUP.SAINT_CLOTH_LEGEND,
+            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_LEGEND_KEY, "Saint Cloth Legend"), LineUP.CROWN,
+            new FigurineLineUpCacheConf(BY_CROWN_KEY, "Saint Cloth Crown"), LineUP.SAINT_CLOTH_SERIES,
+            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_SERIES_KEY, "Saint Cloth Series"));
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
@@ -505,6 +532,70 @@ public class FigurineService {
                                 existingDistributors.add(incomingFigurineDist);
                             });
         }
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Figurine> retrieveFigurineByName(LineUP lineUp, String figurineName) {
+        List<Figurine> availableFigurines = getAvailableFigurines(lineUp);
+        if (availableFigurines == null) {
+            return Optional.empty();
+        }
+
+        double min = 0;
+        Figurine bestMatchingFigurine = null;
+        for (Figurine figurine : availableFigurines) {
+            String officialName = figurine.getLegacyName(); // displayable name
+            double result = FigurineSimilarityUtils.calculateSimilarity(officialName, figurineName);
+
+            if (result > min) {
+                bestMatchingFigurine = figurine;
+                min = result;
+            }
+        }
+        if (min >= 0.5) {
+            return Optional.of(bestMatchingFigurine);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private List<Figurine> getAvailableFigurines(LineUP lineUp) {
+        Cache cache = Objects.requireNonNull(cacheManager.getCache(FIGURINE_CACHE), "figurines cache not configured");
+
+        FigurineLineUpCacheConf config = LINEUP_CONFIG.get(lineUp);
+        if (Objects.isNull(config)) {
+            return List.of();
+        }
+        @SuppressWarnings("unchecked")
+        List<Figurine> figurineList = cache.get(config.cacheKey(), List.class);
+
+        if (figurineList == null) {
+            Optional<LineUp> lineUpOptional = lineUpRepository.findByDescription(config.lineUpDescription());
+            if (lineUpOptional.isEmpty()) {
+                log.warn("No line up found for '{}'", config.lineUpDescription());
+                return null;
+            }
+            LineUp lineUP = lineUpOptional.get();
+            FigurineFilter filter = createFilterUsing(lineUP);
+
+            figurineList = repository.findAll(filter).stream().filter(figurine -> {
+                ReleaseStatus rs = calculateReleaseStatus(figurine);
+                return rs == RELEASED || rs == ANNOUNCED;
+            }).peek(figurine -> {
+                // It's OK to override the legacyName with the displayable name as the
+                // legacyName is not used for this process.
+                figurine.setLegacyName(createDisplayableName(figurine));
+            }).toList();
+
+            cache.put(config.cacheKey(), figurineList);
+        }
+
+        return figurineList;
+    }
+
+    private FigurineFilter createFilterUsing(LineUp lineUp) {
+        return new FigurineFilter(null, null, lineUp.getId(), null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
     }
 
     /**

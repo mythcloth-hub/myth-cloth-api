@@ -1,8 +1,8 @@
 logging:
   level:
     root: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
+    org.hibernate.SQL: INFO
+    org.hibernate.orm.jdbc.bind: INFO   # <- Shows query parameters
 
 myth-cloth:
   demo:
@@ -48,6 +48,11 @@ spring:
         show_sql: false     # <- Log SQL to console
         use_sql_comments: false # <- Adds Hibernate comments to queries
         highlight_sql: true        # ANSI colors (Hibernate 6+)
+
+  rabbitmq:
+    host: localhost
+    username: mythcloth
+    password: mythcloth
 
   sql:
     init:
