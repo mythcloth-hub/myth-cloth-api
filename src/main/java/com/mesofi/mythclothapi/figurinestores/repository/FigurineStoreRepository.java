@@ -11,5 +11,8 @@ import com.mesofi.mythclothapi.stores.model.Store;
 
 @Repository
 public interface FigurineStoreRepository extends JpaRepository<FigurineStore, Long> {
+
     Optional<FigurineStore> findByFigurineAndStore(Figurine figurine, Store store);
+
+    Optional<FigurineStore> findByStoreAndOriginalName(Store store, String originalName);
 }

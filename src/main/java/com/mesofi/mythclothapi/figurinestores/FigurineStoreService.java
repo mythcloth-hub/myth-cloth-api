@@ -1,7 +1,8 @@
+
 package com.mesofi.mythclothapi.figurinestores;
 
+import java.math.BigDecimal;
 import java.util.Currency;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,16 @@ import com.mesofi.mythclothapi.stores.model.Store;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Coordinates the processing of pricing information received from external
+ * stores.
+ * <p>
+ * For each incoming store listing, this service attempts to resolve the listing
+ * to a canonical {@link Figurine}. If a match is found, it creates or updates
+ * the corresponding {@link FigurineStore} mapping and records the pricing
+ * history. Listings that cannot be resolved automatically are persisted for
+ * later manual review.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,68 +43,173 @@ public class FigurineStoreService {
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
     private final StoreRepository storeRepository;
 
+    /**
+     * Processes a pricing update received from an external store.
+     * <p>
+     * The processing flow is as follows:
+     * <ol>
+     * <li>Find or create the corresponding {@link Store}.</li>
+     * <li>Look for an existing {@link FigurineStore} using the store and the
+     * original product name.</li>
+     * <li>If a mapping exists, record the pricing if it has not been stored
+     * previously.</li>
+     * <li>Otherwise, attempt to resolve the listing to a canonical
+     * {@link Figurine}.</li>
+     * <li>If the figurine is resolved, create or update the store mapping and
+     * record the pricing.</li>
+     * <li>If no match is found, persist the listing as an
+     * {@link UnmatchedFigurineListing} for manual resolution.</li>
+     * </ol>
+     *
+     * @param listing
+     *            the pricing information retrieved from a store crawler
+     */
     public void processStorePricing(StoreListing listing) {
-
         StoreName storeName = listing.store();
         Store store = findOrCreateStore(storeName.name(), storeName.website().toString(), listing.currency());
 
-        figurineService.retrieveFigurineByName(listing.lineUp(), listing.productName()).ifPresentOrElse(figurine -> {
-            log.info("[{}] [{}] - {} ==> [{}] - {}", storeName.name(), listing.lineUp(), listing.productName(),
-                    figurine.getId(), figurine.getLegacyName());
-
-            FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing.originalProductName(),
-                    listing.productName());
-
-            figurineStorePricingRepository.findByFigurineStoreAndCurrentPrice(figurineStore, listing.price())
-                    .ifPresentOrElse(
-                            figurineStorePricing -> log.warn(
-                                    "Pricing {} already exists for figurine '{}' at store '{}'.",
-                                    figurineStorePricing.getCurrentPrice(), figurine.getLegacyName(), store.getName()),
-                            () -> {
-                                FigurineStorePricing pricing = new FigurineStorePricing();
-                                pricing.setFigurineStore(figurineStore);
-                                pricing.setCurrentPrice(listing.price());
-                                figurineStorePricingRepository.save(pricing);
-
-                                log.info("New pricing saved for figurine '{}' at store '{}': {}.",
-                                        figurine.getLegacyName(), store.getName(), listing.price());
-                            });
-        }, () -> {
-            log.warn("Figurine not found for name: '{}', this will be resolved manually", listing.productName());
-
-            UnmatchedFigurineListing unmatchedFigurineListing = new UnmatchedFigurineListing();
-            unmatchedFigurineListing.setStore(store);
-            unmatchedFigurineListing.setOriginalName(listing.originalProductName());
-            unmatchedFigurineListing.setNormalizedName(listing.productName());
-            unmatchedFigurineListing.setImageUrl(listing.productImageUrl());
-            unmatchedFigurineListing.setProductUrl(listing.productUrl());
-
-            unmatchedFigurineListingRepository.save(unmatchedFigurineListing);
-        });
-
+        figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
+                fs -> createPricingIfAbsent(fs, listing.price(), listing.productName(), store.getName()),
+                () -> figurineService.retrieveFigurineByName(listing.lineUp(), listing.productName()).ifPresentOrElse(
+                        figurine -> processMatchedListing(figurine, store, listing),
+                        () -> createUnmatchedListing(store, listing)));
     }
 
+    /**
+     * Processes a store listing that has been successfully matched to a canonical
+     * figurine.
+     * <p>
+     * Ensures that a {@link FigurineStore} mapping exists between the figurine and
+     * the store, updates the stored names if necessary, and records the pricing if
+     * it has not already been persisted.
+     *
+     * @param figurine
+     *            the resolved canonical figurine
+     * @param store
+     *            the store where the listing originated
+     * @param listing
+     *            the scraped store listing
+     */
+    private void processMatchedListing(Figurine figurine, Store store, StoreListing listing) {
+        log.info("[{}] [{}] - {} ==> [{}] - {}", store.getName(), listing.lineUp(), listing.productName(),
+                figurine.getId(), figurine.getLegacyName());
+
+        FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing.originalProductName(),
+                listing.productName());
+
+        createPricingIfAbsent(figurineStore, listing.price(), listing.productName(), store.getName());
+    }
+
+    /**
+     * Persists a store listing that could not be matched to any canonical figurine.
+     * <p>
+     * Duplicate unmatched listings are ignored based on the combination of store
+     * and original product name. This allows unresolved listings to be reviewed and
+     * manually linked at a later time.
+     *
+     * @param store
+     *            the originating store
+     * @param listing
+     *            the unmatched store listing
+     */
+    private void createUnmatchedListing(Store store, StoreListing listing) {
+        log.warn("No figurine found for normalized='{}', original='{}'.", listing.productName(),
+                listing.originalProductName());
+
+        unmatchedFigurineListingRepository.findByStoreAndOriginalName(store, listing.originalProductName())
+                .ifPresentOrElse(existing -> log.warn(
+                        "Unmatched figurine listing already exists for original name '{}'. Ignoring duplicate.",
+                        existing.getOriginalName()), () -> {
+                            UnmatchedFigurineListing unmatched = new UnmatchedFigurineListing();
+                            unmatched.setStore(store);
+                            unmatched.setOriginalName(listing.originalProductName());
+                            unmatched.setNormalizedName(listing.productName());
+                            unmatched.setImageUrl(listing.productImageUrl());
+                            unmatched.setProductUrl(listing.productUrl());
+                            unmatchedFigurineListingRepository.save(unmatched);
+                            log.info("Created unmatched figurine listing '{}'.", listing.originalProductName());
+                        });
+    }
+
+    /**
+     * Records a new pricing entry for a figurine if the same price has not already
+     * been stored.
+     * <p>
+     * Price history is maintained by storing only distinct prices for a
+     * {@link FigurineStore}. If the supplied price already exists, no new record is
+     * created.
+     *
+     * @param figurineStore
+     *            the figurine-store mapping
+     * @param price
+     *            the current price
+     * @param figurineName
+     *            the figurine name used for logging
+     * @param storeName
+     *            the store name used for logging
+     */
+    private void createPricingIfAbsent(FigurineStore figurineStore, BigDecimal price, String figurineName,
+            String storeName) {
+        figurineStorePricingRepository.findByFigurineStoreAndCurrentPrice(figurineStore, price)
+                .ifPresentOrElse(p -> log.warn("Pricing {} already exists for figurine '{}' at store '{}'.",
+                        p.getCurrentPrice(), figurineName, storeName), () -> {
+                            FigurineStorePricing pricing = new FigurineStorePricing();
+                            pricing.setFigurineStore(figurineStore);
+                            pricing.setCurrentPrice(price);
+                            figurineStorePricingRepository.save(pricing);
+                            log.info("New pricing saved for figurine '{}' at store '{}': {}.", figurineName, storeName,
+                                    price);
+                        });
+    }
+
+    /**
+     * Retrieves an existing store or creates a new one if it has not been
+     * registered yet.
+     *
+     * @param name
+     *            the store name
+     * @param website
+     *            the store website URL
+     * @param currency
+     *            the currency used by the store
+     * @return the existing or newly created store
+     */
     private Store findOrCreateStore(String name, String website, Currency currency) {
-        Optional<Store> storeOptional = storeRepository.findByName(name);
-        if (storeOptional.isEmpty()) {
+        return storeRepository.findByName(name).orElseGet(() -> {
             Store store = new Store();
             store.setName(name);
             store.setUrl(website);
             store.setCurrency(currency);
-            Store storeSaved = storeRepository.save(store);
-            storeOptional = Optional.of(storeSaved);
-        }
-        return storeOptional.get();
+            return storeRepository.save(store);
+        });
     }
 
+    /**
+     * Retrieves the mapping between a canonical figurine and a store, creating it
+     * if it does not already exist.
+     * <p>
+     * The mapping stores both the original product name provided by the store and
+     * its normalized representation used during the matching process. Existing
+     * mappings are updated with the latest names before being persisted.
+     *
+     * @param figurine
+     *            the canonical figurine
+     * @param store
+     *            the associated store
+     * @param originalFigurineName
+     *            the original product name as published by the store
+     * @param normalizedFigurineName
+     *            the normalized name used for matching
+     * @return the existing or newly created figurine-store mapping
+     */
     private FigurineStore findOrCreateFigurineStore(Figurine figurine, Store store, String originalFigurineName,
             String normalizedFigurineName) {
 
         FigurineStore figurineStore = figurineStoreRepository.findByFigurineAndStore(figurine, store).orElseGet(() -> {
-            FigurineStore newFigurineStore = new FigurineStore();
-            newFigurineStore.setFigurine(figurine);
-            newFigurineStore.setStore(store);
-            return newFigurineStore;
+            FigurineStore mapping = new FigurineStore();
+            mapping.setFigurine(figurine);
+            mapping.setStore(store);
+            return mapping;
         });
 
         figurineStore.setOriginalName(originalFigurineName);
