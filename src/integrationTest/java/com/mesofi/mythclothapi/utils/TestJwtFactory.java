@@ -66,6 +66,8 @@ public final class TestJwtFactory {
     private static final String FIGURINES_IMAGE_ADD_PERMISSION = "figurines:images:add";
     private static final String FIGURINES_IMAGE_READ_PERMISSION = "figurines:images:read";
     private static final String FIGURINES_IMAGE_DELETE_PERMISSION = "figurines:images:delete";
+    private static final String FIGURINES_STORES_READ_PERMISSION = "figurines:stores:read";
+    private static final String FIGURINES_STORES_ASSIGN_PERMISSION = "figurines:stores:assign";
     private static final String ANNIVERSARIES_WRITE_PERMISSION = "anniversaries:write";
     private static final String ANNIVERSARIES_READ_PERMISSION = "anniversaries:read";
 
@@ -115,7 +117,8 @@ public final class TestJwtFactory {
                         FIGURINES_UPDATE_PERMISSION, FIGURINES_EVENT_ADD_PERMISSION, FIGURINES_EVENT_READ_PERMISSION,
                         FIGURINES_EVENT_UPDATE_PERMISSION, FIGURINES_EVENT_DELETE_PERMISSION,
                         FIGURINES_DELETE_PERMISSION, FIGURINES_IMAGE_ADD_PERMISSION, FIGURINES_IMAGE_READ_PERMISSION,
-                        FIGURINES_IMAGE_DELETE_PERMISSION, ANNIVERSARIES_WRITE_PERMISSION,
+                        FIGURINES_IMAGE_DELETE_PERMISSION, FIGURINES_STORES_READ_PERMISSION,
+                        FIGURINES_STORES_ASSIGN_PERMISSION, ANNIVERSARIES_WRITE_PERMISSION,
                         ANNIVERSARIES_READ_PERMISSION))
                 .build();
 

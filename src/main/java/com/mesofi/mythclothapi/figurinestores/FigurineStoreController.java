@@ -5,6 +5,7 @@ import java.util.List;
 
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/figurine-stores")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasRole('ADMIN')")
 public class FigurineStoreController {
 
     private final FigurineStoreService figurineStoreService;
@@ -38,6 +40,7 @@ public class FigurineStoreController {
      * @return unmatched listing responses
      */
     @GetMapping("/unmatched-listings")
+    @PreAuthorize("hasAuthority('figurines:stores:read')")
     public List<FigurineStoreUnmatchedResp> retrieveUnmatchedFigurineListings() {
         log.info("Retrieving unmatched figurines ...");
 
@@ -54,6 +57,7 @@ public class FigurineStoreController {
      *            canonical figurine identifier
      */
     @PostMapping("/unmatched-listings/{unmatchedListingId}/figurines/{figurineId}/match")
+    @PreAuthorize("hasAuthority('figurines:stores:assign')")
     public void matchUnmatchedListingToFigurine(@Positive @PathVariable Long unmatchedListingId,
             @Positive @PathVariable Long figurineId) {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
