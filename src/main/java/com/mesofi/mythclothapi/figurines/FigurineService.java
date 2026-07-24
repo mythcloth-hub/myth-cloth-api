@@ -55,6 +55,7 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -372,6 +373,17 @@ public class FigurineService {
                 .map(collection -> collection.getFigurines().stream().map(CollectorCollectionFigurine::getFigurine)
                         .map(BaseId::getId).toList())
                 .orElseGet(List::of);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable("figurine-summary")
+    public List<FigurineSummaryResp> retrieveFigurineSummaries(@NotNull FigurineFilter filter) {
+        log.info("Retrieving figurines summaries '{}'", filter);
+
+        return repository.findAll(filter).stream().filter(figurine -> {
+            ReleaseStatus status = calculateReleaseStatus(figurine);
+            return status == RELEASED || status == ANNOUNCED;
+        }).map(figurine -> mapper.toFigurineSummaryResp(figurine, this::createDisplayableName)).toList();
     }
 
     /**

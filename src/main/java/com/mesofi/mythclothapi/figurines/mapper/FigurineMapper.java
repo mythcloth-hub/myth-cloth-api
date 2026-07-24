@@ -18,6 +18,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
@@ -38,6 +39,7 @@ import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
@@ -98,6 +100,7 @@ public interface FigurineMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collections", ignore = true)
+    @Mapping(target = "stores", ignore = true)
     Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
     /**
@@ -322,6 +325,7 @@ public interface FigurineMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collections", ignore = true)
+    @Mapping(target = "stores", ignore = true)
     Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
     /**
@@ -458,6 +462,12 @@ public interface FigurineMapper {
     FigurineResp toFigurineResp(Figurine figurine, @Context Function<Figurine, String> createDisplayableName,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, ReleaseStatus> calculateReleaseStatus);
+
+    @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
+    @Mapping(target = "lineUp", source = "lineup")
+    @Mapping(target = "officialImageUrl", source = "officialImages", qualifiedByName = "firstImage")
+    FigurineSummaryResp toFigurineSummaryResp(Figurine figurine,
+            @Context Function<Figurine, String> createDisplayableName);
 
     /**
      * Maps a {@link FigurineDistributor} domain entity to its API response
@@ -636,6 +646,11 @@ public interface FigurineMapper {
     private Distributor findDistributorByCountry(List<Distributor> distributors, CountryCode countryCode) {
         return distributors.stream().filter(d -> d.getCountry() == countryCode).findFirst().orElseThrow(
                 () -> new IllegalArgumentException("Distributor not found for code='" + countryCode + "'"));
+    }
+
+    @Named("firstImage")
+    default String firstImage(List<String> images) {
+        return images == null || images.isEmpty() ? null : images.getFirst();
     }
 
     /**
