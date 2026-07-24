@@ -109,6 +109,8 @@ INSERT INTO permissions (description) VALUES ('figurines:events:add');
 INSERT INTO permissions (description) VALUES ('figurines:events:delete');
 INSERT INTO permissions (description) VALUES ('figurines:events:read');
 INSERT INTO permissions (description) VALUES ('figurines:events:update');
+INSERT INTO permissions (description) VALUES ('figurines:stores:read');
+INSERT INTO permissions (description) VALUES ('figurines:stores:assign');
 INSERT INTO permissions (description) VALUES ('figurines:update');
 INSERT INTO permissions (description) VALUES ('figurines:write');
 
@@ -163,3 +165,5 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 41);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 42);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 43);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 44);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 45);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 46);
