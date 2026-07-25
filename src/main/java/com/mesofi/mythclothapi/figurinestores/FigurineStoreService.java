@@ -2,17 +2,21 @@
 package com.mesofi.mythclothapi.figurinestores;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.List;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
@@ -96,7 +100,8 @@ public class FigurineStoreService {
     public List<FigurineStoreUnmatchedResp> retrieveUnmatchedFigurineListings() {
         log.info("Retrieving unmatched figurine listings");
 
-        return unmatchedFigurineListingRepository.findAll().stream()
+        return unmatchedFigurineListingRepository
+                .findAll(Sort.by(Sort.Order.asc("store.id"), Sort.Order.asc("originalName"))).stream()
                 .map(figurineStoreMapper::toFigurineStoreUnmatchedResp).toList();
     }
 
@@ -127,6 +132,28 @@ public class FigurineStoreService {
         processMatchedListing(figurine, store, listing);
 
         unmatchedFigurineListingRepository.delete(unmatched);
+    }
+
+    @Transactional(readOnly = true)
+    public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive Long figurineId) {
+        log.info("Retrieving average realtime price");
+
+        Figurine figurine = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+
+        List<BigDecimal> prices = figurineStoreRepository.findByFigurine(figurine).stream()
+                .flatMap(fs -> fs.getPrices().stream()).map(FigurineStorePricing::getCurrentPrice)
+                .filter(price -> price != null && price.compareTo(BigDecimal.ZERO) > 0).toList();
+
+        if (prices.isEmpty()) {
+            log.info("No pricing data available for figurine {}", figurineId);
+            return new FigurineStorePricingResp(BigDecimal.ZERO);
+        }
+
+        BigDecimal average = prices.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(prices.size()), 2, RoundingMode.HALF_UP);
+        log.info("Average realtime price for figurine {}: {}", figurineId, average);
+        return new FigurineStorePricingResp(average);
     }
 
     /**

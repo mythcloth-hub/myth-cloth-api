@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 
 import lombok.RequiredArgsConstructor;
@@ -63,5 +64,13 @@ public class FigurineStoreController {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
 
         figurineStoreService.matchUnmatchedListingToFigurine(unmatchedListingId, figurineId);
+    }
+
+    @GetMapping("/figurines/{figurineId}/average-realtime-price")
+    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive @PathVariable Long figurineId) {
+        log.info("Retrieving average realtime price for figurine {}", figurineId);
+
+        return figurineStoreService.retrieveAverageRealtimePrice(figurineId);
     }
 }

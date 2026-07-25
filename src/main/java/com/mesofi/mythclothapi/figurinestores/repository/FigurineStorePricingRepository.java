@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.figurinestores.repository;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,9 @@ import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
 
 @Repository
 public interface FigurineStorePricingRepository extends JpaRepository<FigurineStorePricing, Long> {
+
     Optional<FigurineStorePricing> findByFigurineStoreAndCurrentPrice(FigurineStore figurineStore,
             BigDecimal currentPrice);
+
+    List<FigurineStorePricing> findByFigurineStore(FigurineStore figurineStore);
 }

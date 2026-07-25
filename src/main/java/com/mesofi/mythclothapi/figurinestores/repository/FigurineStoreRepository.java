@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.figurinestores.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,8 @@ import com.mesofi.mythclothapi.stores.model.Store;
 
 @Repository
 public interface FigurineStoreRepository extends JpaRepository<FigurineStore, Long> {
+
+    List<FigurineStore> findByFigurine(Figurine figurine);
 
     Optional<FigurineStore> findByFigurineAndStore(Figurine figurine, Store store);
 
