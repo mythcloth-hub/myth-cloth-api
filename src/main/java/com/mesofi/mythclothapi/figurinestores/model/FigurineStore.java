@@ -44,6 +44,12 @@ public class FigurineStore extends BaseId {
     @Column(nullable = false, length = 200)
     private String normalizedName;
 
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String productUrl;
+
     @Column(nullable = false)
     private Instant creationDate;
 

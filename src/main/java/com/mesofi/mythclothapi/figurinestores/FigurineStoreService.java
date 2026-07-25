@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurinestores;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 
@@ -16,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
@@ -135,6 +138,32 @@ public class FigurineStoreService {
     }
 
     @Transactional(readOnly = true)
+    public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
+        log.info("Retrieving matched figurine listing summary");
+
+        List<FigurineStoreMatchedSummaryResp> response = new ArrayList<>();
+
+        for (Store store : storeRepository.findAllByOrderByNameAsc()) {
+            long totalFigurines = figurineStoreRepository.countByStore(store);
+            response.add(figurineStoreMapper.toFigurineStoreMatchedSummaryResp(store, totalFigurines));
+        }
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
+        log.info("Retrieving matched figurine listing using storeId {}", storeId);
+
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+
+        return figurineStoreRepository.findByStore(store).stream().map(figurineStore -> {
+            String displayableName = figurineService.createDisplayableName(figurineStore.getFigurine());
+            return figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore, displayableName);
+        }).toList();
+    }
+
+    @Transactional(readOnly = true)
     public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive Long figurineId) {
         log.info("Retrieving average realtime price");
 
@@ -175,8 +204,7 @@ public class FigurineStoreService {
         log.info("[{}] [{}] - {} ==> [{}] - {}", store.getName(), listing.lineUp(), listing.productName(),
                 figurine.getId(), figurine.getLegacyName());
 
-        FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing.originalProductName(),
-                listing.productName());
+        FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing);
 
         createPricingIfAbsent(figurineStore, listing.price(), listing.productName(), store.getName());
     }
@@ -279,14 +307,11 @@ public class FigurineStoreService {
      *            the canonical figurine
      * @param store
      *            the associated store
-     * @param originalFigurineName
-     *            the original product name as published by the store
-     * @param normalizedFigurineName
-     *            the normalized name used for matching
+     * @param listing
+     *            the store listing containing the store info.
      * @return the existing or newly created figurine-store mapping
      */
-    private FigurineStore findOrCreateFigurineStore(Figurine figurine, Store store, String originalFigurineName,
-            String normalizedFigurineName) {
+    private FigurineStore findOrCreateFigurineStore(Figurine figurine, Store store, StoreListing listing) {
 
         FigurineStore figurineStore = figurineStoreRepository.findByFigurineAndStore(figurine, store).orElseGet(() -> {
             FigurineStore mapping = new FigurineStore();
@@ -295,8 +320,10 @@ public class FigurineStoreService {
             return mapping;
         });
 
-        figurineStore.setOriginalName(originalFigurineName);
-        figurineStore.setNormalizedName(normalizedFigurineName);
+        figurineStore.setOriginalName(listing.originalProductName());
+        figurineStore.setNormalizedName(listing.productName());
+        figurineStore.setImageUrl(listing.productImageUrl());
+        figurineStore.setProductUrl(listing.productUrl());
 
         return figurineStoreRepository.save(figurineStore);
     }

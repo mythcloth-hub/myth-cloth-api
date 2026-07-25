@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 
@@ -64,6 +66,22 @@ public class FigurineStoreController {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
 
         figurineStoreService.matchUnmatchedListingToFigurine(unmatchedListingId, figurineId);
+    }
+
+    @GetMapping("/matched-listings/summary")
+    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
+        log.info("Retrieving matched figurines ...");
+
+        return figurineStoreService.retrieveMatchedFigurineListingSummary();
+    }
+
+    @GetMapping("/matched-listings/stores/{storeId}")
+    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId) {
+        log.info("Retrieving matched figurines for store {}", storeId);
+
+        return figurineStoreService.retrieveMatchedFigurineListing(storeId);
     }
 
     @GetMapping("/figurines/{figurineId}/average-realtime-price")

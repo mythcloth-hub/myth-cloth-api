@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.stores;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,6 @@ import com.mesofi.mythclothapi.stores.model.Store;
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
     Optional<Store> findByName(String name);
+
+    List<Store> findAllByOrderByNameAsc();
 }
