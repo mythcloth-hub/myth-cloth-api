@@ -10,6 +10,7 @@ import org.mapstruct.Named;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
+import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
 import com.mesofi.mythclothapi.stores.model.Store;
@@ -17,13 +18,14 @@ import com.mesofi.mythclothapi.stores.model.Store;
 @Mapper(componentModel = "spring")
 public interface FigurineStoreMapper {
 
-    @Mapping(target = "storeId", source = "store.id")
-    @Mapping(target = "storeWebsite", source = "store.url")
+    // @Mapping(target = "storeId", source = "store.id")
+    // @Mapping(target = "storeWebsite", source = "store.url")
     FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(UnmatchedFigurineListing unmatchedFigurineListing);
 
     @Mapping(target = "storeId", source = "store.id")
-    @Mapping(target = "storeWebsite", source = "store.url")
-    @Mapping(target = "currency", source = "store.currency")
+    @Mapping(target = "storeName", source = "store.name")
+    @Mapping(target = "storeWebsite", source = "store.website")
+    @Mapping(target = "storeLogo", source = "store.logoUrl")
     @Mapping(target = "matchedFigurineCount", source = "totalFigurines")
     FigurineStoreMatchedSummaryResp toFigurineStoreMatchedSummaryResp(Store store, long totalFigurines);
 
@@ -32,12 +34,15 @@ public interface FigurineStoreMapper {
     @Mapping(target = "figurineDisplayableName", expression = "java(displayableName)")
     @Mapping(target = "figurineOfficialImageUrl", source = "figurineStore.figurine.officialImages", qualifiedByName = "firstImage")
     @Mapping(target = "figurineTamashiiUrl", source = "figurineStore.figurine.tamashiiUrl")
-    // @Mapping(target = "lineup", source = "figurineStore.figurine.lineup")
+    @Mapping(target = "figurineLineUp", source = "figurineStore.figurine.lineup.description")
     @Mapping(target = "storeId", source = "figurineStore.store.id")
     @Mapping(target = "storeOriginalName", source = "figurineStore.originalName")
     @Mapping(target = "storeProductImageUrl", source = "figurineStore.imageUrl")
     @Mapping(target = "storeProductUrl", source = "figurineStore.productUrl")
     FigurineStoreMatchedResp toFigurineStoreMatchedResp(FigurineStore figurineStore, @Context String displayableName);
+
+    CachedStores toStoreCache(Store store);
+    Store toStore(CachedStores cachedStores);
 
     @Named("firstImage")
     default String firstImage(List<String> images) {

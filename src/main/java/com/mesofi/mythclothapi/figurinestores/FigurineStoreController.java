@@ -71,7 +71,7 @@ public class FigurineStoreController {
     @GetMapping("/matched-listings/summary")
     @PreAuthorize("hasAuthority('figurines:stores:read')")
     public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
-        log.info("Retrieving matched figurines ...");
+        log.info("Retrieving matched figurine listing summary ...");
 
         return figurineStoreService.retrieveMatchedFigurineListingSummary();
     }
@@ -79,7 +79,7 @@ public class FigurineStoreController {
     @GetMapping("/matched-listings/stores/{storeId}")
     @PreAuthorize("hasAuthority('figurines:stores:read')")
     public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId) {
-        log.info("Retrieving matched figurines for store {}", storeId);
+        log.info("Retrieving matched figurine listing for store {}", storeId);
 
         return figurineStoreService.retrieveMatchedFigurineListing(storeId);
     }

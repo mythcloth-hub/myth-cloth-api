@@ -1,63 +1,39 @@
 package com.mesofi.mythclothapi.messaging.pricing.model;
 
-import java.net.URI;
-
 /**
  * Identifies the external stores supported by the market crawler.
  * <p>
- * Each enum constant represents a retailer that can be crawled to retrieve
- * product information such as pricing, availability, and product details. In
- * addition to uniquely identifying the store, each constant provides the base
- * website URI used by crawler implementations.
+ * Each enum constant uniquely identifies a retailer from which the market
+ * crawler can retrieve product information, such as pricing, availability, and
+ * product details. These identifiers are used throughout the application to
+ * select the appropriate crawler implementation and to associate pricing data
+ * with its originating store.
  */
 public enum StoreName {
 
     /**
      * Nin-Nin-Game online store.
      */
-    NIN_NIN_GAME("https://www.nin-nin-game.com"),
+    NIN_NIN_GAME,
 
     /**
      * Mandarake online store.
      */
-    MANDARAKE("https://order.mandarake.co.jp"),
+    MANDARAKE,
 
     /**
      * Luna Park online store.
      */
-    LUNA_PARK("https://www.lunapark.store"),
+    LUNA_PARK,
 
     /**
      * My Kombini online store.
      */
-    MY_KOMBINI("https://mykombini.com"),
+    MY_KOMBINI,
 
     /**
      * Myth Supplies online store.
      */
-    MYTH_SUPPLIES("https://mythsupplies.com");
+    MYTH_SUPPLIES;
 
-    /**
-     * Base website URI of the store.
-     */
-    private final URI website;
-
-    /**
-     * Creates a store identifier associated with its website.
-     *
-     * @param website
-     *            the base website URI of the store
-     */
-    StoreName(String website) {
-        this.website = URI.create(website);
-    }
-
-    /**
-     * Returns the base website URI of the store.
-     *
-     * @return the store's website URI
-     */
-    public URI website() {
-        return website;
-    }
 }

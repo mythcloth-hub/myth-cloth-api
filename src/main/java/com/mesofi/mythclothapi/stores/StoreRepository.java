@@ -11,7 +11,9 @@ import com.mesofi.mythclothapi.stores.model.Store;
 @Repository
 public interface StoreRepository extends JpaRepository<Store, Long> {
 
-    Optional<Store> findByName(String name);
+    List<Store> findAllByActiveTrueOrderByNameAsc();
 
-    List<Store> findAllByOrderByNameAsc();
+    Optional<Store> findByIdAndActiveTrue(Long storeId);
+
+    List<Store> findAllByActiveTrue();
 }

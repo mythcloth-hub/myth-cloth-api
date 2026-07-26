@@ -4,12 +4,14 @@ package com.mesofi.mythclothapi.figurinestores;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.List;
+import java.util.Objects;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryRes
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
+import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
 import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
@@ -51,6 +54,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineStoreService {
 
+    private static final String STORE_CACHE = "stores";
+    private static final String STORE_KEY = "store";
+
     private final FigurineStoreMapper figurineStoreMapper;
     private final FigurineService figurineService;
     private final FigurineRepository figurineRepository;
@@ -58,6 +64,7 @@ public class FigurineStoreService {
     private final FigurineStorePricingRepository figurineStorePricingRepository;
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
     private final StoreRepository storeRepository;
+    private final CacheManager cacheManager;
 
     /**
      * Processes a pricing update received from an external store.
@@ -82,10 +89,11 @@ public class FigurineStoreService {
      */
     @Transactional
     public void processStorePricing(StoreListing listing) {
-        log.info("Processing StoreListing");
+        log.info("Processing StoreListing ...");
 
         StoreName storeName = listing.store();
-        Store store = findOrCreateStore(storeName.name(), storeName.website().toString(), listing.currency());
+        CachedStores cachedStores = findStore(storeName);
+        Store store = figurineStoreMapper.toStore(cachedStores);
 
         figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
                 fs -> createPricingIfAbsent(fs, listing.price(), listing.productName(), store.getName()),
@@ -143,7 +151,7 @@ public class FigurineStoreService {
 
         List<FigurineStoreMatchedSummaryResp> response = new ArrayList<>();
 
-        for (Store store : storeRepository.findAllByOrderByNameAsc()) {
+        for (Store store : storeRepository.findAllByActiveTrueOrderByNameAsc()) {
             long totalFigurines = figurineStoreRepository.countByStore(store);
             response.add(figurineStoreMapper.toFigurineStoreMatchedSummaryResp(store, totalFigurines));
         }
@@ -154,7 +162,7 @@ public class FigurineStoreService {
     public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
         log.info("Retrieving matched figurine listing using storeId {}", storeId);
 
-        Store store = storeRepository.findById(storeId)
+        Store store = storeRepository.findByIdAndActiveTrue(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
 
         return figurineStoreRepository.findByStore(store).stream().map(figurineStore -> {
@@ -273,26 +281,20 @@ public class FigurineStoreService {
                         });
     }
 
-    /**
-     * Retrieves an existing store or creates a new one if it has not been
-     * registered yet.
-     *
-     * @param name
-     *            the store name
-     * @param website
-     *            the store website URL
-     * @param currency
-     *            the currency used by the store
-     * @return the existing or newly created store
-     */
-    private Store findOrCreateStore(String name, String website, Currency currency) {
-        return storeRepository.findByName(name).orElseGet(() -> {
-            Store store = new Store();
-            store.setName(name);
-            store.setUrl(website);
-            store.setCurrency(currency);
-            return storeRepository.save(store);
-        });
+    private CachedStores findStore(StoreName storeName) {
+        Cache cache = Objects.requireNonNull(cacheManager.getCache(STORE_CACHE), "stores cache not configured");
+
+        @SuppressWarnings("unchecked")
+        List<CachedStores> cachedStores = cache.get(STORE_KEY, List.class);
+
+        if (cachedStores == null) {
+            List<Store> allStores = storeRepository.findAllByActiveTrue();
+            cachedStores = allStores.stream().map(figurineStoreMapper::toStoreCache).toList();
+
+            cache.put(STORE_KEY, cachedStores);
+        }
+        return cachedStores.stream().filter(cs -> cs.code().equals(storeName.name())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Store not found for code: " + storeName.name()));
     }
 
     /**
