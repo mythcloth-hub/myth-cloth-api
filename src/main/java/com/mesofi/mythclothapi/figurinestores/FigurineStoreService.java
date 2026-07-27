@@ -219,7 +219,8 @@ public class FigurineStoreService {
 
         Store store = unmatched.getStore();
         StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
-                unmatched.getNormalizedName(), null, null, unmatched.getPrice(), null, null, null, null, null);
+                unmatched.getNormalizedName(), unmatched.getImageUrl(), unmatched.getProductUrl(), unmatched.getPrice(),
+                null, null, null, null, null);
 
         processMatchedListing(figurine, store, listing);
 
