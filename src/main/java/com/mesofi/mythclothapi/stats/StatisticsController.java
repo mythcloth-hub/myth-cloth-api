@@ -3,7 +3,6 @@ package com.mesofi.mythclothapi.stats;
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/stats")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN') and hasAuthority('stats:read')")
 public class StatisticsController {
 

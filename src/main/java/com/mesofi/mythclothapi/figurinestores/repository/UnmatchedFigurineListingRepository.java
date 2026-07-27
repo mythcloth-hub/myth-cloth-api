@@ -11,5 +11,7 @@ import com.mesofi.mythclothapi.stores.model.Store;
 @Repository
 public interface UnmatchedFigurineListingRepository extends JpaRepository<UnmatchedFigurineListing, Long> {
 
-    Optional<UnmatchedFigurineListing> findByStoreAndOriginalName(Store store, String originalName);
+    Optional<UnmatchedFigurineListing> findByStoreAndOriginalNameAndIgnoredFalse(Store store, String originalName);
+
+    Optional<UnmatchedFigurineListing> findByStoreAndOriginalNameAndIgnoredTrue(Store store, String originalName);
 }

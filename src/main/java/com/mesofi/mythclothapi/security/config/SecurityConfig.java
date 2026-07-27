@@ -124,7 +124,7 @@ public class SecurityConfig {
      *
      * <ul>
      * <li>Allows origins specified in the security properties.
-     * <li>Allows GET, POST, PUT, DELETE, and OPTIONS methods.
+     * <li>Allows GET, POST, PUT, PATCH, DELETE, and OPTIONS methods.
      * <li>Allows all request headers.
      * <li>Allows credentials in cross-origin requests.
      * </ul>
@@ -135,7 +135,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(SecurityProperties security) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(security.corsUrl()));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

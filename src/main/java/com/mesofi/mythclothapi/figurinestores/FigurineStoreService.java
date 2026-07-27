@@ -41,15 +41,14 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Coordinates the processing of store listings, figurine-store mappings, and
- * pricing information received from external store crawlers.
+ * pricing information for figurine-store catalog data.
  * <p>
- * For each incoming store listing, this service attempts to resolve the listing
- * to a canonical {@link Figurine}. Successfully matched listings are associated
- * with the corresponding store and figurine, and their pricing information is
- * recorded. Listings that cannot be resolved automatically are persisted for
- * later manual review.
+ * Incoming store listings are resolved against canonical {@link Figurine}
+ * records when possible. Matched listings are linked to the corresponding store
+ * and pricing entries are persisted. Listings that cannot be resolved are
+ * stored for later manual review.
  * <p>
- * The service also provides operations for reviewing matched and unmatched
+ * The service also exposes operations for reviewing matched and unmatched
  * listings, manually matching unresolved listings, and retrieving current
  * pricing information.
  */
@@ -98,6 +97,15 @@ public class FigurineStoreService {
         StoreName storeName = listing.store();
         CachedStores cachedStores = findStore(storeName);
         Store store = figurineStoreMapper.toStore(cachedStores);
+
+        // some figurines could not be matched at all with one of the existing figurines
+        // in this catalog, so there's no need for the process to try to match again.
+        if (unmatchedFigurineListingRepository
+                .findByStoreAndOriginalNameAndIgnoredTrue(store, listing.originalProductName()).isPresent()) {
+            log.warn("Ignoring StoreListing with StoreName {}, and original name: '{}'", storeName,
+                    listing.originalProductName());
+            return;
+        }
 
         figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
                 fs -> createPricingIfAbsent(fs, listing.price(), listing.productName(), store.getName()),
@@ -152,6 +160,12 @@ public class FigurineStoreService {
         }).toList();
     }
 
+    /**
+     * Converts a matched figurine-store listing back into the unmatched queue.
+     *
+     * @param figurineStoreId
+     *            identifier of the matched figurine-store association
+     */
     @Transactional
     public void manuallyUnmatchFigurineListing(@Positive Long figurineStoreId) {
         log.info("Manually unmatching figurine listing for figurine store {}", figurineStoreId);
@@ -175,6 +189,26 @@ public class FigurineStoreService {
 
         figurineStorePricingRepository.deleteAll(pricingList);
         figurineStoreRepository.delete(figurineStore);
+    }
+
+    /**
+     * Updates the ignored state of an unmatched figurine listing.
+     *
+     * @param unmatchedFigurineListingId
+     *            identifier of the unmatched listing
+     * @param ignored
+     *            whether the listing should be ignored
+     */
+    @Transactional
+    public void ignoreUnmatchedFigurineListing(Long unmatchedFigurineListingId, boolean ignored) {
+        UnmatchedFigurineListing listing = unmatchedFigurineListingRepository.findById(unmatchedFigurineListingId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Unmatched figurine listing not found for ID: " + unmatchedFigurineListingId));
+
+        listing.setIgnored(ignored);
+
+        log.info("Unmatched figurine listing {} has been {}.", unmatchedFigurineListingId,
+                ignored ? "ignored" : "unignored");
     }
 
     /**
@@ -305,7 +339,8 @@ public class FigurineStoreService {
         log.warn("No figurine found for normalized='{}', original='{}'.", listing.productName(),
                 listing.originalProductName());
 
-        unmatchedFigurineListingRepository.findByStoreAndOriginalName(store, listing.originalProductName())
+        unmatchedFigurineListingRepository
+                .findByStoreAndOriginalNameAndIgnoredFalse(store, listing.originalProductName())
                 .ifPresentOrElse(existing -> log.warn(
                         "Unmatched figurine listing already exists for original name '{}'. Ignoring duplicate.",
                         existing.getOriginalName()), () -> {
@@ -317,6 +352,7 @@ public class FigurineStoreService {
                             unmatched.setImageUrl(listing.productImageUrl());
                             unmatched.setProductUrl(listing.productUrl());
                             unmatched.setPrice(listing.price());
+                            unmatched.setIgnored(false);
                             unmatchedFigurineListingRepository.save(unmatched);
                             log.info("Created unmatched figurine listing '{}'.", listing.originalProductName());
                         });

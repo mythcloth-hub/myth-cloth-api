@@ -53,6 +53,9 @@ public class UnmatchedFigurineListing extends BaseId {
     private BigDecimal price;
 
     @Column(nullable = false)
+    private boolean ignored;
+
+    @Column(nullable = false)
     private Instant creationDate;
 
     @Column(nullable = false)

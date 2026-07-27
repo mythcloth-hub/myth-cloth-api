@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,12 +23,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST controller for managing figurine store listings and their association
- * with canonical figurines.
+ * REST controller for reviewing and maintaining figurine store listings.
  * <p>
- * Provides endpoints for reviewing matched and unmatched store listings,
- * manually assigning unmatched listings to canonical figurines, and retrieving
- * real-time pricing information across stores.
+ * Exposes endpoints for matched and unmatched listings, manual assignment,
+ * ignored-listing toggling, and real-time pricing lookups.
  * </p>
  */
 @Slf4j
@@ -36,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/figurine-stores")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasRole('ADMIN')")
 public class FigurineStoreController {
 
@@ -71,6 +68,12 @@ public class FigurineStoreController {
         return figurineStoreService.retrieveMatchedFigurineListing(storeId);
     }
 
+    /**
+     * Manually unmatches a figurine listing from its associated canonical figurine.
+     *
+     * @param figurineStoreId
+     *            identifier of the matched figurine-store relationship
+     */
     @PostMapping("/matched-listings/figurine-store/{figurineStoreId}")
     @PreAuthorize("hasAuthority('figurines:stores:assign')")
     public void manuallyUnmatchFigurineListing(@Positive @PathVariable Long figurineStoreId) {
@@ -111,6 +114,23 @@ public class FigurineStoreController {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
 
         figurineStoreService.matchUnmatchedListingToFigurine(unmatchedListingId, figurineId);
+    }
+
+    /**
+     * Marks or unmarks an unmatched figurine listing as ignored.
+     *
+     * @param unmatchedListingId
+     *            identifier of the unmatched listing
+     * @param ignored
+     *            whether the listing should be ignored
+     */
+    @PatchMapping("/unmatched-listings/{unmatchedListingId}/ignored/{ignored}")
+    @PreAuthorize("hasAuthority('figurines:stores:assign')")
+    public void ignoreUnmatchedFigurineListing(@Positive @PathVariable Long unmatchedListingId,
+            @PathVariable boolean ignored) {
+        log.info("Setting ignored status of unmatched listing {} to {}", unmatchedListingId, ignored);
+
+        figurineStoreService.ignoreUnmatchedFigurineListing(unmatchedListingId, ignored);
     }
 
     /**
