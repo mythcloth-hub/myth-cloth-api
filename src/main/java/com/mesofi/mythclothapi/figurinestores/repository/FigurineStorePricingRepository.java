@@ -16,5 +16,5 @@ public interface FigurineStorePricingRepository extends JpaRepository<FigurineSt
     Optional<FigurineStorePricing> findByFigurineStoreAndCurrentPrice(FigurineStore figurineStore,
             BigDecimal currentPrice);
 
-    List<FigurineStorePricing> findByFigurineStore(FigurineStore figurineStore);
+    List<FigurineStorePricing> findByFigurineStoreOrderByCreationDateDesc(FigurineStore figurineStore);
 }

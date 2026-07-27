@@ -18,8 +18,9 @@ import com.mesofi.mythclothapi.stores.model.Store;
 @Mapper(componentModel = "spring")
 public interface FigurineStoreMapper {
 
-    // @Mapping(target = "storeId", source = "store.id")
-    // @Mapping(target = "storeWebsite", source = "store.url")
+    @Mapping(target = "storeId", source = "store.id")
+    @Mapping(target = "storeWebsite", source = "store.website")
+    @Mapping(target = "storeLogo", source = "store.logoUrl")
     FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(UnmatchedFigurineListing unmatchedFigurineListing);
 
     @Mapping(target = "storeId", source = "store.id")
@@ -42,6 +43,14 @@ public interface FigurineStoreMapper {
     FigurineStoreMatchedResp toFigurineStoreMatchedResp(FigurineStore figurineStore, @Context String displayableName);
 
     CachedStores toStoreCache(Store store);
+
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "website", ignore = true)
+    @Mapping(target = "logoUrl", ignore = true)
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "country", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "figurines", ignore = true)
     Store toStore(CachedStores cachedStores);
 
     @Named("firstImage")

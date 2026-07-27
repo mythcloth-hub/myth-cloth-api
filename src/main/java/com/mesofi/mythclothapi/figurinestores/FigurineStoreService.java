@@ -40,14 +40,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Coordinates the processing of pricing information received from external
- * stores.
+ * Coordinates the processing of store listings, figurine-store mappings, and
+ * pricing information received from external store crawlers.
  * <p>
  * For each incoming store listing, this service attempts to resolve the listing
- * to a canonical {@link Figurine}. If a match is found, it creates or updates
- * the corresponding {@link FigurineStore} mapping and records the pricing
- * history. Listings that cannot be resolved automatically are persisted for
+ * to a canonical {@link Figurine}. Successfully matched listings are associated
+ * with the corresponding store and figurine, and their pricing information is
+ * recorded. Listings that cannot be resolved automatically are persisted for
  * later manual review.
+ * <p>
+ * The service also provides operations for reviewing matched and unmatched
+ * listings, manually matching unresolved listings, and retrieving current
+ * pricing information.
  */
 @Slf4j
 @Service
@@ -103,6 +107,77 @@ public class FigurineStoreService {
     }
 
     /**
+     * Retrieves a summary of matched figurine listings grouped by active store.
+     * <p>
+     * Stores are returned in alphabetical order by name, with each summary
+     * containing the number of figurines currently associated with the store.
+     *
+     * @return summaries of matched figurine listings for all active stores
+     */
+    @Transactional(readOnly = true)
+    public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
+        log.info("Retrieving matched figurine listing summary");
+
+        List<FigurineStoreMatchedSummaryResp> response = new ArrayList<>();
+
+        for (Store store : storeRepository.findAllByActiveTrueOrderByNameAsc()) {
+            long totalFigurines = figurineStoreRepository.countByStore(store);
+            response.add(figurineStoreMapper.toFigurineStoreMatchedSummaryResp(store, totalFigurines));
+        }
+        return response;
+    }
+
+    /**
+     * Retrieves all figurine-store mappings associated with an active store.
+     * <p>
+     * Each mapping is converted into a response containing the store listing
+     * information and a displayable name for the associated canonical figurine.
+     *
+     * @param storeId
+     *            identifier of the store
+     * @return matched figurine listings associated with the store
+     * @throws IllegalArgumentException
+     *             if the store does not exist or is inactive
+     */
+    @Transactional(readOnly = true)
+    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
+        log.info("Retrieving matched figurine listing using storeId {}", storeId);
+
+        Store store = storeRepository.findByIdAndActiveTrue(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+
+        return figurineStoreRepository.findByStore(store).stream().map(figurineStore -> {
+            String displayableName = figurineService.createDisplayableName(figurineStore.getFigurine());
+            return figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore, displayableName);
+        }).toList();
+    }
+
+    @Transactional
+    public void manuallyUnmatchFigurineListing(@Positive Long figurineStoreId) {
+        log.info("Manually unmatching figurine listing for figurine store {}", figurineStoreId);
+
+        FigurineStore figurineStore = figurineStoreRepository.findById(figurineStoreId)
+                .orElseThrow(() -> new IllegalArgumentException("FigurineStore not found for ID: " + figurineStoreId));
+
+        List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                .findByFigurineStoreOrderByCreationDateDesc(figurineStore);
+        if (pricingList.isEmpty()) {
+            throw new IllegalArgumentException("No pricing data found for FigurineStore ID: " + figurineStoreId);
+        }
+
+        Store store = figurineStore.getStore();
+
+        StoreListing listing = new StoreListing(null, figurineStore.getLineUP(), figurineStore.getOriginalName(),
+                figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
+                pricingList.getFirst().getCurrentPrice(), null, null, null, null, null);
+
+        createUnmatchedListing(store, listing);
+
+        figurineStorePricingRepository.deleteAll(pricingList);
+        figurineStoreRepository.delete(figurineStore);
+    }
+
+    /**
      * Retrieves all unmatched store listings pending manual figurine matching.
      *
      * @return unmatched figurine listing responses
@@ -117,13 +192,19 @@ public class FigurineStoreService {
     }
 
     /**
-     * Matches an unmatched store listing to a canonical figurine and removes the
-     * listing from the unmatched queue.
+     * Manually matches an unmatched store listing to a canonical figurine.
+     * <p>
+     * The existing unmatched listing is converted into a matched
+     * {@link FigurineStore} association, its pricing information is recorded, and
+     * the listing is subsequently removed from the unmatched queue.
      *
      * @param unmatchedFigurineId
-     *            unmatched listing identifier
+     *            identifier of the unmatched store listing
      * @param figurineId
-     *            canonical figurine identifier
+     *            identifier of the canonical figurine
+     * @throws IllegalArgumentException
+     *             if either the unmatched listing or canonical figurine does not
+     *             exist
      */
     @Transactional
     public void matchUnmatchedListingToFigurine(@NotNull Long unmatchedFigurineId, @NotNull Long figurineId) {
@@ -145,32 +226,22 @@ public class FigurineStoreService {
         unmatchedFigurineListingRepository.delete(unmatched);
     }
 
-    @Transactional(readOnly = true)
-    public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
-        log.info("Retrieving matched figurine listing summary");
-
-        List<FigurineStoreMatchedSummaryResp> response = new ArrayList<>();
-
-        for (Store store : storeRepository.findAllByActiveTrueOrderByNameAsc()) {
-            long totalFigurines = figurineStoreRepository.countByStore(store);
-            response.add(figurineStoreMapper.toFigurineStoreMatchedSummaryResp(store, totalFigurines));
-        }
-        return response;
-    }
-
-    @Transactional(readOnly = true)
-    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
-        log.info("Retrieving matched figurine listing using storeId {}", storeId);
-
-        Store store = storeRepository.findByIdAndActiveTrue(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
-
-        return figurineStoreRepository.findByStore(store).stream().map(figurineStore -> {
-            String displayableName = figurineService.createDisplayableName(figurineStore.getFigurine());
-            return figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore, displayableName);
-        }).toList();
-    }
-
+    /**
+     * Retrieves the average current price of a figurine across its associated store
+     * listings.
+     * <p>
+     * Only positive current prices are included in the calculation. The resulting
+     * average is rounded to two decimal places using {@link RoundingMode#HALF_UP}.
+     * If the figurine has no valid pricing information, an average price of zero is
+     * returned.
+     *
+     * @param figurineId
+     *            identifier of the canonical figurine
+     * @return average current price across the figurine's store listings, or zero
+     *         when no valid pricing information is available
+     * @throws IllegalArgumentException
+     *             if the figurine does not exist
+     */
     @Transactional(readOnly = true)
     public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive Long figurineId) {
         log.info("Retrieving average realtime price");
@@ -206,7 +277,7 @@ public class FigurineStoreService {
      * @param store
      *            the store where the listing originated
      * @param listing
-     *            the scraped store listing
+     *            listing the store listing containing the store info.
      */
     private void processMatchedListing(Figurine figurine, Store store, StoreListing listing) {
         log.info("[{}] [{}] - {} ==> [{}] - {}", store.getName(), listing.lineUp(), listing.productName(),
@@ -322,6 +393,7 @@ public class FigurineStoreService {
             return mapping;
         });
 
+        figurineStore.setLineUP(listing.lineUp());
         figurineStore.setOriginalName(listing.originalProductName());
         figurineStore.setNormalizedName(listing.productName());
         figurineStore.setImageUrl(listing.productImageUrl());
