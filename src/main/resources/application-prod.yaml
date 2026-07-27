@@ -49,6 +49,11 @@ spring:
         use_sql_comments: false # <- Adds Hibernate comments to queries
         highlight_sql: false        # ANSI colors (Hibernate 6+)
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
   sql:
     init:
       mode: never   # FORCE data.sql to run with 'always'

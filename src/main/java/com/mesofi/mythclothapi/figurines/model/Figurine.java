@@ -26,6 +26,7 @@ import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFi
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -52,6 +53,9 @@ public class Figurine extends BaseId {
 
     @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CollectorCollectionFigurine> collections = new ArrayList<>();
+
+    @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FigurineStore> stores = new ArrayList<>();
 
     @Column(length = 50)
     private String tamashiiUrl;

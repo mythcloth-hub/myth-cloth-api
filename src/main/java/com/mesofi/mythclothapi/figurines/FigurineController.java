@@ -28,6 +28,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
@@ -144,7 +145,7 @@ public class FigurineController {
      * @return a {@link ResponseEntity} containing a {@link PaginatedResponse}
      */
     @GetMapping
-    public ResponseEntity<PaginatedResponse> retrieveFigurines(Authentication authentication,
+    public ResponseEntity<PaginatedResponse> retrieveFigurineDetails(Authentication authentication,
             @RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
             @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
@@ -180,6 +181,15 @@ public class FigurineController {
             }
         }
         return Optional.empty();
+    }
+
+    @GetMapping("/summary")
+    public List<FigurineSummaryResp> retrieveFigurineSummaries() {
+
+        FigurineFilter figurineFilter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null);
+
+        return service.retrieveFigurineSummaries(figurineFilter);
     }
 
     @GetMapping("/selectable-ids")

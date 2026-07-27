@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.figurines;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
+import static com.mesofi.mythclothapi.figurines.FigurineSimilarityUtils.calculateSimilarity;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
@@ -24,6 +25,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -32,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
@@ -51,15 +55,18 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
+import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import io.micrometer.core.annotation.Timed;
@@ -99,6 +106,17 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
+    private static final String FIGURINE_CACHE = "figurines";
+    private static final String BY_MYTH_CLOTH_EX_KEY = "by-mythcloth-ex";
+    private static final String BY_MYTH_CLOTH_KEY = "by-mythcloth";
+    private static final String BY_APPENDIX_KEY = "by-appendix";
+    private static final String BY_DD_PANORAMATION_KEY = "by-dd-panoramation";
+    private static final String BY_FIGUARTS_ZERO_KEY = "by-figuarts-zero";
+    private static final String BY_FIGUARTS_KEY = "by-figuarts";
+    private static final String BY_SAINT_CLOTH_LEGEND_KEY = "by-saint-cloth-legend";
+    private static final String BY_CROWN_KEY = "by-crown";
+    private static final String BY_SAINT_CLOTH_SERIES_KEY = "by-saint-cloth-series";
+
     private final FigurineMapper mapper;
     private final FigurineCsvSource csvSource;
 
@@ -112,6 +130,7 @@ public class FigurineService {
     private final CurrencyRegionResolver currencyRegionResolver;
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
+    private final CacheManager cacheManager;
 
     private final String ANN_MSG = "First announced as a possible future release.";
     private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
@@ -134,6 +153,20 @@ public class FigurineService {
         ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
         ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
     }
+
+    private static final Map<LineUP, FigurineLineUpCacheConf> LINEUP_CONFIG = Map.of(LineUP.MYTH_CLOTH_EX,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_EX_KEY, "Myth Cloth EX"), LineUP.MYTH_CLOTH,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_KEY, "Myth Cloth"), LineUP.APPENDIX,
+            new FigurineLineUpCacheConf(BY_APPENDIX_KEY, "Appendix"), LineUP.DD_PANORAMATION,
+            new FigurineLineUpCacheConf(BY_DD_PANORAMATION_KEY, "DD Panoramation"), LineUP.FIGUARTS_ZERO,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_ZERO_KEY, "Figuarts Zero Metallic Touch"), LineUP.FIGUARTS,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_KEY, "Figuarts"), LineUP.SAINT_CLOTH_LEGEND,
+            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_LEGEND_KEY, "Saint Cloth Legend"), LineUP.CROWN,
+            new FigurineLineUpCacheConf(BY_CROWN_KEY, "Saint Cloth Crown"), LineUP.SAINT_CLOTH_SERIES,
+            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_SERIES_KEY, "Saint Cloth Series"));
+
+    // Is the minimum similarity score required to consider a match valid
+    private static final double MIN_SIMILARITY_THRESHOLD = 0.6;
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
@@ -342,6 +375,17 @@ public class FigurineService {
                 .orElseGet(List::of);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable("figurine-summary")
+    public List<FigurineSummaryResp> retrieveFigurineSummaries(@NotNull FigurineFilter filter) {
+        log.info("Retrieving figurines summaries '{}'", filter);
+
+        return repository.findAll(filter).stream().filter(figurine -> {
+            ReleaseStatus status = calculateReleaseStatus(figurine);
+            return status == RELEASED || status == ANNOUNCED;
+        }).map(figurine -> mapper.toFigurineSummaryResp(figurine, this::createDisplayableName)).toList();
+    }
+
     /**
      * Retrieves the identifiers of figurines that are eligible for selection based
      * on the provided filter criteria.
@@ -505,6 +549,89 @@ public class FigurineService {
                                 existingDistributors.add(incomingFigurineDist);
                             });
         }
+    }
+
+    /**
+     * Finds the figurine whose display name best matches the provided normalized
+     * name within the specified line up.
+     * <p>
+     * The search is performed by comparing the supplied normalized name against the
+     * display name of every available figurine in the given line up using
+     * {@link FigurineSimilarityUtils#calculateSimilarity(String, String)}. The
+     * figurine with the highest similarity score is returned only if its score
+     * meets or exceeds {@code MIN_SIMILARITY_THRESHOLD}.
+     *
+     * @param lineUp
+     *            the line-up to search within
+     * @param normalizedName
+     *            the normalized figurine name obtained from a store listing
+     * @return an {@link Optional} containing the best matching figurine if a
+     *         suitable match is found; otherwise {@link Optional#empty()}
+     */
+    @Transactional(readOnly = true)
+    public Optional<Figurine> findBestMatchingFigurine(LineUP lineUp, String normalizedName) {
+        List<CachedFigurine> availableFigurines = getAvailableFigurinesByLineUp(lineUp);
+
+        if (availableFigurines.isEmpty()) {
+            return Optional.empty();
+        }
+
+        double bestSimilarity = MIN_SIMILARITY_THRESHOLD;
+        Long bestMatchId = null;
+
+        for (CachedFigurine figurine : availableFigurines) {
+
+            double similarity = calculateSimilarity(figurine.displayName(), normalizedName);
+
+            if (similarity >= bestSimilarity) {
+                bestSimilarity = similarity;
+                bestMatchId = figurine.id();
+            }
+        }
+
+        return Optional.ofNullable(bestMatchId).flatMap(repository::findById);
+    }
+
+    /**
+     * Retrieves all released and announced figurines for the specified line up.
+     * <p>
+     * Results are cached to avoid repeatedly querying the database for the same
+     * line-up. The returned entities are treated as read-only and are never
+     * modified by this service.
+     *
+     * @param lineUp
+     *            the line-up whose figurines should be retrieved
+     * @return the available figurines for the requested line-up, or an empty list
+     *         if the line-up is not configured or cannot be found
+     */
+    private List<CachedFigurine> getAvailableFigurinesByLineUp(LineUP lineUp) {
+        Cache cache = Objects.requireNonNull(cacheManager.getCache(FIGURINE_CACHE), "figurines cache not configured");
+
+        FigurineLineUpCacheConf config = LINEUP_CONFIG.get(lineUp);
+        if (config == null) {
+            return List.of();
+        }
+
+        @SuppressWarnings("unchecked")
+        List<CachedFigurine> figurines = cache.get(config.cacheKey(), List.class);
+
+        if (figurines == null) {
+            Optional<LineUp> lineUpEntity = lineUpRepository.findByDescription(config.lineUpDescription());
+
+            if (lineUpEntity.isEmpty()) {
+                log.warn("No line up found for '{}'.", config.lineUpDescription());
+                return List.of();
+            }
+
+            figurines = repository.findAllByLineup(lineUpEntity.get()).stream().filter(figurine -> {
+                ReleaseStatus status = calculateReleaseStatus(figurine);
+                return status == RELEASED || status == ANNOUNCED;
+            }).map(figurine -> new CachedFigurine(figurine.getId(), createDisplayableName(figurine))).toList();
+
+            cache.put(config.cacheKey(), figurines);
+        }
+
+        return figurines;
     }
 
     /**

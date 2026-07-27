@@ -49,6 +49,11 @@ spring:
         use_sql_comments: false # <- Adds Hibernate comments to queries
         highlight_sql: true        # ANSI colors (Hibernate 6+)
 
+  rabbitmq:
+    host: localhost
+    username: mythcloth
+    password: mythcloth
+
   sql:
     init:
       mode: always   # FORCE data.sql to run

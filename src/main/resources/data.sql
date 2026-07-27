@@ -62,6 +62,13 @@ INSERT INTO series (description) VALUES ('Saint Seiya Omega');
 INSERT INTO series (description) VALUES ('The Lost Canvas');
 INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
 
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Mandarake', 'MANDARAKE', 'https://order.mandarake.co.jp', 'https://www.mandarake.co.jp/img/global/logo.png', 'JPY', 'JP', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Nin-Nin-Game', 'NIN_NIN_GAME', 'https://www.nin-nin-game.com', 'https://www.nin-nin-game.com/img/logo.png', 'MXN', 'JP', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('MyKombini', 'MY_KOMBINI', 'https://mykombini.com', 'https://mykombini-ab5a.kxcdn.com/img/mykombini-logo-1723002204.jpg', 'JPY', 'JP', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Luna Park', 'LUNA_PARK', 'https://www.lunapark.store', 'https://static.wixstatic.com/media/4724a1_42d57453f336409688f3960ca07cc2fa~mv2.png/v1/fill/w_650,h_364,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/LUNA%20PARK%20LOGO_%20REVISE-01.png', 'JPY', 'JP', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Myth Supplies', 'MYTH_SUPPLIES', 'https://mythsupplies.com', 'https://mythsupplies.com/assets/images/web/logo_myth-supplies-header.png', 'MXN', 'MX', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Logan Store', 'LOGAN_STORE', 'https://loganstore.com.mx', 'https://loganstore.com.mx/wp-content/uploads/2021/11/logan-logo_Mesa-de-trabajo-1.svg', 'MXN', 'MX', true);
+
 -- ========================= INITIALIZING BASIC ADMIN ========================================
 INSERT INTO roles (description) VALUES ('Admin');
 
@@ -109,6 +116,8 @@ INSERT INTO permissions (description) VALUES ('figurines:events:add');
 INSERT INTO permissions (description) VALUES ('figurines:events:delete');
 INSERT INTO permissions (description) VALUES ('figurines:events:read');
 INSERT INTO permissions (description) VALUES ('figurines:events:update');
+INSERT INTO permissions (description) VALUES ('figurines:stores:read');
+INSERT INTO permissions (description) VALUES ('figurines:stores:assign');
 INSERT INTO permissions (description) VALUES ('figurines:update');
 INSERT INTO permissions (description) VALUES ('figurines:write');
 
@@ -163,3 +172,5 @@ INSERT INTO role_permission (role_id, permission_id) VALUES (1, 41);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 42);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 43);
 INSERT INTO role_permission (role_id, permission_id) VALUES (1, 44);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 45);
+INSERT INTO role_permission (role_id, permission_id) VALUES (1, 46);
