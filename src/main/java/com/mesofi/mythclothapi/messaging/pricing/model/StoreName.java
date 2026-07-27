@@ -34,6 +34,11 @@ public enum StoreName {
     /**
      * Myth Supplies online store.
      */
-    MYTH_SUPPLIES;
+    MYTH_SUPPLIES,
+
+    /**
+     * Logan Store online store.
+     */
+    LOGAN_STORE
 
 }
