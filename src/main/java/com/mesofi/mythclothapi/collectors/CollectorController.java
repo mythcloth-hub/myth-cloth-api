@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.collectors;
 
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -26,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/collectors/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class CollectorController {
 
     private final CollectorService collectorService;
