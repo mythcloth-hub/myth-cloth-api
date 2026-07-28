@@ -28,6 +28,12 @@ public class FigurineStorePricing extends BaseId {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal currentPrice;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Column(nullable = false)
+    private Instant checkedAt;
+
     @Column(nullable = false)
     private Instant creationDate;
 

@@ -17,6 +17,7 @@ import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
+import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 import lombok.Getter;
@@ -51,6 +52,16 @@ public class UnmatchedFigurineListing extends BaseId {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ListingStatus status;
+
+    @Column(nullable = false)
+    private Instant checkedAt;
 
     @Column(nullable = false)
     private boolean ignored;

@@ -20,6 +20,7 @@ import jakarta.persistence.UniqueConstraint;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
+import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 import lombok.Getter;
@@ -56,6 +57,10 @@ public class FigurineStore extends BaseId {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String productUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ListingStatus status;
 
     @Column(nullable = false)
     private Instant creationDate;

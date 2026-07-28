@@ -166,7 +166,7 @@ public class FigurineService {
             new FigurineLineUpCacheConf(BY_SAINT_CLOTH_SERIES_KEY, "Saint Cloth Series"));
 
     // Is the minimum similarity score required to consider a match valid
-    private static final double MIN_SIMILARITY_THRESHOLD = 0.6;
+    private static final double MIN_SIMILARITY_THRESHOLD = 0.7;
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
