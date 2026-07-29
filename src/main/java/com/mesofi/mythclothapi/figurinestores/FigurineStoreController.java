@@ -1,6 +1,8 @@
 
 package com.mesofi.mythclothapi.figurinestores;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.toCurrency;
+
 import java.util.List;
 
 import jakarta.validation.constraints.Positive;
@@ -12,11 +14,13 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
-import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 
 import lombok.RequiredArgsConstructor;
@@ -34,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/figurine-stores")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class FigurineStoreController {
 
     private final FigurineStoreService figurineStoreService;
@@ -46,7 +49,7 @@ public class FigurineStoreController {
      *         figurine listings
      */
     @GetMapping("/matched-listings/summary")
-    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
     public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
         log.info("Retrieving matched figurine listing summary ...");
 
@@ -61,7 +64,7 @@ public class FigurineStoreController {
      * @return matched figurine listings associated with the specified store
      */
     @GetMapping("/matched-listings/stores/{storeId}")
-    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
     public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId) {
         log.info("Retrieving matched figurine listing for store {}", storeId);
 
@@ -75,7 +78,7 @@ public class FigurineStoreController {
      *            identifier of the matched figurine-store relationship
      */
     @PostMapping("/matched-listings/figurine-store/{figurineStoreId}")
-    @PreAuthorize("hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
     public void manuallyUnmatchFigurineListing(@Positive @PathVariable Long figurineStoreId) {
         log.info("Manually unmatching figurine store {}", figurineStoreId);
 
@@ -89,7 +92,7 @@ public class FigurineStoreController {
      * @return unmatched store listings awaiting manual matching
      */
     @GetMapping("/unmatched-listings")
-    @PreAuthorize("hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
     public List<FigurineStoreUnmatchedResp> retrieveUnmatchedFigurineListings() {
         log.info("Retrieving unmatched figurines ...");
 
@@ -108,7 +111,7 @@ public class FigurineStoreController {
      *            identifier of the canonical figurine
      */
     @PostMapping("/unmatched-listings/{unmatchedListingId}/figurines/{figurineId}/match")
-    @PreAuthorize("hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
     public void matchUnmatchedListingToFigurine(@Positive @PathVariable Long unmatchedListingId,
             @Positive @PathVariable Long figurineId) {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
@@ -125,7 +128,7 @@ public class FigurineStoreController {
      *            whether the listing should be ignored
      */
     @PatchMapping("/unmatched-listings/{unmatchedListingId}/ignored/{ignored}")
-    @PreAuthorize("hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
     public void ignoreUnmatchedFigurineListing(@Positive @PathVariable Long unmatchedListingId,
             @PathVariable boolean ignored) {
         log.info("Setting ignored status of unmatched listing {} to {}", unmatchedListingId, ignored);
@@ -139,13 +142,24 @@ public class FigurineStoreController {
      *
      * @param figurineId
      *            identifier of the canonical figurine
+     * @param currency
+     *            optional currency code for price conversion; if not provided, the
+     *            default currency of the listings will be used
      * @return pricing information calculated from the current store listings
      */
-    @GetMapping("/figurines/{figurineId}/average-realtime-price")
-    @PreAuthorize("hasAuthority('figurines:stores:read')")
-    public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive @PathVariable Long figurineId) {
-        log.info("Retrieving average realtime price for figurine {}", figurineId);
+    @GetMapping("/figurines/{figurineId}/prices/current")
+    public FigurineStorePriceResp retrieveAverageRealtimePrice(@Positive @PathVariable Long figurineId,
+            @RequestParam(required = false) String currency) {
+        log.info("Retrieving average realtime price for figurine {} with currency {}", figurineId, currency);
 
-        return figurineStoreService.retrieveAverageRealtimePrice(figurineId);
+        return figurineStoreService.retrieveAverageRealtimePrice(figurineId, toCurrency(currency));
+    }
+
+    @GetMapping("/figurines/{figurineId}/prices/history")
+    public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive @PathVariable Long figurineId,
+            @Positive @RequestParam(required = false) Long storeId, @RequestParam(required = false) String currency) {
+        log.info("Retrieving historical prices for figurine {} with currency {}", figurineId, currency);
+
+        return figurineStoreService.retrieveHistoricalPrices(figurineId, storeId, toCurrency(currency));
     }
 }

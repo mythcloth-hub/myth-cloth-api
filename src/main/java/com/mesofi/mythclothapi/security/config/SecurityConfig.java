@@ -105,8 +105,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth.requestMatchers(OPTIONS, "/**").permitAll()
                         .requestMatchers(GET, "/figurines/**", "/catalogs/{catalogType}/**", "/anniversaries/**",
-                                "/demos/**", "/actuator/**", "/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml",
-                                "/v3/api-docs/**", "/v3/api-docs.yaml")
+                                "/demos/**", "/stores/**", "/figurine-stores/figurines/{figurineId}/**", "/actuator/**",
+                                "/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
+                                "/v3/api-docs.yaml")
                         .permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**").permitAll().anyRequest()
                         .authenticated())
                 .oauth2ResourceServer(

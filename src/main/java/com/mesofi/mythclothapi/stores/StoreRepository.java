@@ -14,6 +14,4 @@ public interface StoreRepository extends JpaRepository<Store, Long> {
     List<Store> findAllByActiveTrueOrderByNameAsc();
 
     Optional<Store> findByIdAndActiveTrue(Long storeId);
-
-    List<Store> findAllByActiveTrue();
 }

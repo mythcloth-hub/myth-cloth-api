@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.stores;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,5 +28,13 @@ public class StoreService {
 
         var saved = repository.save(entity);
         return mapper.toStoreResp(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<StoreResp> retrieveStores() {
+        log.info("Retrieving all existing stores ...");
+
+        List<Store> stores = repository.findAllByActiveTrueOrderByNameAsc();
+        return stores.stream().map(mapper::toStoreResp).toList();
     }
 }

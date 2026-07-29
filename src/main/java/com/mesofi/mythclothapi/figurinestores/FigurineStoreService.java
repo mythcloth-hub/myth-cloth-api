@@ -1,14 +1,18 @@
 
 package com.mesofi.mythclothapi.figurinestores;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.isDefault;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Currency;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -21,9 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalPriceResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
-import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
@@ -33,6 +39,7 @@ import com.mesofi.mythclothapi.figurinestores.model.FigurineStoreUnmatched;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStorePricingRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStoreRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.UnmatchedFigurineListingRepository;
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
 import com.mesofi.mythclothapi.stores.StoreRepository;
@@ -70,6 +77,7 @@ public class FigurineStoreService {
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
     private final StoreRepository storeRepository;
     private final CacheManager cacheManager;
+    private final CurrencyConversionService currencyConversionService;
 
     /**
      * Processes a pricing update received from an external store.
@@ -288,31 +296,114 @@ public class FigurineStoreService {
      *
      * @param figurineId
      *            identifier of the canonical figurine
+     * @param currency
+     *            optional currency code for price conversion; if not provided, the
+     *            default currency of the listings will be used
      * @return average current price across the figurine's store listings, or zero
      *         when no valid pricing information is available
      * @throws IllegalArgumentException
      *             if the figurine does not exist
      */
     @Transactional(readOnly = true)
-    public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive Long figurineId) {
-        log.info("Retrieving average realtime price");
+    public FigurineStorePriceResp retrieveAverageRealtimePrice(@Positive Long figurineId, @Nonnull Currency currency) {
+        log.info("Retrieving average realtime price for figurine {} with currency {}", figurineId, currency);
 
         Figurine figurine = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
 
-        List<BigDecimal> prices = figurineStoreRepository.findByFigurine(figurine).stream()
-                .flatMap(fs -> fs.getPrices().stream()).map(FigurineStorePricing::getCurrentPrice)
-                .filter(price -> price != null && price.compareTo(BigDecimal.ZERO) > 0).toList();
+        List<BigDecimal> prices = new ArrayList<>();
+
+        String source;
+        String target = currency.toString();
+
+        List<FigurineStore> figurineStores = figurineStoreRepository.findByFigurine(figurine);
+        for (FigurineStore figurineStore : figurineStores) {
+            source = figurineStore.getStore().getCurrency();
+            List<FigurineStorePricing> pricingList = figurineStore.getPrices();
+
+            for (FigurineStorePricing pricing : pricingList) {
+                prices.add(currencyConversionService.convert(pricing.getCurrentPrice(), source, target));
+            }
+        }
 
         if (prices.isEmpty()) {
-            log.info("No pricing data available for figurine {}", figurineId);
-            return new FigurineStorePricingResp(BigDecimal.ZERO);
+            return new FigurineStorePriceResp(BigDecimal.ZERO, target);
         }
 
         BigDecimal average = prices.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal.valueOf(prices.size()), 2, RoundingMode.HALF_UP);
-        log.info("Average realtime price for figurine {}: {}", figurineId, average);
-        return new FigurineStorePricingResp(average);
+
+        log.info("Average realtime price for figurine {}: {} {}", figurineId, average, target);
+        return new FigurineStorePriceResp(average, target);
+    }
+
+    public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive Long figurineId, @Positive Long storeId,
+            @Nonnull Currency currency) {
+
+        Figurine figurine = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+
+        FigurineStoreHistoricalResp response;
+        List<FigurineStoreHistoricalPriceResp> historicalPrices = new ArrayList<>();
+
+        if (storeId == null) {
+            // show all the prices from all stores
+            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurine(figurine);
+
+            for (FigurineStore figurineStore : figurineStoreList) {
+
+                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+
+                for (FigurineStorePricing pricing : pricingList) {
+
+                    BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
+                            figurineStore.getStore().getCurrency(), currency.toString());
+
+                    historicalPrices.add(new FigurineStoreHistoricalPriceResp(figurineStore.getStore().getName(),
+                            figurineStore.getStore().getLogoUrl(), figurineStore.getProductUrl(), convertedPrice,
+                            pricing.getCheckedAt()));
+                }
+            }
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), currency.toString(),
+                    historicalPrices);
+
+        } else {
+            Store store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+
+            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurineAndStore(figurine, store);
+
+            String theCurrency = null;
+
+            for (FigurineStore figurineStore : figurineStoreList) {
+                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+                for (FigurineStorePricing pricing : pricingList) {
+                    if (isDefault(currency)) {
+                        // no conversion, take the currency from the current store
+                        theCurrency = figurineStore.getStore().getCurrency();
+
+                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                                figurineStore.getProductUrl(), pricing.getCurrentPrice(), pricing.getCheckedAt()));
+                    } else {
+                        theCurrency = currency.toString();
+
+                        BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
+                                figurineStore.getStore().getCurrency(), currency.toString());
+                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                                figurineStore.getProductUrl(), convertedPrice, pricing.getCheckedAt()));
+                    }
+
+                }
+            }
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), theCurrency, historicalPrices);
+        }
+
+        historicalPrices.sort(Comparator.comparing(FigurineStoreHistoricalPriceResp::checkedAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+        return response;
     }
 
     /**
@@ -422,7 +513,7 @@ public class FigurineStoreService {
         List<CachedStores> cachedStores = cache.get(STORE_KEY, List.class);
 
         if (cachedStores == null) {
-            List<Store> allStores = storeRepository.findAllByActiveTrue();
+            List<Store> allStores = storeRepository.findAllByActiveTrueOrderByNameAsc();
             cachedStores = allStores.stream().map(figurineStoreMapper::toStoreCache).toList();
 
             cache.put(STORE_KEY, cachedStores);

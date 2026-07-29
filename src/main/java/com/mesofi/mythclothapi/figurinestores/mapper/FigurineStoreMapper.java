@@ -55,6 +55,7 @@ public interface FigurineStoreMapper {
     @Mapping(target = "discount", source = "discount")
     @Mapping(target = "discountedPrice", expression = "java(calculateDiscountedPrice(pricing.getCurrentPrice(), pricing.getDiscount()))")
     @Mapping(target = "lastUpdated", source = "checkedAt")
+    @Mapping(target = "currency", ignore = true)
     FigurineStorePriceResp toFigurineStorePriceResp(FigurineStorePricing pricing);
 
     default BigDecimal calculateDiscountedPrice(BigDecimal price, BigDecimal discount) {

@@ -17,6 +17,8 @@ public interface FigurineStoreRepository extends JpaRepository<FigurineStore, Lo
 
     Optional<FigurineStore> findByFigurineAndStoreAndOriginalName(Figurine figurine, Store store, String originalName);
 
+    List<FigurineStore> findByFigurineAndStore(Figurine figurine, Store store);
+
     Optional<FigurineStore> findByStoreAndOriginalName(Store store, String originalName);
 
     long countByStore(Store store);
