@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -29,8 +30,9 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "figurine_stores", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_figurine_store_pair", columnNames = {"figurine_id", "store_id"})})
+@Table(name = "figurine_stores", uniqueConstraints = {@UniqueConstraint(name = "uk_figurine_store_pair", columnNames = {
+        "figurine_id", "store_id", "original_name"})}, indexes = {
+                @Index(name = "idx_figurine_stores_store_original_name", columnList = "store_id, original_name")})
 public class FigurineStore extends BaseId {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

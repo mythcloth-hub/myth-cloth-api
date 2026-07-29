@@ -29,7 +29,7 @@ import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
-import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStoreUnmatched;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStorePricingRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStoreRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.UnmatchedFigurineListingRepository;
@@ -86,7 +86,7 @@ public class FigurineStoreService {
      * <li>If the figurine is resolved, create or update the store mapping and
      * record the pricing.</li>
      * <li>If no match is found, persist the listing as an
-     * {@link UnmatchedFigurineListing} for manual resolution.</li>
+     * {@link FigurineStoreUnmatched} for manual resolution.</li>
      * </ol>
      *
      * @param listing
@@ -94,7 +94,7 @@ public class FigurineStoreService {
      */
     @Transactional
     public void processStorePricing(StoreListing listing) {
-        log.info("Processing StoreListing ...");
+        log.info("Processing StoreListing for store: {} ...", listing.store());
 
         StoreName storeName = listing.store();
         CachedStores cachedStores = findStore(storeName);
@@ -216,7 +216,7 @@ public class FigurineStoreService {
      */
     @Transactional
     public void ignoreUnmatchedFigurineListing(Long unmatchedFigurineListingId, boolean ignored) {
-        UnmatchedFigurineListing listing = unmatchedFigurineListingRepository.findById(unmatchedFigurineListingId)
+        FigurineStoreUnmatched listing = unmatchedFigurineListingRepository.findById(unmatchedFigurineListingId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unmatched figurine listing not found for ID: " + unmatchedFigurineListingId));
 
@@ -259,7 +259,7 @@ public class FigurineStoreService {
     public void matchUnmatchedListingToFigurine(@NotNull Long unmatchedFigurineId, @NotNull Long figurineId) {
         log.info("Matching unmatched figurine listing {} to figurine {}", unmatchedFigurineId, figurineId);
 
-        UnmatchedFigurineListing unmatched = unmatchedFigurineListingRepository.findById(unmatchedFigurineId)
+        FigurineStoreUnmatched unmatched = unmatchedFigurineListingRepository.findById(unmatchedFigurineId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unmatched figurine listing not found for ID: " + unmatchedFigurineId));
 
@@ -332,7 +332,7 @@ public class FigurineStoreService {
      */
     private void processMatchedListing(Figurine figurine, Store store, StoreListing listing) {
         log.info("[{}] [{}] - {} ==> [{}] - {}", store.getName(), listing.lineUp(), listing.productName(),
-                figurine.getId(), figurine.getLegacyName());
+                figurine.getId(), figurine.getNormalizedName());
 
         FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing);
 
@@ -361,7 +361,7 @@ public class FigurineStoreService {
                 .ifPresentOrElse(existing -> log.warn(
                         "Unmatched figurine listing already exists for original name '{}'. Ignoring duplicate.",
                         existing.getOriginalName()), () -> {
-                            UnmatchedFigurineListing unmatched = new UnmatchedFigurineListing();
+                            FigurineStoreUnmatched unmatched = new FigurineStoreUnmatched();
                             unmatched.setStore(store);
                             unmatched.setLineUP(listing.lineUp());
                             unmatched.setOriginalName(listing.originalProductName());
@@ -449,12 +449,13 @@ public class FigurineStoreService {
      */
     private FigurineStore findOrCreateFigurineStore(Figurine figurine, Store store, StoreListing listing) {
 
-        FigurineStore figurineStore = figurineStoreRepository.findByFigurineAndStore(figurine, store).orElseGet(() -> {
-            FigurineStore mapping = new FigurineStore();
-            mapping.setFigurine(figurine);
-            mapping.setStore(store);
-            return mapping;
-        });
+        FigurineStore figurineStore = figurineStoreRepository
+                .findByFigurineAndStoreAndOriginalName(figurine, store, listing.originalProductName()).orElseGet(() -> {
+                    FigurineStore mapping = new FigurineStore();
+                    mapping.setFigurine(figurine);
+                    mapping.setStore(store);
+                    return mapping;
+                });
 
         figurineStore.setLineUP(listing.lineUp());
         figurineStore.setOriginalName(listing.originalProductName());

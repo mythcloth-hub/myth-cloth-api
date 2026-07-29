@@ -6,6 +6,7 @@ import java.util.Currency;
 import java.util.Map;
 
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.mesofi.mythclothapi.figurinestores.FigurineStoreService;
@@ -21,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @AllArgsConstructor
+@ConditionalOnProperty(name = "myth-cloth.rabbit.enabled", havingValue = "true", matchIfMissing = true)
 public class MessageConsumer {
 
     private final FigurineStoreService figurineStoreService;

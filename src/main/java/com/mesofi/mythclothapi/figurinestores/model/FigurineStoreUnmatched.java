@@ -27,9 +27,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "figurine_stores_unmatched", indexes = {
-        @Index(name = "idx_store_normalized_name", columnList = "store_id, normalized_name")}, uniqueConstraints = {
+        @Index(name = "idx_store_original_name", columnList = "store_id, original_name")}, uniqueConstraints = {
                 @UniqueConstraint(name = "uk_store_original_name", columnNames = {"store_id", "original_name"})})
-public class UnmatchedFigurineListing extends BaseId {
+public class FigurineStoreUnmatched extends BaseId {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Store store;

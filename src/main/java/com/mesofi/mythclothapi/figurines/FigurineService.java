@@ -11,6 +11,8 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -577,18 +579,22 @@ public class FigurineService {
         }
 
         double bestSimilarity = MIN_SIMILARITY_THRESHOLD;
+        double currentSimilarity = 0;
         Long bestMatchId = null;
 
         for (CachedFigurine figurine : availableFigurines) {
+            currentSimilarity = calculateSimilarity(figurine.displayName(), normalizedName);
 
-            double similarity = calculateSimilarity(figurine.displayName(), normalizedName);
-
-            if (similarity >= bestSimilarity) {
-                bestSimilarity = similarity;
+            if (currentSimilarity >= bestSimilarity) {
+                bestSimilarity = currentSimilarity;
                 bestMatchId = figurine.id();
             }
         }
 
+        if (bestMatchId == null) {
+            log.info("No suitable match found for '{}', similarity: {} %.", normalizedName,
+                    new BigDecimal(currentSimilarity * 100).setScale(2, RoundingMode.UP));
+        }
         return Optional.ofNullable(bestMatchId).flatMap(repository::findById);
     }
 

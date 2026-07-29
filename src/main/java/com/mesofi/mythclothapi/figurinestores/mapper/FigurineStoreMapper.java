@@ -17,7 +17,7 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
-import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStoreUnmatched;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 @Mapper(componentModel = "spring")
@@ -26,7 +26,7 @@ public interface FigurineStoreMapper {
     @Mapping(target = "storeId", source = "store.id")
     @Mapping(target = "storeWebsite", source = "store.website")
     @Mapping(target = "storeLogo", source = "store.logoUrl")
-    FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(UnmatchedFigurineListing unmatchedFigurineListing);
+    FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(FigurineStoreUnmatched figurineStoreUnmatched);
 
     @Mapping(target = "storeId", source = "store.id")
     @Mapping(target = "storeName", source = "store.name")
