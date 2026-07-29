@@ -70,6 +70,7 @@ public final class TestJwtFactory {
     private static final String FIGURINES_STORES_ASSIGN_PERMISSION = "figurines:stores:assign";
     private static final String ANNIVERSARIES_WRITE_PERMISSION = "anniversaries:write";
     private static final String ANNIVERSARIES_READ_PERMISSION = "anniversaries:read";
+    private static final String STORES_WRITE_PERMISSION = "stores:write";
 
     private static final long TOKEN_EXPIRATION_HOURS = 720; // valid for 30 days, it's long, but it is OK for testing.
 
@@ -119,7 +120,7 @@ public final class TestJwtFactory {
                         FIGURINES_DELETE_PERMISSION, FIGURINES_IMAGE_ADD_PERMISSION, FIGURINES_IMAGE_READ_PERMISSION,
                         FIGURINES_IMAGE_DELETE_PERMISSION, FIGURINES_STORES_READ_PERMISSION,
                         FIGURINES_STORES_ASSIGN_PERMISSION, ANNIVERSARIES_WRITE_PERMISSION,
-                        ANNIVERSARIES_READ_PERMISSION))
+                        ANNIVERSARIES_READ_PERMISSION, STORES_WRITE_PERMISSION))
                 .build();
 
         return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))

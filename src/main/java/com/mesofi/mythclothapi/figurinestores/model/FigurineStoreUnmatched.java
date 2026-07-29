@@ -17,6 +17,7 @@ import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
+import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 import lombok.Getter;
@@ -26,9 +27,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "figurine_stores_unmatched", indexes = {
-        @Index(name = "idx_store_normalized_name", columnList = "store_id, normalized_name")}, uniqueConstraints = {
+        @Index(name = "idx_store_original_name", columnList = "store_id, original_name")}, uniqueConstraints = {
                 @UniqueConstraint(name = "uk_store_original_name", columnNames = {"store_id", "original_name"})})
-public class UnmatchedFigurineListing extends BaseId {
+public class FigurineStoreUnmatched extends BaseId {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Store store;
@@ -51,6 +52,16 @@ public class UnmatchedFigurineListing extends BaseId {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ListingStatus status;
+
+    @Column(nullable = false)
+    private Instant checkedAt;
 
     @Column(nullable = false)
     private boolean ignored;

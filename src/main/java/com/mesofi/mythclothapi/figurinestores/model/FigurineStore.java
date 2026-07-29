@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -20,6 +21,7 @@ import jakarta.persistence.UniqueConstraint;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
+import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 import lombok.Getter;
@@ -28,8 +30,9 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "figurine_stores", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_figurine_store_pair", columnNames = {"figurine_id", "store_id"})})
+@Table(name = "figurine_stores", uniqueConstraints = {@UniqueConstraint(name = "uk_figurine_store_pair", columnNames = {
+        "figurine_id", "store_id", "original_name"})}, indexes = {
+                @Index(name = "idx_figurine_stores_store_original_name", columnList = "store_id, original_name")})
 public class FigurineStore extends BaseId {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -56,6 +59,10 @@ public class FigurineStore extends BaseId {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String productUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ListingStatus status;
 
     @Column(nullable = false)
     private Instant creationDate;

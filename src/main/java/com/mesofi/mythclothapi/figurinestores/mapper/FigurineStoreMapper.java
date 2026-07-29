@@ -1,5 +1,8 @@
 package com.mesofi.mythclothapi.figurinestores.mapper;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Currency;
 import java.util.List;
 
 import org.mapstruct.Context;
@@ -9,10 +12,12 @@ import org.mapstruct.Named;
 
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
-import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStoreUnmatched;
 import com.mesofi.mythclothapi.stores.model.Store;
 
 @Mapper(componentModel = "spring")
@@ -21,7 +26,7 @@ public interface FigurineStoreMapper {
     @Mapping(target = "storeId", source = "store.id")
     @Mapping(target = "storeWebsite", source = "store.website")
     @Mapping(target = "storeLogo", source = "store.logoUrl")
-    FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(UnmatchedFigurineListing unmatchedFigurineListing);
+    FigurineStoreUnmatchedResp toFigurineStoreUnmatchedResp(FigurineStoreUnmatched figurineStoreUnmatched);
 
     @Mapping(target = "storeId", source = "store.id")
     @Mapping(target = "storeName", source = "store.name")
@@ -37,10 +42,31 @@ public interface FigurineStoreMapper {
     @Mapping(target = "figurineTamashiiUrl", source = "figurineStore.figurine.tamashiiUrl")
     @Mapping(target = "figurineLineUp", source = "figurineStore.figurine.lineup.description")
     @Mapping(target = "storeId", source = "figurineStore.store.id")
+    @Mapping(target = "storeCurrency", expression = "java(currency)")
     @Mapping(target = "storeOriginalName", source = "figurineStore.originalName")
     @Mapping(target = "storeProductImageUrl", source = "figurineStore.imageUrl")
     @Mapping(target = "storeProductUrl", source = "figurineStore.productUrl")
-    FigurineStoreMatchedResp toFigurineStoreMatchedResp(FigurineStore figurineStore, @Context String displayableName);
+    @Mapping(target = "storeStatus", source = "figurineStore.status")
+    @Mapping(target = "storePrices", source = "pricingList")
+    FigurineStoreMatchedResp toFigurineStoreMatchedResp(FigurineStore figurineStore, @Context String displayableName,
+            @Context Currency currency, List<FigurineStorePricing> pricingList);
+
+    @Mapping(target = "realTimePrice", source = "currentPrice")
+    @Mapping(target = "discount", source = "discount")
+    @Mapping(target = "discountedPrice", expression = "java(calculateDiscountedPrice(pricing.getCurrentPrice(), pricing.getDiscount()))")
+    @Mapping(target = "lastUpdated", source = "checkedAt")
+    @Mapping(target = "currency", ignore = true)
+    FigurineStorePriceResp toFigurineStorePriceResp(FigurineStorePricing pricing);
+
+    default BigDecimal calculateDiscountedPrice(BigDecimal price, BigDecimal discount) {
+        if (price == null || discount == null) {
+            return price;
+        }
+
+        return price
+                .multiply(BigDecimal.ONE.subtract(discount.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
 
     CachedStores toStoreCache(Store store);
 

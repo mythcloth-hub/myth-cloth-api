@@ -1,12 +1,18 @@
 
 package com.mesofi.mythclothapi.figurinestores;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.isDefault;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Currency;
 import java.util.List;
 import java.util.Objects;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -19,18 +25,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalPriceResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
-import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePricingResp;
+import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;
-import com.mesofi.mythclothapi.figurinestores.model.UnmatchedFigurineListing;
+import com.mesofi.mythclothapi.figurinestores.model.FigurineStoreUnmatched;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStorePricingRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.FigurineStoreRepository;
 import com.mesofi.mythclothapi.figurinestores.repository.UnmatchedFigurineListingRepository;
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
 import com.mesofi.mythclothapi.stores.StoreRepository;
@@ -68,6 +77,7 @@ public class FigurineStoreService {
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
     private final StoreRepository storeRepository;
     private final CacheManager cacheManager;
+    private final CurrencyConversionService currencyConversionService;
 
     /**
      * Processes a pricing update received from an external store.
@@ -84,7 +94,7 @@ public class FigurineStoreService {
      * <li>If the figurine is resolved, create or update the store mapping and
      * record the pricing.</li>
      * <li>If no match is found, persist the listing as an
-     * {@link UnmatchedFigurineListing} for manual resolution.</li>
+     * {@link FigurineStoreUnmatched} for manual resolution.</li>
      * </ol>
      *
      * @param listing
@@ -92,7 +102,7 @@ public class FigurineStoreService {
      */
     @Transactional
     public void processStorePricing(StoreListing listing) {
-        log.info("Processing StoreListing ...");
+        log.info("Processing StoreListing for store: {} ...", listing.store());
 
         StoreName storeName = listing.store();
         CachedStores cachedStores = findStore(storeName);
@@ -108,7 +118,8 @@ public class FigurineStoreService {
         }
 
         figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
-                fs -> createPricingIfAbsent(fs, listing.price(), listing.productName(), store.getName()),
+                fs -> createPricingIfAbsent(fs, listing.productName(), store.getName(), listing.price(),
+                        listing.discount(), listing.checkedAt()),
                 () -> figurineService.findBestMatchingFigurine(listing.lineUp(), listing.productName()).ifPresentOrElse(
                         figurine -> processMatchedListing(figurine, store, listing),
                         () -> createUnmatchedListing(store, listing)));
@@ -149,15 +160,25 @@ public class FigurineStoreService {
      */
     @Transactional(readOnly = true)
     public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
-        log.info("Retrieving matched figurine listing using storeId {}", storeId);
+        log.info("Retrieving matched figurine listing using storeId '{}'", storeId);
 
         Store store = storeRepository.findByIdAndActiveTrue(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
 
-        return figurineStoreRepository.findByStore(store).stream().map(figurineStore -> {
+        List<FigurineStore> figurineStores = figurineStoreRepository.findByStoreOrderByOriginalName(store);
+
+        List<FigurineStoreMatchedResp> figurineStoreMatchedRespList = new ArrayList<>();
+        for (FigurineStore figurineStore : figurineStores) {
+            List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                    .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+
             String displayableName = figurineService.createDisplayableName(figurineStore.getFigurine());
-            return figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore, displayableName);
-        }).toList();
+
+            figurineStoreMatchedRespList.add(figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore,
+                    displayableName, Currency.getInstance(store.getCurrency()), pricingList));
+        }
+
+        return figurineStoreMatchedRespList;
     }
 
     /**
@@ -174,7 +195,7 @@ public class FigurineStoreService {
                 .orElseThrow(() -> new IllegalArgumentException("FigurineStore not found for ID: " + figurineStoreId));
 
         List<FigurineStorePricing> pricingList = figurineStorePricingRepository
-                .findByFigurineStoreOrderByCreationDateDesc(figurineStore);
+                .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
         if (pricingList.isEmpty()) {
             throw new IllegalArgumentException("No pricing data found for FigurineStore ID: " + figurineStoreId);
         }
@@ -183,7 +204,9 @@ public class FigurineStoreService {
 
         StoreListing listing = new StoreListing(null, figurineStore.getLineUP(), figurineStore.getOriginalName(),
                 figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
-                pricingList.getFirst().getCurrentPrice(), null, null, null, null, null);
+                pricingList.getFirst().getCurrentPrice(), pricingList.getFirst().getDiscount(), null,
+                Currency.getInstance(store.getCurrency()), figurineStore.getStatus(),
+                pricingList.getFirst().getCheckedAt());
 
         createUnmatchedListing(store, listing);
 
@@ -201,7 +224,7 @@ public class FigurineStoreService {
      */
     @Transactional
     public void ignoreUnmatchedFigurineListing(Long unmatchedFigurineListingId, boolean ignored) {
-        UnmatchedFigurineListing listing = unmatchedFigurineListingRepository.findById(unmatchedFigurineListingId)
+        FigurineStoreUnmatched listing = unmatchedFigurineListingRepository.findById(unmatchedFigurineListingId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unmatched figurine listing not found for ID: " + unmatchedFigurineListingId));
 
@@ -244,7 +267,7 @@ public class FigurineStoreService {
     public void matchUnmatchedListingToFigurine(@NotNull Long unmatchedFigurineId, @NotNull Long figurineId) {
         log.info("Matching unmatched figurine listing {} to figurine {}", unmatchedFigurineId, figurineId);
 
-        UnmatchedFigurineListing unmatched = unmatchedFigurineListingRepository.findById(unmatchedFigurineId)
+        FigurineStoreUnmatched unmatched = unmatchedFigurineListingRepository.findById(unmatchedFigurineId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unmatched figurine listing not found for ID: " + unmatchedFigurineId));
 
@@ -254,7 +277,8 @@ public class FigurineStoreService {
         Store store = unmatched.getStore();
         StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
                 unmatched.getNormalizedName(), unmatched.getImageUrl(), unmatched.getProductUrl(), unmatched.getPrice(),
-                null, null, null, null, null);
+                unmatched.getDiscount(), null, Currency.getInstance(store.getCurrency()), unmatched.getStatus(),
+                unmatched.getCheckedAt());
 
         processMatchedListing(figurine, store, listing);
 
@@ -272,31 +296,114 @@ public class FigurineStoreService {
      *
      * @param figurineId
      *            identifier of the canonical figurine
+     * @param currency
+     *            optional currency code for price conversion; if not provided, the
+     *            default currency of the listings will be used
      * @return average current price across the figurine's store listings, or zero
      *         when no valid pricing information is available
      * @throws IllegalArgumentException
      *             if the figurine does not exist
      */
     @Transactional(readOnly = true)
-    public FigurineStorePricingResp retrieveAverageRealtimePrice(@Positive Long figurineId) {
-        log.info("Retrieving average realtime price");
+    public FigurineStorePriceResp retrieveAverageRealtimePrice(@Positive Long figurineId, @Nonnull Currency currency) {
+        log.info("Retrieving average realtime price for figurine {} with currency {}", figurineId, currency);
 
         Figurine figurine = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
 
-        List<BigDecimal> prices = figurineStoreRepository.findByFigurine(figurine).stream()
-                .flatMap(fs -> fs.getPrices().stream()).map(FigurineStorePricing::getCurrentPrice)
-                .filter(price -> price != null && price.compareTo(BigDecimal.ZERO) > 0).toList();
+        List<BigDecimal> prices = new ArrayList<>();
+
+        String source;
+        String target = currency.toString();
+
+        List<FigurineStore> figurineStores = figurineStoreRepository.findByFigurine(figurine);
+        for (FigurineStore figurineStore : figurineStores) {
+            source = figurineStore.getStore().getCurrency();
+            List<FigurineStorePricing> pricingList = figurineStore.getPrices();
+
+            for (FigurineStorePricing pricing : pricingList) {
+                prices.add(currencyConversionService.convert(pricing.getCurrentPrice(), source, target));
+            }
+        }
 
         if (prices.isEmpty()) {
-            log.info("No pricing data available for figurine {}", figurineId);
-            return new FigurineStorePricingResp(BigDecimal.ZERO);
+            return new FigurineStorePriceResp(BigDecimal.ZERO, target);
         }
 
         BigDecimal average = prices.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal.valueOf(prices.size()), 2, RoundingMode.HALF_UP);
-        log.info("Average realtime price for figurine {}: {}", figurineId, average);
-        return new FigurineStorePricingResp(average);
+
+        log.info("Average realtime price for figurine {}: {} {}", figurineId, average, target);
+        return new FigurineStorePriceResp(average, target);
+    }
+
+    public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive Long figurineId, @Positive Long storeId,
+            @Nonnull Currency currency) {
+
+        Figurine figurine = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+
+        FigurineStoreHistoricalResp response;
+        List<FigurineStoreHistoricalPriceResp> historicalPrices = new ArrayList<>();
+
+        if (storeId == null) {
+            // show all the prices from all stores
+            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurine(figurine);
+
+            for (FigurineStore figurineStore : figurineStoreList) {
+
+                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+
+                for (FigurineStorePricing pricing : pricingList) {
+
+                    BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
+                            figurineStore.getStore().getCurrency(), currency.toString());
+
+                    historicalPrices.add(new FigurineStoreHistoricalPriceResp(figurineStore.getStore().getName(),
+                            figurineStore.getStore().getLogoUrl(), figurineStore.getProductUrl(), convertedPrice,
+                            pricing.getCheckedAt()));
+                }
+            }
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), currency.toString(),
+                    historicalPrices);
+
+        } else {
+            Store store = storeRepository.findById(storeId)
+                    .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+
+            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurineAndStore(figurine, store);
+
+            String theCurrency = null;
+
+            for (FigurineStore figurineStore : figurineStoreList) {
+                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+                for (FigurineStorePricing pricing : pricingList) {
+                    if (isDefault(currency)) {
+                        // no conversion, take the currency from the current store
+                        theCurrency = figurineStore.getStore().getCurrency();
+
+                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                                figurineStore.getProductUrl(), pricing.getCurrentPrice(), pricing.getCheckedAt()));
+                    } else {
+                        theCurrency = currency.toString();
+
+                        BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
+                                figurineStore.getStore().getCurrency(), currency.toString());
+                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                                figurineStore.getProductUrl(), convertedPrice, pricing.getCheckedAt()));
+                    }
+
+                }
+            }
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), theCurrency, historicalPrices);
+        }
+
+        historicalPrices.sort(Comparator.comparing(FigurineStoreHistoricalPriceResp::checkedAt,
+                Comparator.nullsLast(Comparator.reverseOrder())));
+
+        return response;
     }
 
     /**
@@ -316,11 +423,12 @@ public class FigurineStoreService {
      */
     private void processMatchedListing(Figurine figurine, Store store, StoreListing listing) {
         log.info("[{}] [{}] - {} ==> [{}] - {}", store.getName(), listing.lineUp(), listing.productName(),
-                figurine.getId(), figurine.getLegacyName());
+                figurine.getId(), figurine.getNormalizedName());
 
         FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing);
 
-        createPricingIfAbsent(figurineStore, listing.price(), listing.productName(), store.getName());
+        createPricingIfAbsent(figurineStore, listing.productName(), store.getName(), listing.price(),
+                listing.discount(), listing.checkedAt());
     }
 
     /**
@@ -344,7 +452,7 @@ public class FigurineStoreService {
                 .ifPresentOrElse(existing -> log.warn(
                         "Unmatched figurine listing already exists for original name '{}'. Ignoring duplicate.",
                         existing.getOriginalName()), () -> {
-                            UnmatchedFigurineListing unmatched = new UnmatchedFigurineListing();
+                            FigurineStoreUnmatched unmatched = new FigurineStoreUnmatched();
                             unmatched.setStore(store);
                             unmatched.setLineUP(listing.lineUp());
                             unmatched.setOriginalName(listing.originalProductName());
@@ -352,6 +460,9 @@ public class FigurineStoreService {
                             unmatched.setImageUrl(listing.productImageUrl());
                             unmatched.setProductUrl(listing.productUrl());
                             unmatched.setPrice(listing.price());
+                            unmatched.setDiscount(listing.discount());
+                            unmatched.setStatus(listing.status());
+                            unmatched.setCheckedAt(listing.checkedAt());
                             unmatched.setIgnored(false);
                             unmatchedFigurineListingRepository.save(unmatched);
                             log.info("Created unmatched figurine listing '{}'.", listing.originalProductName());
@@ -368,21 +479,27 @@ public class FigurineStoreService {
      *
      * @param figurineStore
      *            the figurine-store mapping
-     * @param price
-     *            the current price
      * @param figurineName
      *            the figurine name used for logging
      * @param storeName
      *            the store name used for logging
+     * @param price
+     *            the current price
+     * @param discount
+     *            the current discount, if any
+     * @param checkedAt
+     *            the timestamp when the price was checked
      */
-    private void createPricingIfAbsent(FigurineStore figurineStore, BigDecimal price, String figurineName,
-            String storeName) {
+    private void createPricingIfAbsent(FigurineStore figurineStore, String figurineName, String storeName,
+            BigDecimal price, BigDecimal discount, Instant checkedAt) {
         figurineStorePricingRepository.findByFigurineStoreAndCurrentPrice(figurineStore, price)
                 .ifPresentOrElse(p -> log.warn("Pricing {} already exists for figurine '{}' at store '{}'.",
                         p.getCurrentPrice(), figurineName, storeName), () -> {
                             FigurineStorePricing pricing = new FigurineStorePricing();
                             pricing.setFigurineStore(figurineStore);
                             pricing.setCurrentPrice(price);
+                            pricing.setDiscount(discount);
+                            pricing.setCheckedAt(checkedAt);
                             figurineStorePricingRepository.save(pricing);
                             log.info("New pricing saved for figurine '{}' at store '{}': {}.", figurineName, storeName,
                                     price);
@@ -396,7 +513,7 @@ public class FigurineStoreService {
         List<CachedStores> cachedStores = cache.get(STORE_KEY, List.class);
 
         if (cachedStores == null) {
-            List<Store> allStores = storeRepository.findAllByActiveTrue();
+            List<Store> allStores = storeRepository.findAllByActiveTrueOrderByNameAsc();
             cachedStores = allStores.stream().map(figurineStoreMapper::toStoreCache).toList();
 
             cache.put(STORE_KEY, cachedStores);
@@ -423,18 +540,20 @@ public class FigurineStoreService {
      */
     private FigurineStore findOrCreateFigurineStore(Figurine figurine, Store store, StoreListing listing) {
 
-        FigurineStore figurineStore = figurineStoreRepository.findByFigurineAndStore(figurine, store).orElseGet(() -> {
-            FigurineStore mapping = new FigurineStore();
-            mapping.setFigurine(figurine);
-            mapping.setStore(store);
-            return mapping;
-        });
+        FigurineStore figurineStore = figurineStoreRepository
+                .findByFigurineAndStoreAndOriginalName(figurine, store, listing.originalProductName()).orElseGet(() -> {
+                    FigurineStore mapping = new FigurineStore();
+                    mapping.setFigurine(figurine);
+                    mapping.setStore(store);
+                    return mapping;
+                });
 
         figurineStore.setLineUP(listing.lineUp());
         figurineStore.setOriginalName(listing.originalProductName());
         figurineStore.setNormalizedName(listing.productName());
         figurineStore.setImageUrl(listing.productImageUrl());
         figurineStore.setProductUrl(listing.productUrl());
+        figurineStore.setStatus(listing.status());
 
         return figurineStoreRepository.save(figurineStore);
     }

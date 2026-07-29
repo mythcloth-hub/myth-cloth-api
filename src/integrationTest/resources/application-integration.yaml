@@ -1,7 +1,7 @@
 logging:
   level:
     root: INFO
-    org.hibernate.SQL: INFO
+    org.hibernate.SQL: INFO  # <- Shows SQL statements
     org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
 
 myth-cloth:
@@ -14,6 +14,9 @@ myth-cloth:
   facebook:
     app-id: "0000"
     app-secret: "1111"
+
+  rabbit:
+    enabled: false
 
   security:
     jwt:

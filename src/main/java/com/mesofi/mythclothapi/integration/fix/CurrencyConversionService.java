@@ -9,6 +9,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.springframework.stereotype.Service;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Converts monetary amounts between currencies using rates provided by
  * {@link FxApiClient}.
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
  * Rates are cached in memory for one hour per currency pair to reduce outbound
  * API calls and keep conversion latency low.
  */
+@Slf4j
 @Service
 public class CurrencyConversionService {
     private static final Duration TTL = Duration.ofHours(1);
@@ -54,7 +57,10 @@ public class CurrencyConversionService {
         if (from.equalsIgnoreCase(to))
             return amount;
         BigDecimal rate = getRate(from, to);
-        return amount.multiply(rate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal result = amount.multiply(rate).setScale(2, RoundingMode.HALF_UP);
+
+        log.info("Converted {} {} to {} {} using rate {}", amount, from, result, to, rate);
+        return result;
     }
 
     /**
