@@ -68,6 +68,7 @@ INSERT INTO stores (name, code, website, logo_url, currency, country, active) VA
 INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Luna Park', 'LUNA_PARK', 'https://www.lunapark.store', 'https://static.wixstatic.com/media/4724a1_42d57453f336409688f3960ca07cc2fa~mv2.png/v1/fill/w_650,h_364,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/LUNA%20PARK%20LOGO_%20REVISE-01.png', 'JPY', 'JP', true);
 INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Myth Supplies', 'MYTH_SUPPLIES', 'https://mythsupplies.com', 'https://mythsupplies.com/assets/images/web/logo_myth-supplies-header.png', 'MXN', 'MX', true);
 INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Logan Store', 'LOGAN_STORE', 'https://loganstore.com.mx', 'https://loganstore.com.mx/wp-content/uploads/2021/11/logan-logo_Mesa-de-trabajo-1.svg', 'MXN', 'MX', true);
+INSERT INTO stores (name, code, website, logo_url, currency, country, active) VALUES ('Myth Factory', 'MYTH_FACTORY', 'https://www.mythfactoryshop.com', 'https://www.mythfactoryshop.com/cdn-cgi/image/format=webp/img/myth-factory-logo-1742594757.jpg', 'EUR', 'BE', true);
 
 -- ========================= INITIALIZING BASIC ADMIN ========================================
 INSERT INTO roles (description) VALUES ('Admin');

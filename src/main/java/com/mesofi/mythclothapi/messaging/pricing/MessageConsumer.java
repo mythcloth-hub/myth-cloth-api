@@ -42,10 +42,11 @@ public class MessageConsumer {
         BigDecimal discountedPrice = getBigDecimal(payload.get("discountedPrice"));
         Currency currency = Currency.getInstance((String) payload.get("currency"));
         ListingStatus status = ListingStatus.valueOf((String) payload.get("status"));
+        boolean preorder = (Boolean) payload.get("preorder");
         Instant checkedAt = Instant.parse((String) payload.get("checkedAt"));
 
         StoreListing storeListing = new StoreListing(store, lineUp, originalProductName, productName, productImageUrl,
-                productUrl, price, discount, discountedPrice, currency, status, checkedAt);
+                productUrl, price, discount, discountedPrice, currency, status, preorder, checkedAt);
 
         figurineStoreService.processStorePricing(storeListing);
     }
