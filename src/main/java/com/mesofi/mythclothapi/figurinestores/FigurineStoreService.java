@@ -117,12 +117,16 @@ public class FigurineStoreService {
             return;
         }
 
-        figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName()).ifPresentOrElse(
-                fs -> createPricingIfAbsent(fs, listing.productName(), store.getName(), listing.price(),
-                        listing.discount(), listing.checkedAt()),
-                () -> figurineService.findBestMatchingFigurine(listing.lineUp(), listing.productName()).ifPresentOrElse(
-                        figurine -> processMatchedListing(figurine, store, listing),
-                        () -> createUnmatchedListing(store, listing)));
+        figurineStoreRepository.findByStoreAndOriginalName(store, listing.originalProductName())
+                .ifPresentOrElse(existing -> {
+                    existing.setPreorder(listing.preorder());
+                    existing.setStatus(listing.status());
+
+                    createOrUpdatePricing(existing, listing.productName(), store.getName(), listing.price(),
+                            listing.discount(), listing.checkedAt());
+                }, () -> figurineService.findBestMatchingFigurine(listing.lineUp(), listing.productName())
+                        .ifPresentOrElse(figurine -> processMatchedListing(figurine, store, listing),
+                                () -> createUnmatchedListing(store, listing)));
     }
 
     /**
@@ -205,7 +209,7 @@ public class FigurineStoreService {
         StoreListing listing = new StoreListing(null, figurineStore.getLineUP(), figurineStore.getOriginalName(),
                 figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
                 pricingList.getFirst().getCurrentPrice(), pricingList.getFirst().getDiscount(), null,
-                Currency.getInstance(store.getCurrency()), figurineStore.getStatus(),
+                Currency.getInstance(store.getCurrency()), figurineStore.getStatus(), figurineStore.isPreorder(),
                 pricingList.getFirst().getCheckedAt());
 
         createUnmatchedListing(store, listing);
@@ -278,7 +282,7 @@ public class FigurineStoreService {
         StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
                 unmatched.getNormalizedName(), unmatched.getImageUrl(), unmatched.getProductUrl(), unmatched.getPrice(),
                 unmatched.getDiscount(), null, Currency.getInstance(store.getCurrency()), unmatched.getStatus(),
-                unmatched.getCheckedAt());
+                unmatched.isPreorder(), unmatched.getCheckedAt());
 
         processMatchedListing(figurine, store, listing);
 
@@ -427,7 +431,7 @@ public class FigurineStoreService {
 
         FigurineStore figurineStore = findOrCreateFigurineStore(figurine, store, listing);
 
-        createPricingIfAbsent(figurineStore, listing.productName(), store.getName(), listing.price(),
+        createOrUpdatePricing(figurineStore, listing.productName(), store.getName(), listing.price(),
                 listing.discount(), listing.checkedAt());
     }
 
@@ -462,6 +466,7 @@ public class FigurineStoreService {
                             unmatched.setPrice(listing.price());
                             unmatched.setDiscount(listing.discount());
                             unmatched.setStatus(listing.status());
+                            unmatched.setPreorder(listing.preorder());
                             unmatched.setCheckedAt(listing.checkedAt());
                             unmatched.setIgnored(false);
                             unmatchedFigurineListingRepository.save(unmatched);
@@ -470,12 +475,12 @@ public class FigurineStoreService {
     }
 
     /**
-     * Records a new pricing entry for a figurine if the same price has not already
-     * been stored.
+     * Records a new pricing entry for a figurine or updates an existing one if the
+     * price has changed.
      * <p>
      * Price history is maintained by storing only distinct prices for a
-     * {@link FigurineStore}. If the supplied price already exists, no new record is
-     * created.
+     * {@link FigurineStore}. If the supplied price already exists, the existing
+     * record is updated.
      *
      * @param figurineStore
      *            the figurine-store mapping
@@ -490,20 +495,26 @@ public class FigurineStoreService {
      * @param checkedAt
      *            the timestamp when the price was checked
      */
-    private void createPricingIfAbsent(FigurineStore figurineStore, String figurineName, String storeName,
+    private void createOrUpdatePricing(FigurineStore figurineStore, String figurineName, String storeName,
             BigDecimal price, BigDecimal discount, Instant checkedAt) {
+
         figurineStorePricingRepository.findByFigurineStoreAndCurrentPrice(figurineStore, price)
-                .ifPresentOrElse(p -> log.warn("Pricing {} already exists for figurine '{}' at store '{}'.",
-                        p.getCurrentPrice(), figurineName, storeName), () -> {
-                            FigurineStorePricing pricing = new FigurineStorePricing();
-                            pricing.setFigurineStore(figurineStore);
-                            pricing.setCurrentPrice(price);
-                            pricing.setDiscount(discount);
-                            pricing.setCheckedAt(checkedAt);
-                            figurineStorePricingRepository.save(pricing);
-                            log.info("New pricing saved for figurine '{}' at store '{}': {}.", figurineName, storeName,
-                                    price);
-                        });
+                .ifPresentOrElse(existing -> {
+                    existing.setCheckedAt(checkedAt);
+                    existing.setDiscount(discount);
+
+                    log.info("Updated pricing for figurine '{}' at store '{}': {}.", figurineName, storeName, price);
+                }, () -> {
+                    FigurineStorePricing pricing = new FigurineStorePricing();
+                    pricing.setFigurineStore(figurineStore);
+                    pricing.setCurrentPrice(price);
+                    pricing.setDiscount(discount);
+                    pricing.setCheckedAt(checkedAt);
+
+                    figurineStorePricingRepository.save(pricing);
+
+                    log.info("Created pricing for figurine '{}' at store '{}': {}.", figurineName, storeName, price);
+                });
     }
 
     private CachedStores findStore(StoreName storeName) {
@@ -554,6 +565,7 @@ public class FigurineStoreService {
         figurineStore.setImageUrl(listing.productImageUrl());
         figurineStore.setProductUrl(listing.productUrl());
         figurineStore.setStatus(listing.status());
+        figurineStore.setPreorder(listing.preorder());
 
         return figurineStoreRepository.save(figurineStore);
     }

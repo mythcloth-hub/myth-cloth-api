@@ -61,6 +61,9 @@ public class FigurineStoreUnmatched extends BaseId {
     private ListingStatus status;
 
     @Column(nullable = false)
+    private boolean preorder;
+
+    @Column(nullable = false)
     private Instant checkedAt;
 
     @Column(nullable = false)

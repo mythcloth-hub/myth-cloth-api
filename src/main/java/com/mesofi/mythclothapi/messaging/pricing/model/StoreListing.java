@@ -33,10 +33,12 @@ import java.util.Currency;
  *            the currency associated with the product price.
  * @param status
  *            the normalized availability status of the listing.
+ * @param preorder
+ *            indicates whether the listing is a pre-order.
  * @param checkedAt
  *            the timestamp when the listing was crawled.
  */
 public record StoreListing(StoreName store, LineUP lineUp, String originalProductName, String productName,
         String productImageUrl, String productUrl, BigDecimal price, BigDecimal discount, BigDecimal discountedPrice,
-        Currency currency, ListingStatus status, Instant checkedAt) {
+        Currency currency, ListingStatus status, boolean preorder, Instant checkedAt) {
 }

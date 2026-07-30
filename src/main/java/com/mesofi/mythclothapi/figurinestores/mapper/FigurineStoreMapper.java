@@ -48,6 +48,7 @@ public interface FigurineStoreMapper {
     @Mapping(target = "storeProductUrl", source = "figurineStore.productUrl")
     @Mapping(target = "storeStatus", source = "figurineStore.status")
     @Mapping(target = "storePrices", source = "pricingList")
+    @Mapping(target = "storePreorder", source = "figurineStore.preorder")
     FigurineStoreMatchedResp toFigurineStoreMatchedResp(FigurineStore figurineStore, @Context String displayableName,
             @Context Currency currency, List<FigurineStorePricing> pricingList);
 
