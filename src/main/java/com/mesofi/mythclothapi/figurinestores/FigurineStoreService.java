@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.figurines.FigurineService;
+import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreHistoricalPriceResp;
@@ -42,6 +43,7 @@ import com.mesofi.mythclothapi.figurinestores.repository.UnmatchedFigurineListin
 import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
+import com.mesofi.mythclothapi.stores.StoreNotFoundException;
 import com.mesofi.mythclothapi.stores.StoreRepository;
 import com.mesofi.mythclothapi.stores.model.Store;
 
@@ -77,7 +79,7 @@ public class FigurineStoreService {
     private final UnmatchedFigurineListingRepository unmatchedFigurineListingRepository;
     private final StoreRepository storeRepository;
     private final CacheManager cacheManager;
-    private final CurrencyConversionService currencyConversionService;
+    private final CurrencyConversionService currencyService;
 
     /**
      * Processes a pricing update received from an external store.
@@ -318,15 +320,14 @@ public class FigurineStoreService {
         List<BigDecimal> prices = new ArrayList<>();
 
         String source;
-        String target = currency.toString();
+        String target = currency.getCurrencyCode();
 
         List<FigurineStore> figurineStores = figurineStoreRepository.findByFigurine(figurine);
         for (FigurineStore figurineStore : figurineStores) {
             source = figurineStore.getStore().getCurrency();
-            List<FigurineStorePricing> pricingList = figurineStore.getPrices();
 
-            for (FigurineStorePricing pricing : pricingList) {
-                prices.add(currencyConversionService.convert(pricing.getCurrentPrice(), source, target));
+            for (FigurineStorePricing pricing : figurineStore.getPrices()) {
+                prices.add(currencyService.convert(pricing.getCurrentPrice(), source, target));
             }
         }
 
@@ -341,73 +342,112 @@ public class FigurineStoreService {
         return new FigurineStorePriceResp(average, target);
     }
 
+    /**
+     * Retrieves the historical pricing information for a figurine.
+     * <p>
+     * Historical prices can be retrieved either across all stores or for a specific
+     * store. When querying all stores, all prices are converted to the requested
+     * currency. When querying a single store, the original store currency is
+     * preserved if the requested currency is the default currency; otherwise, all
+     * prices are converted to the requested currency.
+     * <p>
+     * The returned price history is sorted by the time each price was checked, with
+     * the most recent entries appearing first.
+     *
+     * @param figurineId
+     *            the identifier of the figurine
+     * @param storeId
+     *            the identifier of the store to filter by, or {@code null} to
+     *            retrieve prices from all stores
+     * @param requestedCurrency
+     *            the currency in which prices should be returned
+     * @return the historical pricing information for the figurine
+     * @throws FigurineNotFoundException
+     *             if the figurine does not exist
+     * @throws StoreNotFoundException
+     *             if a non-null store identifier does not correspond to an existing
+     *             store
+     */
     public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive Long figurineId, @Positive Long storeId,
-            @Nonnull Currency currency) {
+            @Nonnull Currency requestedCurrency) {
 
         Figurine figurine = figurineRepository.findById(figurineId)
-                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+                .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
         FigurineStoreHistoricalResp response;
         List<FigurineStoreHistoricalPriceResp> historicalPrices = new ArrayList<>();
 
+        List<FigurineStore> figurineStores = retrieveFigurineStores(figurine, storeId);
+
         if (storeId == null) {
-            // show all the prices from all stores
-            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurine(figurine);
+            for (FigurineStore figurineStore : figurineStores) {
+                Store store = figurineStore.getStore();
+                for (FigurineStorePricing pricing : figurineStore.getPrices()) {
 
-            for (FigurineStore figurineStore : figurineStoreList) {
+                    BigDecimal convertedPrice = currencyService.convert(pricing.getCurrentPrice(), store.getCurrency(),
+                            requestedCurrency.getCurrencyCode());
 
-                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
-                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
-
-                for (FigurineStorePricing pricing : pricingList) {
-
-                    BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
-                            figurineStore.getStore().getCurrency(), currency.toString());
-
-                    historicalPrices.add(new FigurineStoreHistoricalPriceResp(figurineStore.getStore().getName(),
-                            figurineStore.getStore().getLogoUrl(), figurineStore.getProductUrl(), convertedPrice,
-                            pricing.getCheckedAt()));
+                    historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                            figurineStore.getProductUrl(), convertedPrice, pricing.getCheckedAt()));
                 }
             }
-            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), currency.toString(),
-                    historicalPrices);
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(),
+                    requestedCurrency.getCurrencyCode(), historicalPrices);
 
         } else {
-            Store store = storeRepository.findById(storeId)
-                    .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+            String currencyCode = null;
 
-            List<FigurineStore> figurineStoreList = figurineStoreRepository.findByFigurineAndStore(figurine, store);
+            for (FigurineStore figurineStore : figurineStores) {
+                Store store = figurineStore.getStore();
+                for (FigurineStorePricing pricing : figurineStore.getPrices()) {
+                    BigDecimal convertedPrice;
 
-            String theCurrency = null;
+                    if (isDefaultCurrency(requestedCurrency)) {
+                        currencyCode = store.getCurrency();
+                        convertedPrice = pricing.getCurrentPrice();
 
-            for (FigurineStore figurineStore : figurineStoreList) {
-                List<FigurineStorePricing> pricingList = figurineStorePricingRepository
-                        .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
-                for (FigurineStorePricing pricing : pricingList) {
-                    if (isDefaultCurrency(currency)) {
-                        // no conversion, take the currency from the current store
-                        theCurrency = figurineStore.getStore().getCurrency();
-
-                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
-                                figurineStore.getProductUrl(), pricing.getCurrentPrice(), pricing.getCheckedAt()));
                     } else {
-                        theCurrency = currency.toString();
+                        currencyCode = requestedCurrency.getCurrencyCode();
+                        convertedPrice = currencyService.convert(pricing.getCurrentPrice(), store.getCurrency(),
+                                currencyCode);
 
-                        BigDecimal convertedPrice = currencyConversionService.convert(pricing.getCurrentPrice(),
-                                figurineStore.getStore().getCurrency(), currency.toString());
-                        historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
-                                figurineStore.getProductUrl(), convertedPrice, pricing.getCheckedAt()));
                     }
-
+                    historicalPrices.add(new FigurineStoreHistoricalPriceResp(store.getName(), store.getLogoUrl(),
+                            figurineStore.getProductUrl(), convertedPrice, pricing.getCheckedAt()));
                 }
             }
-            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), theCurrency, historicalPrices);
+            response = new FigurineStoreHistoricalResp(figurine.getNormalizedName(), currencyCode, historicalPrices);
         }
 
         historicalPrices.sort(Comparator.comparing(FigurineStoreHistoricalPriceResp::checkedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
         return response;
+    }
+
+    /**
+     * Retrieves the {@link FigurineStore} associations for the specified figurine.
+     * <p>
+     * If no store identifier is provided, all stores associated with the figurine
+     * are returned. Otherwise, only the association for the specified store is
+     * retrieved.
+     *
+     * @param figurine
+     *            the figurine whose store associations should be retrieved
+     * @param storeId
+     *            the identifier of the store to filter by, or {@code null} to
+     *            retrieve all associated stores
+     * @return the matching figurine-store associations
+     * @throws StoreNotFoundException
+     *             if the specified store does not exist
+     */
+    private List<FigurineStore> retrieveFigurineStores(Figurine figurine, Long storeId) {
+        if (storeId == null) {
+            return figurineStoreRepository.findByFigurine(figurine);
+        }
+
+        Store store = storeRepository.findById(storeId).orElseThrow(() -> new StoreNotFoundException(storeId));
+        return figurineStoreRepository.findByFigurineAndStore(figurine, store);
     }
 
     /**
@@ -517,6 +557,21 @@ public class FigurineStoreService {
                 });
     }
 
+    /**
+     * Retrieves the cached store metadata for the specified store.
+     * <p>
+     * If the store cache has not yet been initialized, all active stores are loaded
+     * from the database, mapped to {@link CachedStores} instances, and stored in
+     * the cache for subsequent lookups.
+     *
+     * @param storeName
+     *            the store identifier to retrieve
+     * @return the cached store metadata
+     * @throws IllegalArgumentException
+     *             if no active store exists for the specified store identifier
+     * @throws NullPointerException
+     *             if the configured store cache is unavailable
+     */
     private CachedStores findStore(StoreName storeName) {
         Cache cache = Objects.requireNonNull(cacheManager.getCache(STORE_CACHE), "stores cache not configured");
 

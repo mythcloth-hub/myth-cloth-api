@@ -155,6 +155,27 @@ public class FigurineStoreController {
         return figurineStoreService.retrieveAverageRealtimePrice(figurineId, toCurrency(currency));
     }
 
+    /**
+     * Retrieves the historical price history for a figurine.
+     * <p>
+     * Historical prices can be returned either for all stores or for a specific
+     * store. When a {@code storeId} is provided, only prices from that store are
+     * returned. Otherwise, prices from all stores are included.
+     * <p>
+     * If a currency is specified, prices are converted to that currency. When the
+     * currency is omitted or invalid, the default currency behavior defined by
+     * {@link com.mesofi.mythclothapi.utils.CurrencyConverter#toCurrency(String)} is
+     * applied.
+     *
+     * @param figurineId
+     *            the identifier of the figurine
+     * @param storeId
+     *            the optional store identifier used to filter the results
+     * @param currency
+     *            the optional ISO 4217 currency code used to convert returned
+     *            prices
+     * @return the historical pricing information for the requested figurine
+     */
     @GetMapping("/figurines/{figurineId}/prices/history")
     public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive @PathVariable Long figurineId,
             @Positive @RequestParam(required = false) Long storeId, @RequestParam(required = false) String currency) {
