@@ -1,7 +1,7 @@
 
 package com.mesofi.mythclothapi.figurinestores;
 
-import static com.mesofi.mythclothapi.utils.CurrencyConverter.isDefault;
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.isDefaultCurrency;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -384,7 +384,7 @@ public class FigurineStoreService {
                 List<FigurineStorePricing> pricingList = figurineStorePricingRepository
                         .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
                 for (FigurineStorePricing pricing : pricingList) {
-                    if (isDefault(currency)) {
+                    if (isDefaultCurrency(currency)) {
                         // no conversion, take the currency from the current store
                         theCurrency = figurineStore.getStore().getCurrency();
 
