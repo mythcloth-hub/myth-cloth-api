@@ -91,6 +91,7 @@ public interface FigurineMapper {
     @Mapping(target = "id", ignore = true) // populated by DB
     @Mapping(target = "legacyName", source = "originalName")
     @Mapping(target = "normalizedName", source = "baseName")
+    @Mapping(target = "displayName", ignore = true)
     @Mapping(target = "distributors", expression = "java(toDistributors(csv, catalogs.distributors()))")
     @Mapping(target = "distribution", source = "distributionString")
     @Mapping(target = "lineup", source = "lineupString")
@@ -302,6 +303,7 @@ public interface FigurineMapper {
     @Mapping(target = "id", ignore = true) // populated by DB
     @Mapping(target = "legacyName", ignore = true) // no needed
     @Mapping(target = "normalizedName", source = "name")
+    @Mapping(target = "displayName", ignore = true)
     @Mapping(target = "distribution", source = "distributionId")
     @Mapping(target = "lineup", source = "lineUpId")
     @Mapping(target = "series", source = "seriesId")
@@ -315,7 +317,6 @@ public interface FigurineMapper {
     @Mapping(target = "golden", source = "isGoldenArmor")
     @Mapping(target = "gold", source = "isGold24kEdition")
     @Mapping(target = "manga", source = "isMangaVersion")
-    @Mapping(target = "surplice", ignore = true) // this will be removed in the future
     @Mapping(target = "set", source = "isMultiPack")
     @Mapping(target = "articulable", source = "isArticulable")
     @Mapping(target = "remarks", source = "notes")
@@ -402,6 +403,8 @@ public interface FigurineMapper {
     @Mapping(target = "distributor", source = "supplierId")
     @Mapping(target = "announcementDate", source = "announcedAt")
     @Mapping(target = "preorderDate", source = "preorderOpensAt")
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     FigurineDistributor toDistributor(DistributorReq distributorReq, @Context CatalogContext catalogs);
 
     /**
@@ -441,7 +444,7 @@ public interface FigurineMapper {
      * @return API-facing {@link FigurineResp}
      */
     @Mapping(target = "name", source = "normalizedName")
-    @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
+    @Mapping(target = "displayableName", source = "displayName")
     @Mapping(target = "releaseStatus", expression = "java(calculateReleaseStatus.apply(figurine))")
     @Mapping(target = "lineUp", source = "lineup")
     @Mapping(target = "isMetalBody", source = "metalBody")
@@ -459,15 +462,13 @@ public interface FigurineMapper {
     @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
     @Mapping(target = "createdAt", source = "creationDate")
     @Mapping(target = "updatedAt", source = "updateDate")
-    FigurineResp toFigurineResp(Figurine figurine, @Context Function<Figurine, String> createDisplayableName,
-            @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
+    FigurineResp toFigurineResp(Figurine figurine, @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, ReleaseStatus> calculateReleaseStatus);
 
-    @Mapping(target = "displayableName", expression = "java(createDisplayableName.apply(figurine))")
+    @Mapping(target = "displayableName", source = "displayName")
     @Mapping(target = "lineUp", source = "lineup")
     @Mapping(target = "officialImageUrl", source = "officialImages", qualifiedByName = "firstImage")
-    FigurineSummaryResp toFigurineSummaryResp(Figurine figurine,
-            @Context Function<Figurine, String> createDisplayableName);
+    FigurineSummaryResp toFigurineSummaryResp(Figurine figurine);
 
     /**
      * Maps a {@link FigurineDistributor} domain entity to its API response
@@ -479,8 +480,6 @@ public interface FigurineMapper {
      *
      * @param figurineDistributor
      *            distributor-specific figurine data
-     * @param createDisplayableName
-     *            function used to compute the figurine display name
      * @param calculatePriceWithTax
      *            function used to compute the final price including tax
      * @return API-facing {@link FigurineDistributorResp}
@@ -489,7 +488,6 @@ public interface FigurineMapper {
     @Mapping(target = "announcedAt", source = "announcementDate")
     @Mapping(target = "preorderOpensAt", source = "preorderDate")
     FigurineDistributorResp toFigurineDistributorResp(FigurineDistributor figurineDistributor,
-            @Context Function<Figurine, String> createDisplayableName,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
     /**
@@ -519,17 +517,13 @@ public interface FigurineMapper {
      *
      * @param figurineEvent
      *            domain event entity
-     * @param createDisplayableName
-     *            function used to compute the figurine display name
      * @param calculatePriceWithTax
      *            function used for downstream pricing enrichment
      * @return API-facing {@link FigurineEventResp}
      */
     @Mapping(target = "date", source = "eventDate")
     @Mapping(target = "dateConfirmed", source = "eventDateConfirmed")
-    // @Mapping(target = "figurine", ignore = true) // map this later
     FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent,
-            @Context Function<Figurine, String> createDisplayableName,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
     /**

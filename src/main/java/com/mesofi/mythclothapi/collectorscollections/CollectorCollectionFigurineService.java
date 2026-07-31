@@ -293,8 +293,10 @@ public class CollectorCollectionFigurineService {
         var figurineFound = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
-        return collectorMapper.toCollectorCollectionFigurineDetailResp(figurineFound,
-                figurineService::createDisplayableName, figurineService::calculatePriceWithTax);
+        CollectorCollectionFigurineDetailResp resp = collectorMapper
+                .toCollectorCollectionFigurineDetailResp(figurineFound);
+
+        return resp;
     }
 
     /**

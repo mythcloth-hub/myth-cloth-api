@@ -9,7 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 
 import lombok.Getter;
@@ -19,7 +19,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "stores")
-public class Store extends BaseId {
+public class Store extends Auditable {
 
     @Column(nullable = false)
     private String name;

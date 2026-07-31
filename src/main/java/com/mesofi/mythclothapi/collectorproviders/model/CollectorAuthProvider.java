@@ -1,7 +1,5 @@
 package com.mesofi.mythclothapi.collectorproviders.model;
 
-import java.time.Instant;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -9,12 +7,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,7 +32,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Table(name = "collector_providers", uniqueConstraints = {
         @UniqueConstraint(name = "uk_provider_collector", columnNames = {"provider", "provider_user_id"})})
-public class CollectorAuthProvider extends BaseId {
+public class CollectorAuthProvider extends Auditable {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
@@ -53,13 +50,4 @@ public class CollectorAuthProvider extends BaseId {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collector_id", nullable = false)
     private Collector collector;
-
-    @Column(nullable = false)
-    private Instant creationDate;
-
-    /** Sets the creation timestamp when the entity is first persisted. */
-    @PrePersist
-    public void prePersist() {
-        creationDate = Instant.now();
-    }
 }

@@ -29,6 +29,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -109,6 +110,8 @@ import lombok.extern.slf4j.Slf4j;
 public class FigurineService {
 
     private static final String FIGURINE_CACHE = "figurines";
+    private static final String FIGURINE_SUMMARY_CACHE = "figurine-summary";
+
     private static final String BY_MYTH_CLOTH_EX_KEY = "by-mythcloth-ex";
     private static final String BY_MYTH_CLOTH_KEY = "by-mythcloth";
     private static final String BY_APPENDIX_KEY = "by-appendix";
@@ -190,6 +193,7 @@ public class FigurineService {
      *             if the CSV source cannot be read
      */
     @Transactional
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
     public void importAllFigurinesFromPublicDrive() {
         CatalogContext catalogContext = loadCatalogs();
 
@@ -257,6 +261,7 @@ public class FigurineService {
      * @return API response DTO for the created figurine
      */
     @Transactional
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
@@ -266,8 +271,7 @@ public class FigurineService {
         prepareForPersistence(figurine);
 
         var saved = repository.save(figurine);
-        return mapper.toFigurineResp(saved, this::createDisplayableName, this::calculatePriceWithTax,
-                this::calculateReleaseStatus);
+        return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::calculateReleaseStatus);
     }
 
     /**
@@ -297,8 +301,7 @@ public class FigurineService {
         log.info("Reading figurine with id '{}'", id);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-        return mapper.toFigurineResp(existing, this::createDisplayableName, this::calculatePriceWithTax,
-                this::calculateReleaseStatus);
+        return mapper.toFigurineResp(existing, this::calculatePriceWithTax, this::calculateReleaseStatus);
     }
 
     /**
@@ -328,15 +331,16 @@ public class FigurineService {
      */
     @Transactional(readOnly = true)
     @Timed(value = "figurine.search", description = "Time spent searching figurines")
-    @Cacheable(value = "figurines", key = "T(java.util.Objects).hash(#filter, #page, #size)")
+    @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter, #page, #size)")
     public CollectablePageImpl<FigurineResp> filterFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
             @Positive int size) {
         log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
-        List<FigurineResp> list = figurines.getContent().stream().map(figurine -> mapper.toFigurineResp(figurine,
-                this::createDisplayableName, this::calculatePriceWithTax, this::calculateReleaseStatus)).toList();
+        List<FigurineResp> list = figurines.getContent().stream().map(
+                figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax, this::calculateReleaseStatus))
+                .toList();
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());
@@ -378,14 +382,14 @@ public class FigurineService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable("figurine-summary")
+    @Cacheable(FIGURINE_SUMMARY_CACHE)
     public List<FigurineSummaryResp> retrieveFigurineSummaries(@NotNull FigurineFilter filter) {
         log.info("Retrieving figurines summaries '{}'", filter);
 
         return repository.findAll(filter).stream().filter(figurine -> {
             ReleaseStatus status = calculateReleaseStatus(figurine);
             return status == RELEASED || status == ANNOUNCED;
-        }).map(figurine -> mapper.toFigurineSummaryResp(figurine, this::createDisplayableName)).toList();
+        }).map(mapper::toFigurineSummaryResp).toList();
     }
 
     /**
@@ -435,6 +439,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -477,8 +482,7 @@ public class FigurineService {
         });
 
         var updated = repository.save(existing);
-        return mapper.toFigurineResp(updated, this::createDisplayableName, this::calculatePriceWithTax,
-                this::calculateReleaseStatus);
+        return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::calculateReleaseStatus);
     }
 
     /**
@@ -503,6 +507,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
     public void deleteFigurine(@Positive Long id) {
         log.info("Deleting figurine with id '{}'", id);
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -632,7 +637,7 @@ public class FigurineService {
             figurines = repository.findAllByLineup(lineUpEntity.get()).stream().filter(figurine -> {
                 ReleaseStatus status = calculateReleaseStatus(figurine);
                 return status == RELEASED || status == ANNOUNCED;
-            }).map(figurine -> new CachedFigurine(figurine.getId(), createDisplayableName(figurine))).toList();
+            }).map(figurine -> new CachedFigurine(figurine.getId(), figurine.getDisplayName())).toList();
 
             cache.put(config.cacheKey(), figurines);
         }
@@ -647,6 +652,7 @@ public class FigurineService {
      *            figurine entity
      * @return displayable name
      */
+    @Deprecated
     public String createDisplayableName(Figurine figurine) {
 
         String name = figurine.getNormalizedName();

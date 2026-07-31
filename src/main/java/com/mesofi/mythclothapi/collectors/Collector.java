@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.collectors;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,13 +9,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
 import lombok.Getter;
@@ -27,7 +24,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "collectors")
-public class Collector extends BaseId {
+public class Collector extends Auditable {
 
     @Column(length = 254, nullable = false)
     private String email;
@@ -46,23 +43,4 @@ public class Collector extends BaseId {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Role role;
-
-    @Column(nullable = false)
-    private Instant creationDate;
-
-    @Column(nullable = false)
-    private Instant updateDate;
-
-    /** Initializes creation and update timestamps before first persistence. */
-    @PrePersist
-    public void prePersist() {
-        creationDate = Instant.now();
-        updateDate = Instant.now();
-    }
-
-    /** Refreshes the update timestamp before entity updates. */
-    @PreUpdate
-    public void preUpdate() {
-        updateDate = Instant.now();
-    }
 }

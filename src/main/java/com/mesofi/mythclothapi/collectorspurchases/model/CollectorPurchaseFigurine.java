@@ -10,7 +10,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import lombok.Getter;
@@ -36,7 +36,7 @@ import lombok.Setter;
 @Setter
 @Table(name = "collector_purchase_figurines", uniqueConstraints = @UniqueConstraint(name = "uk_purchase_figurine_pair", columnNames = {
         "purchase_id", "figurine_id"}))
-public class CollectorPurchaseFigurine extends BaseId {
+public class CollectorPurchaseFigurine extends Auditable {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private CollectorPurchase purchase;
