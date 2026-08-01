@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -80,6 +82,8 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 @RequiredArgsConstructor
 public class CollectorCollectionFigurineService {
+
+    public static final String COLLECTOR_FIGURINE_CACHE = "collector-figurines";
 
     private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
@@ -160,6 +164,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectionAlreadyExistsException
      *             if creating a collection with an existing name
      */
+    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void assignFigurinesToCollections(Long collectorId, @Valid AssignFigurinesReq request) {
         List<Figurine> existingFigurines = retrieveExistingFigurines(request.figurineIds());
         List<CollectorCollection> existingCollections = retrieveExistingCollections(request.collectionMode(),
@@ -214,6 +219,7 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "#collectorId + ':' + #collectionId")
     public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
             @Positive Long collectionId) {
 
@@ -293,10 +299,7 @@ public class CollectorCollectionFigurineService {
         var figurineFound = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
-        CollectorCollectionFigurineDetailResp resp = collectorMapper
-                .toCollectorCollectionFigurineDetailResp(figurineFound);
-
-        return resp;
+        return collectorMapper.toCollectorCollectionFigurineDetailResp(figurineFound);
     }
 
     /**
@@ -321,8 +324,11 @@ public class CollectorCollectionFigurineService {
      *             if the figurine does not exist
      */
     @Transactional
+    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void deleteCollectionFigurine(@Positive Long collectorId, @Positive Long collectionId,
             @Positive Long figurineId) {
+        log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
+                collectorId);
 
         var collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
@@ -383,7 +389,10 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
+    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void deleteCollection(Long collectorId, Long collectionId) {
+        log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
+
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
@@ -437,19 +446,23 @@ public class CollectorCollectionFigurineService {
         var existing = collectorCollections.stream().filter(c -> c.getId().equals(collectionId)).findFirst()
                 .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
-        // is there any collection that contains the same name?
-        collectorCollections.stream().filter(cc -> cc.getName().equals(request.name())).findFirst().ifPresent(cc -> {
-            throw new CollectionAlreadyExistsException(cc.getName());
-        });
+        // is there any other user collection that contains the same collection name? if
+        // so, report it
+        collectorCollections.stream().filter(cc -> !cc.getId().equals(collectionId))
+                .filter(cc -> cc.getName().equals(request.name())).findFirst().ifPresent(cc -> {
+                    throw new CollectionAlreadyExistsException(cc.getName());
+                });
 
         // No need to use MapStruct when properties are too simple. Just update them
         // directly.
         existing.setName(request.name());
+        existing.setImageUrl(request.imageUrl());
         existing.setDescription(request.description());
 
         var updated = collectorCollectionRepository.save(existing);
 
-        return new CollectorCollectionResp(updated.getId(), updated.getName(), updated.getDescription(), 0, List.of());
+        return new CollectorCollectionResp(updated.getId(), updated.getName(), updated.getImageUrl(),
+                updated.getDescription(), 0, List.of());
     }
 
     /**
@@ -489,11 +502,12 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
         String newName = owningCollection.getName() + " copy";
+        String newImageUrl = owningCollection.getImageUrl() != null ? owningCollection.getImageUrl() : null;
         String newDescription = owningCollection.getDescription() != null
                 ? owningCollection.getDescription() + " copy"
                 : null;
 
-        CollectorCollection duplicateCollection = createCollection(collectorId, newName, newDescription);
+        CollectorCollection duplicateCollection = createCollection(collectorId, newName, newImageUrl, newDescription);
 
         duplicateCollection.setFigurines(owningCollection.getFigurines().stream().map(figurine -> {
             CollectorCollectionFigurine newFigurine = new CollectorCollectionFigurine();
@@ -554,7 +568,8 @@ public class CollectorCollectionFigurineService {
         if (mode == CollectionAssignmentMode.AUTO) {
             existingCollections.add(createDefaultCollection(collectorId));
         } else if (mode == CollectionAssignmentMode.CREATE) {
-            existingCollections.add(createCollection(collectorId, collectionReq.name(), collectionReq.description()));
+            existingCollections.add(createCollection(collectorId, collectionReq.name(), collectionReq.imageUrl(),
+                    collectionReq.description()));
         } else if (mode == CollectionAssignmentMode.EXISTING) {
             existingCollections.addAll(collectionIds.stream().map(collectionId -> collectorCollectionRepository
                     .findById(collectionId).orElseThrow(() -> new CollectionNotFoundException(collectionId))).toList());
@@ -572,7 +587,7 @@ public class CollectorCollectionFigurineService {
      * @return collector default collection
      */
     private CollectorCollection createDefaultCollection(Long collectorId) {
-        return createCollection(collectorId, "My Myth Collection", null);
+        return createCollection(collectorId, "My Myth Collection", null, null);
     }
 
     /**
@@ -594,7 +609,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectionAlreadyExistsException
      *             if a collection with the same name already exists
      */
-    private CollectorCollection createCollection(Long collectorId, String name, String description) {
+    private CollectorCollection createCollection(Long collectorId, String name, String imageUrl, String description) {
         Collector collector = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
@@ -605,6 +620,7 @@ public class CollectorCollectionFigurineService {
         CollectorCollection collectorCollection = new CollectorCollection();
         collectorCollection.setCollector(collector);
         collectorCollection.setName(name);
+        collectorCollection.setImageUrl(imageUrl);
         collectorCollection.setDescription(description);
 
         return collectorCollectionRepository.save(collectorCollection);

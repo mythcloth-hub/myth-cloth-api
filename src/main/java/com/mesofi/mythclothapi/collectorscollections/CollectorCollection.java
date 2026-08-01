@@ -29,6 +29,9 @@ public class CollectorCollection extends Auditable {
     @Column(nullable = false, length = 200)
     private String name;
 
+    @Column(length = 500)
+    private String imageUrl;
+
     @Column(length = 200)
     private String description;
 

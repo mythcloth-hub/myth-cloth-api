@@ -1,4 +1,5 @@
 package com.mesofi.mythclothapi.figurines;
+import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_FIGURINE_CACHE;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
@@ -193,7 +194,7 @@ public class FigurineService {
      *             if the CSV source cannot be read
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void importAllFigurinesFromPublicDrive() {
         CatalogContext catalogContext = loadCatalogs();
 
@@ -261,7 +262,7 @@ public class FigurineService {
      * @return API response DTO for the created figurine
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
@@ -439,7 +440,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -507,7 +508,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void deleteFigurine(@Positive Long id) {
         log.info("Deleting figurine with id '{}'", id);
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
