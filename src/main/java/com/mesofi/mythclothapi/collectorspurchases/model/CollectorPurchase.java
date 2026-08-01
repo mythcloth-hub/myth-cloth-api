@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 import lombok.Getter;
@@ -38,7 +38,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "collector_purchases")
-public class CollectorPurchase extends BaseId {
+public class CollectorPurchase extends Auditable {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Collector collector;

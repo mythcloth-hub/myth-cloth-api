@@ -78,6 +78,8 @@ public interface FigurineStoreMapper {
     @Mapping(target = "country", ignore = true)
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Store toStore(CachedStores cachedStores);
 
     @Named("firstImage")

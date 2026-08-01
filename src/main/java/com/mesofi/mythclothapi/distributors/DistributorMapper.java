@@ -36,6 +36,8 @@ public interface DistributorMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
     @Mapping(target = "country", source = "countryCode")
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Distributor toDistributor(DistributorReq request);
 
     /**
@@ -59,8 +61,7 @@ public interface DistributorMapper {
      *
      * <p>
      * Null properties in the request are ignored to avoid overwriting existing
-     * values. The {@code
-     * id} and {@code figurines} fields are not modified.
+     * values. The {@code id} and {@code figurines} fields are not modified.
      *
      * @param request
      *            the request containing updated distributor information
@@ -70,6 +71,8 @@ public interface DistributorMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
     @Mapping(target = "country", source = "countryCode")
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateDistributor(DistributorReq request, @MappingTarget Distributor entity);
 }

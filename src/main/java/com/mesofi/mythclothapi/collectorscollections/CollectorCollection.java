@@ -14,7 +14,7 @@ import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -24,10 +24,13 @@ import lombok.Setter;
 @Setter
 @Table(name = "collector_collections", uniqueConstraints = @UniqueConstraint(name = "uk_collection_collector_name", columnNames = {
         "collector_id", "description"}))
-public class CollectorCollection extends BaseId {
+public class CollectorCollection extends Auditable {
 
     @Column(nullable = false, length = 200)
     private String name;
+
+    @Column(length = 500)
+    private String imageUrl;
 
     @Column(length = 200)
     private String description;

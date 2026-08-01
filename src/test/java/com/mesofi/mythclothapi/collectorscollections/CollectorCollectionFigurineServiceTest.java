@@ -433,7 +433,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
         when(figurineRepository.findById(10L)).thenReturn(Optional.of(figurine));
-        when(collectorMapper.toCollectorCollectionFigurineDetailResp(eq(figurine), any(), any())).thenReturn(response);
+        when(collectorMapper.toCollectorCollectionFigurineDetailResp(eq(figurine))).thenReturn(response);
 
         CollectorCollectionFigurineDetailResp result = service.retrieveCollectionFigurine(1L, 20L, 10L);
 

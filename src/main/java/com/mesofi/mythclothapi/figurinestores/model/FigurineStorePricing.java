@@ -8,12 +8,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +23,7 @@ import lombok.Setter;
         @UniqueConstraint(name = "uk_figurine_price_pair", columnNames = {"figurine_store_id",
                 "current_price"})}, indexes = {
                         @Index(name = "idx_figurine_store_pricings_current_price", columnList = "figurine_store_id, current_price")})
-public class FigurineStorePricing extends BaseId {
+public class FigurineStorePricing extends Auditable {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private FigurineStore figurineStore;
@@ -38,27 +36,4 @@ public class FigurineStorePricing extends BaseId {
 
     @Column(nullable = false)
     private Instant checkedAt;
-
-    @Column(nullable = false)
-    private Instant creationDate;
-
-    @Column(nullable = false)
-    private Instant updateDate;
-
-    /**
-     * Initializes creation and update timestamps before first persistence.
-     */
-    @PrePersist
-    public void prePersist() {
-        creationDate = Instant.now();
-        updateDate = Instant.now();
-    }
-
-    /**
-     * Refreshes the update timestamp before entity updates.
-     */
-    @PreUpdate
-    public void preUpdate() {
-        updateDate = Instant.now();
-    }
 }

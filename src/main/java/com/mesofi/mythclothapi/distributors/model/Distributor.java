@@ -12,7 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 
 import lombok.EqualsAndHashCode;
@@ -25,7 +25,7 @@ import lombok.Setter;
 @Table(name = "distributors", uniqueConstraints = @UniqueConstraint(name = "uk_distributor_name_country", columnNames = {
         "name", "country"}))
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
-public class Distributor extends BaseId {
+public class Distributor extends Auditable {
 
     @Column(nullable = false, length = 100)
     @Enumerated(EnumType.STRING)

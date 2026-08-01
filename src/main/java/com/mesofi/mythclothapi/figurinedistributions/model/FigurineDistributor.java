@@ -6,7 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
@@ -16,7 +16,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class FigurineDistributor extends BaseId {
+public class FigurineDistributor extends Auditable {
 
     // Many figurines → many distributions
 

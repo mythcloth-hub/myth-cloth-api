@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.figurinestores.model;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,12 +12,10 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
-import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
@@ -33,7 +30,7 @@ import lombok.Setter;
 @Table(name = "figurine_stores", uniqueConstraints = {@UniqueConstraint(name = "uk_figurine_store_pair", columnNames = {
         "figurine_id", "store_id", "original_name"})}, indexes = {
                 @Index(name = "idx_figurine_stores_store_original_name", columnList = "store_id, original_name")})
-public class FigurineStore extends BaseId {
+public class FigurineStore extends Auditable {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Figurine figurine;
@@ -66,27 +63,4 @@ public class FigurineStore extends BaseId {
 
     @Column(nullable = false)
     private boolean preorder;
-
-    @Column(nullable = false)
-    private Instant creationDate;
-
-    @Column(nullable = false)
-    private Instant updateDate;
-
-    /**
-     * Initializes creation and update timestamps before first persistence.
-     */
-    @PrePersist
-    public void prePersist() {
-        creationDate = Instant.now();
-        updateDate = Instant.now();
-    }
-
-    /**
-     * Refreshes the update timestamp before entity updates.
-     */
-    @PreUpdate
-    public void preUpdate() {
-        updateDate = Instant.now();
-    }
 }

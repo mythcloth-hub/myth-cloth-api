@@ -161,7 +161,7 @@ public class FigurineStoreService {
      * @param storeId
      *            identifier of the store
      * @return matched figurine listings associated with the store
-     * @throws IllegalArgumentException
+     * @throws StoreNotFoundException
      *             if the store does not exist or is inactive
      */
     @Transactional(readOnly = true)
@@ -169,7 +169,7 @@ public class FigurineStoreService {
         log.info("Retrieving matched figurine listing using storeId '{}'", storeId);
 
         Store store = storeRepository.findByIdAndActiveTrue(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("Store not found for ID: " + storeId));
+                .orElseThrow(() -> new StoreNotFoundException(storeId));
 
         List<FigurineStore> figurineStores = figurineStoreRepository.findByStoreOrderByOriginalName(store);
 
@@ -178,7 +178,7 @@ public class FigurineStoreService {
             List<FigurineStorePricing> pricingList = figurineStorePricingRepository
                     .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
 
-            String displayableName = figurineService.createDisplayableName(figurineStore.getFigurine());
+            String displayableName = figurineStore.getFigurine().getDisplayName();
 
             figurineStoreMatchedRespList.add(figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore,
                     displayableName, Currency.getInstance(store.getCurrency()), pricingList));
@@ -278,7 +278,7 @@ public class FigurineStoreService {
                         "Unmatched figurine listing not found for ID: " + unmatchedFigurineId));
 
         Figurine figurine = figurineRepository.findById(figurineId)
-                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+                .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
         Store store = unmatched.getStore();
         StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
@@ -307,7 +307,7 @@ public class FigurineStoreService {
      *            default currency of the listings will be used
      * @return average current price across the figurine's store listings, or zero
      *         when no valid pricing information is available
-     * @throws IllegalArgumentException
+     * @throws FigurineNotFoundException
      *             if the figurine does not exist
      */
     @Transactional(readOnly = true)
@@ -315,7 +315,7 @@ public class FigurineStoreService {
         log.info("Retrieving average realtime price for figurine {} with currency {}", figurineId, currency);
 
         Figurine figurine = figurineRepository.findById(figurineId)
-                .orElseThrow(() -> new IllegalArgumentException("Figurine not found for ID: " + figurineId));
+                .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
         List<BigDecimal> prices = new ArrayList<>();
 

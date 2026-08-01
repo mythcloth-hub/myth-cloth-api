@@ -92,9 +92,6 @@ public class FigurineCsv {
     @CsvCustomBindByName(column = "Manga", converter = TrueFalseConverter.class)
     private boolean manga;
 
-    @CsvCustomBindByName(column = "Surplice", converter = TrueFalseConverter.class)
-    private boolean surplice;
-
     @CsvCustomBindByName(column = "Set", converter = TrueFalseConverter.class)
     private boolean set;
 

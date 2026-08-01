@@ -29,6 +29,8 @@ public interface StoreMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "code", source = "storeName")
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Store toStore(StoreReq storeReq);
 
     /**

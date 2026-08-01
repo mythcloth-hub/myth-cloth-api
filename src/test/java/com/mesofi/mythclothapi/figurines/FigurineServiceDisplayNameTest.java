@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.CacheManager;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
@@ -59,6 +60,8 @@ class FigurineServiceDisplayNameTest {
     private CollectorRepository collectorRepository;
     @Mock
     private CollectorCollectionRepository collectorCollectionRepository;
+    @Mock
+    private CacheManager cacheManager;
 
     private FigurineService service;
 
@@ -66,7 +69,7 @@ class FigurineServiceDisplayNameTest {
     void setUp() {
         service = new FigurineService(mapper, csvSource, distributorRepository, distributionRepository,
                 lineUpRepository, seriesRepository, groupRepository, anniversaryRepository, figurineRepository,
-                currencyRegionResolver, collectorRepository, collectorCollectionRepository);
+                currencyRegionResolver, collectorRepository, collectorCollectionRepository, cacheManager);
     }
 
     @ParameterizedTest(name = "{index} - {0}")
