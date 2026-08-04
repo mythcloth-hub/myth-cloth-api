@@ -9,9 +9,9 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.figurinestores.FigurineStoreService;
 import com.mesofi.mythclothapi.messaging.RabbitMQConfig;
-import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
@@ -32,7 +32,7 @@ public class MessageConsumer {
         log.info("=> Processing the following figurine '{}'", payload.get("productName"));
 
         StoreName store = StoreName.valueOf((String) payload.get("store"));
-        LineUP lineUp = LineUP.valueOf((String) payload.get("lineUp"));
+        LineUpType lineUp = LineUpType.valueOf((String) payload.get("lineUp"));
         String originalProductName = (String) payload.get("originalProductName");
         String productName = (String) payload.get("productName");
         String productImageUrl = (String) payload.get("productImageUrl");

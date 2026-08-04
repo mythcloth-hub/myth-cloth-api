@@ -1,27 +1,35 @@
 package com.mesofi.mythclothapi.figurines;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.anniversaries.model.AnniversaryType;
+import com.mesofi.mythclothapi.catalogs.model.GroupType;
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
+import com.mesofi.mythclothapi.catalogs.model.SeriesType;
 import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
+/**
+ * Builds the display name for a {@link Figurine} according to the official
+ * Saint Seiya Myth Cloth naming conventions.
+ * <p>
+ * Display names vary depending on the figurine's product line, series, group,
+ * release information, anniversary editions, and special edition flags (such as
+ * Original Color Edition, Revival, Golden Limited Edition, and Manga Version).
+ * This class centralizes all naming rules so they remain consistent throughout
+ * the application.
+ * <p>
+ * The builder first converts descriptive catalog values into their
+ * corresponding enum types, creates an immutable {@link BuildContext}, and then
+ * delegates the formatting to a line-up specific builder.
+ */
 public final class FigurineDisplayNameBuilder {
-
-    private static final String BRONZE_V1 = "Bronze Saint V1";
-    private static final String BRONZE_V2 = "Bronze Saint V2";
-    private static final String BRONZE_V3 = "Bronze Saint V3";
-    private static final String BRONZE_V4 = "Bronze Saint V4";
-    private static final String BRONZE_V5 = "Bronze Saint V5";
-    private static final String SURPLICE = "Surplice Saint";
-    private static final String GOD = "God";
-    private static final String GOD_ROBE = "God Robe";
-
-    private static final String OCE_SUFFIX = " ~Original Color Edition~";
-    private static final String REVIVAL_SUFFIX = " <Revival Ver.>";
-    private static final String _20_REVIVAL_SUFFIX = " <20th Revival Ver.>";
 
     private static final Map<String, String> DD_NAMES = Map.ofEntries(
             Map.entry("gemini", "{name} -the Pope's Chamber-"), Map.entry("pegasus", "{name} -Pegasus Meteor Punches-"),
@@ -36,350 +44,457 @@ public final class FigurineDisplayNameBuilder {
             Map.entry("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-"),
             Map.entry("libra", "Guidance of the Palace of the Scale -{name}-"));
 
+    private static final List<Map.Entry<String, LineUpType>> LINE_UP_MAPPINGS = List.of(
+            Map.entry("myth cloth ex", LineUpType.MYTH_CLOTH_EX), Map.entry("myth cloth", LineUpType.MYTH_CLOTH),
+            Map.entry("appendix", LineUpType.APPENDIX), Map.entry("panoramation", LineUpType.DD_PANORAMATION),
+            Map.entry("legend", LineUpType.SAINT_CLOTH_LEGEND), Map.entry("crown", LineUpType.SAINT_CLOTH_CROWN),
+            Map.entry("zero", LineUpType.FIGUARTS_ZERO), Map.entry("figuarts", LineUpType.FIGUARTS),
+            Map.entry("box", LineUpType.TAMASHII_NATIONS_BOX), Map.entry("action", LineUpType.SAINT_CLOTH_ACTION),
+            Map.entry("rebirth", LineUpType.SAINT_CLOTH_REBIRTH), Map.entry("series", LineUpType.SAINT_CLOTH_SERIES),
+            Map.entry("metalbuild", LineUpType.METALBUILD_EX_PROJECT));
+
+    private static final List<Map.Entry<String, SeriesType>> SERIES_MAPPINGS = List.of(
+            Map.entry("soul", SeriesType.SOUL_OF_GOLD), Map.entry("beginning", SeriesType.SS_THE_BEGINNING),
+            Map.entry("saintia", SeriesType.SAINTIA_SHO), Map.entry("lost", SeriesType.LOST_CANVAS),
+            Map.entry("legend", SeriesType.LEGEND_OF_SANCTUARY));
+
+    private static final List<Map.Entry<String, GroupType>> GROUP_MAPPINGS = List.of(
+            Map.entry("v1", GroupType.BRONZE_SAINT_V1), Map.entry("v2", GroupType.BRONZE_SAINT_V2),
+            Map.entry("v3", GroupType.BRONZE_SAINT_V3), Map.entry("v4", GroupType.BRONZE_SAINT_V4),
+            Map.entry("v5", GroupType.BRONZE_SAINT_V5), Map.entry("steel", GroupType.STEEL),
+            Map.entry("gold saint", GroupType.GOLD_SAINT), Map.entry("robe", GroupType.GOD_ROBE),
+            Map.entry("scale", GroupType.POSEIDON_SCALE), Map.entry("surplice", GroupType.SURPLICE_SAINT),
+            Map.entry("specter", GroupType.SPECTER), Map.entry("judge", GroupType.JUDGE),
+            Map.entry("god", GroupType.GOD), Map.entry("inheritor", GroupType.INHERITOR),
+            Map.entry("accessories", GroupType.ACCESSORIES));
+
     private FigurineDisplayNameBuilder() {
     }
 
+    /**
+     * Builds the display name for the supplied figurine.
+     * <p>
+     * The formatting strategy is selected according to the figurine's
+     * {@link LineUpType}. If the line-up cannot be determined, {@code "-"} is
+     * returned.
+     *
+     * @param figurine
+     *            the figurine whose display name will be generated
+     * @return the formatted display name
+     */
     public static String build(Figurine figurine) {
         BuildContext context = BuildContext.from(figurine);
+        LineUpType lineUpType = context.lineUpType;
 
-        String displayName = buildFiguartsZeroDisplayName(context);
-        if (displayName != null) {
-            return displayName;
+        return switch (lineUpType) {
+            case MYTH_CLOTH_EX -> buildMythClothExLineUp(context);
+            case MYTH_CLOTH -> buildMythClothLineUp(context);
+            case APPENDIX -> buildAppendixLineUp(context);
+            case DD_PANORAMATION -> buildPanoramationLineUp(context);
+            case SAINT_CLOTH_LEGEND -> buildLOSLineUp(context);
+            case SAINT_CLOTH_CROWN -> buildCrownLineUp(context);
+            case FIGUARTS_ZERO -> buildMythClothFiguartsZeroLineUp(context);
+            case FIGUARTS -> buildMythClothFiguartsLineUp(context);
+            case TAMASHII_NATIONS_BOX -> buildTamashiiNationsBoxLineUp(context);
+            case SAINT_CLOTH_ACTION -> buildSaintClothActionLineUp(context);
+            case SAINT_CLOTH_REBIRTH -> buildSaintClothRebirthLineUp(context);
+            case SAINT_CLOTH_SERIES -> buildSaintClothSeriesLineUp(context);
+            case METALBUILD_EX_PROJECT -> buildMetalBuildExProjectLineUp(context);
+            case null -> "-";
+        };
+    }
+
+    private static String buildMythClothExLineUp(BuildContext context) {
+        // Bronze Saints
+        if (context.groupType == GroupType.BRONZE_SAINT_V1) {
+            return "%s [First Bronze Cloth]".formatted(context.name);
+        } else if (context.groupType == GroupType.BRONZE_SAINT_V2) {
+            if (context.golden) {
+                return "%s [New Bronze Cloth] -Golden Limited Edition-".formatted(context.name);
+            }
+            if (context.revival) {
+                return "%s [New Bronze Cloth] <Revival Ver.>".formatted(context.name);
+            }
+            if (context.oce) {
+                if (context.anniversary != null && context.anniversary.getYear() == 40) {
+                    return "%s ~(New Bronze Cloth) 40th Anniversary Edition~".formatted(context.name);
+                }
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+            return "%s ~New Bronze Cloth~".formatted(context.name);
+        } else if (context.groupType == GroupType.BRONZE_SAINT_V3) {
+            if (context.golden) {
+                return "%s [Final Bronze Cloth] ~Golden Limited Edition~".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s [Final Bronze Cloth] -Original Color Edition-".formatted(context.name);
+            } else {
+                return "%s [Final Bronze Cloth]".formatted(context.name);
+            }
+        } else if (context.groupType == GroupType.BRONZE_SAINT_V4) {
+            return "%s [God Cloth]".formatted(context.name);
+
+            // Gold Saints
+        } else if (context.groupType == GroupType.GOLD_SAINT) {
+            if (context.seriesType == SeriesType.LEGEND_OF_SANCTUARY) {
+                return "%s ~Legend Of Sanctuary Edition~".formatted(context.name);
+            }
+            if (context.seriesType == SeriesType.SAINTIA_SHO) {
+                return "%s Saintia Sho Color Edition".formatted(context.name);
+            }
+            if (context.seriesType == SeriesType.SOUL_OF_GOLD) {
+                if (context.set) {
+                    return "%s God Cloth Saga Saga Premium Set".formatted(context.name);
+                }
+                return "%s God Cloth".formatted(context.name);
+            }
+            if (context.revival) {
+                if (context.anniversary != null && context.anniversary.getYear() == 20
+                        && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                    return "%s <20th Revival Ver.>".formatted(context.name);
+                }
+                if (context.name.toLowerCase(Locale.ROOT).contains("leo")
+                        || context.name.toLowerCase(Locale.ROOT).contains("virgo")) {
+                    return "%s <Revival Version>".formatted(context.name);
+                } else {
+                    return "%s <Revival Ver.>".formatted(context.name);
+                }
+            }
+            if (context.gold) {
+                return "%s Gold24".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+
+            // Asgard
+        } else if (context.groupType == GroupType.GOD_ROBE) {
+            if (context.seriesType == SeriesType.SOUL_OF_GOLD) {
+                return "%s God Robe".formatted(context.name);
+            }
+            if (context.anniversary != null && context.anniversary.getYear() == 40
+                    && context.anniversary.getType() == AnniversaryType.SAINT_SEIYA) {
+                return "%s 40th Anniversary Ver.".formatted(context.name);
+            }
+
+            // Poseidon
+        } else if (context.groupType == GroupType.POSEIDON_SCALE) {
+            if (context.name.toLowerCase(Locale.ROOT).contains("sorrento") && context.releaseDate != null
+                    && context.releaseDate.getYear() == 2021) {
+                return "%s <Asgard Final Battle Ver.>".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s -Original Color Edition-".formatted(context.name);
+            }
+            if (context.set) {
+                return "%s Imperial Throne Set".formatted(context.name);
+            }
+
+            // Surplice
+        } else if (context.groupType == GroupType.SURPLICE_SAINT) {
+            if (context.revival && context.anniversary != null && context.anniversary.getYear() == 20
+                    && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                return "%s (Surplice) <20th Revival Ver.>".formatted(context.name);
+            }
+            if (context.set) {
+                return "%s Set".formatted(context.name);
+            }
+            return "%s (Surplice)".formatted(context.name);
+
+            // Judge
+        } else if (context.groupType == GroupType.JUDGE) {
+            if (context.oce) {
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+
+            // Gods
+        } else if (context.groupType == GroupType.GOD) {
+            if (context.set) {
+                return "%s ~Divine Saga Premium Set~".formatted(context.name);
+            }
+
+            if (context.oce) {
+                if (context.name.toLowerCase(Locale.ROOT).contains("hades")) {
+                    return "%s ~Original Color Edition~".formatted(context.name);
+                } else {
+                    return "%s -Original Color Edition-".formatted(context.name);
+                }
+            }
+            // Inheritor
+        } else if (context.groupType == GroupType.INHERITOR) {
+            return "%s -Inheritor of the Gold Cloth-".formatted(context.name);
+            // Accessories
+        } else if (context.groupType == GroupType.ACCESSORIES) {
+            if (context.set) {
+                return "%s Set".formatted(context.name);
+            }
+        } else if (context.seriesType == SeriesType.SS_THE_BEGINNING) {
+            return "%s -Knights of the Zodiac-".formatted(context.name);
         }
 
-        displayName = buildDdPanoramationDisplayName(context);
-        if (displayName != null) {
-            return displayName;
+        return context.name;
+    }
+    private static String buildMythClothLineUp(BuildContext context) {
+        // Bronze Saints
+        if (context.groupType == GroupType.BRONZE_SAINT_V1) {
+            if (context.revival) {
+                return "%s [First Bronze Cloth] <Revival Ver.>".formatted(context.name);
+            }
+            if (context.manga) {
+                return "%s Comic Ver.".formatted(context.name);
+            }
+            if (context.anniversary != null && context.anniversary.getYear() == 20
+                    && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                return "%s 20th Anniversary Ver.".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+            if (context.golden) {
+                return "%s ~Limited Gold~".formatted(context.name);
+            }
+            if (context.seriesType != SeriesType.SAINTIA_SHO && context.seriesType != SeriesType.LOST_CANVAS) {
+                return "%s ~Initial Bronze Cloth~".formatted(context.name);
+            }
+        }
+        if (context.groupType == GroupType.BRONZE_SAINT_V2) {
+            if (context.golden) {
+                return "%s ~Power of Gold~".formatted(context.name);
+            }
+            if (context.broken) {
+                return "%s ~Broken Version~".formatted(context.name);
+            }
+        }
+        if (context.groupType == GroupType.BRONZE_SAINT_V3) {
+            if (context.oce) {
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+            if (context.gold) {
+                return "Golden Genealogy %s".formatted(context.name);
+            }
+            return "%s ~Final Bronze Cloth~".formatted(context.name);
+        }
+        if (context.groupType == GroupType.BRONZE_SAINT_V4) {
+            if (context.anniversary != null && context.anniversary.getYear() == 10
+                    && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                return "%s (God Cloth) ~10th Anniversary Ver.~".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s (God Cloth) ~Original Color Edition~".formatted(context.name);
+            } else {
+                return "%s (God Cloth)".formatted(context.name);
+            }
+        }
+        if (context.groupType == GroupType.BRONZE_SAINT_V5) {
+            return "%s (Heaven Chapter)".formatted(context.name);
+        }
+        if (context.groupType == GroupType.STEEL || context.groupType == GroupType.POSEIDON_SCALE) {
+            if (context.revival) {
+                return "%s <Revival Ver.>".formatted(context.name);
+            }
+            if (context.anniversary != null && context.anniversary.getYear() == 15
+                    && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                return "%s 15th Anniversary Ver.".formatted(context.name);
+            }
         }
 
-        displayName = buildMythClothExDisplayName(context);
-        if (displayName != null) {
-            return displayName;
+        // Asgard
+        if (context.groupType == GroupType.GOD_ROBE) {
+            if (context.releaseDate != null && context.releaseDate.getYear() == 2023) {
+                return "%s -The Earth Representative of Odin-".formatted(context.name);
+            }
+            if (context.seriesType == SeriesType.SOUL_OF_GOLD) {
+                return "%s God Robe".formatted(context.name);
+            }
         }
 
-        displayName = buildMythClothDisplayName(context);
-        if (displayName != null) {
-            return displayName;
+        // Surplice Saints
+        if (context.groupType == GroupType.SURPLICE_SAINT) {
+            if (context.set) {
+                if (context.oce) {
+                    return "%s and Pope Set (Surplice) ~Asia Version~".formatted(context.name);
+                } else {
+                    return "%s and Pope Set (Surplice)".formatted(context.name);
+                }
+            }
+            return "%s (Surplice)".formatted(context.name);
         }
 
-        displayName = buildAppendixDisplayName(context);
-        if (displayName != null) {
-            return displayName;
+        // Specters
+        if (context.groupType == GroupType.SPECTER) {
+            if (context.set) {
+                return "%s Complete Set".formatted(context.name);
+            }
+        }
+
+        // Gods
+        if (context.groupType == GroupType.GOD) {
+            if (context.anniversary != null && context.anniversary.getYear() == 15
+                    && context.anniversary.getType() == AnniversaryType.SAINT_CLOTH_MYTH) {
+                return "%s 15th Anniversary Ver.".formatted(context.name);
+            }
+            if (context.set) {
+                return "%s Memorial Set".formatted(context.name);
+            }
+            if (context.oce) {
+                return "%s ~Original Color Edition~".formatted(context.name);
+            }
+        }
+        if (context.revival) {
+            return "%s <Revival Ver.>".formatted(context.name);
         }
 
         return context.name;
     }
 
-    private static String buildFiguartsZeroDisplayName(BuildContext context) {
-        if (context.lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
-            return "Figuarts Zero Touche Métallique " + context.name;
+    private static String buildAppendixLineUp(BuildContext context) {
+        if (context.groupType == GroupType.BRONZE_SAINT_V3) {
+            return "%s (Final Bronze Cloth)".formatted(context.name);
         }
-        return null;
+        if (context.oce) {
+            return "%s ~Original Color Edition~".formatted(context.name);
+        }
+        if (context.plainCloth) {
+            return "%s -Plain Clothes-".formatted(context.name);
+        }
+        return context.name;
     }
 
-    private static String buildDdPanoramationDisplayName(BuildContext context) {
-        if (!context.lineUpString.equalsIgnoreCase("DD Panoramation")) {
-            return null;
-        }
-
+    private static String buildPanoramationLineUp(BuildContext context) {
         String simpleName = context.name.toLowerCase();
         return DD_NAMES.keySet().stream().filter(simpleName::contains).findFirst()
                 .map(key -> DD_NAMES.get(key).replace("{name}", context.name)).orElse(context.name);
     }
 
-    private static String buildMythClothExDisplayName(BuildContext context) {
-        if (!context.lineUpString.equalsIgnoreCase("Myth Cloth EX")) {
-            return null;
-        }
-
-        String name = context.name;
-
-        if (context.seriesString.equalsIgnoreCase("Saint Seiya Legend Of Sanctuary")) {
-            return name + " ~Legend of Sanctuary Edition~";
-        }
-        if (context.seriesString.equalsIgnoreCase("Saintia Sho")) {
-            return name + " Saintia Sho Color Edition";
-        }
-        if (context.seriesString.equalsIgnoreCase("Soul of Gold")) {
-            if (context.groupString.equalsIgnoreCase(GOD_ROBE)) {
-                return name + " God Robe";
-            } else {
-                if (context.groupString.equalsIgnoreCase("Accessories")) {
-                    return name + " Set";
-                } else {
-                    name += " (God Cloth)";
-                    if (context.set) {
-                        name += " Saga Saga Premium Set";
-                    }
-                    return name;
-                }
-            }
-        }
-        if (context.gold) {
-            return name + " Gold 24";
-        }
-        if (context.seriesString.equalsIgnoreCase("Saint Seiya The Beginning")) {
-            return name + " -Knights of the Zodiac-";
-        }
-        if (context.groupString.equalsIgnoreCase(GOD) && context.anniversary && context.set) {
-            return name + " -Divine Saga Premium Set-";
-        }
-        if (context.groupString.equalsIgnoreCase("Gold Inheritor")) {
-            return name + " ~Inheritor of the Gold Cloth~";
-        }
-        if (context.groupString.equalsIgnoreCase(GOD_ROBE)) {
-            if (context.anniversary40) {
-                return name + " 40th Anniversary Ver.";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase("Poseidon Scale")) {
-            if (context.oce) {
-                return name + OCE_SUFFIX;
-            }
-            if (name.toLowerCase().contains("sorrento") && !context.metal && context.year == 2021) {
-                return name + " <Asgard Final Battle Ver.>";
-            }
-            if (context.set) {
-                return name + " Imperial Throne Set";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase("Judge")) {
-            if (context.oce) {
-                return name + " -Original Color Edition-";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V1)) {
-            return name + " (Initial Bronze Cloth)";
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V2)) {
-            if (context.golden) {
-                return name + " (New Bronze Cloth) ~Golden Limited Edition~";
-            } else if (context.revival) {
-                return name + " [New Bronze Cloth]" + REVIVAL_SUFFIX;
-            } else if (context.oce) {
-                if (context.anniversary) {
-                    return name + " ~(New Bronze Cloth) 40th Anniversary Edition~";
-                } else {
-                    return name + OCE_SUFFIX;
-                }
-            } else {
-                return name + " (New Bronze Cloth)";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V3)) {
-            name += " [Final Bronze Cloth]";
-            if (context.oce) {
-                name += OCE_SUFFIX;
-            } else if (context.golden) {
-                name += " ~Golden Limited Edition~";
-            }
-            return name;
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V4)) {
-            return name + " [God Cloth]";
-        }
-        if (context.groupString.equalsIgnoreCase(GOD)) {
-            if (context.oce) {
-                return name + OCE_SUFFIX;
-            }
-        }
-        if (context.groupString.equalsIgnoreCase("Gold Saint")) {
-            if (context.oce) {
-                return name + OCE_SUFFIX;
-            }
-            if (context.revival && context.anniversary) {
-                return name + _20_REVIVAL_SUFFIX;
-            }
-            if (context.revival) {
-                return name + OCE_SUFFIX;
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(SURPLICE) && !context.set) {
-            name += " (Surplice)";
-            if (context.revival) {
-                name += _20_REVIVAL_SUFFIX;
-            }
-            return name;
-        }
-        if (context.groupString.equalsIgnoreCase(SURPLICE) && context.set) {
-            return name + " Set";
-        }
-
-        return null;
+    private static String buildLOSLineUp(BuildContext context) {
+        return "Saint Cloth Legend %s".formatted(context.name);
     }
 
-    private static String buildMythClothDisplayName(BuildContext context) {
-        if (!context.lineUpString.equalsIgnoreCase("Myth Cloth")) {
-            return null;
-        }
-
-        String name = context.name;
-
-        if (name.toLowerCase().contains("hilda") && context.distribution.toLowerCase().contains("stores")) {
-            return name + " -The Earth Representative of Odin-";
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V1)) {
-            if (context.manga) {
-                return name + " Comic Ver.";
-            }
-            if (context.anniversary && !context.oce) {
-                return name + " 20th Anniversary Ver.";
-            }
-            if (context.revival) {
-                return name + " Early Bronze Cloth" + REVIVAL_SUFFIX;
-            }
-            if (context.golden) {
-                return name + " ~Limited Gold~";
-            }
-            if (context.oce) {
-                return name + OCE_SUFFIX;
-            }
-            if (!context.seriesString.equalsIgnoreCase("The Lost Canvas")) {
-                return name + " (Initial Bronze Cloth)";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V2)) {
-            if (context.golden) {
-                return name + " Power of Gold";
-            }
-            if (context.broken) {
-                return name + " ~Broken Version~";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V3)) {
-            if (context.gold) {
-                return name + " Golden Genealogy";
-            }
-            if (!context.oce) {
-                return name + " (Final Bronze Cloth)";
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V4)) {
-            if (context.anniversary10) {
-                return name + " (God Cloth) -10th Anniversary Edition-";
-            }
-            name += " God Cloth";
-            if (context.oce) {
-                return name + OCE_SUFFIX;
-            }
-        }
-        if (context.groupString.equalsIgnoreCase(SURPLICE) && !context.oce) {
-            return name + " (Surplice)";
-        }
-        if (context.groupString.equalsIgnoreCase("Specter")) {
-            if (context.set) {
-                return name + " Complete Set";
-            }
-        }
-        if (context.revival) {
-            return name + REVIVAL_SUFFIX;
-        }
-        if (context.groupString.equalsIgnoreCase(BRONZE_V5)) {
-            return name + " (Heaven Chapter)";
-        }
-        if (context.anniversary15) {
-            return name + " 15th Anniversary Ver.";
-        }
-        if (context.oce) {
-            return name + OCE_SUFFIX;
-        }
-
-        return null;
+    private static String buildCrownLineUp(BuildContext context) {
+        return context.name;
     }
 
-    private static String buildAppendixDisplayName(BuildContext context) {
-        if (!context.lineUpString.equalsIgnoreCase("Appendix")) {
-            return null;
-        }
-
-        if (context.oce) {
-            return context.name + OCE_SUFFIX;
-        }
-        if (context.plainCloth) {
-            return context.name + " (Plain Cloth)";
-        }
-
-        return null;
+    private static String buildMythClothFiguartsZeroLineUp(BuildContext context) {
+        return "Figuarts Zero Touche Métallique %s".formatted(context.name);
     }
 
-    private static boolean isAnniversaryEdition(Anniversary anniversary, int year) {
-        return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
+    private static String buildMythClothFiguartsLineUp(BuildContext context) {
+        return context.name;
     }
 
-    private static final class BuildContext {
-        private final String name;
-        private final String lineUpString;
-        private final String seriesString;
-        private final String groupString;
-        private final String distribution;
-        private final int year;
-        private final boolean oce;
-        private final boolean revival;
-        private final boolean golden;
-        private final boolean gold;
-        private final boolean set;
-        private final boolean manga;
-        private final boolean metal;
-        private final boolean broken;
-        private final boolean plainCloth;
-        private final boolean anniversary;
-        private final boolean anniversary15;
-        private final boolean anniversary10;
-        private final boolean anniversary40;
+    private static String buildTamashiiNationsBoxLineUp(BuildContext context) {
+        return context.name;
+    }
 
-        private BuildContext(String name, String lineUpString, String seriesString, String groupString,
-                String distribution, int year, boolean oce, boolean revival, boolean golden, boolean gold, boolean set,
-                boolean manga, boolean metal, boolean broken, boolean plainCloth, boolean anniversary,
-                boolean anniversary15, boolean anniversary10, boolean anniversary40) {
-            this.name = name;
-            this.lineUpString = lineUpString;
-            this.seriesString = seriesString;
-            this.groupString = groupString;
-            this.distribution = distribution;
-            this.year = year;
-            this.oce = oce;
-            this.revival = revival;
-            this.golden = golden;
-            this.gold = gold;
-            this.set = set;
-            this.manga = manga;
-            this.metal = metal;
-            this.broken = broken;
-            this.plainCloth = plainCloth;
-            this.anniversary = anniversary;
-            this.anniversary15 = anniversary15;
-            this.anniversary10 = anniversary10;
-            this.anniversary40 = anniversary40;
-        }
+    private static String buildSaintClothActionLineUp(BuildContext context) {
+        return context.name;
+    }
 
+    private static String buildSaintClothRebirthLineUp(BuildContext context) {
+        return context.name;
+    }
+
+    private static String buildSaintClothSeriesLineUp(BuildContext context) {
+        return "Saint Cloth Series %s".formatted(context.name);
+    }
+
+    private static String buildMetalBuildExProjectLineUp(BuildContext context) {
+        return "MetalBuild EX Project %s".formatted(context.name);
+    }
+
+    /**
+     * Resolves a {@link LineUpType} from a line-up description.
+     * <p>
+     * Matching is performed using a case-insensitive substring comparison against
+     * the configured mappings.
+     *
+     * @param lineUpString
+     *            the line-up description
+     * @return the matching line-up type, or {@code null} if no mapping exists
+     */
+    private static LineUpType toLineUpType(String lineUpString) {
+        String normalized = lineUpString.toLowerCase(Locale.ROOT);
+
+        return LINE_UP_MAPPINGS.stream().filter(entry -> normalized.contains(entry.getKey())).map(Map.Entry::getValue)
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Resolves a {@link SeriesType} from a series description.
+     *
+     * @param seriesString
+     *            the series description
+     * @return the matching series type, or {@code null} if no mapping exists
+     */
+    private static SeriesType toSeriesType(String seriesString) {
+        String normalized = seriesString.toLowerCase(Locale.ROOT);
+
+        return SERIES_MAPPINGS.stream().filter(entry -> normalized.contains(entry.getKey())).map(Map.Entry::getValue)
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Resolves a {@link GroupType} from a group description.
+     *
+     * @param groupString
+     *            the group description
+     * @return the matching group type, or {@code null} if no mapping exists
+     */
+    private static GroupType toGroupType(String groupString) {
+        String normalized = groupString.toLowerCase(Locale.ROOT);
+
+        return GROUP_MAPPINGS.stream().filter(entry -> normalized.contains(entry.getKey())).map(Map.Entry::getValue)
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Immutable representation of the figurine attributes required to generate a
+     * display name.
+     * <p>
+     * This record extracts and normalizes the relevant information from a
+     * {@link Figurine}, allowing the formatting logic to work with strongly typed
+     * values instead of repeatedly traversing the domain model.
+     */
+    private record BuildContext(String name, LineUpType lineUpType, SeriesType seriesType, GroupType groupType,
+            LocalDate releaseDate, boolean metal, boolean oce, boolean revival, boolean plainCloth, boolean broken,
+            boolean golden, boolean gold, boolean manga, boolean set, Anniversary anniversary) {
+
+        /**
+         * Creates a {@link BuildContext} from the supplied figurine.
+         * <p>
+         * Descriptive catalog values are converted into their corresponding enum types,
+         * nullable Boolean properties are normalized to primitive booleans, and the
+         * first distributor release date is used when available.
+         *
+         * @param figurine
+         *            the figurine to convert
+         * @return an immutable context containing all data required for display name
+         *         generation
+         */
         private static BuildContext from(Figurine figurine) {
             String name = figurine.getNormalizedName();
-            String lineUpString = Optional.ofNullable(figurine.getLineup()).map(Descriptive::getDescription).orElse("");
-            String seriesString = Optional.ofNullable(figurine.getSeries()).map(Descriptive::getDescription).orElse("");
-            String groupString = Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription).orElse("");
-            String distribution = Optional.ofNullable(figurine.getDistribution()).map(Descriptive::getDescription)
-                    .orElse("");
-            int year = Optional.ofNullable(figurine.getDistributors())
-                    .map(list -> list.isEmpty() ? null : list.getFirst().getReleaseDate()).map(LocalDate::getYear)
-                    .orElse(0);
+            LineUpType lineUpType = Optional.ofNullable(figurine.getLineup()).map(Descriptive::getDescription)
+                    .map(FigurineDisplayNameBuilder::toLineUpType).orElse(null);
+            SeriesType seriesType = Optional.ofNullable(figurine.getSeries()).map(Descriptive::getDescription)
+                    .map(FigurineDisplayNameBuilder::toSeriesType).orElse(null);
+            GroupType groupType = Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription)
+                    .map(FigurineDisplayNameBuilder::toGroupType).orElse(null);
 
+            LocalDate releaseDate = Optional.ofNullable(figurine.getDistributors()).filter(list -> !list.isEmpty())
+                    .map(List::getFirst).map(FigurineDistributor::getReleaseDate).orElse(null);
+
+            boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
             boolean oce = Optional.ofNullable(figurine.getOce()).orElse(false);
             boolean revival = Optional.ofNullable(figurine.getRevival()).orElse(false);
+            boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
+            boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
             boolean golden = Optional.ofNullable(figurine.getGolden()).orElse(false);
             boolean gold = Optional.ofNullable(figurine.getGold()).orElse(false);
-            boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
             boolean manga = Optional.ofNullable(figurine.getManga()).orElse(false);
-            boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
-            boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
-            boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
-            boolean anniversary = Optional.ofNullable(figurine.getAnniversary()).isPresent();
-            boolean anniversary15 = isAnniversaryEdition(figurine.getAnniversary(), 15);
-            boolean anniversary10 = isAnniversaryEdition(figurine.getAnniversary(), 10);
-            boolean anniversary40 = isAnniversaryEdition(figurine.getAnniversary(), 40);
+            boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
 
-            return new BuildContext(name, lineUpString, seriesString, groupString, distribution, year, oce, revival,
-                    golden, gold, set, manga, metal, broken, plainCloth, anniversary, anniversary15, anniversary10,
-                    anniversary40);
+            return new BuildContext(name, lineUpType, seriesType, groupType, releaseDate, metal, oce, revival,
+                    plainCloth, broken, golden, gold, manga, set, figurine.getAnniversary());
         }
     }
 }

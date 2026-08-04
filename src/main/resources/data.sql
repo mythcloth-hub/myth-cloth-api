@@ -53,6 +53,7 @@ INSERT INTO lineups (description) VALUES ('Saint Cloth Action');
 INSERT INTO lineups (description) VALUES ('Saint Cloth Rebirth');
 INSERT INTO lineups (description) VALUES ('EX project Metalbuild');
 INSERT INTO lineups (description) VALUES ('Saint Cloth Series');
+INSERT INTO lineups (description) VALUES ('Tamashii Nations Box');
 
 INSERT INTO series (description) VALUES ('Saint Seiya');
 INSERT INTO series (description) VALUES ('Saintia Sho');

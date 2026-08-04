@@ -38,7 +38,7 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
-import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
+import com.mesofi.mythclothapi.messaging.pricing.model.LineUpType;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
@@ -250,21 +250,21 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
     private List<StoreListing> createMythFactoryStoreListing() {
         // All four items contain nearly the same information. The preorder status
         // changes in the third item, and the price changes in the fourth item.
-        return List.of(new StoreListing(StoreName.MYTH_FACTORY, LineUP.MYTH_CLOTH_EX,
+        return List.of(new StoreListing(StoreName.MYTH_FACTORY, LineUpType.MYTH_CLOTH_EX,
                 "Merak Hagen (Beta God Warrior) Saint Cloth Myth EX Metal 40th anniversary by Bandai Tamashii...",
                 "merak hagen (beta god warrior) metal 40th anniversary by bandai tamashii...",
                 "https://www.mythfactoryshop.com/cdn-cgi/image/format=webp,width=250/79266-large_default/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.jpg",
                 "https://www.mythfactoryshop.com/en/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.html",
                 new BigDecimal("141.90"), null, new BigDecimal("141.90"), Currency.getInstance("EUR"),
                 ListingStatus.OUT_OF_STOCK, true, Instant.parse("2026-07-28T17:00:00.623880Z")),
-                new StoreListing(StoreName.MYTH_FACTORY, LineUP.MYTH_CLOTH_EX,
+                new StoreListing(StoreName.MYTH_FACTORY, LineUpType.MYTH_CLOTH_EX,
                         "Merak Hagen (Beta God Warrior) Saint Cloth Myth EX Metal 40th anniversary by Bandai Tamashii...",
                         "merak hagen (beta god warrior) metal 40th anniversary by bandai tamashii...",
                         "https://www.mythfactoryshop.com/cdn-cgi/image/format=webp,width=250/79266-large_default/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.jpg",
                         "https://www.mythfactoryshop.com/en/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.html",
                         new BigDecimal("141.90"), null, new BigDecimal("141.90"), Currency.getInstance("EUR"),
                         ListingStatus.IN_STOCK, true, Instant.parse("2026-07-29T17:00:01.623880Z")),
-                new StoreListing(StoreName.MYTH_FACTORY, LineUP.MYTH_CLOTH_EX,
+                new StoreListing(StoreName.MYTH_FACTORY, LineUpType.MYTH_CLOTH_EX,
                         "Merak Hagen (Beta God Warrior) Saint Cloth Myth EX Metal 40th anniversary by Bandai Tamashii...",
                         "merak hagen (beta god warrior) metal 40th anniversary by bandai tamashii...",
                         "https://www.mythfactoryshop.com/cdn-cgi/image/format=webp,width=250/79266-large_default/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.jpg",
@@ -272,7 +272,7 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
                         new BigDecimal("200.00"), new BigDecimal("10"), new BigDecimal("180.00"),
                         Currency.getInstance("EUR"), ListingStatus.IN_STOCK, false,
                         Instant.parse("2026-07-30T17:00:00.623880Z")),
-                new StoreListing(StoreName.MYTH_FACTORY, LineUP.MYTH_CLOTH_EX,
+                new StoreListing(StoreName.MYTH_FACTORY, LineUpType.MYTH_CLOTH_EX,
                         "Merak Hagen (Beta God Warrior) Saint Cloth Myth EX Metal 40th anniversary by Bandai Tamashii...",
                         "merak hagen (beta god warrior) metal 40th anniversary by bandai tamashii...",
                         "https://www.mythfactoryshop.com/cdn-cgi/image/format=webp,width=250/79266-large_default/merak-hagen-beta-god-warrior-bandai-tamashii-nations-saint-cloth-myth-ex-metal-40th-anniversary-action-figure-saint-seiya.jpg",
@@ -284,13 +284,13 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
     }
 
     private List<StoreListing> createNinNinGameStoreListing() {
-        return List.of(new StoreListing(StoreName.NIN_NIN_GAME, LineUP.MYTH_CLOTH,
+        return List.of(new StoreListing(StoreName.NIN_NIN_GAME, LineUpType.MYTH_CLOTH,
                 "Saint Seiya Myth Cloth - Bronze Saint Phoenix Ikki [Used]", "bronze saint phoenix ikki [used]",
                 "https://media2.nin-nin-game.com/88515-pos_product/saint-seiya-myth-cloth-bronze-saint-phoenix-ikki-used.jpg",
                 "https://www.nin-nin-game.com/en/myth-cloth-saint-seiya/15903-saint-seiya-myth-cloth-bronze-saint-phoenix-ikki-used.html",
                 new BigDecimal(3098), null, new BigDecimal(3098), Currency.getInstance("MXN"),
                 ListingStatus.OUT_OF_STOCK, false, Instant.parse("2026-07-28T17:05:17.623880Z")),
-                new StoreListing(StoreName.NIN_NIN_GAME, LineUP.MYTH_CLOTH,
+                new StoreListing(StoreName.NIN_NIN_GAME, LineUpType.MYTH_CLOTH,
                         "Saint Seiya Myth Cloth - Bronze Saint Phoenix Ikki", "bronze saint phoenix ikki",
                         "https://media3.nin-nin-game.com/88514-pos_product/saint-seiya-myth-cloth-bronze-saint-phoenix-ikki.jpg",
                         "https://www.nin-nin-game.com/en/myth-cloth-saint-seiya/2804-saint-seiya-myth-cloth-bronze-saint-phoenix-ikki.html",
