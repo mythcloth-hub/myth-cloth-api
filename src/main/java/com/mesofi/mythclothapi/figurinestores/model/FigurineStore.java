@@ -15,9 +15,9 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.stores.model.Store;
 
@@ -43,7 +43,7 @@ public class FigurineStore extends Auditable {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name = "line_up")
-    private LineUP lineUP;
+    private LineUpType lineUp;
 
     @Column(nullable = false, length = 300)
     private String originalName;

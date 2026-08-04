@@ -208,7 +208,7 @@ public class FigurineStoreService {
 
         Store store = figurineStore.getStore();
 
-        StoreListing listing = new StoreListing(null, figurineStore.getLineUP(), figurineStore.getOriginalName(),
+        StoreListing listing = new StoreListing(null, figurineStore.getLineUp(), figurineStore.getOriginalName(),
                 figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
                 pricingList.getFirst().getCurrentPrice(), pricingList.getFirst().getDiscount(), null,
                 Currency.getInstance(store.getCurrency()), figurineStore.getStatus(), figurineStore.isPreorder(),
@@ -281,7 +281,7 @@ public class FigurineStoreService {
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
         Store store = unmatched.getStore();
-        StoreListing listing = new StoreListing(null, unmatched.getLineUP(), unmatched.getOriginalName(),
+        StoreListing listing = new StoreListing(null, unmatched.getLineUp(), unmatched.getOriginalName(),
                 unmatched.getNormalizedName(), unmatched.getImageUrl(), unmatched.getProductUrl(), unmatched.getPrice(),
                 unmatched.getDiscount(), null, Currency.getInstance(store.getCurrency()), unmatched.getStatus(),
                 unmatched.isPreorder(), unmatched.getCheckedAt());
@@ -498,7 +498,7 @@ public class FigurineStoreService {
                         existing.getOriginalName()), () -> {
                             FigurineStoreUnmatched unmatched = new FigurineStoreUnmatched();
                             unmatched.setStore(store);
-                            unmatched.setLineUP(listing.lineUp());
+                            unmatched.setLineUp(listing.lineUp());
                             unmatched.setOriginalName(listing.originalProductName());
                             unmatched.setNormalizedName(listing.productName());
                             unmatched.setImageUrl(listing.productImageUrl());
@@ -614,7 +614,7 @@ public class FigurineStoreService {
                     return mapping;
                 });
 
-        figurineStore.setLineUP(listing.lineUp());
+        figurineStore.setLineUp(listing.lineUp());
         figurineStore.setOriginalName(listing.originalProductName());
         figurineStore.setNormalizedName(listing.productName());
         figurineStore.setImageUrl(listing.productImageUrl());

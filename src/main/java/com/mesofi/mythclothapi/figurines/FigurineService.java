@@ -40,6 +40,7 @@ import org.springframework.validation.annotation.Validated;
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
@@ -70,7 +71,6 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
-import com.mesofi.mythclothapi.messaging.pricing.model.LineUP;
 import com.opencsv.bean.CsvToBeanBuilder;
 
 import io.micrometer.core.annotation.Timed;
@@ -160,15 +160,15 @@ public class FigurineService {
         ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
     }
 
-    private static final Map<LineUP, FigurineLineUpCacheConf> LINEUP_CONFIG = Map.of(LineUP.MYTH_CLOTH_EX,
-            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_EX_KEY, "Myth Cloth EX"), LineUP.MYTH_CLOTH,
-            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_KEY, "Myth Cloth"), LineUP.APPENDIX,
-            new FigurineLineUpCacheConf(BY_APPENDIX_KEY, "Appendix"), LineUP.DD_PANORAMATION,
-            new FigurineLineUpCacheConf(BY_DD_PANORAMATION_KEY, "DD Panoramation"), LineUP.FIGUARTS_ZERO,
-            new FigurineLineUpCacheConf(BY_FIGUARTS_ZERO_KEY, "Figuarts Zero Metallic Touch"), LineUP.FIGUARTS,
-            new FigurineLineUpCacheConf(BY_FIGUARTS_KEY, "Figuarts"), LineUP.SAINT_CLOTH_LEGEND,
-            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_LEGEND_KEY, "Saint Cloth Legend"), LineUP.CROWN,
-            new FigurineLineUpCacheConf(BY_CROWN_KEY, "Saint Cloth Crown"), LineUP.SAINT_CLOTH_SERIES,
+    private static final Map<LineUpType, FigurineLineUpCacheConf> LINEUP_CONFIG = Map.of(LineUpType.MYTH_CLOTH_EX,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_EX_KEY, "Myth Cloth EX"), LineUpType.MYTH_CLOTH,
+            new FigurineLineUpCacheConf(BY_MYTH_CLOTH_KEY, "Myth Cloth"), LineUpType.APPENDIX,
+            new FigurineLineUpCacheConf(BY_APPENDIX_KEY, "Appendix"), LineUpType.DD_PANORAMATION,
+            new FigurineLineUpCacheConf(BY_DD_PANORAMATION_KEY, "DD Panoramation"), LineUpType.FIGUARTS_ZERO,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_ZERO_KEY, "Figuarts Zero Metallic Touch"), LineUpType.FIGUARTS,
+            new FigurineLineUpCacheConf(BY_FIGUARTS_KEY, "Figuarts"), LineUpType.SAINT_CLOTH_LEGEND,
+            new FigurineLineUpCacheConf(BY_SAINT_CLOTH_LEGEND_KEY, "Saint Cloth Legend"), LineUpType.SAINT_CLOTH_CROWN,
+            new FigurineLineUpCacheConf(BY_CROWN_KEY, "Saint Cloth Crown"), LineUpType.SAINT_CLOTH_SERIES,
             new FigurineLineUpCacheConf(BY_SAINT_CLOTH_SERIES_KEY, "Saint Cloth Series"));
 
     // Is the minimum similarity score required to consider a match valid
@@ -577,7 +577,7 @@ public class FigurineService {
      *         suitable match is found; otherwise {@link Optional#empty()}
      */
     @Transactional(readOnly = true)
-    public Optional<Figurine> findBestMatchingFigurine(LineUP lineUp, String normalizedName) {
+    public Optional<Figurine> findBestMatchingFigurine(LineUpType lineUp, String normalizedName) {
         List<CachedFigurine> availableFigurines = getAvailableFigurinesByLineUp(lineUp);
 
         if (availableFigurines.isEmpty()) {
@@ -616,7 +616,7 @@ public class FigurineService {
      * @return the available figurines for the requested line-up, or an empty list
      *         if the line-up is not configured or cannot be found
      */
-    private List<CachedFigurine> getAvailableFigurinesByLineUp(LineUP lineUp) {
+    private List<CachedFigurine> getAvailableFigurinesByLineUp(LineUpType lineUp) {
         Cache cache = Objects.requireNonNull(cacheManager.getCache(FIGURINE_CACHE), "figurines cache not configured");
 
         FigurineLineUpCacheConf config = LINEUP_CONFIG.get(lineUp);
