@@ -272,7 +272,7 @@ public class FigurineService {
         prepareForPersistence(figurine);
 
         var saved = repository.save(figurine);
-        return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::calculateReleaseStatus);
+        return mapper.toFigurineResp(saved, this::calculatePriceWithTax);
     }
 
     /**
@@ -302,7 +302,7 @@ public class FigurineService {
         log.info("Reading figurine with id '{}'", id);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-        return mapper.toFigurineResp(existing, this::calculatePriceWithTax, this::calculateReleaseStatus);
+        return mapper.toFigurineResp(existing, this::calculatePriceWithTax);
     }
 
     /**
@@ -339,9 +339,8 @@ public class FigurineService {
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
-        List<FigurineResp> list = figurines.getContent().stream().map(
-                figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax, this::calculateReleaseStatus))
-                .toList();
+        List<FigurineResp> list = figurines.getContent().stream()
+                .map(figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax)).toList();
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());
@@ -387,10 +386,8 @@ public class FigurineService {
     public List<FigurineSummaryResp> retrieveFigurineSummaries(@NotNull FigurineFilter filter) {
         log.info("Retrieving figurines summaries '{}'", filter);
 
-        return repository.findAll(filter).stream().filter(figurine -> {
-            ReleaseStatus status = calculateReleaseStatus(figurine);
-            return status == RELEASED || status == ANNOUNCED;
-        }).map(mapper::toFigurineSummaryResp).toList();
+        return repository.findAll(filter).stream().filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED
+                || figurine.getCurrentReleaseStatus() == ANNOUNCED).map(mapper::toFigurineSummaryResp).toList();
     }
 
     /**
@@ -407,10 +404,8 @@ public class FigurineService {
      * @return a list containing the identifiers of selectable figurines
      */
     public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
-        return repository.findAll(filter).stream().filter(figurine -> {
-            ReleaseStatus releaseStatus = calculateReleaseStatus(figurine);
-            return releaseStatus == ANNOUNCED || releaseStatus == RELEASED;
-        }).map(BaseId::getId).toList();
+        return repository.findAll(filter).stream().filter(figurine -> figurine.getCurrentReleaseStatus() == ANNOUNCED
+                || figurine.getCurrentReleaseStatus() == RELEASED).map(BaseId::getId).toList();
     }
 
     /**
@@ -483,7 +478,7 @@ public class FigurineService {
         });
 
         var updated = repository.save(existing);
-        return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::calculateReleaseStatus);
+        return mapper.toFigurineResp(updated, this::calculatePriceWithTax);
     }
 
     /**
@@ -635,10 +630,10 @@ public class FigurineService {
                 return List.of();
             }
 
-            figurines = repository.findAllByLineup(lineUpEntity.get()).stream().filter(figurine -> {
-                ReleaseStatus status = calculateReleaseStatus(figurine);
-                return status == RELEASED || status == ANNOUNCED;
-            }).map(figurine -> new CachedFigurine(figurine.getId(), figurine.getDisplayName())).toList();
+            figurines = repository.findAllByLineup(lineUpEntity.get()).stream()
+                    .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED
+                            || figurine.getCurrentReleaseStatus() == ANNOUNCED)
+                    .map(figurine -> new CachedFigurine(figurine.getId(), figurine.getDisplayName())).toList();
 
             cache.put(config.cacheKey(), figurines);
         }
@@ -956,6 +951,7 @@ public class FigurineService {
      *            the figurine whose release status is to be determined
      * @return the computed {@link ReleaseStatus}
      */
+    @Deprecated
     public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
         List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
 

@@ -236,27 +236,27 @@ public class CollectorCollectionFigurineService {
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null);
 
-        return figurineRepository.findAll(figurineFilter).stream().filter(figurine -> {
-            ReleaseStatus releaseStatus = figurineService.calculateReleaseStatus(figurine);
-            return releaseStatus == RELEASED || releaseStatus == ANNOUNCED;
-        }).map(figurine -> {
-            boolean isCollected = false;
-            int ownedQuantity = 0;
+        return figurineRepository.findAll(figurineFilter).stream()
+                .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED
+                        || figurine.getCurrentReleaseStatus() == ANNOUNCED)
+                .map(figurine -> {
+                    boolean isCollected = false;
+                    int ownedQuantity = 0;
 
-            for (CollectorCollectionFigurine collectorCollectionFigurine : collectionFound.getFigurines()) {
-                if (figurine.getId().equals(collectorCollectionFigurine.getFigurine().getId())) {
-                    isCollected = true;
-                    ownedQuantity = collectorCollectionFigurine.getQuantity();
-                    break;
-                }
-            }
+                    for (CollectorCollectionFigurine collectorCollectionFigurine : collectionFound.getFigurines()) {
+                        if (figurine.getId().equals(collectorCollectionFigurine.getFigurine().getId())) {
+                            isCollected = true;
+                            ownedQuantity = collectorCollectionFigurine.getQuantity();
+                            break;
+                        }
+                    }
 
-            ReleaseStatus releaseStatus = figurineService.calculateReleaseStatus(figurine);
-            int year = figurine.getDistributors().getFirst().getReleaseDate().getYear();
+                    ReleaseStatus releaseStatus = figurine.getCurrentReleaseStatus();
+                    int year = figurine.getDistributors().getFirst().getReleaseDate().getYear();
 
-            return collectorMapper.toCollectorCollectionFigurineResp(figurine, releaseStatus, isCollected,
-                    ownedQuantity, year);
-        }).toList();
+                    return collectorMapper.toCollectorCollectionFigurineResp(figurine, releaseStatus, isCollected,
+                            ownedQuantity, year);
+                }).toList();
     }
 
     /**

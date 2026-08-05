@@ -41,7 +41,6 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -98,6 +97,7 @@ public interface FigurineMapper {
     @Mapping(target = "series", source = "seriesString")
     @Mapping(target = "group", source = "groupString")
     @Mapping(target = "anniversary", expression = "java(toAnniversary(csv.getAnniversaryNumberType(), catalogs))")
+    @Mapping(target = "currentReleaseStatus", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collections", ignore = true)
@@ -309,6 +309,7 @@ public interface FigurineMapper {
     @Mapping(target = "series", source = "seriesId")
     @Mapping(target = "group", source = "groupId")
     @Mapping(target = "anniversary", source = "anniversaryId")
+    @Mapping(target = "currentReleaseStatus", ignore = true)
     @Mapping(target = "metalBody", source = "isMetalBody")
     @Mapping(target = "oce", source = "isOriginalColorEdition")
     @Mapping(target = "revival", source = "isRevival")
@@ -445,7 +446,7 @@ public interface FigurineMapper {
      */
     @Mapping(target = "name", source = "normalizedName")
     @Mapping(target = "displayableName", source = "displayName")
-    @Mapping(target = "releaseStatus", expression = "java(calculateReleaseStatus.apply(figurine))")
+    @Mapping(target = "releaseStatus", source = "currentReleaseStatus")
     @Mapping(target = "lineUp", source = "lineup")
     @Mapping(target = "isMetalBody", source = "metalBody")
     @Mapping(target = "isOriginalColorEdition", source = "oce")
@@ -462,8 +463,8 @@ public interface FigurineMapper {
     @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
     @Mapping(target = "createdAt", source = "creationDate")
     @Mapping(target = "updatedAt", source = "updateDate")
-    FigurineResp toFigurineResp(Figurine figurine, @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
-            @Context Function<Figurine, ReleaseStatus> calculateReleaseStatus);
+    FigurineResp toFigurineResp(Figurine figurine,
+            @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
     @Mapping(target = "displayableName", source = "displayName")
     @Mapping(target = "lineUp", source = "lineup")

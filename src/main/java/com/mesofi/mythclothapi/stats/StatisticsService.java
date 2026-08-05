@@ -287,13 +287,13 @@ public class StatisticsService {
      * status.
      */
     private List<Figurine> findAllReleasedFigurinesWithFilter(FigurineFilter filter) {
-        return repository.findAll(filter).stream()
-                .filter(figurine -> figurineService.calculateReleaseStatus(figurine) == RELEASED).toList();
+        return repository.findAll(filter).stream().filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED)
+                .toList();
     }
 
     /** Counts figurines by calculated release status name. */
     private Map<String, Integer> countByReleaseStatus(List<Figurine> allFigurines) {
-        return allFigurines.stream().map(figurineService::calculateReleaseStatus)
+        return allFigurines.stream().map(Figurine::getCurrentReleaseStatus)
                 .collect(Collectors.groupingBy(ReleaseStatus::name, Collectors.summingInt(status -> 1)));
     }
 
