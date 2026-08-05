@@ -9,6 +9,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
@@ -81,6 +83,10 @@ public class Figurine extends Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Anniversary anniversary;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private ReleaseStatus currentReleaseStatus;
 
     @Column(name = "is_metal_body")
     private Boolean metalBody;
