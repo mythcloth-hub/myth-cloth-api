@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -72,6 +73,7 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -521,18 +523,30 @@ public class FigurineService {
     /**
      * Recalculates the restocking history for the supplied figurines.
      *
-     * <p>The algorithm compares each imported figurine that has been released or
+     * <p>
+     * The algorithm compares each imported figurine that has been released or
      * announced against the existing released, non-anniversary figurines ordered
      * from newest to oldest. If a matching earlier release is found, the figurine's
-     * {@code previousRelease} reference is updated, rebuilding the restocking chain.
+     * {@code previousRelease} reference is updated, rebuilding the restocking
+     * chain.
      *
-     * @param existingFigurines the figurines to evaluate after the import
+     * @param existingFigurines
+     *            the figurines to evaluate after the import
      */
     private void rebuildRestockHistory(List<Figurine> existingFigurines) {
         List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+        log.info("Found {} released figurines", releasedFigurines.size());
 
-        existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
-                .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+        Map<FigurineCharacteristics, List<Figurine>> index = releasedFigurines.stream()
+                .collect(Collectors.groupingBy(FigurineCharacteristics::from));
+
+        log.info("Built restock index with {} characteristic groups", index.size());
+
+        existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED).forEach(figurine -> {
+            List<Figurine> restockCandidates = index.getOrDefault(FigurineCharacteristics.from(figurine), List.of());
+
+            assignPreviousRelease(figurine, restockCandidates);
+        });
 
         log.info("Rebuilt restock history");
     }
