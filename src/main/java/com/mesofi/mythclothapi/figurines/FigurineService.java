@@ -223,14 +223,7 @@ public class FigurineService {
             throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
         }
 
-        // Now once all the figurines are saved, we'll try to find restocks
-        log.info("Searching for restocks...");
-        List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
-
-        // for each imported figurine, we traverse the released figurines
-        importedFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
-                .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
-        log.info("Finished searching for restocks.");
+        rebuildRestockHistory(importedFigurines);
     }
 
     void assignPreviousRelease(Figurine figurine, List<Figurine> releasedFigurines) {
@@ -518,17 +511,30 @@ public class FigurineService {
 
         if (IS_RELEASED_OR_ANNOUNCED.test(updated)) {
             int total = repository.clearPreviousReleases();
-            log.info("{} figurines have been updated with previous releases", total);
-
-            List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
-
-            List<Figurine> existingFigurines = repository.findAll();
-
-            existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
-                    .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+            log.info("Cleared previousRelease for {} figurines", total);
+            rebuildRestockHistory(repository.findAll());
         }
 
         return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::buildRestockHistory);
+    }
+
+    /**
+     * Recalculates the restocking history for the supplied figurines.
+     *
+     * <p>The algorithm compares each imported figurine that has been released or
+     * announced against the existing released, non-anniversary figurines ordered
+     * from newest to oldest. If a matching earlier release is found, the figurine's
+     * {@code previousRelease} reference is updated, rebuilding the restocking chain.
+     *
+     * @param existingFigurines the figurines to evaluate after the import
+     */
+    private void rebuildRestockHistory(List<Figurine> existingFigurines) {
+        List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+
+        existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
+                .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+
+        log.info("Rebuilt restock history");
     }
 
     /**
