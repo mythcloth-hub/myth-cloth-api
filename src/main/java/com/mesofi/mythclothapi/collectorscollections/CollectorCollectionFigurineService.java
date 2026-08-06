@@ -234,7 +234,7 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectionNotFoundException(collectionId));
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
 
         return figurineRepository.findAll(figurineFilter).stream()
                 .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED

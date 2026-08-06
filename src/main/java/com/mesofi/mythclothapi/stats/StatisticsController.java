@@ -82,11 +82,11 @@ public class StatisticsController {
             @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
             @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus) {
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
                 anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus);
+                releaseStatus, restocks);
 
         return service.retrieveStatistics(figurineFilter);
     }
@@ -138,7 +138,7 @@ public class StatisticsController {
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
+                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable, null,
                 null);
 
         return service.retrieveStatisticsByReleases(figurineFilter);
@@ -202,11 +202,11 @@ public class StatisticsController {
             @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
             @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus) {
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
                 anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus);
+                releaseStatus, restocks);
 
         return service.retrieveYearlyReleasePrices(figurineFilter);
     }

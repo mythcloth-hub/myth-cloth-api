@@ -255,8 +255,15 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
             params.put("articulable", filter.articulable());
         }
         if (Objects.nonNull(filter.releaseStatus())) {
-            dynamicSql.append(" AND release_status = :status");
+            dynamicSql.append(" AND current_release_status = :status");
             params.put("status", filter.releaseStatus());
+        }
+        if (Objects.nonNull(filter.restocks())) {
+            if (filter.restocks()) {
+                dynamicSql.append(" AND previous_release_id IS NOT NULL");
+            } else {
+                dynamicSql.append(" AND previous_release_id IS NULL");
+            }
         }
 
         return new SearchQueryContext(dynamicSql, params);

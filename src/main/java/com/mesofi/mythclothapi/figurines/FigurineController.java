@@ -152,7 +152,8 @@ public class FigurineController {
             @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
             @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus, @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         log.info("Retrieving figurines ...");
         CollectablePageImpl<FigurineResp> result;
@@ -163,7 +164,7 @@ public class FigurineController {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
                 anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus);
+                releaseStatus, restocks);
 
         result = service.filterFigurines(figurineFilter, page, size);
 
@@ -185,7 +186,7 @@ public class FigurineController {
     public List<FigurineSummaryResp> retrieveFigurineSummaries() {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
 
         return service.retrieveFigurineSummaries(figurineFilter);
     }
@@ -199,11 +200,11 @@ public class FigurineController {
             @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
             @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
             @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus) {
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
                 anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus);
+                releaseStatus, restocks);
         return service.retrieveSelectableFigurines(figurineFilter);
     }
 
