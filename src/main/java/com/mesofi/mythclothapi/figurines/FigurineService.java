@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -72,6 +73,7 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -533,9 +535,18 @@ public class FigurineService {
      */
     private void rebuildRestockHistory(List<Figurine> existingFigurines) {
         List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+        log.info("Found {} released figurines", releasedFigurines.size());
 
-        existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
-                .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+        Map<FigurineCharacteristics, List<Figurine>> index = releasedFigurines.stream()
+                .collect(Collectors.groupingBy(FigurineCharacteristics::from));
+
+        log.info("Built restock index with {} characteristic groups", index.size());
+
+        existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED).forEach(figurine -> {
+            List<Figurine> restockCandidates = index.getOrDefault(FigurineCharacteristics.from(figurine), List.of());
+
+            assignPreviousRelease(figurine, restockCandidates);
+        });
 
         log.info("Rebuilt restock history");
     }
