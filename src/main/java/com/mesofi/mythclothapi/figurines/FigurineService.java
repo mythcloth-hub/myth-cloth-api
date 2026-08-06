@@ -521,12 +521,15 @@ public class FigurineService {
     /**
      * Recalculates the restocking history for the supplied figurines.
      *
-     * <p>The algorithm compares each imported figurine that has been released or
+     * <p>
+     * The algorithm compares each imported figurine that has been released or
      * announced against the existing released, non-anniversary figurines ordered
      * from newest to oldest. If a matching earlier release is found, the figurine's
-     * {@code previousRelease} reference is updated, rebuilding the restocking chain.
+     * {@code previousRelease} reference is updated, rebuilding the restocking
+     * chain.
      *
-     * @param existingFigurines the figurines to evaluate after the import
+     * @param existingFigurines
+     *            the figurines to evaluate after the import
      */
     private void rebuildRestockHistory(List<Figurine> existingFigurines) {
         List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
