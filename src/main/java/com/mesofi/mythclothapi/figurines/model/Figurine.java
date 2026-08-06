@@ -42,7 +42,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "figurines", indexes = @Index(name = "idx_figurine_unique_name", columnList = "legacyName"), comment = "Stores all collectible figurines managed by the application. This is the central repository for all figurine records.")
+@Table(name = "figurines", indexes = @Index(name = "idx_figurine_normalized_name", columnList = "normalizedName"), comment = "Stores all collectible figurines managed by the application. This is the central repository for all figurine records.")
 public class Figurine extends Auditable {
 
     @Column(unique = true, length = 200, updatable = false, comment = "Original figurine name imported from the initial CSV dataset (\"Myth Cloth Original Name\" column). Indexed to optimize search performance and enforce uniqueness across the catalog. Preserved only for traceability and migration purposes.")
@@ -125,6 +125,13 @@ public class Figurine extends Auditable {
     @OrderBy("eventDate DESC")
     private List<FigurineEvent> events = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "previous_release_id")
+    private Figurine previousRelease;
+
+    @OneToMany(mappedBy = "previousRelease")
+    private List<Figurine> subsequentReleases = new ArrayList<>();
+
     @ElementCollection
     @CollectionTable(name = "official_images", joinColumns = @JoinColumn(name = "figurine_id"))
     private List<String> officialImages;
@@ -132,4 +139,9 @@ public class Figurine extends Auditable {
     @ElementCollection
     @CollectionTable(name = "non_official_images", joinColumns = @JoinColumn(name = "figurine_id"))
     private List<String> nonOfficialImages;
+
+    @Override
+    public String toString() {
+        return normalizedName;
+    }
 }

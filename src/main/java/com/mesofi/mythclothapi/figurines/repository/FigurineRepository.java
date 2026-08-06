@@ -1,9 +1,9 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -38,21 +38,16 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long>, FigurineRepositoryCustom {
 
-    /**
-     * Finds a figurine by its legacy name.
-     *
-     * <p>
-     * This method returns an {@link Optional} containing the figurine whose legacy
-     * name matches the provided value. If no figurine exists with the given legacy
-     * name, an empty {@link Optional} is returned. The legacy name is expected to
-     * be unique, but may be {@code null} for some figurines.
-     *
-     * @param legacyName
-     *            the legacy name of the figurine to search for (maybe {@code null})
-     * @return an {@link Optional} containing the matching figurine, or empty if no
-     *         match exists
-     */
-    Optional<Figurine> findByLegacyName(String legacyName);
-
     List<Figurine> findAllByLineup(LineUp lineUP);
+
+    @Query("""
+            SELECT f
+            FROM Figurine f
+            JOIN f.distributors fd
+            WHERE f.currentReleaseStatus = 'RELEASED'
+            AND f.anniversary IS NULL
+            GROUP BY f
+            ORDER BY MIN(fd.releaseDate) DESC
+            """)
+    List<Figurine> findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
 }

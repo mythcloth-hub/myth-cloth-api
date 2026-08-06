@@ -39,6 +39,7 @@ import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
@@ -102,6 +103,8 @@ public interface FigurineMapper {
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collections", ignore = true)
     @Mapping(target = "stores", ignore = true)
+    @Mapping(target = "previousRelease", ignore = true)
+    @Mapping(target = "subsequentReleases", ignore = true)
     Figurine toFigurine(FigurineCsv csv, @Context CatalogContext catalogs);
 
     /**
@@ -328,6 +331,8 @@ public interface FigurineMapper {
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collections", ignore = true)
     @Mapping(target = "stores", ignore = true)
+    @Mapping(target = "previousRelease", ignore = true)
+    @Mapping(target = "subsequentReleases", ignore = true)
     Figurine toFigurine(FigurineReq req, @Context CatalogContext catalogs);
 
     /**
@@ -461,10 +466,11 @@ public interface FigurineMapper {
     @Mapping(target = "notes", source = "remarks")
     @Mapping(target = "officialImageUrls", source = "officialImages")
     @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
+    @Mapping(target = "restocks", expression = "java(toFigurineRestockRespList.apply(figurine))")
     @Mapping(target = "createdAt", source = "creationDate")
     @Mapping(target = "updatedAt", source = "updateDate")
-    FigurineResp toFigurineResp(Figurine figurine,
-            @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+    FigurineResp toFigurineResp(Figurine figurine, @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
+            @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
     @Mapping(target = "displayableName", source = "displayName")
     @Mapping(target = "lineUp", source = "lineup")

@@ -1,4 +1,5 @@
 package com.mesofi.mythclothapi.figurines;
+
 import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_FIGURINE_CACHE;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
@@ -9,19 +10,21 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RUMORED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
+import static com.mesofi.mythclothapi.figurines.utils.FigurineComparisonUtils.isRestock;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -60,6 +63,7 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
@@ -174,6 +178,9 @@ public class FigurineService {
     // Is the minimum similarity score required to consider a match valid
     private static final double MIN_SIMILARITY_THRESHOLD = 0.7;
 
+    private Predicate<Figurine> isReleasedOrAnnounced = figurine -> figurine.getCurrentReleaseStatus() == RELEASED
+            || figurine.getCurrentReleaseStatus() == ANNOUNCED;
+
     /**
      * Imports all figurines from the public Google Drive CSV source.
      *
@@ -198,51 +205,48 @@ public class FigurineService {
     public void importAllFigurinesFromPublicDrive() {
         CatalogContext catalogContext = loadCatalogs();
 
+        List<Figurine> importedFigurines;
+
         try (Reader reader = csvSource.openReader()) {
             List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
                     .withIgnoreLeadingWhiteSpace(true).build().parse();
-            log.info("Importing {} figurines.", csvRows.size());
 
-            List<Figurine> figurines = csvRows.stream().map(csv -> convertAndPrepareFigurine(csv, catalogContext))
-                    .toList();
+            log.info("Importing {} figurines from CSV file.", csvRows.size());
+            List<Figurine> figurines = csvRows.stream().map(csv -> mapper.toFigurine(csv, catalogContext))
+                    .peek(this::prepareForPersistence).toList();
 
-            List<Figurine> saved = repository.saveAllAndFlush(figurines);
-            log.info("{} figurines have been inserted", saved.size());
+            log.info("{} figurines have been prepared for persistence.", figurines.size());
+            importedFigurines = repository.saveAllAndFlush(figurines);
+
+            log.info("{} figurines have been imported", importedFigurines.size());
         } catch (IOException ex) {
             throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
         }
-    }
 
-    /**
-     * Converts a CSV row into a fully prepared {@link Figurine} entity ready for
-     * persistence.
-     *
-     * <p>
-     * This method performs two steps:
-     *
-     * <ul>
-     * <li>Maps the incoming {@link FigurineCsv} record into a domain
-     * {@link Figurine}
-     * <li>Applies persistence preparation logic such as creating default events,
-     * linking bidirectional relationships, and initializing audit timestamps
-     * </ul>
-     *
-     * <p>
-     * Used primarily during bulk CSV imports to normalize imported data before
-     * saving.
-     *
-     * @param csv
-     *            source CSV row representing a figurine
-     * @param context
-     *            preloaded catalog context used to resolve references
-     * @return prepared {@link Figurine} entity ready to be persisted
-     */
-    private Figurine convertAndPrepareFigurine(FigurineCsv csv, CatalogContext context) {
-        // Convert CSV → Incoming entity
-        Figurine figurine = mapper.toFigurine(csv, context);
+        // Now once all the figurines are saved, we'll try to find restocks
+        log.info("Searching for restocks...");
+        List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
 
-        prepareForPersistence(figurine);
-        return figurine;
+        // for each imported figurine, we traverse the released figurines
+        for (Figurine imported : importedFigurines.stream().filter(isReleasedOrAnnounced).toList()) {
+
+            Figurine self = null;
+            for (Figurine released : releasedFigurines) {
+                if (Objects.equals(imported.getId(), released.getId())) {
+                    self = released;
+                    continue;
+                }
+                if (isRestock(imported, released)) {
+                    if (self != null) {
+                        self.setPreviousRelease(released);
+                        log.info("[{}] - {} is a restock from [{}] - {}", released.getId(), released.getDisplayName(),
+                                imported.getId(), imported.getDisplayName());
+                        break;
+                    }
+                }
+            }
+        }
+        log.info("Finished searching for restocks.");
     }
 
     /**
@@ -268,11 +272,11 @@ public class FigurineService {
 
         CatalogContext catalogContext = loadCatalogs();
 
-        Figurine figurine = mapper.toFigurine(request, catalogContext);
-        prepareForPersistence(figurine);
+        Figurine newFigurine = mapper.toFigurine(request, catalogContext);
+        prepareForPersistence(newFigurine);
 
-        var saved = repository.save(figurine);
-        return mapper.toFigurineResp(saved, this::calculatePriceWithTax);
+        var saved = repository.save(newFigurine);
+        return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     /**
@@ -302,7 +306,7 @@ public class FigurineService {
         log.info("Reading figurine with id '{}'", id);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-        return mapper.toFigurineResp(existing, this::calculatePriceWithTax);
+        return mapper.toFigurineResp(existing, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     /**
@@ -339,11 +343,32 @@ public class FigurineService {
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
-        List<FigurineResp> list = figurines.getContent().stream()
-                .map(figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax)).toList();
+        List<FigurineResp> list = figurines.getContent().stream().map(
+                figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax, this::buildRestockHistory))
+                .toList();
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());
+    }
+
+    private List<FigurineRestockResp> buildRestockHistory(Figurine figurine) {
+
+        List<FigurineRestockResp> history = new ArrayList<>();
+
+        Figurine current = figurine;
+        while (current.getPreviousRelease() != null) {
+            history.add(toRestockResponse(current));
+            current = current.getPreviousRelease();
+        }
+
+        return history.isEmpty() ? null : history;
+    }
+
+    private FigurineRestockResp toRestockResponse(Figurine figurine) {
+        Figurine previousRelease = figurine.getPreviousRelease();
+
+        return new FigurineRestockResp(previousRelease.getId(),
+                previousRelease.getDistributors().getFirst().getReleaseDate());
     }
 
     /**
@@ -478,7 +503,7 @@ public class FigurineService {
         });
 
         var updated = repository.save(existing);
-        return mapper.toFigurineResp(updated, this::calculatePriceWithTax);
+        return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     /**
@@ -1025,10 +1050,6 @@ public class FigurineService {
     private void prepareForPersistence(Figurine figurine) {
         createDefaultEvents(figurine);
         linkReferences(figurine);
-
-        Instant localDateTime = Instant.now();
-        figurine.setCreationDate(localDateTime);
-        figurine.setUpdateDate(localDateTime);
     }
 
     /**

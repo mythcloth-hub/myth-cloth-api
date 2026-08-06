@@ -169,6 +169,11 @@ public final class FigurineDisplayNameBuilder {
 
             // Asgard
         } else if (context.groupType == GroupType.GOD_ROBE) {
+            if (context.name.toLowerCase(Locale.ROOT).contains("sorrento") && context.releaseDate != null
+                    && context.releaseDate.getYear() == 2021) {
+                return "%s <Asgard Final Battle Ver.>".formatted(context.name);
+            }
+
             if (context.seriesType == SeriesType.SOUL_OF_GOLD) {
                 return "%s God Robe".formatted(context.name);
             }
@@ -179,10 +184,6 @@ public final class FigurineDisplayNameBuilder {
 
             // Poseidon
         } else if (context.groupType == GroupType.POSEIDON_SCALE) {
-            if (context.name.toLowerCase(Locale.ROOT).contains("sorrento") && context.releaseDate != null
-                    && context.releaseDate.getYear() == 2021) {
-                return "%s <Asgard Final Battle Ver.>".formatted(context.name);
-            }
             if (context.oce) {
                 return "%s -Original Color Edition-".formatted(context.name);
             }

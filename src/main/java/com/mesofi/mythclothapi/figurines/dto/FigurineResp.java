@@ -16,5 +16,5 @@ public record FigurineResp(long id, String name, String displayableName, List<Fi
         Boolean isOriginalColorEdition, Boolean isRevival, Boolean isPlainCloth, Boolean isBattleDamaged,
         Boolean isGoldenArmor, Boolean isGold24kEdition, Boolean isMangaVersion, Boolean isMultiPack,
         Boolean isArticulable, String notes, List<String> officialImageUrls, List<String> unofficialImageUrls,
-        List<FigurineEventResp> events, Instant createdAt, Instant updatedAt) {
+        List<FigurineEventResp> events, List<FigurineRestockResp> restocks, Instant createdAt, Instant updatedAt) {
 }
