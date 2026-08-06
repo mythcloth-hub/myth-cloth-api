@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurines.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -50,4 +51,12 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
             ORDER BY MIN(fd.releaseDate) DESC
             """)
     List<Figurine> findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+
+    @Modifying
+    @Query("""
+                    UPDATE Figurine f
+                    SET f.previousRelease = null
+                    WHERE f.previousRelease IS NOT NULL
+            """)
+    int clearPreviousReleases();
 }

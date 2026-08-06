@@ -178,8 +178,8 @@ public class FigurineService {
     // Is the minimum similarity score required to consider a match valid
     private static final double MIN_SIMILARITY_THRESHOLD = 0.7;
 
-    private Predicate<Figurine> isReleasedOrAnnounced = figurine -> figurine.getCurrentReleaseStatus() == RELEASED
-            || figurine.getCurrentReleaseStatus() == ANNOUNCED;
+    private static final Predicate<Figurine> IS_RELEASED_OR_ANNOUNCED = figurine -> figurine
+            .getCurrentReleaseStatus() == RELEASED || figurine.getCurrentReleaseStatus() == ANNOUNCED;
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
@@ -228,25 +228,28 @@ public class FigurineService {
         List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
 
         // for each imported figurine, we traverse the released figurines
-        for (Figurine imported : importedFigurines.stream().filter(isReleasedOrAnnounced).toList()) {
+        importedFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
+                .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+        log.info("Finished searching for restocks.");
+    }
 
-            Figurine self = null;
-            for (Figurine released : releasedFigurines) {
-                if (Objects.equals(imported.getId(), released.getId())) {
-                    self = released;
-                    continue;
-                }
-                if (isRestock(imported, released)) {
-                    if (self != null) {
-                        self.setPreviousRelease(released);
-                        log.info("[{}] - {} is a restock from [{}] - {}", released.getId(), released.getDisplayName(),
-                                imported.getId(), imported.getDisplayName());
-                        break;
-                    }
+    void assignPreviousRelease(Figurine figurine, List<Figurine> releasedFigurines) {
+        Figurine self = null;
+
+        for (Figurine released : releasedFigurines) {
+            if (Objects.equals(figurine.getId(), released.getId())) {
+                self = released;
+                continue;
+            }
+            if (isRestock(figurine, released)) {
+                if (self != null) {
+                    self.setPreviousRelease(released);
+                    log.info("[{}] - {} is a restock from [{}] - {}", released.getId(), released.getDisplayName(),
+                            figurine.getId(), figurine.getDisplayName());
+                    return;
                 }
             }
         }
-        log.info("Finished searching for restocks.");
     }
 
     /**
@@ -275,8 +278,17 @@ public class FigurineService {
         Figurine newFigurine = mapper.toFigurine(request, catalogContext);
         prepareForPersistence(newFigurine);
 
-        var saved = repository.save(newFigurine);
+        var saved = repository.saveAndFlush(newFigurine);
+
+        postPersist(saved);
         return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::buildRestockHistory);
+    }
+
+    private void postPersist(Figurine persistedFigurine) {
+        if (IS_RELEASED_OR_ANNOUNCED.test(persistedFigurine)) {
+            assignPreviousRelease(persistedFigurine,
+                    repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc());
+        }
     }
 
     /**
@@ -502,7 +514,20 @@ public class FigurineService {
             existing.getEvents().forEach(e -> e.setFigurine(existing));
         });
 
-        var updated = repository.save(existing);
+        var updated = repository.saveAndFlush(existing);
+
+        if (IS_RELEASED_OR_ANNOUNCED.test(updated)) {
+            int total = repository.clearPreviousReleases();
+            log.info("{} figurines have been updated with previous releases", total);
+
+            List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+
+            List<Figurine> existingFigurines = repository.findAll();
+
+            existingFigurines.stream().filter(IS_RELEASED_OR_ANNOUNCED)
+                    .forEach(imported -> assignPreviousRelease(imported, releasedFigurines));
+        }
+
         return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
