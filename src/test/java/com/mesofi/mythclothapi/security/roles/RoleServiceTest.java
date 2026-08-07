@@ -28,9 +28,9 @@ import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
-import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
 @ActiveProfiles("test")
@@ -220,7 +220,7 @@ public class RoleServiceTest {
 
         // Act + Assert
         assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
-                .isInstanceOfSatisfying(RoleAlreadyAssociatedToPermissionException.class, ex -> {
+                .isInstanceOfSatisfying(RolePermissionAlreadyExistsException.class, ex -> {
                     assertThat(ex.getMessage()).isEqualTo("Role with ID 77 already has permission 88 assigned.");
                     assertThat(ex.getRoleId()).isEqualTo(77L);
                     assertThat(ex.getPermissionId()).isEqualTo(88L);

@@ -18,7 +18,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
-import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.common.Descriptive;
 
@@ -89,7 +89,7 @@ public class CatalogService {
     @SuppressWarnings("unchecked")
     private <T> T saveEntry(String catalogName, T entity) {
         return Optional.ofNullable(repositories.get(catalogName)).map(repo -> (IdDescRepository<T, Long>) repo)
-                .map(repo -> repo.save(entity)).orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+                .map(repo -> repo.save(entity)).orElseThrow(() -> new CatalogRepositoryNotFoundException(catalogName));
     }
 
     @SuppressWarnings("unchecked")
@@ -98,13 +98,14 @@ public class CatalogService {
                 .map(repo -> repo.findById(id)
                         .orElseThrow(() -> new CatalogNotFoundException(
                                 "ID %d not found in catalog '%s'".formatted(id, catalogName))))
-                .orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+                .orElseThrow(() -> new CatalogRepositoryNotFoundException(catalogName));
     }
 
     @SuppressWarnings("unchecked")
     private <T> List<T> findAll(String catalogName) {
         return Optional.ofNullable(repositories.get(catalogName)).map(repo -> (IdDescRepository<T, Long>) repo)
-                .map(ListCrudRepository::findAll).orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+                .map(ListCrudRepository::findAll)
+                .orElseThrow(() -> new CatalogRepositoryNotFoundException(catalogName));
     }
 
     @SuppressWarnings("unchecked")
@@ -113,14 +114,14 @@ public class CatalogService {
                 .map(repo -> repo.findByDescription(description)
                         .orElseThrow(() -> new CatalogNotFoundException(
                                 "Description '%s' not found in catalog '%s'".formatted(description, catalogName))))
-                .orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+                .orElseThrow(() -> new CatalogRepositoryNotFoundException(catalogName));
     }
 
     @SuppressWarnings("unchecked")
     private <T> void deleteEntry(String catalogName, T entity) {
         IdDescRepository<T, Long> repo = Optional.ofNullable(repositories.get(catalogName))
                 .map(r -> (IdDescRepository<T, Long>) r)
-                .orElseThrow(() -> new RepositoryNotFoundException(catalogName));
+                .orElseThrow(() -> new CatalogRepositoryNotFoundException(catalogName));
 
         repo.delete(entity);
     }

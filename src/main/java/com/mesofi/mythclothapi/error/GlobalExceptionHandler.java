@@ -21,51 +21,51 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
-import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
-import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ProblemDetail handleNoResourceFound(NoResourceFoundException ex) {
-        return Problem.of(NOT_FOUND, "Endpoint not found", "The URL you are calling does not exist.");
+        return ApiProblemDetail.of(NOT_FOUND, "Endpoint not found", "The URL you are calling does not exist.");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ProblemDetail handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        return Problem.of(BAD_REQUEST, "Invalid body", ex.getMessage());
+        return ApiProblemDetail.of(BAD_REQUEST, "Invalid body", ex.getMessage());
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ProblemDetail handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
-        return Problem.of(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type", ex.getMessage());
+        return ApiProblemDetail.of(UNSUPPORTED_MEDIA_TYPE, "Unsupported Media Type", ex.getMessage());
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ProblemDetail handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
-        return Problem.of(METHOD_NOT_ALLOWED, "Method Not Allowed", ex.getMessage());
+        return ApiProblemDetail.of(METHOD_NOT_ALLOWED, "Method Not Allowed", ex.getMessage());
     }
 
     @ExceptionHandler(CollectorPurchaseNotFoundException.class)
     public ProblemDetail handleCollectorPurchaseNotFoundException(CollectorPurchaseNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail handleEnumConversionError(MethodArgumentTypeMismatchException ex) {
-        ProblemDetail problemDetail = Problem.of(BAD_REQUEST, "Validation Failed",
+        ProblemDetail problemDetail = ApiProblemDetail.of(BAD_REQUEST, "Validation Failed",
                 "Your request parameters didn't convert correctly");
 
         // Check specifically for Enum conversion failure
@@ -84,7 +84,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ProblemDetail handleValidationErrors(MethodArgumentNotValidException ex) {
-        ProblemDetail problemDetail = Problem.of(BAD_REQUEST, "Validation Failed",
+        ProblemDetail problemDetail = ApiProblemDetail.of(BAD_REQUEST, "Validation Failed",
                 "Your request parameters didn't validate");
 
         Map<String, String> errors = new HashMap<>();
@@ -98,77 +98,77 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException ex) {
-        return Problem.of(BAD_REQUEST, "Invalid argument", ex.getMessage());
+        return ApiProblemDetail.of(BAD_REQUEST, "Invalid argument", ex.getMessage());
     }
 
     @ExceptionHandler(DistributorAlreadyExistsException.class)
     public ProblemDetail handleDistributorAlreadyExists(DistributorAlreadyExistsException ex) {
 
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(DistributorNotFoundException.class)
     public ProblemDetail handleDistributorNotFound(DistributorNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(CatalogNotFoundException.class)
     public ProblemDetail handleCatalogNotFound(CatalogNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
-    @ExceptionHandler(RepositoryNotFoundException.class)
-    public ProblemDetail handleRepositoryNotFound(RepositoryNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+    @ExceptionHandler(CatalogRepositoryNotFoundException.class)
+    public ProblemDetail handleRepositoryNotFound(CatalogRepositoryNotFoundException ex) {
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(CollectorInvalidTokenException.class)
     public ProblemDetail handleCollectorInvalidToken(CollectorInvalidTokenException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(CollectorNotFoundException.class)
     public ProblemDetail handleCollectorNotFound(CollectorNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex);
     }
 
-    @ExceptionHandler(CollectionNotFoundException.class)
-    public ProblemDetail handleCollectionNotFoundException(CollectionNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+    @ExceptionHandler(CollectorCollectionNotFoundException.class)
+    public ProblemDetail handleCollectionNotFoundException(CollectorCollectionNotFoundException ex) {
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
-    @ExceptionHandler(CollectionAlreadyExistsException.class)
-    public ProblemDetail handleCollectionAlreadyExistsException(CollectionAlreadyExistsException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+    @ExceptionHandler(CollectorCollectionAlreadyExistsException.class)
+    public ProblemDetail handleCollectionAlreadyExistsException(CollectorCollectionAlreadyExistsException ex) {
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(IntegrationException.class)
     public ProblemDetail handleIntegrationException(IntegrationException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
     }
 
     @ExceptionHandler(RoleAlreadyExistsException.class)
     public ProblemDetail handleRoleDuplicateException(RoleAlreadyExistsException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(RoleNotFoundException.class)
     public ProblemDetail handleRoleNotFound(RoleNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(PermissionAlreadyExistsException.class)
     public ProblemDetail handlePermissionDuplicateException(PermissionAlreadyExistsException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
     }
 
     @ExceptionHandler(PermissionNotFoundException.class)
     public ProblemDetail handlePermissionNotFound(PermissionNotFoundException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
-    @ExceptionHandler(RoleAlreadyAssociatedToPermissionException.class)
-    public ProblemDetail handleRoleAlreadyAssociatedToPermission(RoleAlreadyAssociatedToPermissionException ex) {
-        return Problem.of(ex.getStatus(), ex.getMessage(), ex.getCauseDetail());
+    @ExceptionHandler(RolePermissionAlreadyExistsException.class)
+    public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
+        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 }

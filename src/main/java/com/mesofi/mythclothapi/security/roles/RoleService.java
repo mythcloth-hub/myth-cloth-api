@@ -14,9 +14,9 @@ import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
-import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
 import lombok.RequiredArgsConstructor;
@@ -77,7 +77,7 @@ public class RoleService {
                 .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
 
         if (alreadyExists) {
-            throw new RoleAlreadyAssociatedToPermissionException(role.getId(), permission.getId());
+            throw new RolePermissionAlreadyExistsException(role.getId(), permission.getId());
         }
 
         RolePermission rolePermission = new RolePermission();

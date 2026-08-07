@@ -15,7 +15,7 @@ class RepositoryNotFoundExceptionTest {
         String name = "myth-cloth-repo";
 
         // Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException(name);
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException(name);
 
         // Assert
         assertThat(exception.getName()).isEqualTo(name);
@@ -24,7 +24,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void constructor_shouldSetMessageCorrectly_whenCreated() {
         // Arrange & Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException("myth-cloth-repo");
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Assert
         assertThat(exception.getMessage()).isEqualTo("Repository not found: myth-cloth-repo");
@@ -33,7 +33,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void constructor_shouldSetCauseDetailCorrectly_whenCreated() {
         // Arrange & Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException("myth-cloth-repo");
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Assert
         assertThat(exception.getCauseDetail()).isEqualTo("Repository not found: myth-cloth-repo");
@@ -42,7 +42,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void getStatus_shouldReturnNotFound_whenCalled() {
         // Arrange
-        RepositoryNotFoundException exception = new RepositoryNotFoundException("myth-cloth-repo");
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Act
         HttpStatus status = exception.getStatus();
@@ -54,7 +54,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void exception_shouldBeInstanceOfApiException_whenCreated() {
         // Arrange & Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException("myth-cloth-repo");
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Assert
         assertThat(exception).isInstanceOf(ApiException.class);
@@ -63,7 +63,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void exception_shouldBeInstanceOfRuntimeException_whenCreated() {
         // Arrange & Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException("myth-cloth-repo");
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Assert
         assertThat(exception).isInstanceOf(RuntimeException.class);
@@ -72,7 +72,7 @@ class RepositoryNotFoundExceptionTest {
     @Test
     void constructor_shouldHandleNullName_whenCreatedWithNullName() {
         // Arrange & Act
-        RepositoryNotFoundException exception = new RepositoryNotFoundException(null);
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException(null);
 
         // Assert
         assertThat(exception.getName()).isNull();

@@ -10,37 +10,38 @@ import com.mesofi.mythclothapi.error.ErrorCode;
 import lombok.Getter;
 
 /**
- * Exception thrown when a catalog cannot be found.
+ * Exception thrown when a catalog repository cannot be found.
  *
  * <p>
  * This exception is raised when attempting to retrieve or operate on a catalog
- * that does not exist.
+ * repository that does not exist.
  *
  * <p>
  * This exception is translated into a {@link HttpStatus#NOT_FOUND} API response
- * and provides a specific {@link ErrorCode#CATALOG_NOT_FOUND} error code that
- * clients can use to handle missing catalog resources programmatically.
+ * and provides a specific {@link ErrorCode#CATALOG_REPOSITORY_NOT_FOUND} error
+ * code that clients can use to handle missing catalog repository resources
+ * programmatically.
  * </p>
  */
 @Getter
-public class CatalogNotFoundException extends ApiException {
+public class CatalogRepositoryNotFoundException extends ApiException {
 
     @Serial
     private static final long serialVersionUID = -7007970083830745467L;
 
     /**
-     * Name of the catalog that could not be found.
+     * Name of the catalog repository that could not be found.
      */
     private final String name;
 
     /**
-     * Creates a new exception for a missing catalog.
+     * Creates a new exception for a missing catalog repository.
      *
      * @param name
-     *            name of the catalog that was not found
+     *            name of the repository that was not found
      */
-    public CatalogNotFoundException(String name) {
-        super("Catalog '%s' was not found".formatted(name));
+    public CatalogRepositoryNotFoundException(String name) {
+        super("Catalog repository '%s' was not found".formatted(name));
         this.name = name;
     }
 
@@ -57,20 +58,20 @@ public class CatalogNotFoundException extends ApiException {
     /**
      * {@inheritDoc}
      *
-     * @return {@code Catalog not found}
+     * @return {@code Catalog repository not found}
      */
     @Override
     public String getTitle() {
-        return "Catalog not found";
+        return "Catalog repository not found";
     }
 
     /**
      * {@inheritDoc}
      *
-     * @return {@link ErrorCode#CATALOG_NOT_FOUND}
+     * @return {@link ErrorCode#CATALOG_REPOSITORY_NOT_FOUND}
      */
     @Override
     public ErrorCode getErrorCode() {
-        return ErrorCode.CATALOG_NOT_FOUND;
+        return ErrorCode.CATALOG_REPOSITORY_NOT_FOUND;
     }
 }

@@ -27,8 +27,8 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
@@ -159,9 +159,9 @@ public class CollectorCollectionFigurineService {
      *             if any requested figurine does not exist
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if an existing collection cannot be found
-     * @throws CollectionAlreadyExistsException
+     * @throws CollectorCollectionAlreadyExistsException
      *             if creating a collection with an existing name
      */
     @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
@@ -214,7 +214,7 @@ public class CollectorCollectionFigurineService {
      * @return list of figurines with collection ownership details
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or does not belong to the
      *             collector
      */
@@ -227,11 +227,11 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
         var collectionFound = collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // make sure this collector owns the collection to be retrieved.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null);
@@ -276,7 +276,7 @@ public class CollectorCollectionFigurineService {
      * @return detailed figurine information
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or does not belong to the
      *             collector
      * @throws FigurineNotFoundException
@@ -290,11 +290,11 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
         collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // make sure this collector owns the collection to be retrieved.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         var figurineFound = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
@@ -317,7 +317,7 @@ public class CollectorCollectionFigurineService {
      *            identifier of the figurine to unassign
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or does not belong to the
      *             collector
      * @throws FigurineNotFoundException
@@ -334,11 +334,11 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
         var collectionFound = collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // make sure this collector owns the collection to be deleted.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         var figurineFound = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
@@ -384,7 +384,7 @@ public class CollectorCollectionFigurineService {
      *            identifier of the collection to delete
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or does not belong to the
      *             collector
      */
@@ -398,7 +398,7 @@ public class CollectorCollectionFigurineService {
 
         // make sure this collection owns the collection to be removed.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // deletes all the figurines associated with the collection.
         int deletedCount = collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(collectionId,
@@ -406,7 +406,7 @@ public class CollectorCollectionFigurineService {
 
         // Now it deletes the collection itself
         if (!collectorCollectionRepository.existsById(collectionId)) {
-            throw new CollectionNotFoundException(collectionId);
+            throw new CollectorCollectionNotFoundException(collectionId);
         }
         collectorCollectionRepository.deleteCollectionById(collectionId);
 
@@ -428,7 +428,7 @@ public class CollectorCollectionFigurineService {
      * @return updated collection response
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or does not belong to the
      *             collector
      */
@@ -444,13 +444,13 @@ public class CollectorCollectionFigurineService {
 
         // make sure this collector owns the collection to be updated.
         var existing = collectorCollections.stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // is there any other user collection that contains the same collection name? if
         // so, report it
         collectorCollections.stream().filter(cc -> !cc.getId().equals(collectionId))
                 .filter(cc -> cc.getName().equals(request.name())).findFirst().ifPresent(cc -> {
-                    throw new CollectionAlreadyExistsException(cc.getName());
+                    throw new CollectorCollectionAlreadyExistsException(cc.getName());
                 });
 
         // No need to use MapStruct when properties are too simple. Just update them
@@ -481,10 +481,10 @@ public class CollectorCollectionFigurineService {
      * @return identifier of the newly created collection
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if the source collection does not exist or is not owned by the
      *             collector
-     * @throws CollectionAlreadyExistsException
+     * @throws CollectorCollectionAlreadyExistsException
      *             if the generated duplicate name already exists
      */
     @Transactional
@@ -499,7 +499,7 @@ public class CollectorCollectionFigurineService {
 
         CollectorCollection owningCollection = collectorCollection.stream()
                 .filter(cc -> cc.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         String newName = owningCollection.getName() + " copy";
         String newImageUrl = owningCollection.getImageUrl() != null ? owningCollection.getImageUrl() : null;
@@ -523,7 +523,7 @@ public class CollectorCollectionFigurineService {
         List<CollectorCollection> savedCollections = collectorCollectionRepository.saveAllAndFlush(collectorCollection);
 
         return savedCollections.stream().filter(sc -> sc.getName().equals(newName)).findFirst()
-                .orElseThrow(() -> new CollectionNotFoundException(0L)).getId();
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(0L)).getId();
     }
 
     /**
@@ -555,9 +555,9 @@ public class CollectorCollectionFigurineService {
      * @return list of resolved collections
      * @throws CollectorNotFoundException
      *             if collector lookup is required and fails
-     * @throws CollectionNotFoundException
+     * @throws CollectorCollectionNotFoundException
      *             if an existing collection id cannot be found
-     * @throws CollectionAlreadyExistsException
+     * @throws CollectorCollectionAlreadyExistsException
      *             if creating a collection conflicts by name
      * @throws IllegalArgumentException
      *             if the mode is unsupported
@@ -571,8 +571,11 @@ public class CollectorCollectionFigurineService {
             existingCollections.add(createCollection(collectorId, collectionReq.name(), collectionReq.imageUrl(),
                     collectionReq.description()));
         } else if (mode == CollectionAssignmentMode.EXISTING) {
-            existingCollections.addAll(collectionIds.stream().map(collectionId -> collectorCollectionRepository
-                    .findById(collectionId).orElseThrow(() -> new CollectionNotFoundException(collectionId))).toList());
+            existingCollections
+                    .addAll(collectionIds.stream()
+                            .map(collectionId -> collectorCollectionRepository.findById(collectionId)
+                                    .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId)))
+                            .toList());
         } else {
             throw new IllegalArgumentException("Unsupported collection assignment mode: " + mode);
         }
@@ -606,7 +609,7 @@ public class CollectorCollectionFigurineService {
      * @return newly created collection entity
      * @throws CollectorNotFoundException
      *             if the collector does not exist
-     * @throws CollectionAlreadyExistsException
+     * @throws CollectorCollectionAlreadyExistsException
      *             if a collection with the same name already exists
      */
     private CollectorCollection createCollection(Long collectorId, String name, String imageUrl, String description) {
@@ -614,7 +617,7 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
         collectorCollectionRepository.findByName(name).ifPresent(existing -> {
-            throw new CollectionAlreadyExistsException(existing.getName());
+            throw new CollectorCollectionAlreadyExistsException(existing.getName());
         });
 
         CollectorCollection collectorCollection = new CollectorCollection();

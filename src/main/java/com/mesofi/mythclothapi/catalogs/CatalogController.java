@@ -22,6 +22,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -103,7 +104,7 @@ public class CatalogController {
      * @throws com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException
      *             if the entry with the given ID does not exist in the specified
      *             catalog type
-     * @throws com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException
+     * @throws CatalogRepositoryNotFoundException
      *             if the catalog type is not recognized
      */
     @GetMapping("/{catalogType}/{id}")
@@ -123,7 +124,7 @@ public class CatalogController {
      * @param catalogType
      *            the type of catalog to retrieve
      * @return a list of {@link CatalogResp} entries for the requested catalog type
-     * @throws com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException
+     * @throws CatalogRepositoryNotFoundException
      *             if the catalog type is not recognized by the service layer
      */
     @GetMapping("/{catalogType}")
@@ -150,7 +151,7 @@ public class CatalogController {
      * @throws com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException
      *             if the entry with the given ID does not exist in the specified
      *             catalog type
-     * @throws com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException
+     * @throws CatalogRepositoryNotFoundException
      *             if the catalog type is not recognized
      * @throws jakarta.validation.ConstraintViolationException
      *             if the request data is invalid
@@ -178,7 +179,7 @@ public class CatalogController {
      * @throws com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException
      *             if the entry with the given ID does not exist in the specified
      *             catalog type
-     * @throws com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException
+     * @throws CatalogRepositoryNotFoundException
      *             if the catalog type is not recognized
      * @throws jakarta.validation.ConstraintViolationException
      *             if the catalog type is invalid

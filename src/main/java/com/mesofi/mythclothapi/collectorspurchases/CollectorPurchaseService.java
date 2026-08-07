@@ -20,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemReq;
@@ -285,7 +285,7 @@ public class CollectorPurchaseService {
                 .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
 
         var existingCollection = collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectionNotFoundException(collectionId));
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         List<CollectorPurchaseFigurine> lineItems = collectorPurchaseFigurineRepository
                 .findByPurchase(existingPurchase);
