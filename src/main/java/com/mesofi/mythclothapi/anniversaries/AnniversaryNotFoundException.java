@@ -14,8 +14,8 @@ import lombok.Getter;
  *
  * <p>
  * This exception is translated into a {@link HttpStatus#NOT_FOUND} API response
- * and provides a specific {@link ErrorCode#ANNIVERSARY_NOT_FOUND} error code
- * that clients can use to handle missing anniversary resources
+ * and provides a specific {@link ErrorCode#FIGURINE_ANNIVERSARY_NOT_FOUND}
+ * error code that clients can use to handle missing anniversary resources
  * programmatically.
  * </p>
  */
@@ -64,10 +64,10 @@ public class AnniversaryNotFoundException extends ApiException {
     /**
      * {@inheritDoc}
      *
-     * @return {@link ErrorCode#ANNIVERSARY_NOT_FOUND}
+     * @return {@link ErrorCode#FIGURINE_ANNIVERSARY_NOT_FOUND}
      */
     @Override
     public ErrorCode getErrorCode() {
-        return ErrorCode.ANNIVERSARY_NOT_FOUND;
+        return ErrorCode.FIGURINE_ANNIVERSARY_NOT_FOUND;
     }
 }

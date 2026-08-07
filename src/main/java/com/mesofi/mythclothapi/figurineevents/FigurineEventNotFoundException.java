@@ -14,8 +14,8 @@ import lombok.Getter;
  *
  * <p>
  * This exception is translated into a {@link HttpStatus#NOT_FOUND} API response
- * and provides a specific {@link ErrorCode#EVENT_NOT_FOUND} error code that
- * clients can use to handle the error programmatically.
+ * and provides a specific {@link ErrorCode#FIGURINE_EVENT_NOT_FOUND} error code
+ * that clients can use to handle the error programmatically.
  * </p>
  */
 @Getter
@@ -61,10 +61,10 @@ public class FigurineEventNotFoundException extends ApiException {
     /**
      * {@inheritDoc}
      *
-     * @return {@link ErrorCode#EVENT_NOT_FOUND}
+     * @return {@link ErrorCode#FIGURINE_EVENT_NOT_FOUND}
      */
     @Override
     public ErrorCode getErrorCode() {
-        return ErrorCode.EVENT_NOT_FOUND;
+        return ErrorCode.FIGURINE_EVENT_NOT_FOUND;
     }
 }
