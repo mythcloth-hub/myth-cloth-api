@@ -210,6 +210,10 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
             dynamicSql.append(" AND group_id = :groupId");
             params.put("groupId", filter.groupId());
         }
+        if (Objects.nonNull(filter.distributionId())) {
+            dynamicSql.append(" AND distribution_id = :distributionId");
+            params.put("distributionId", filter.distributionId());
+        }
         if (Objects.nonNull(filter.anniversaryId())) {
             dynamicSql.append(" AND anniversary_id = :anniversaryId");
             params.put("anniversaryId", filter.anniversaryId());

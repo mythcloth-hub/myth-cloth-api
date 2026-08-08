@@ -27,7 +27,7 @@ import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
@@ -820,7 +820,8 @@ public class CollectorPurchaseServiceTest {
         when(collectorCollectionRepository.findById(900L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 900 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 900 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);

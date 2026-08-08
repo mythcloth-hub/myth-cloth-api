@@ -27,7 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
-import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
@@ -99,7 +99,8 @@ class CatalogServiceTest {
 
         // Act
         assertThatThrownBy(() -> catalogService.createCatalog("groups", request))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -136,7 +137,8 @@ class CatalogServiceTest {
     void retrieveCatalog_shouldThrowRepositoryNotFoundException_whenRepositoryIsMissing() {
         // Act
         assertThatThrownBy(() -> catalogService.retrieveCatalog("groups", 1L))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -187,7 +189,8 @@ class CatalogServiceTest {
     void retrieveCatalogs_shouldThrowRepositoryNotFoundException_whenRepositoryIsMissing() {
         // Act
         assertThatThrownBy(() -> catalogService.retrieveCatalogs("groups"))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -236,7 +239,8 @@ class CatalogServiceTest {
     void retrieveCatalogWithDescription_shouldThrowRepositoryNotFoundException_whenRepositoryIsMissing() {
         // Act
         assertThatThrownBy(() -> catalogService.retrieveCatalogWithDescription("groups", "Asgard"))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -286,7 +290,8 @@ class CatalogServiceTest {
 
         // Act
         assertThatThrownBy(() -> catalogService.updateCatalog("groups", 5L, request))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -339,7 +344,8 @@ class CatalogServiceTest {
     void deleteCatalog_shouldThrowRepositoryNotFoundException_whenRepositoryIsMissing() {
         // Act
         assertThatThrownBy(() -> catalogService.deleteCatalog("groups", 1L))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
     }
 
     @Test
@@ -385,7 +391,8 @@ class CatalogServiceTest {
 
         // Act
         assertThatThrownBy(() -> catalogService.deleteCatalog("groups", 21L))
-                .isInstanceOf(RepositoryNotFoundException.class).hasMessageContaining("Repository not found: groups");
+                .isInstanceOf(CatalogRepositoryNotFoundException.class)
+                .hasMessageContaining("Repository not found: groups");
 
         verify(repository, never()).delete(any(Group.class));
     }

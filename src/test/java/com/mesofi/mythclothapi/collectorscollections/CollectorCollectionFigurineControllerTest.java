@@ -35,8 +35,8 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.security.config.SecurityConfig;
 
 @WebMvcTest(value = CollectorCollectionFigurineController.class, properties = {
@@ -216,8 +216,8 @@ class CollectorCollectionFigurineControllerTest {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
                 new CollectorCollectionReq("my collection", "test desc"));
 
-        doThrow(new CollectionAlreadyExistsException("my collection")).when(service).assignFigurinesToCollections(123L,
-                req);
+        doThrow(new CollectorCollectionAlreadyExistsException("my collection")).when(service)
+                .assignFigurinesToCollections(123L, req);
 
         String requestBody = "{\"collectionMode\":\"CREATE\", \"figurineIds\": [3], \"collection\": {\"name\": \"my collection\", \"description\": \"test desc\"}}";
 
@@ -240,7 +240,7 @@ class CollectorCollectionFigurineControllerTest {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.EXISTING, List.of(2L),
                 null);
 
-        doThrow(new CollectionNotFoundException(2L)).when(service).assignFigurinesToCollections(123L, req);
+        doThrow(new CollectorCollectionNotFoundException(2L)).when(service).assignFigurinesToCollections(123L, req);
 
         String requestBody = "{\"collectionMode\":\"EXISTING\", \"figurineIds\": [3], \"collectionIds\": [2]}";
 

@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 
 import lombok.RequiredArgsConstructor;
@@ -48,10 +48,10 @@ public class ApiTokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder().issuer(security.jwt().issuer()).issuedAt(now).expiresAt(exp)
                 .subject(String.valueOf(collector.getId())) // database ID in sub
                 .claim("email", email).claim("name", collector.getDisplayName())
-                .claim("roles", List.of(collector.getRole().getDescription().toUpperCase()))
+                .claim("roles", List.of(collector.getRole().getName().toUpperCase()))
                 .claim("permissions",
                         collector.getRole().getPermissions().stream().map(RolePermission::getPermission)
-                                .map(Descriptive::getDescription).toList())
+                                .map(Permission::getName).toList())
                 .claim("provider", provider).claim("provider_user_id", providerUserId)
                 .claim("jti", UUID.randomUUID().toString()).build();
 

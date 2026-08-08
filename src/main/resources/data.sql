@@ -1,12 +1,12 @@
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', null,40);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Jump 50th Anniversary Edition', null,50);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Tamashii Nations 10th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',10);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Tamashii Nations 15th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',15);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('10th Anniversary', 'SAINT_CLOTH_MYTH',10);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('15th Anniversary', 'SAINT_CLOTH_MYTH',15);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('20th Anniversary', 'SAINT_CLOTH_MYTH',20);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 'SAINT_SEIYA',30);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Saint Seiya 40th anniversary', 'SAINT_SEIYA',40);
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', null,40, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Jump 50th Anniversary Edition', null,50, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 10th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 15th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('10th Anniversary', 'SAINT_CLOTH_MYTH',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('15th Anniversary', 'SAINT_CLOTH_MYTH',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('20th Anniversary', 'SAINT_CLOTH_MYTH',20, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 'SAINT_SEIYA',30, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 40th anniversary', 'SAINT_SEIYA',40, NOW(), NOW());
 
 INSERT INTO distributions (description) VALUES ('Stores');
 INSERT INTO distributions (description) VALUES ('Tamashii Web Shop');
@@ -72,65 +72,65 @@ INSERT INTO stores (name, code, website, logo_url, currency, country, active, cr
 INSERT INTO stores (name, code, website, logo_url, currency, country, active, creation_date, update_date) VALUES ('Myth Factory', 'MYTH_FACTORY', 'https://www.mythfactoryshop.com', 'https://www.mythfactoryshop.com/cdn-cgi/image/format=webp/img/myth-factory-logo-1742594757.jpg', 'EUR', 'BE', true, NOW(), NOW());
 
 -- ========================= INITIALIZING BASIC ADMIN ========================================
-INSERT INTO roles (description) VALUES ('Admin');
+INSERT INTO roles (name, creation_date, update_date) VALUES ('Admin', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('permissions:delete');
-INSERT INTO permissions (description) VALUES ('permissions:read');
-INSERT INTO permissions (description) VALUES ('permissions:update');
-INSERT INTO permissions (description) VALUES ('permissions:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('permissions:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('permissions:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('permissions:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('permissions:write', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('roles:permissions:assign');
-INSERT INTO permissions (description) VALUES ('roles:permissions:read');
-INSERT INTO permissions (description) VALUES ('roles:permissions:sync');
-INSERT INTO permissions (description) VALUES ('roles:read');
-INSERT INTO permissions (description) VALUES ('roles:update');
-INSERT INTO permissions (description) VALUES ('roles:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:permissions:assign', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:permissions:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:permissions:sync', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('roles:write', NOW(), NOW());
 
 -- ========================= ADDED REST OF PERMISSIONS TO ADMIN ========================================
-INSERT INTO permissions (description) VALUES ('anniversaries:delete');
-INSERT INTO permissions (description) VALUES ('anniversaries:read');
-INSERT INTO permissions (description) VALUES ('anniversaries:update');
-INSERT INTO permissions (description) VALUES ('anniversaries:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('anniversaries:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('anniversaries:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('anniversaries:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('anniversaries:write', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('catalogs:delete');
-INSERT INTO permissions (description) VALUES ('catalogs:read');
-INSERT INTO permissions (description) VALUES ('catalogs:update');
-INSERT INTO permissions (description) VALUES ('catalogs:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('catalogs:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('catalogs:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('catalogs:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('catalogs:write', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('collections:figurines:add');
-INSERT INTO permissions (description) VALUES ('collections:figurines:read');
-INSERT INTO permissions (description) VALUES ('collections:figurines:delete');
-INSERT INTO permissions (description) VALUES ('collections:read');
-INSERT INTO permissions (description) VALUES ('collections:delete');
-INSERT INTO permissions (description) VALUES ('collections:update');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:figurines:add', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:figurines:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:figurines:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('collections:update', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('distributors:delete');
-INSERT INTO permissions (description) VALUES ('distributors:read');
-INSERT INTO permissions (description) VALUES ('distributors:update');
-INSERT INTO permissions (description) VALUES ('distributors:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('distributors:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('distributors:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('distributors:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('distributors:write', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('figurines:delete');
-INSERT INTO permissions (description) VALUES ('figurines:load');
-INSERT INTO permissions (description) VALUES ('figurines:images:add');
-INSERT INTO permissions (description) VALUES ('figurines:images:delete');
-INSERT INTO permissions (description) VALUES ('figurines:images:read');
-INSERT INTO permissions (description) VALUES ('figurines:events:add');
-INSERT INTO permissions (description) VALUES ('figurines:events:delete');
-INSERT INTO permissions (description) VALUES ('figurines:events:read');
-INSERT INTO permissions (description) VALUES ('figurines:events:update');
-INSERT INTO permissions (description) VALUES ('figurines:stores:read');
-INSERT INTO permissions (description) VALUES ('figurines:stores:assign');
-INSERT INTO permissions (description) VALUES ('figurines:update');
-INSERT INTO permissions (description) VALUES ('figurines:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:load', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:images:add', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:images:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:images:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:events:add', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:events:delete', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:events:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:events:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:stores:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:stores:assign', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('figurines:write', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('purchases:add');
-INSERT INTO permissions (description) VALUES ('purchases:read');
-INSERT INTO permissions (description) VALUES ('purchases:update');
-INSERT INTO permissions (description) VALUES ('purchases:delete');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('purchases:add', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('purchases:read', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('purchases:update', NOW(), NOW());
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('purchases:delete', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('stats:read');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('stats:read', NOW(), NOW());
 
-INSERT INTO permissions (description) VALUES ('stores:write');
+INSERT INTO permissions (name, creation_date, update_date) VALUES ('stores:write', NOW(), NOW());
 
 INSERT INTO role_permission (role_id, permission_id, creation_date, update_date) VALUES (1, 1, NOW(), NOW());
 INSERT INTO role_permission (role_id, permission_id, creation_date, update_date) VALUES (1, 2, NOW(), NOW());

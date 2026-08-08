@@ -14,9 +14,9 @@ import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
-import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
 import lombok.RequiredArgsConstructor;
@@ -36,9 +36,9 @@ public class RoleService {
         log.info("Creating role: {}", request.description());
 
         Role entity = mapper.toRole(request);
-        // make sure the roles contain different descriptions.
-        roleRepository.findByDescription(entity.getDescription()).ifPresent(existing -> {
-            throw new RoleAlreadyExistsException(entity.getDescription());
+        // make sure the roles contain different names.
+        roleRepository.findByName(entity.getName()).ifPresent(existing -> {
+            throw new RoleAlreadyExistsException(existing.getName());
         });
 
         var saved = roleRepository.save(entity);
@@ -60,7 +60,7 @@ public class RoleService {
         log.info("Updating role {} to {}", id, request.description());
         var existing = roleRepository.findById(id).orElseThrow(() -> new RoleNotFoundException(id));
 
-        existing.setDescription(request.description());
+        existing.setName(request.description());
 
         var saved = roleRepository.save(existing);
         return mapper.toRoleResp(saved);
@@ -77,7 +77,7 @@ public class RoleService {
                 .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
 
         if (alreadyExists) {
-            throw new RoleAlreadyAssociatedToPermissionException(role.getId(), permission.getId());
+            throw new RolePermissionAlreadyExistsException(role.getId(), permission.getId());
         }
 
         RolePermission rolePermission = new RolePermission();
@@ -93,6 +93,6 @@ public class RoleService {
         Role role = roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
 
         return role.getPermissions().stream().map(RolePermission::getPermission)
-                .map(permission -> new PermissionResp(permission.getId(), permission.getDescription())).toList();
+                .map(permission -> new PermissionResp(permission.getId(), permission.getName())).toList();
     }
 }

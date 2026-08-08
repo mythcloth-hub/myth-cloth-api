@@ -19,16 +19,16 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
-import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.integration.ServiceName;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
-import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyAssociatedToPermissionException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 
 class GlobalExceptionHandlerTest {
 
@@ -123,7 +123,8 @@ class GlobalExceptionHandlerTest {
                 .handleDistributorAlreadyExists(new DistributorAlreadyExistsException("BANDAI", "JP"));
         ProblemDetail notFound = handler.handleDistributorNotFound(new DistributorNotFoundException(1L));
         ProblemDetail catalogNotFound = handler.handleCatalogNotFound(new CatalogNotFoundException("lineup"));
-        ProblemDetail repositoryNotFound = handler.handleRepositoryNotFound(new RepositoryNotFoundException("series"));
+        ProblemDetail repositoryNotFound = handler
+                .handleRepositoryNotFound(new CatalogRepositoryNotFoundException("series"));
         ProblemDetail invalidToken = handler
                 .handleCollectorInvalidToken(new CollectorInvalidTokenException("token invalid"));
 
@@ -216,7 +217,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleRoleAlreadyAssociatedToPermission_shouldUseExceptionMessageForTitleAndDetail() {
-        RoleAlreadyAssociatedToPermissionException ex = new RoleAlreadyAssociatedToPermissionException(1L, 1L);
+        RolePermissionAlreadyExistsException ex = new RolePermissionAlreadyExistsException(1L, 1L);
 
         ProblemDetail result = handler.handleRoleAlreadyAssociatedToPermission(ex);
 

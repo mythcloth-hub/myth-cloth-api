@@ -23,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
-import com.mesofi.mythclothapi.catalogs.exceptions.RepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -135,7 +135,7 @@ class CatalogControllerTest {
     void createCatalog_shouldReturn404_whenCatalogRepositoryDoesNotExist() throws Exception {
         CatalogReq request = new CatalogReq("Gold Saints");
 
-        when(service.createCatalog("groups", request)).thenThrow(new RepositoryNotFoundException("groups"));
+        when(service.createCatalog("groups", request)).thenThrow(new CatalogRepositoryNotFoundException("groups"));
 
         mockMvc.perform(post("/catalogs/groups").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))).andExpect(status().isNotFound())

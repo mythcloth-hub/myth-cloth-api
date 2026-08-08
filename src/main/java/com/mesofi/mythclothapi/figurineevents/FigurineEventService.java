@@ -62,7 +62,7 @@ public class FigurineEventService {
      */
     @Transactional
     public FigurineEventResp createFigurineEvent(@NotNull @Valid FigurineEventReq request) {
-        log.info("Creating event for figurine {} - [{}]({})", request.getFigurineId(), request.getDate(),
+        log.info("Creating event for figurine {} - [{}] ({})", request.getFigurineId(), request.getDate(),
                 request.getDescription());
 
         FigurineEvent figurineEvent = mapper.toFigurineEvent(request);
@@ -155,7 +155,7 @@ public class FigurineEventService {
         figurineEvent.setEventDateConfirmed(newRequest.isDateConfirmed());
         figurineEvent.setType(newRequest.getType());
         figurineEvent.setRegion(newRequest.getRegion());
-        figurineEvent.setDescription(newRequest.getDescription());
+        figurineEvent.setDetails(newRequest.getDescription());
         if (!Objects.equals(figurine.getId(), figurineId)) {
             // there was a change ... the new figureId is different from the existing one.
             figurineEvent.setFigurine(figurine);

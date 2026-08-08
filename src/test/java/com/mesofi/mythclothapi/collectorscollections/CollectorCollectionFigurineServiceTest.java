@@ -32,8 +32,8 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionAlreadyExistsException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.model.Condition;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
@@ -268,7 +268,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findByName("Existing Collection")).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> service.assignFigurinesToCollections(1L, request))
-                .isInstanceOf(CollectionAlreadyExistsException.class)
+                .isInstanceOf(CollectorCollectionAlreadyExistsException.class)
                 .hasMessage("Collection with name 'Existing Collection' already exists");
     }
 
@@ -295,7 +295,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.assignFigurinesToCollections(1L, request))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -397,7 +398,8 @@ class CollectorCollectionFigurineServiceTest {
                 .thenReturn(Optional.of(collection(20L, collector, "Collection", "Desc")));
 
         assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 20L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -417,7 +419,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 20L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -456,7 +459,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -469,7 +473,8 @@ class CollectorCollectionFigurineServiceTest {
                 .thenReturn(Optional.of(collection(20L, collector, "Collection", "Desc")));
 
         assertThatThrownBy(() -> service.retrieveCollectionFigurine(1L, 20L, 10L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -502,7 +507,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -515,7 +521,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
 
         assertThatThrownBy(() -> service.deleteCollectionFigurine(1L, 20L, 10L))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -601,7 +608,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         lenient().when(collectorCollectionRepository.existsById(20L)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.deleteCollection(1L, 20L)).isInstanceOf(CollectionNotFoundException.class)
+        assertThatThrownBy(() -> service.deleteCollection(1L, 20L))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collection with id 20 was not found");
     }
 
@@ -615,7 +623,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(20L, 1L)).thenReturn(1);
         when(collectorCollectionRepository.existsById(20L)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.deleteCollection(1L, 20L)).isInstanceOf(CollectionNotFoundException.class)
+        assertThatThrownBy(() -> service.deleteCollection(1L, 20L))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collection with id 20 was not found");
 
         verify(collectorCollectionRepository, never()).deleteCollectionById(20L);
@@ -658,7 +667,8 @@ class CollectorCollectionFigurineServiceTest {
         lenient().when(collectorCollectionRepository.findById(20L)).thenReturn(Optional.of(collection));
 
         assertThatThrownBy(() -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
-                .isInstanceOf(CollectionNotFoundException.class).hasMessage("Collection with id 20 was not found");
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .hasMessage("Collection with id 20 was not found");
     }
 
     @Test
@@ -671,7 +681,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
 
         assertThatThrownBy(() -> service.updateCollection(1L, 20L, new CollectorCollectionReq("New", "New desc")))
-                .isInstanceOf(CollectionAlreadyExistsException.class)
+                .isInstanceOf(CollectorCollectionAlreadyExistsException.class)
                 .hasMessage("Collection with name 'New' already exists");
     }
 
@@ -759,7 +769,8 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findByCollector(collector)).thenReturn(new ArrayList<>());
 
-        assertThatThrownBy(() -> service.duplicateCollection(1L, 20L)).isInstanceOf(CollectionNotFoundException.class)
+        assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collection with id 20 was not found");
     }
 
@@ -774,7 +785,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorCollectionRepository.findByName("Bronze Saints copy")).thenReturn(Optional.of(duplicateName));
 
         assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
-                .isInstanceOf(CollectionAlreadyExistsException.class)
+                .isInstanceOf(CollectorCollectionAlreadyExistsException.class)
                 .hasMessage("Collection with name 'Bronze Saints copy' already exists");
     }
 
@@ -814,7 +825,8 @@ class CollectorCollectionFigurineServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(collectorCollectionRepository.saveAllAndFlush(any())).thenReturn(List.of(source));
 
-        assertThatThrownBy(() -> service.duplicateCollection(1L, 20L)).isInstanceOf(CollectionNotFoundException.class)
+        assertThatThrownBy(() -> service.duplicateCollection(1L, 20L))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collection with id 0 was not found");
     }
 

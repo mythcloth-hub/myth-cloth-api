@@ -4,12 +4,14 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
@@ -22,24 +24,27 @@ import lombok.Setter;
  * Represents an event associated with a {@link Figurine}.
  *
  * <p>
- * A {@code FigurineEvent} captures a dated action or milestone in the lifecycle
- * of a figurine, such as a pre-order, release, arrival, purchase, or any other
- * relevant event tracked by the system.
+ * A {@code FigurineEvent} captures a dated event or milestone in the lifecycle
+ * of a figurine, such as an announcement, prototype presentation, pre-order,
+ * release, or other relevant event tracked by the system.
+ * </p>
  *
  * <p>
  * Each event is characterized by:
- *
+ * </p>
  * <ul>
- * <li>The date when the event occurred
- * <li>The type of event
- * <li>The region (country) where the event is relevant
- * <li>The figurine to which the event belongs
+ * <li>the {@link #eventDate event date},</li>
+ * <li>whether the event date has been officially confirmed,</li>
+ * <li>the {@link #region region} where the event applies,</li>
+ * <li>the {@link #type type} of event,</li>
+ * <li>additional {@link #details details} describing the event, and</li>
+ * <li>the {@link #figurine figurine} associated with the event.</li>
  * </ul>
  *
  * <p>
- * This entity extends {@link Descriptive}, inheriting a unique identifier, a
- * human-readable description, and other shared descriptive fields across domain
- * entities.
+ * This entity extends {@link Auditable}, inheriting common auditing fields used
+ * to track the creation and modification of domain entities.
+ * </p>
  */
 @Entity
 @Getter
@@ -47,7 +52,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "figurine_events")
-public class FigurineEvent extends Descriptive {
+public class FigurineEvent extends Auditable {
+
+    /**
+     * Additional information describing the event.
+     *
+     * <p>
+     * This field provides contextual information about the event that cannot be
+     * fully represented by the event type, date, or region.
+     * </p>
+     *
+     * <p>
+     * The field is mandatory, must be unique, and is limited to 200 characters.
+     * </p>
+     */
+    @Column(nullable = false, length = 200)
+    private String details;
 
     /**
      * The date on which the event occurred.
@@ -98,7 +118,8 @@ public class FigurineEvent extends Descriptive {
      * <p>
      * This field is mandatory and cannot be {@code null}.
      */
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
     private FigurineEventType type;
 
     /**
