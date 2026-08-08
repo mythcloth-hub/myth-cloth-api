@@ -56,6 +56,7 @@ spring:
         highlight_sql: true        # ANSI colors (Hibernate 6+)
 
   rabbitmq:
+    port: 5672
     host: localhost
     username: mythcloth
     password: mythcloth
