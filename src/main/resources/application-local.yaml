@@ -5,6 +5,12 @@ logging:
     org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
 
 myth-cloth:
+  bootstrap:
+    admin:
+      FACEBOOK: ${FACEBOOK_BOOTSTRAP_ADMIN_PROVIDER}
+      GOOGLE: ${GOOGLE_BOOTSTRAP_ADMIN_PROVIDER}
+      LOCAL: ${DEMO_BOOTSTRAP_ADMIN_PROVIDER}
+
   demo:
     enabled: true
     provider-user-id: 00000
@@ -56,4 +62,7 @@ spring:
 
   sql:
     init:
-      mode: always   # FORCE data.sql to run
+      mode: always   # FORCE db/*.sql to run
+      data-locations:
+      - classpath:db/seed-catalogs.sql
+      - classpath:db/seed-stores.sql

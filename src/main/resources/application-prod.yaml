@@ -5,6 +5,12 @@ logging:
     org.hibernate.orm.jdbc.bind: INFO  # <- Shows query parameters
 # Change the app-id and app-secret using new credentials. For now, the app-id and app-secret are for a test Facebook app. If you want to use your own Facebook app, you can create one at https://developers.facebook.com/apps/ and then update the app-id and app-secret here.
 myth-cloth:
+  bootstrap:
+    admin:
+      FACEBOOK: ${FACEBOOK_BOOTSTRAP_ADMIN_PROVIDER}
+      GOOGLE: ${GOOGLE_BOOTSTRAP_ADMIN_PROVIDER}
+      LOCAL: ${DEMO_BOOTSTRAP_ADMIN_PROVIDER}
+
   demo:
     enabled: ${DEMO_MODE:false}
     provider-user-id: 99999
@@ -56,4 +62,7 @@ spring:
 
   sql:
     init:
-      mode: never   # FORCE data.sql to run with 'always'
+      mode: never   # Do not run db/*.sql on startup in production
+      data-locations:
+        - classpath:db/seed-catalogs.sql
+        - classpath:db/seed-stores.sql

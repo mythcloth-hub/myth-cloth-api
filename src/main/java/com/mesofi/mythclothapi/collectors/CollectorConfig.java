@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.collectors;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import com.mesofi.mythclothapi.BootstrapProperties;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 
@@ -11,6 +12,7 @@ import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
  * services.
  */
 @Configuration
-@EnableConfigurationProperties({FcCredentialsProperties.class, GoogleCredentialsProperties.class})
+@EnableConfigurationProperties({FcCredentialsProperties.class, GoogleCredentialsProperties.class,
+        BootstrapProperties.class})
 public class CollectorConfig {
 }

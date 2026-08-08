@@ -1,0 +1,64 @@
+INSERT INTO lineups (description) VALUES ('Myth Cloth EX');
+INSERT INTO lineups (description) VALUES ('Myth Cloth');
+INSERT INTO lineups (description) VALUES ('Appendix');
+INSERT INTO lineups (description) VALUES ('Saint Cloth Legend');
+INSERT INTO lineups (description) VALUES ('Figuarts');
+INSERT INTO lineups (description) VALUES ('Saint Cloth Crown');
+INSERT INTO lineups (description) VALUES ('DD Panoramation');
+INSERT INTO lineups (description) VALUES ('Figuarts Zero Metallic Touch');
+INSERT INTO lineups (description) VALUES ('Saint Cloth Action');
+INSERT INTO lineups (description) VALUES ('Saint Cloth Rebirth');
+INSERT INTO lineups (description) VALUES ('EX project Metalbuild');
+INSERT INTO lineups (description) VALUES ('Saint Cloth Series');
+INSERT INTO lineups (description) VALUES ('Tamashii Nations Box');
+
+INSERT INTO series (description) VALUES ('Saint Seiya');
+INSERT INTO series (description) VALUES ('Saintia Sho');
+INSERT INTO series (description) VALUES ('Soul of Gold');
+INSERT INTO series (description) VALUES ('Saint Seiya Legend Of Sanctuary');
+INSERT INTO series (description) VALUES ('Saint Seiya Omega');
+INSERT INTO series (description) VALUES ('The Lost Canvas');
+INSERT INTO series (description) VALUES ('Saint Seiya The Beginning');
+
+INSERT INTO groups (description) VALUES ('Accessories');
+INSERT INTO groups (description) VALUES ('Bronze Saint V1');
+INSERT INTO groups (description) VALUES ('Bronze Saint V2');
+INSERT INTO groups (description) VALUES ('Bronze Saint V3');
+INSERT INTO groups (description) VALUES ('Bronze Saint V4');
+INSERT INTO groups (description) VALUES ('Bronze Saint V5');
+INSERT INTO groups (description) VALUES ('Secondary Bronze');
+INSERT INTO groups (description) VALUES ('Black Saint');
+INSERT INTO groups (description) VALUES ('Steel');
+INSERT INTO groups (description) VALUES ('Silver Saint');
+INSERT INTO groups (description) VALUES ('Gold Saint');
+INSERT INTO groups (description) VALUES ('God Robe');
+INSERT INTO groups (description) VALUES ('Poseidon Scale');
+INSERT INTO groups (description) VALUES ('Surplice Saint');
+INSERT INTO groups (description) VALUES ('Specter');
+INSERT INTO groups (description) VALUES ('Judge');
+INSERT INTO groups (description) VALUES ('God');
+INSERT INTO groups (description) VALUES ('Gold Inheritor');
+
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('BANDAI', 'JP', 'https://tamashii.jp/', NOW(), NOW());
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('DAM', 'MX', 'https://animexico-online.com/', NOW(), NOW());
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('DTM', 'MX', null, NOW(), NOW());
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('BANDAI_CHINA', 'CN', null, NOW(), NOW());
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('DS_DISTRIBUTIONS', 'ES', 'https://www.sddistribuciones.com/', NOW(), NOW());
+INSERT INTO distributors (name, country, website, creation_date, update_date) VALUES ('BLUE_FIN', 'US', 'https://www.bluefincorp.com', NOW(), NOW());
+
+INSERT INTO distributions (description) VALUES ('Stores');
+INSERT INTO distributions (description) VALUES ('Tamashii Web Shop');
+INSERT INTO distributions (description) VALUES ('Tamashii World Tour');
+INSERT INTO distributions (description) VALUES ('Tamashii Nations');
+INSERT INTO distributions (description) VALUES ('Tamashii Store');
+INSERT INTO distributions (description) VALUES ('Other Limited Edition');
+
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', null,40, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Jump 50th Anniversary Edition', null,50, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 10th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 15th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('10th Anniversary', 'SAINT_CLOTH_MYTH',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('15th Anniversary', 'SAINT_CLOTH_MYTH',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('20th Anniversary', 'SAINT_CLOTH_MYTH',20, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 'SAINT_SEIYA',30, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 40th anniversary', 'SAINT_SEIYA',40, NOW(), NOW());

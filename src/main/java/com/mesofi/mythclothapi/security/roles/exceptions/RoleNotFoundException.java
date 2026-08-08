@@ -41,6 +41,17 @@ public class RoleNotFoundException extends ApiException {
     }
 
     /**
+     * Creates a new exception for a missing role.
+     *
+     * @param name
+     *            name of the role that was not found
+     */
+    public RoleNotFoundException(String name) {
+        super("Role with name %s was not found".formatted(name));
+        this.id = 0L;
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @return {@link HttpStatus#NOT_FOUND}

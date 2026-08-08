@@ -6,11 +6,13 @@ import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.LOCA
 
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.mesofi.mythclothapi.BootstrapProperties;
 import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProviderRepository;
 import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
@@ -27,7 +29,9 @@ import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.ApiTokenService;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
+import com.mesofi.mythclothapi.security.roles.model.Roles;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +52,7 @@ public class CollectorService {
     private final CollectorRepository collectorRepository;
     private final CollectorAuthProviderRepository collectorAuthProviderRepository;
     private final FbApiClient fbApiClient;
+    private final BootstrapProperties bootstrapProperties;
     private final FcCredentialsProperties fcCredentials;
     private final GoogleApiClient googleApiClient;
     private final GoogleCredentialsProperties googleCredentials;
@@ -66,6 +71,7 @@ public class CollectorService {
      * @throws IllegalArgumentException
      *             if provider is missing or unsupported
      */
+    @Transactional
     public CollectorLoginResp login(String provider, CollectorLoginReq loginRequest) {
         ProviderType providerType = resolveProvider(provider);
 
@@ -234,69 +240,36 @@ public class CollectorService {
         }
     }
 
-    /**
-     * Finds an existing collector by provider identity or creates a new collector
-     * and link.
-     *
-     * @param providerType
-     *            provider associated with the social identity
-     * @param userId
-     *            provider user id
-     * @param name
-     *            display name from provider claims
-     * @param email
-     *            email from provider claims
-     * @param emailVerified
-     *            provider-reported email verification flag
-     * @param picture
-     *            profile picture URL from provider claims
-     * @return existing or newly created collector entity
-     */
     private Collector createOrUpdateRegisteredCollector(ProviderType providerType, String userId, String name,
             String email, boolean emailVerified, String picture) {
-        Optional<CollectorAuthProvider> found = collectorAuthProviderRepository
-                .findByProviderAndProviderUserId(providerType, userId);
-        if (found.isPresent()) {
-            Collector existingCollector = found.get().getCollector();
+        log.info("Creating collector for userId: {}, name: {}", userId, name);
 
-            log.info("Logging in collector {} with {} provider", existingCollector.getId(), providerType);
+        return collectorAuthProviderRepository.findByProviderAndProviderUserId(providerType, userId).orElseGet(() -> {
+            Map<ProviderType, String> adminMap = bootstrapProperties.admin();
+            boolean isAdmin = adminMap.get(providerType).equals(userId);
 
-            return existingCollector;
-        }
+            String roleName = isAdmin ? Roles.ADMIN : providerType == LOCAL ? Roles.DEMO : Roles.COLLECTOR;
+            Role currRole = roleRepository.findByName(roleName).orElseThrow(() -> new RoleNotFoundException(roleName));
 
-        // In case it is the first collector, or it is a local provider, this would have
-        // an Admin role.
-        String role = (collectorRepository.count() == 0 | providerType == ProviderType.LOCAL)
-                ? "Admin"
-                : "Basic Collector";
-        Role currRole = retrieveRoleByName(role);
+            log.info("Creating new collector for {} user {}", providerType, userId);
 
-        // No existing provider link, create collector and provider association.
-        log.info("Creating new collector for {} user {}", providerType, userId);
+            Collector collector = new Collector();
+            collector.setEmail(email);
+            collector.setDisplayName(name);
+            collector.setProfilePictureUrl(picture);
+            collector.setRole(currRole);
+            Collector newCollector = collectorRepository.save(collector);
 
-        Collector collector = new Collector();
-        collector.setEmail(email);
-        collector.setDisplayName(name);
-        collector.setProfilePictureUrl(picture);
-        collector.setRole(currRole);
-        Collector newCollector = collectorRepository.save(collector);
+            CollectorAuthProvider newProvider = new CollectorAuthProvider();
+            newProvider.setCollector(newCollector);
+            newProvider.setProvider(providerType);
+            newProvider.setEmail(email);
+            newProvider.setProviderUserId(userId);
+            newProvider.setEmailVerified(emailVerified);
+            collectorAuthProviderRepository.save(newProvider);
 
-        CollectorAuthProvider newProvider = new CollectorAuthProvider();
-        newProvider.setCollector(newCollector);
-        newProvider.setProvider(providerType);
-        newProvider.setEmail(email);
-        newProvider.setProviderUserId(userId);
-        newProvider.setEmailVerified(emailVerified);
-        collectorAuthProviderRepository.save(newProvider);
-
-        return newCollector;
+            return newProvider;
+        }).getCollector();
     }
 
-    private Role retrieveRoleByName(String name) {
-        return roleRepository.findByName(name).orElseGet(() -> {
-            Role adminRole = new Role();
-            adminRole.setName(name);
-            return roleRepository.save(adminRole);
-        });
-    }
 }
