@@ -34,6 +34,6 @@ public abstract class Descriptive extends BaseId {
      * constraints at the database level, ensuring the field is never null and
      * adheres to the specified maximum length.
      */
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 200, unique = true)
     private String description;
 }

@@ -530,6 +530,7 @@ public interface FigurineMapper {
      */
     @Mapping(target = "date", source = "eventDate")
     @Mapping(target = "dateConfirmed", source = "eventDateConfirmed")
+    @Mapping(target = "description", source = "details")
     FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
 
@@ -619,7 +620,7 @@ public interface FigurineMapper {
         }
 
         FigurineEvent event = new FigurineEvent();
-        event.setDescription(descriptionPart);
+        event.setDetails(descriptionPart);
         event.setEventDate(date);
         event.setEventDateConfirmed(true);
         CountryCode countryCode = StringUtils.hasLength(regionPart)

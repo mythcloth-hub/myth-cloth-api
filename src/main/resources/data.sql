@@ -72,7 +72,7 @@ INSERT INTO stores (name, code, website, logo_url, currency, country, active, cr
 INSERT INTO stores (name, code, website, logo_url, currency, country, active, creation_date, update_date) VALUES ('Myth Factory', 'MYTH_FACTORY', 'https://www.mythfactoryshop.com', 'https://www.mythfactoryshop.com/cdn-cgi/image/format=webp/img/myth-factory-logo-1742594757.jpg', 'EUR', 'BE', true, NOW(), NOW());
 
 -- ========================= INITIALIZING BASIC ADMIN ========================================
-INSERT INTO roles (description) VALUES ('Admin');
+INSERT INTO roles (name, creation_date, update_date) VALUES ('Admin', NOW(), NOW());
 
 INSERT INTO permissions (description) VALUES ('permissions:delete');
 INSERT INTO permissions (description) VALUES ('permissions:read');

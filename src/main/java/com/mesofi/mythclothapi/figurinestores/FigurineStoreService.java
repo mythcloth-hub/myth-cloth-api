@@ -332,6 +332,7 @@ public class FigurineStoreService {
         }
 
         if (prices.isEmpty()) {
+            log.info("No prices found for figurine {} with currency {}", figurineId, currency);
             return new FigurineStorePriceResp(BigDecimal.ZERO, target);
         }
 

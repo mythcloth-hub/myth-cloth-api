@@ -76,17 +76,18 @@ public class StatisticsController {
     @GetMapping
     public StatisticsResp retrieveStatistics(@RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
+            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
+            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
+            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
+            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
+            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
+            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
+            @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus, restocks);
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, releaseStatus, restocks);
 
         return service.retrieveStatistics(figurineFilter);
     }
@@ -103,6 +104,8 @@ public class StatisticsController {
      *            series id filter
      * @param groupId
      *            group id filter
+     * @param distributionId
+     *            distribution id filter
      * @param anniversaryId
      *            anniversary id filter
      * @param metalBody
@@ -130,16 +133,17 @@ public class StatisticsController {
     @GetMapping("/releases/years")
     public List<YearStatisticsResp> retrieveStatisticsByReleases(@RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable) {
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
+            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
+            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
+            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
+            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
+            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
+            @RequestParam(required = false) Boolean articulable) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable, null,
-                null);
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, null, null);
 
         return service.retrieveStatisticsByReleases(figurineFilter);
     }
@@ -167,6 +171,8 @@ public class StatisticsController {
      *            series id filter
      * @param groupId
      *            group id filter
+     * @param distributionId
+     *            distribution id filter
      * @param anniversaryId
      *            anniversary id filter
      * @param metalBody
@@ -196,17 +202,18 @@ public class StatisticsController {
     @GetMapping("/prices/releases/years")
     public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
+            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
+            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
+            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
+            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
+            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
+            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
+            @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus, restocks);
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, releaseStatus, restocks);
 
         return service.retrieveYearlyReleasePrices(figurineFilter);
     }

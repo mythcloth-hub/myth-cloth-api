@@ -146,14 +146,14 @@ public class FigurineController {
     public ResponseEntity<PaginatedResponse> retrieveFigurineDetails(Authentication authentication,
             @RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
+            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
+            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
+            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
+            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
+            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
+            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
+            @RequestParam(required = false) Boolean restocks, @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         log.info("Retrieving figurines ...");
         CollectablePageImpl<FigurineResp> result;
@@ -163,8 +163,8 @@ public class FigurineController {
                 collectorId -> figurineIds.addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId)));
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus, restocks);
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, releaseStatus, restocks);
 
         result = service.filterFigurines(figurineFilter, page, size);
 
@@ -186,7 +186,7 @@ public class FigurineController {
     public List<FigurineSummaryResp> retrieveFigurineSummaries() {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null, null);
 
         return service.retrieveFigurineSummaries(figurineFilter);
     }
@@ -194,17 +194,18 @@ public class FigurineController {
     @GetMapping("/selectable-ids")
     public List<Long> retrieveSelectableFigurines(@RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long anniversaryId,
-            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
-            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
-            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
-            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
-            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
-            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks) {
+            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
+            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
+            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
+            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
+            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
+            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
+            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
+            @RequestParam(required = false) Boolean restocks) {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
-                releaseStatus, restocks);
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, releaseStatus, restocks);
         return service.retrieveSelectableFigurines(figurineFilter);
     }
 

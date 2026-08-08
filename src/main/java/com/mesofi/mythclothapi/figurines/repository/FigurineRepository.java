@@ -45,12 +45,12 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
             SELECT f
             FROM Figurine f
             JOIN f.distributors fd
-            WHERE f.currentReleaseStatus = 'RELEASED'
+            WHERE (f.currentReleaseStatus = 'RELEASED' or f.currentReleaseStatus = 'ANNOUNCED')
             AND f.anniversary IS NULL
             GROUP BY f
             ORDER BY MIN(fd.releaseDate) DESC
             """)
-    List<Figurine> findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+    List<Figurine> findReleasedOrAnnouncedOrderByFirstReleaseDateDesc();
 
     @Modifying
     @Query("""

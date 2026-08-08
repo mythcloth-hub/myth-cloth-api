@@ -281,8 +281,7 @@ public class FigurineService {
 
     private void postPersist(Figurine persistedFigurine) {
         if (IS_RELEASED_OR_ANNOUNCED.test(persistedFigurine)) {
-            assignPreviousRelease(persistedFigurine,
-                    repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc());
+            assignPreviousRelease(persistedFigurine, repository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc());
         }
     }
 
@@ -534,7 +533,7 @@ public class FigurineService {
      *            the figurines to evaluate after the import
      */
     private void rebuildRestockHistory(List<Figurine> existingFigurines) {
-        List<Figurine> releasedFigurines = repository.findReleasedNonAnniversaryOrderByInitialReleaseDateDesc();
+        List<Figurine> releasedFigurines = repository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc();
         log.info("Found {} released figurines", releasedFigurines.size());
 
         Map<FigurineCharacteristics, List<Figurine>> index = releasedFigurines.stream()
@@ -1143,7 +1142,7 @@ public class FigurineService {
             Figurine figurine) {
 
         FigurineEvent event = new FigurineEvent();
-        event.setDescription(description);
+        event.setDetails(description);
         event.setEventDate(date);
         event.setEventDateConfirmed(dateConfirmed);
         event.setType(type);

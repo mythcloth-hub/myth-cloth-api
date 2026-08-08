@@ -269,7 +269,7 @@ public class CollectorService {
         String role = (collectorRepository.count() == 0 | providerType == ProviderType.LOCAL)
                 ? "Admin"
                 : "Basic Collector";
-        Role currRole = retrieveRoleByDescription(role);
+        Role currRole = retrieveRoleByName(role);
 
         // No existing provider link, create collector and provider association.
         log.info("Creating new collector for {} user {}", providerType, userId);
@@ -292,10 +292,10 @@ public class CollectorService {
         return newCollector;
     }
 
-    private Role retrieveRoleByDescription(String description) {
-        return roleRepository.findByDescription(description).orElseGet(() -> {
+    private Role retrieveRoleByName(String name) {
+        return roleRepository.findByName(name).orElseGet(() -> {
             Role adminRole = new Role();
-            adminRole.setDescription(description);
+            adminRole.setName(name);
             return roleRepository.save(adminRole);
         });
     }

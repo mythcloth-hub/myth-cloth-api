@@ -10,5 +10,5 @@ import com.mesofi.mythclothapi.security.roles.model.Role;
 /** Repository for managing {@link Role} persistence operations. */
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
-    Optional<Role> findByDescription(String description);
+    Optional<Role> findByName(String name);
 }

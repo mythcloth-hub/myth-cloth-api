@@ -17,9 +17,13 @@ public interface SecurityMapper {
     // Roles
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "permissions", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "name", source = "description")
     Role toRole(RoleReq request);
 
-    RoleResp toRoleResp(Descriptive descriptiveEntity);
+    @Mapping(target = "description", source = "name")
+    RoleResp toRoleResp(Role role);
 
     // Permission
     @Mapping(target = "id", ignore = true)

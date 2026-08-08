@@ -39,6 +39,8 @@ public final class FigurineFilterFactory {
      *            optional series identifier
      * @param groupId
      *            optional group identifier
+     * @param distributionId
+     *            optional distribution identifier
      * @param anniversaryId
      *            optional anniversary identifier
      * @param metalBody
@@ -66,13 +68,14 @@ public final class FigurineFilterFactory {
      * @return a new {@link FigurineFilter} instance
      */
     public static FigurineFilter build(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, Long groupId,
-            Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival, Boolean plainCloth, Boolean broken,
-            Boolean golden, Boolean gold, Boolean manga, Boolean set, Boolean articulable, String releaseStatus,
-            Boolean restocks) {
+            Long distributionId, Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival,
+            Boolean plainCloth, Boolean broken, Boolean golden, Boolean gold, Boolean manga, Boolean set,
+            Boolean articulable, String releaseStatus, Boolean restocks) {
 
         String figurineName = name != null && name.trim().length() >= 3 ? name.trim() : "";
 
-        return new FigurineFilter(figurineIds, figurineName, lineUpId, seriesId, groupId, anniversaryId, metalBody, oce,
-                revival, plainCloth, broken, golden, gold, manga, set, articulable, releaseStatus, restocks);
+        return new FigurineFilter(figurineIds, figurineName, lineUpId, seriesId, groupId, distributionId, anniversaryId,
+                metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable, releaseStatus,
+                restocks);
     }
 }

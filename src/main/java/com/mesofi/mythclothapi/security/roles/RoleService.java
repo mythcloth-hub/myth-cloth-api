@@ -36,9 +36,9 @@ public class RoleService {
         log.info("Creating role: {}", request.description());
 
         Role entity = mapper.toRole(request);
-        // make sure the roles contain different descriptions.
-        roleRepository.findByDescription(entity.getDescription()).ifPresent(existing -> {
-            throw new RoleAlreadyExistsException(entity.getDescription());
+        // make sure the roles contain different names.
+        roleRepository.findByName(entity.getName()).ifPresent(existing -> {
+            throw new RoleAlreadyExistsException(existing.getName());
         });
 
         var saved = roleRepository.save(entity);
@@ -60,7 +60,7 @@ public class RoleService {
         log.info("Updating role {} to {}", id, request.description());
         var existing = roleRepository.findById(id).orElseThrow(() -> new RoleNotFoundException(id));
 
-        existing.setDescription(request.description());
+        existing.setName(request.description());
 
         var saved = roleRepository.save(existing);
         return mapper.toRoleResp(saved);
