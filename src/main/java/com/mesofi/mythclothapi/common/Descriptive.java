@@ -24,7 +24,7 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 @EqualsAndHashCode(callSuper = false)
-public abstract class Descriptive extends BaseId {
+public abstract class Descriptive extends Auditable {
 
     /**
      * A brief description of the entity.

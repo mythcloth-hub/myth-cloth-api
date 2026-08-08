@@ -37,6 +37,8 @@ public interface CatalogMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Group toGroup(CatalogReq request);
 
     /**
@@ -53,6 +55,8 @@ public interface CatalogMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Series toSeries(CatalogReq request);
 
     /**
@@ -68,6 +72,8 @@ public interface CatalogMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     LineUp toLineUp(CatalogReq request);
 
     /**
@@ -83,6 +89,8 @@ public interface CatalogMapper {
      */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "figurines", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
     Distribution toDistribution(CatalogReq request);
 
     /**
