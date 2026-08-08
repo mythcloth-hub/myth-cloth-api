@@ -30,8 +30,8 @@ public class PermissionService {
 
         Permission entity = mapper.toPermission(request);
         // make sure the permissions contain different descriptions.
-        repository.findByDescription(entity.getDescription()).ifPresent(existing -> {
-            throw new PermissionAlreadyExistsException(entity.getDescription());
+        repository.findByName(entity.getName()).ifPresent(existing -> {
+            throw new PermissionAlreadyExistsException(existing.getName());
         });
 
         var saved = repository.save(entity);
@@ -54,7 +54,7 @@ public class PermissionService {
         log.info("Updating permission {} to {}", id, request.description());
         var existing = repository.findById(id).orElseThrow(() -> new PermissionNotFoundException(id));
 
-        existing.setDescription(request.description());
+        existing.setName(request.description());
 
         var saved = repository.save(existing);
         return mapper.toPermissionResp(saved);

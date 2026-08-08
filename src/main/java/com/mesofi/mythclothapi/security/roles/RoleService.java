@@ -93,6 +93,6 @@ public class RoleService {
         Role role = roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
 
         return role.getPermissions().stream().map(RolePermission::getPermission)
-                .map(permission -> new PermissionResp(permission.getId(), permission.getDescription())).toList();
+                .map(permission -> new PermissionResp(permission.getId(), permission.getName())).toList();
     }
 }
