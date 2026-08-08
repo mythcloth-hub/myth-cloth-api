@@ -59,6 +59,9 @@ spring:
     host: localhost
     username: mythcloth
     password: mythcloth
+    virtual-host: /
+    ssl:
+      enabled: false
 
   sql:
     init:

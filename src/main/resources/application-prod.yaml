@@ -59,6 +59,9 @@ spring:
     host: ${RABBITMQ_HOST}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST}
+    ssl:
+      enabled: true
 
   sql:
     init:
