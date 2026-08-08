@@ -11,7 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 import lombok.Getter;
@@ -21,7 +21,10 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(name = "anniversaries")
-public class Anniversary extends Descriptive {
+public class Anniversary extends Auditable {
+
+    @Column(nullable = false, length = 200, unique = true)
+    private String name;
 
     @OneToMany(mappedBy = "anniversary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Figurine> figurines = new ArrayList<>();

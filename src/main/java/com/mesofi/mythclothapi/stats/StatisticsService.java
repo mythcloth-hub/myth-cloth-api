@@ -99,7 +99,7 @@ public class StatisticsService {
                 countByCatalog(allFigurines, groupRepository.findAll(), Figurine::getGroup, Group::getId,
                         Group::getDescription),
                 countByCatalog(allFigurines, anniversaryRepository.findAll(), Figurine::getAnniversary,
-                        Anniversary::getId, Anniversary::getDescription),
+                        Anniversary::getId, Anniversary::getName),
                 countByReleaseStatus(allFigurines));
     }
 

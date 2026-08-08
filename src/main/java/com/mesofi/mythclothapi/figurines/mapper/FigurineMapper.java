@@ -21,6 +21,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
+import com.mesofi.mythclothapi.anniversaries.AnniversaryMapper;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -66,7 +67,7 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
  * {@link CatalogContext} is used extensively to resolve catalog references
  * without performing database access inside the mapper.
  */
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = AnniversaryMapper.class)
 public interface FigurineMapper {
 
     /** Formatter used to parse event dates coming from CSV or raw strings. */

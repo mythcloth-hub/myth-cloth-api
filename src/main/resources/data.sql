@@ -1,12 +1,12 @@
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', null,40);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Jump 50th Anniversary Edition', null,50);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Tamashii Nations 10th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',10);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Tamashii Nations 15th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',15);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('10th Anniversary', 'SAINT_CLOTH_MYTH',10);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('15th Anniversary', 'SAINT_CLOTH_MYTH',15);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('20th Anniversary', 'SAINT_CLOTH_MYTH',20);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 'SAINT_SEIYA',30);
-INSERT INTO anniversaries (description, anniversary_type, anniversary_year) VALUES ('Saint Seiya 40th anniversary', 'SAINT_SEIYA',40);
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Masami Kurumada''s Passionate Artwork 40th Anniversary', null,40, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Jump 50th Anniversary Edition', null,50, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 10th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Tamashii Nations 15th World Tour', 'TAMASHII_NATIONS_WORLD_TOUR',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('10th Anniversary', 'SAINT_CLOTH_MYTH',10, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('15th Anniversary', 'SAINT_CLOTH_MYTH',15, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('20th Anniversary', 'SAINT_CLOTH_MYTH',20, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 30th Anniversary Theme Exhibition', 'SAINT_SEIYA',30, NOW(), NOW());
+INSERT INTO anniversaries (name, anniversary_type, anniversary_year, creation_date, update_date) VALUES ('Saint Seiya 40th anniversary', 'SAINT_SEIYA',40, NOW(), NOW());
 
 INSERT INTO distributions (description) VALUES ('Stores');
 INSERT INTO distributions (description) VALUES ('Tamashii Web Shop');

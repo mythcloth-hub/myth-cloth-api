@@ -47,7 +47,7 @@ public class AnniversaryService {
         log.info("Updating anniversary {} to {}", id, request.description());
         var existing = repository.findById(id).orElseThrow(() -> new AnniversaryNotFoundException(id));
 
-        existing.setDescription(request.description());
+        existing.setName(request.description());
         existing.setYear(request.year());
         existing.setType(request.type());
 
