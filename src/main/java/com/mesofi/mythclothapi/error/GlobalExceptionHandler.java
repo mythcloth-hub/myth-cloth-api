@@ -171,4 +171,9 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
         return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleException(Exception ex) {
+        return ApiProblemDetail.of(new UnexpectedException(ex.getMessage()));
+    }
 }

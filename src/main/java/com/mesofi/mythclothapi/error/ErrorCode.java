@@ -146,5 +146,14 @@ public enum ErrorCode {
     /**
      * Indicates that the requested store could not be found.
      */
-    STORE_NOT_FOUND
+    STORE_NOT_FOUND,
+
+    // -------------------------------------------------------------------------
+    // Other
+    // -------------------------------------------------------------------------
+
+    /**
+     * Indicates that an unexpected error has occurred.
+     */
+    UNEXPECTED_ERROR,
 }
