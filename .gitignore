@@ -251,6 +251,8 @@ gradle-app.setting
 # Java heap dump
 *.hprof
 
+# Local files
 .run
+.env-prod
 
 # End of https://www.toptal.com/developers/gitignore/api/eclipse,intellij,netbeans,macos,gradle
