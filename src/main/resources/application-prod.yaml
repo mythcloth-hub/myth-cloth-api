@@ -33,7 +33,10 @@ myth-cloth:
     jwt:
       secret: ${JWT_SECRET}
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
-    cors-url: "https://myth-cloth-ui.onrender.com"
+    cors-urls:
+      - "https://myth-cloth-ui.onrender.com"
+      - "https://saintcollections.com"
+      - "https://www.saintcollections.com"
 
 server:
   port: ${PORT:9090} # Uses Render's port, or defaults to 9090
