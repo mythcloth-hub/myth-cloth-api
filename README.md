@@ -18,41 +18,58 @@ The build also exports a YAML snapshot to `build/generated/openapi/swagger.yaml`
 
 ## Environment variables
 
-The API now reads sensitive/runtime config from environment variables.
+The API reads runtime and secret configuration from environment variables. Some
+values have local defaults, but several placeholders are still mandatory.
+
+### Required in all environments
+
+| Variable                            | Purpose                                                         |
+|-------------------------------------|-----------------------------------------------------------------|
+| `FACEBOOK_BOOTSTRAP_ADMIN_PROVIDER` | Provider user id used to bootstrap the Facebook admin account   |
+| `GOOGLE_BOOTSTRAP_ADMIN_PROVIDER`   | Provider user id used to bootstrap the Google admin account     |
+| `DEMO_BOOTSTRAP_ADMIN_PROVIDER`     | Provider user id used to bootstrap the local/demo admin account |
+| `FACEBOOK_APP_SECRET`               | Facebook app secret for social login                            |
+| `JWT_SECRET`                        | JWT signing secret                                              |
 
 ### Required in production
 
-| Variable              | Purpose                                   |
-|-----------------------|-------------------------------------------|
-| `FACEBOOK_APP_ID`     | Facebook app id for social login          |
-| `FACEBOOK_APP_SECRET` | Facebook app secret                       |
-| `GOOGLE_CLIENT_ID`    | Google OAuth client id                    |
-| `JWT_SECRET`          | JWT signing secret                        |
-| `DB_URL`              | PostgreSQL JDBC URL                       |
-| `DB_USERNAME`         | PostgreSQL username                       |
-| `DB_PASSWORD`         | PostgreSQL password                       |
-| `PORT`                | Server port (Render usually injects this) |
+| Variable                | Purpose                          |
+|-------------------------|----------------------------------|
+| `FACEBOOK_APP_ID`       | Facebook app id for social login |
+| `GOOGLE_CLIENT_ID`      | Google OAuth client id           |
+| `DB_URL`                | PostgreSQL JDBC URL              |
+| `DB_USERNAME`           | PostgreSQL username              |
+| `DB_PASSWORD`           | PostgreSQL password              |
+| `RABBITMQ_HOST`         | RabbitMQ host                    |
+| `RABBITMQ_PORT`         | RabbitMQ port                    |
+| `RABBITMQ_USERNAME`     | RabbitMQ username                |
+| `RABBITMQ_PASSWORD`     | RabbitMQ password                |
+| `RABBITMQ_VIRTUAL_HOST` | RabbitMQ virtual host            |
 
-### Local development notes
+### Optional in production
 
-- The base config (`application.yaml`) expects these variables to be present:
-  - `FACEBOOK_APP_ID`
-  - `FACEBOOK_APP_SECRET`
-  - `GOOGLE_CLIENT_ID`
-  - `JWT_SECRET`
-  - `DB_URL`
-  - `DB_USERNAME`
-  - `DB_PASSWORD`
-- `application-local.yaml` adds local overrides for:
-  - `server.servlet.context-path=/api/v1`
-  - `myth-cloth.security.jwt.issuer=myth-cloth-api`
-  - `myth-cloth.security.jwt.ttl-minutes=60`
+| Variable      | Purpose                                   | Default  |
+|---------------|-------------------------------------------|----------|
+| `DEMO_MODE`   | Enables demo mode in `prod` profile       | `false`  |
+| `PORT`        | Server port (Render usually injects this) | `9090`   |
+
+### Local profile defaults
+
+When running with `local`, these values already have defaults in
+`application-local.yaml`:
+
+- `FACEBOOK_APP_ID=4393993617525351`
+- `GOOGLE_CLIENT_ID=1068577777042-fmeugfjurp1nbbfqq4q544gjk2h2l3cb.apps.googleusercontent.com`
+- `DB_URL=jdbc:postgresql://localhost:5432/mythclothlocal`
+- `DB_USERNAME=postgres`
+- `DB_PASSWORD=postgres`
+- RabbitMQ host/port/credentials are local in-file defaults
 
 ### Profiles used by this project
 
-- `local`: enables local API context path (`/api/v1`) and JWT issuer/TTL defaults.
-- `prod`: overrides DB/JPA/logging/CORS values from `application-prod.yaml`.
-- No profile: only `application.yaml` is loaded.
+- `application.yaml`: always loaded; defines `/api/v1`, JWT issuer/TTL, and shared RabbitMQ settings.
+- `local`: adds local DB, OAuth, demo, logging, and RabbitMQ defaults.
+- `prod`: reads production DB, OAuth, demo, bootstrap, and RabbitMQ values from environment variables.
 
 ---
 
@@ -169,6 +186,9 @@ docker compose logs -f postgres
 Export env vars (example values for local):
 
 ```sh
+export FACEBOOK_BOOTSTRAP_ADMIN_PROVIDER="facebook-admin-provider-user-id"
+export GOOGLE_BOOTSTRAP_ADMIN_PROVIDER="google-admin-provider-user-id"
+export DEMO_BOOTSTRAP_ADMIN_PROVIDER="demo-admin-provider-user-id"
 export FACEBOOK_APP_ID="your-facebook-app-id"
 export FACEBOOK_APP_SECRET="your-facebook-app-secret"
 export GOOGLE_CLIENT_ID="your-google-client-id"
@@ -218,8 +238,15 @@ Full check pipeline (includes integration tests + PIT mutation tests):
 
 ## Important local behavior
 
-- With `local` profile, JPA settings come from `application.yaml` (`ddl-auto: update`, `sql.init.mode: never`).
-- With `prod` profile, JPA settings are overridden by `application-prod.yaml` (`ddl-auto: create-drop`, `sql.init.mode: always`).
+- `application.yaml` always provides `server.servlet.context-path=/api/v1`,
+  `myth-cloth.security.jwt.issuer=myth-cloth-api`, and
+  `myth-cloth.security.jwt.ttl-minutes=60`.
+- With `local` profile, JPA uses `ddl-auto: create-drop` and
+  `spring.sql.init.mode: always`.
+- With `prod` profile, JPA uses `ddl-auto: update` and
+  `spring.sql.init.mode: never`.
+- `local` enables demo mode by default; `prod` only enables it when
+  `DEMO_MODE=true`.
 
 ---
 
@@ -272,7 +299,7 @@ docker compose down -v
 Run app:
 
 ```sh
-./gradlew bootRun
+./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
 Run a clean build:
