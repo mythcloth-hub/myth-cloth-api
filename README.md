@@ -22,16 +22,16 @@ The API now reads sensitive/runtime config from environment variables.
 
 ### Required in production
 
-| Variable | Purpose |
-| --- | --- |
-| `FACEBOOK_APP_ID` | Facebook app id for social login |
-| `FACEBOOK_APP_SECRET` | Facebook app secret |
-| `GOOGLE_CLIENT_ID` | Google OAuth client id |
-| `JWT_SECRET` | JWT signing secret |
-| `DATABASE_URL` | PostgreSQL JDBC URL |
-| `DB_USERNAME` | PostgreSQL username |
-| `DB_PASSWORD` | PostgreSQL password |
-| `PORT` | Server port (Render usually injects this) |
+| Variable              | Purpose                                   |
+|-----------------------|-------------------------------------------|
+| `FACEBOOK_APP_ID`     | Facebook app id for social login          |
+| `FACEBOOK_APP_SECRET` | Facebook app secret                       |
+| `GOOGLE_CLIENT_ID`    | Google OAuth client id                    |
+| `JWT_SECRET`          | JWT signing secret                        |
+| `DB_URL`              | PostgreSQL JDBC URL                       |
+| `DB_USERNAME`         | PostgreSQL username                       |
+| `DB_PASSWORD`         | PostgreSQL password                       |
+| `PORT`                | Server port (Render usually injects this) |
 
 ### Local development notes
 
@@ -40,7 +40,7 @@ The API now reads sensitive/runtime config from environment variables.
   - `FACEBOOK_APP_SECRET`
   - `GOOGLE_CLIENT_ID`
   - `JWT_SECRET`
-  - `DATABASE_URL`
+  - `DB_URL`
   - `DB_USERNAME`
   - `DB_PASSWORD`
 - `application-local.yaml` adds local overrides for:
@@ -173,7 +173,7 @@ export FACEBOOK_APP_ID="your-facebook-app-id"
 export FACEBOOK_APP_SECRET="your-facebook-app-secret"
 export GOOGLE_CLIENT_ID="your-google-client-id"
 export JWT_SECRET="$(openssl rand -base64 32)"
-export DATABASE_URL="jdbc:postgresql://localhost:5432/mythclothlocal"
+export DB_URL="jdbc:postgresql://localhost:5432/mythclothlocal"
 export DB_USERNAME="postgres"
 export DB_PASSWORD="postgres"
 ```
