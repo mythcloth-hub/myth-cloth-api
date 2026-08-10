@@ -39,6 +39,8 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long>, FigurineRepositoryCustom {
 
+    List<Figurine> findByLegacyNameIn(List<String> legacyNames);
+
     List<Figurine> findAllByLineup(LineUp lineUP);
 
     @Query("""

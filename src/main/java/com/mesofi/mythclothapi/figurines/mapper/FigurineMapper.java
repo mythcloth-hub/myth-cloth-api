@@ -560,6 +560,40 @@ public interface FigurineMapper {
     @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
     void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "legacyName", ignore = true)
+    // @Mapping(target = "normalizedName", ignore = true)
+    @Mapping(target = "displayName", ignore = true)
+    @Mapping(target = "distributors", ignore = true)
+    @Mapping(target = "collections", ignore = true)
+    @Mapping(target = "stores", ignore = true)
+    @Mapping(target = "tamashiiUrl", ignore = true)
+    @Mapping(target = "distribution", ignore = true)
+    @Mapping(target = "lineup", ignore = true)
+    @Mapping(target = "series", ignore = true)
+    @Mapping(target = "group", ignore = true)
+    @Mapping(target = "anniversary", ignore = true)
+    @Mapping(target = "currentReleaseStatus", ignore = true)
+    @Mapping(target = "metalBody", ignore = true)
+    @Mapping(target = "oce", ignore = true)
+    @Mapping(target = "revival", ignore = true)
+    @Mapping(target = "plainCloth", ignore = true)
+    @Mapping(target = "broken", ignore = true)
+    @Mapping(target = "golden", ignore = true)
+    @Mapping(target = "gold", ignore = true)
+    @Mapping(target = "manga", ignore = true)
+    @Mapping(target = "set", ignore = true)
+    @Mapping(target = "articulable", ignore = true)
+    @Mapping(target = "remarks", ignore = true)
+    @Mapping(target = "events", ignore = true)
+    @Mapping(target = "previousRelease", ignore = true)
+    @Mapping(target = "subsequentReleases", ignore = true)
+    @Mapping(target = "officialImages", ignore = true)
+    @Mapping(target = "nonOfficialImages", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    void updateFigurineNew(@MappingTarget Figurine target, Figurine source, boolean b);
+
     /**
      * Updates a {@link FigurineDistributor} entity using values from another
      * instance.

@@ -17,7 +17,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -68,6 +68,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
+import com.mesofi.mythclothapi.figurines.exceptions.FigurineImportException;
 import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
@@ -136,6 +137,7 @@ public class FigurineService {
     private final FigurineMapper mapper;
     private final FigurineCsvSource csvSource;
 
+    private final FigurineImportHistoryService figurineImportHistoryService;
     private final FigurineImportRepository figurineImportRepository;
     private final DistributorRepository distributorRepository;
     private final DistributionRepository distributionRepository;
@@ -191,16 +193,73 @@ public class FigurineService {
     @Transactional
     @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void importAllFigurinesFromPublicDrive(boolean overwriteExisting) {
-        System.out.println("Importing all figurines ...");
-        // if (true) {
-        // throw new FigurineImportException();
-        // }
+        log.info("Loading all figurines ...");
+
+        List<Figurine> importedFigurines = List.of();
+        CatalogContext catalogContext = loadCatalogs();
+
         String errorMessage = null;
-        int totalImported = 10;
+        int totalImported = 0;
         int totalSkipped = 0;
 
-        saveFigurineImport(totalImported, totalSkipped, errorMessage);
+        try (Reader reader = csvSource.openReader()) {
+            List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
+                    .withIgnoreLeadingWhiteSpace(true).build().parse();
+
+            log.info("Importing {} figurines from CSV file.", csvRows.size());
+            if (overwriteExisting) {
+                List<Figurine> existingFigurines = repository
+                        .findByLegacyNameIn(csvRows.stream().map(FigurineCsv::getOriginalName).toList());
+
+                Map<String, Figurine> figurinesByLegacyName = existingFigurines.stream()
+                        .collect(Collectors.toMap(Figurine::getLegacyName, Function.identity()));
+
+                List<Figurine> allFigurines = new ArrayList<>();
+                for (FigurineCsv csv : csvRows) {
+                    Figurine existingFigurine = figurinesByLegacyName.get(csv.getOriginalName());
+
+                    if (existingFigurine == null) {
+                        existingFigurine = mapper.toFigurine(csv, catalogContext);
+                    } else {
+                        Figurine incoming = mapper.toFigurine(csv, catalogContext);
+                        // Update existing figurine with new data from CSV
+                        mapper.updateFigurineNew(existingFigurine, incoming, true);
+                    }
+
+                    prepareForPersistence(existingFigurine);
+                    allFigurines.add(existingFigurine);
+                    totalImported++;
+                }
+                importedFigurines = repository.saveAll(allFigurines);
+            } else {
+
+            }
+        } catch (IOException ex) {
+            log.error("Error while reading csv file.", ex);
+            errorMessage = "Unable to load all figurines: " + ex.getMessage();
+            throw new FigurineImportException();
+        } catch (Exception ex) {
+            log.error("Unexpected error while importing figurines.", ex);
+            errorMessage = "Unexpected error: " + ex.getMessage();
+            throw new FigurineImportException();
+        } finally {
+            figurineImportHistoryService.saveFigurineImport(totalImported, totalSkipped, errorMessage);
+        }
+
+        // Rebuild restock history for all imported figurines
+        // rebuildRestockHistory(importedFigurines);
     }
+
+    /*
+     * overwriteExisting = true If the figurine already exists in the DB, retrieve
+     * it and update its fields with the new data from the CSV. if the figurine does
+     * not exist in the DB, create a new one and persist it.
+     *
+     * overwriteExisting = false if the figurine already exists in the DB, skip it
+     * and do not update its fields (as long as someone else already edited the
+     * figurine). if the figurine does not exist in the DB, create a new one and
+     * persist it.
+     */
 
     /**
      * Retrieves up to 20 figurine import records.
@@ -208,22 +267,13 @@ public class FigurineService {
      * The retrieved entities are mapped to {@link FigurineImportResp} instances
      * before being returned.
      * </p>
-     * 
+     *
      * @return a list containing up to 20 figurine import records.
      */
     public List<FigurineImportResp> getAllFigurineImports() {
-        return figurineImportRepository.findAll().stream().limit(20).map(mapper::toFigurineImportResp).toList();
-    }
-
-    private void saveFigurineImport(int totalImported, int totalSkipped, String errorMessage) {
-        FigurineImport figurineImport = new FigurineImport();
-
-        figurineImport.setCompletedAt(LocalDateTime.now());
-        figurineImport.setErrorMessage(errorMessage);
-        figurineImport.setTotalImported(totalImported);
-        figurineImport.setTotalSkipped(totalSkipped);
-
-        figurineImportRepository.save(figurineImport);
+        return figurineImportRepository.findAll().stream().limit(20)
+                .sorted(Comparator.comparing(FigurineImport::getCompletedAt).reversed())
+                .map(mapper::toFigurineImportResp).toList();
     }
 
     /**
