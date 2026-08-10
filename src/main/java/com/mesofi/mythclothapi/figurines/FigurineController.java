@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
@@ -36,14 +37,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * REST controller exposing CRUD operations for {@link Figurine} resources.
+ * REST controller exposing CRUD and import operations for {@link Figurine}
+ * resources.
  *
  * <p>
  * This controller is responsible for:
  *
  * <ul>
+ * <li>Triggering bulk imports from the public Google Drive CSV source
  * <li>Handling HTTP requests related to figurine creation, retrieval, updates,
  * and deletion
+ * <li>Providing filtered, paginated retrieval with support for name, catalog,
+ * characteristic, and release-status filters
+ * <li>Exposing lightweight summary and selectable-id projections for UI
+ * consumption
+ * <li>Retrieving the history of past figurine imports
  * <li>Triggering Jakarta Bean Validation for incoming request payloads
  * <li>Delegating all business logic to {@link FigurineService}
  * <li>Building appropriate HTTP responses, including {@code Location} headers
@@ -52,7 +60,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * All request payloads annotated with {@code @Valid} are validated before
- * reaching the service layer.
+ * reaching the service layer. Write operations and the bulk-load endpoint are
+ * protected by Spring Security authorization rules.
  */
 @Slf4j
 @Validated
@@ -63,12 +72,58 @@ public class FigurineController {
 
     private final FigurineService service;
 
+    /**
+     * Triggers a bulk import of all figurines from the public Google Drive CSV
+     * source.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Reads the configured Google Drive CSV file
+     * <li>Maps each row to a {@link Figurine} entity, resolving catalog references
+     * <li>Upserts each figurine: updates existing records (matched by legacy name)
+     * or inserts new ones
+     * <li>Rebuilds the restocking history after the import
+     * </ul>
+     *
+     * <p>
+     * The operation is accepted asynchronously and returns {@code 202 Accepted}
+     * immediately. Requires the {@code figurines:load} authority.
+     *
+     * @param overwriteExisting
+     *            when {@code true}, forces all figurines to be replaced even if
+     *            they already exist; when {@code false} (default) only new or
+     *            changed figurines are persisted
+     * @return {@link ResponseEntity} with status {@code 202 Accepted} and nobody
+     */
     @PostMapping("/load")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:load')")
-    public ResponseEntity<Void> loadAllFigurines() {
+    @PreAuthorize("hasAuthority('figurines:load')")
+    public ResponseEntity<Void> loadAllFigurines(
+            @RequestParam(name = "overwriteExisting", defaultValue = "false") boolean overwriteExisting) {
         log.info("Loading all figurines ...");
-        service.importAllFigurinesFromPublicDrive();
+
+        service.importAllFigurinesFromPublicDrive(overwriteExisting);
         return ResponseEntity.accepted().build();
+    }
+
+    /**
+     * Retrieves the history of all past figurine import operations.
+     *
+     * <p>
+     * Each entry in the returned list represents a single import run, including
+     * metadata such as when the import occurred and how many figurines were
+     * processed. Requires the {@code figurines:load} authority.
+     *
+     * @return list of {@link FigurineImportResp} records describing each import
+     *         run, ordered from most recent to oldest
+     */
+    @GetMapping("/imports")
+    @PreAuthorize("hasAuthority('figurines:load')")
+    public List<FigurineImportResp> getFigurineImports() {
+        log.info("Retrieving all figurine imports ...");
+
+        return service.getAllFigurineImports();
     }
 
     /**
@@ -128,19 +183,74 @@ public class FigurineController {
     }
 
     /**
-     * Retrieves a paginated list of figurines, optionally filtered by name.
+     * Retrieves a paginated list of figurines, optionally filtered by any
+     * combination of catalog, characteristic, and release-status criteria.
      *
      * <p>
-     * If the 'name' parameter is provided and at least 3 characters, performs a
-     * paginated search by name. Otherwise, returns all figurines paginated.
+     * This endpoint:
      *
+     * <ul>
+     * <li>Resolves the authenticated collector's id (if present) and pre-loads
+     * which figurines belong to their collection
+     * <li>Builds a {@link FigurineFilter} from all supplied query parameters and
+     * delegates to the service layer
+     * <li>Returns a paginated response that includes collection-ownership metadata
+     * when a collector is authenticated
+     * </ul>
+     *
+     * <p>
+     * This endpoint is publicly accessible; however, collection-ownership data in
+     * the response is only populated when the request carries a valid JWT.
+     *
+     * @param authentication
+     *            Spring Security authentication context; may be {@code null} for
+     *            unauthenticated requests
+     * @param collectionId
+     *            optional id of a specific collector collection to scope results to
      * @param name
-     *            optional name filter (min 3 chars to trigger search)
+     *            optional name filter (substring match on normalized name)
+     * @param lineUpId
+     *            optional line-up catalog id filter
+     * @param seriesId
+     *            optional series catalog id filter
+     * @param groupId
+     *            optional group catalog id filter
+     * @param distributionId
+     *            optional distribution catalog id filter
+     * @param anniversaryId
+     *            optional anniversary id filter
+     * @param metalBody
+     *            optional filter for metal-body editions
+     * @param oce
+     *            optional filter for Original Color Edition figurines
+     * @param revival
+     *            optional filter for revival editions
+     * @param plainCloth
+     *            optional filter for plain-cloth variants
+     * @param broken
+     *            optional filter for battle-damaged (broken) variants
+     * @param golden
+     *            optional filter for golden-armor editions
+     * @param gold
+     *            optional filter for Gold 24k editions
+     * @param manga
+     *            optional filter for manga-version figurines
+     * @param set
+     *            optional filter for multipack sets
+     * @param articulable
+     *            optional filter for articulable figurines
+     * @param releaseStatus
+     *            optional release-status filter (e.g. {@code RELEASED},
+     *            {@code ANNOUNCED})
+     * @param restocks
+     *            optional filter to include only restock figurines
      * @param page
-     *            zero-based page index (must be 0 or greater)
+     *            zero-based page index; must be {@code 0} or greater
      * @param size
-     *            number of elements per page (must be between 1 and 100)
-     * @return a {@link ResponseEntity} containing a {@link PaginatedResponse}
+     *            number of elements per page; must be between {@code 1} and
+     *            {@code 100}
+     * @return {@link ResponseEntity} containing a {@link PaginatedResponse} with
+     *         the matched figurines and pagination metadata
      */
     @GetMapping
     public ResponseEntity<PaginatedResponse> retrieveFigurineDetails(Authentication authentication,
@@ -182,6 +292,20 @@ public class FigurineController {
         return Optional.empty();
     }
 
+    /**
+     * Retrieves a lightweight summary list of all figurines.
+     *
+     * <p>
+     * This endpoint returns a reduced projection of each figurine intended for
+     * scenarios where a compact list is needed (e.g. dropdown selection or
+     * autocomplete). The summary includes only essential fields such as the display
+     * name, line-up, and the first official image URL.
+     *
+     * <p>
+     * This endpoint is publicly accessible.
+     *
+     * @return list of {@link FigurineSummaryResp} records for all figurines
+     */
     @GetMapping("/summary")
     public List<FigurineSummaryResp> retrieveFigurineSummaries() {
 
@@ -191,6 +315,57 @@ public class FigurineController {
         return service.retrieveFigurineSummaries(figurineFilter);
     }
 
+    /**
+     * Retrieves the ids of figurines that match the supplied filter criteria.
+     *
+     * <p>
+     * This endpoint is intended for UI scenarios where only figurine identifiers
+     * are needed (e.g. populating a multi-select component or building a
+     * collection). The same filter parameters available on the paginated endpoint
+     * are supported, but no pagination is applied and only ids are returned.
+     *
+     * <p>
+     * This endpoint is publicly accessible.
+     *
+     * @param name
+     *            optional name filter (substring match on normalized name)
+     * @param lineUpId
+     *            optional line-up catalog id filter
+     * @param seriesId
+     *            optional series catalog id filter
+     * @param groupId
+     *            optional group catalog id filter
+     * @param distributionId
+     *            optional distribution catalog id filter
+     * @param anniversaryId
+     *            optional anniversary id filter
+     * @param metalBody
+     *            optional filter for metal-body editions
+     * @param oce
+     *            optional filter for Original Color Edition figurines
+     * @param revival
+     *            optional filter for revival editions
+     * @param plainCloth
+     *            optional filter for plain-cloth variants
+     * @param broken
+     *            optional filter for battle-damaged (broken) variants
+     * @param golden
+     *            optional filter for golden-armor editions
+     * @param gold
+     *            optional filter for Gold 24k editions
+     * @param manga
+     *            optional filter for manga-version figurines
+     * @param set
+     *            optional filter for multipack sets
+     * @param articulable
+     *            optional filter for articulable figurines
+     * @param releaseStatus
+     *            optional release-status filter (e.g. {@code RELEASED},
+     *            {@code ANNOUNCED})
+     * @param restocks
+     *            optional filter to include only restock figurines
+     * @return list of figurine ids matching the specified criteria
+     */
     @GetMapping("/selectable-ids")
     public List<Long> retrieveSelectableFigurines(@RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,

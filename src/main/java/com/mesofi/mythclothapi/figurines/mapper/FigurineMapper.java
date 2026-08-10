@@ -38,11 +38,13 @@ import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineImport;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -72,6 +74,10 @@ public interface FigurineMapper {
 
     /** Formatter used to parse event dates coming from CSV or raw strings. */
     DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");
+
+    @Mapping(target = "imported", source = "totalImported")
+    @Mapping(target = "skipped", source = "totalSkipped")
+    FigurineImportResp toFigurineImportResp(FigurineImport importResult);
 
     /*
      * ============================ CSV → Figurine ============================

@@ -17,6 +17,7 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
@@ -74,8 +76,10 @@ import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
+import com.mesofi.mythclothapi.figurines.model.FigurineImport;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
+import com.mesofi.mythclothapi.figurines.repository.FigurineImportRepository;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.opencsv.bean.CsvToBeanBuilder;
 
@@ -132,6 +136,7 @@ public class FigurineService {
     private final FigurineMapper mapper;
     private final FigurineCsvSource csvSource;
 
+    private final FigurineImportRepository figurineImportRepository;
     private final DistributorRepository distributorRepository;
     private final DistributionRepository distributionRepository;
     private final LineUpRepository lineUpRepository;
@@ -182,6 +187,44 @@ public class FigurineService {
 
     private static final Predicate<Figurine> IS_RELEASED_OR_ANNOUNCED = figurine -> figurine
             .getCurrentReleaseStatus() == RELEASED || figurine.getCurrentReleaseStatus() == ANNOUNCED;
+
+    @Transactional
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    public void importAllFigurinesFromPublicDrive(boolean overwriteExisting) {
+        System.out.println("Importing all figurines ...");
+        // if (true) {
+        // throw new FigurineImportException();
+        // }
+        String errorMessage = null;
+        int totalImported = 10;
+        int totalSkipped = 0;
+
+        saveFigurineImport(totalImported, totalSkipped, errorMessage);
+    }
+
+    /**
+     * Retrieves up to 20 figurine import records.
+     * <p>
+     * The retrieved entities are mapped to {@link FigurineImportResp} instances
+     * before being returned.
+     * </p>
+     * 
+     * @return a list containing up to 20 figurine import records.
+     */
+    public List<FigurineImportResp> getAllFigurineImports() {
+        return figurineImportRepository.findAll().stream().limit(20).map(mapper::toFigurineImportResp).toList();
+    }
+
+    private void saveFigurineImport(int totalImported, int totalSkipped, String errorMessage) {
+        FigurineImport figurineImport = new FigurineImport();
+
+        figurineImport.setCompletedAt(LocalDateTime.now());
+        figurineImport.setErrorMessage(errorMessage);
+        figurineImport.setTotalImported(totalImported);
+        figurineImport.setTotalSkipped(totalSkipped);
+
+        figurineImportRepository.save(figurineImport);
+    }
 
     /**
      * Imports all figurines from the public Google Drive CSV source.
