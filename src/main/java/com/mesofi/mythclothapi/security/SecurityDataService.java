@@ -1,5 +1,9 @@
 package com.mesofi.mythclothapi.security;
 
+import static com.mesofi.mythclothapi.security.roles.model.RoleType.ADMIN;
+import static com.mesofi.mythclothapi.security.roles.model.RoleType.COLLECTOR;
+import static com.mesofi.mythclothapi.security.roles.model.RoleType.DEMO;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,30 +14,34 @@ import org.springframework.transaction.annotation.Transactional;
 import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 import com.mesofi.mythclothapi.security.rolepermissions.RolePermissionRepository;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.model.Role;
-import com.mesofi.mythclothapi.security.roles.model.Roles;
+import com.mesofi.mythclothapi.security.roles.model.RoleType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 
  * Service responsible for initializing the application's security data.
  *
  * <p>
- * Defines the roles and permissions available to the application and
- * establishes the relationships between them. During initialization, existing
- * roles and permissions are reused when available; otherwise, they are created.
+ * This service initializes the roles, permissions, and role-permission
+ * relationships required by the application. Existing roles and permissions are
+ * reused when available, while missing entries are created.
  * </p>
  *
  * <p>
- * The service also creates the configured role-permission relationships. The
- * initialization is skipped when role-permission data already exists.
+ * Role-permission relationships are initialized only when no existing
+ * relationships are found. This prevents the initialization process from
+ * recreating relationships that have already been persisted.
  * </p>
- * 
+ *
+ * <p>
+ * The configured roles and permissions are defined by {@link #AVAILABLE_ROLES},
+ * {@link #AVAILABLE_PERMISSIONS}, and {@link #ROLE_PERMISSIONS_MAP}.
+ * </p>
  */
 @Slf4j
 @Service
@@ -45,12 +53,18 @@ public class SecurityDataService {
     private final RolePermissionRepository rolePermissionRepository;
 
     /**
-     * Roles configured and available to the application.
+     * Roles that are available to the application.
      */
-    private static final List<String> AVAILABLE_ROLES = List.of(Roles.ADMIN, Roles.COLLECTOR, Roles.DEMO);
+    private static final List<RoleType> AVAILABLE_ROLES = List.of(ADMIN, COLLECTOR, DEMO);
 
     /**
-     * Permissions configured and available to the application.
+     * Permissions that are available to the application.
+     *
+     * <p>
+     * This list represents the complete set of permissions recognized by the
+     * application's security model. Each permission is created in the database if
+     * it does not already exist.
+     * </p>
      */
     private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.PERMISSIONS_DELETE,
             Permissions.PERMISSIONS_READ, Permissions.PERMISSIONS_UPDATE, Permissions.PERMISSIONS_WRITE,
@@ -86,24 +100,40 @@ public class SecurityDataService {
             Permissions.STORES_WRITE);
 
     /**
-     * Defines the permissions assigned to each application role.
+     * Defines the initial set of permissions assigned to each application role.
+     *
+     * <p>
+     * The ADMIN and DEMO roles receive all available permissions, while the
+     * COLLECTOR role receives only the permissions required for standard collector
+     * functionality.
+     * </p>
      */
-    private static final Map<String, List<String>> ROLE_PERMISSIONS_MAP = Map.of(Roles.ADMIN, AVAILABLE_PERMISSIONS,
-            Roles.COLLECTOR,
+    private static final Map<RoleType, List<String>> ROLE_PERMISSIONS_MAP = Map.of(ADMIN, AVAILABLE_PERMISSIONS,
+            COLLECTOR,
             List.of(Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_READ,
                     Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_READ,
                     Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_IMAGES_READ,
                     Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_STORES_READ, Permissions.PURCHASES_ADD,
                     Permissions.PURCHASES_READ, Permissions.PURCHASES_UPDATE, Permissions.STATS_READ),
-            Roles.DEMO, AVAILABLE_PERMISSIONS);
+            DEMO, AVAILABLE_PERMISSIONS);
 
     /**
-     * In-memory lookup of initialized roles by role name.
+     * In-memory lookup of roles initialized during the current operation.
+     *
+     * <p>
+     * The map associates each {@link RoleType} with its corresponding persisted
+     * {@link Role} entity.
+     * </p>
      */
-    private static final Map<String, Role> roleMap = new HashMap<>();
+    private static final Map<RoleType, Role> roleMap = new HashMap<>();
 
     /**
-     * In-memory lookup of initialized permissions by permission name.
+     * In-memory lookup of permissions initialized during the current operation.
+     *
+     * <p>
+     * The map associates each permission name with its corresponding persisted
+     * {@link Permission} entity.
+     * </p>
      */
     private static final Map<String, Permission> permissionMap = new HashMap<>();
 
@@ -112,15 +142,21 @@ public class SecurityDataService {
      * relationships.
      *
      * <p>
-     * If role-permission data already exists, initialization is skipped to prevent
-     * recreating the existing security configuration.
+     * If at least one role-permission relationship already exists, the
+     * initialization is skipped. This assumes that the presence of existing
+     * role-permission data indicates that the security configuration has already
+     * been initialized.
      * </p>
      *
      * <p>
      * Existing roles and permissions are reused when found in the database. Missing
-     * entries are created before the configured role-permission relationships are
-     * persisted.
+     * roles and permissions are created before the configured role-permission
+     * relationships are persisted.
      * </p>
+     *
+     * @implNote This method is transactional to ensure that the initialization of
+     *           roles, permissions, and their relationships is performed within a
+     *           single transaction.
      */
     @Transactional
     public void initializeSecurityData() {
@@ -132,12 +168,12 @@ public class SecurityDataService {
         }
 
         // Create the roles
-        for (String role : AVAILABLE_ROLES) {
+        for (RoleType role : AVAILABLE_ROLES) {
             roleMap.put(role, getOrCreateRole(role));
         }
 
-        log.info("Roles initialized correctly: {}, {}, {}", roleMap.get(Roles.ADMIN).getName(),
-                roleMap.get(Roles.COLLECTOR).getName(), roleMap.get(Roles.DEMO).getName());
+        log.info("Roles initialized correctly: {}, {}, {}", roleMap.get(ADMIN).getName(),
+                roleMap.get(COLLECTOR).getName(), roleMap.get(DEMO).getName());
 
         // Create the permissions
         for (String permission : AVAILABLE_PERMISSIONS) {
@@ -147,8 +183,8 @@ public class SecurityDataService {
         log.info("Permissions initialized correctly: {} permissions retrieved.", permissionMap.size());
 
         // Create role-permission relationships
-        for (Map.Entry<String, List<String>> entry : ROLE_PERMISSIONS_MAP.entrySet()) {
-            String roleName = entry.getKey();
+        for (Map.Entry<RoleType, List<String>> entry : ROLE_PERMISSIONS_MAP.entrySet()) {
+            RoleType roleName = entry.getKey();
             List<String> permissions = entry.getValue();
 
             for (String permission : permissions) {
@@ -163,27 +199,28 @@ public class SecurityDataService {
     }
 
     /**
-     * Retrieves an existing role by name or creates it when it does not exist.
+     * Retrieves an existing role by its display name or creates a new role when no
+     * matching role exists.
      *
      * @param roleName
-     *            the name of the role
+     *            the role type to retrieve or create
      * @return the existing or newly created role
      */
-    private Role getOrCreateRole(String roleName) {
-        return roleRepository.findByName(roleName).orElseGet(() -> {
+    private Role getOrCreateRole(RoleType roleName) {
+        return roleRepository.findByName(roleName.getDisplayName()).orElseGet(() -> {
             Role newRole = new Role();
-            newRole.setName(roleName);
+            newRole.setName(roleName.getDisplayName());
 
             return roleRepository.save(newRole);
         });
     }
 
     /**
-     * Retrieves an existing permission by name or creates it when it does not
-     * exist.
+     * Retrieves an existing permission by name or creates a new permission when no
+     * matching permission exists.
      *
      * @param permissionName
-     *            the name of the permission
+     *            the permission name to retrieve or create
      * @return the existing or newly created permission
      */
     private Permission getOrCreatePermission(String permissionName) {

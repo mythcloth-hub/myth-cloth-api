@@ -155,12 +155,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RoleAlreadyExistsException.class)
     public ProblemDetail handleRoleDuplicateException(RoleAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(RoleNotFoundException.class)
     public ProblemDetail handleRoleNotFound(RoleNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(PermissionAlreadyExistsException.class)
@@ -175,7 +175,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RolePermissionAlreadyExistsException.class)
     public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(Exception.class)

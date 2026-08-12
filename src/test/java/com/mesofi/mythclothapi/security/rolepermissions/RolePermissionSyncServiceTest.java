@@ -21,7 +21,6 @@ import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
@@ -47,7 +46,7 @@ public class RolePermissionSyncServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> rolePermissionSyncService.syncPermissions(99L, request))
                 .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role not found");
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 99 was not found");
                     assertThat(ex.getId()).isEqualTo(99L);
                 });
 

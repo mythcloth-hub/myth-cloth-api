@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 
 import lombok.RequiredArgsConstructor;
 

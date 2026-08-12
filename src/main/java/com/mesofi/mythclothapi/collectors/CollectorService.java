@@ -31,7 +31,7 @@ import com.mesofi.mythclothapi.security.ApiTokenService;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
-import com.mesofi.mythclothapi.security.roles.model.Roles;
+import com.mesofi.mythclothapi.security.roles.model.RoleType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -248,8 +248,9 @@ public class CollectorService {
             Map<ProviderType, String> adminMap = bootstrapProperties.admin();
             boolean isAdmin = adminMap.get(providerType).equals(userId);
 
-            String roleName = isAdmin ? Roles.ADMIN : providerType == LOCAL ? Roles.DEMO : Roles.COLLECTOR;
-            Role currRole = roleRepository.findByName(roleName).orElseThrow(() -> new RoleNotFoundException(roleName));
+            RoleType roleName = isAdmin ? RoleType.ADMIN : providerType == LOCAL ? RoleType.DEMO : RoleType.COLLECTOR;
+            Role currRole = roleRepository.findByName(roleName.getDisplayName())
+                    .orElseThrow(() -> new RoleNotFoundException(roleName.getDisplayName()));
 
             log.info("Creating new collector for {} user {}", providerType, userId);
 

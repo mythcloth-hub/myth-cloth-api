@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines.imports;
+package com.mesofi.mythclothapi.figurineimports.csvsource;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -16,9 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.mesofi.mythclothapi.figurineimports.config.FigurineImportProperties;
-import com.mesofi.mythclothapi.figurineimports.csvsource.GoogleDriveImportCsvSource;
 
-class GoogleDriveCsvSourceTest {
+public class GoogleDriveImportCsvSourceTest {
 
     @Test
     void openReader_shouldReturnReaderForResolvedUrl() throws IOException {
