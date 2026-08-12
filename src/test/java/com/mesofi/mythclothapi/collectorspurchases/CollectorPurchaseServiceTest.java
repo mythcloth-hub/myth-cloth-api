@@ -41,7 +41,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseFigurineRepository;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
+import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 

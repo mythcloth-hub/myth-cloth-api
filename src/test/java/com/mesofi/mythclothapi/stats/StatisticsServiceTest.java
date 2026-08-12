@@ -44,7 +44,7 @@ import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 class StatisticsServiceTest {
 
     private static final FigurineFilter EMPTY_FILTER = new FigurineFilter(null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null);
 
     @InjectMocks
     private StatisticsService service;
@@ -335,7 +335,7 @@ class StatisticsServiceTest {
     private Anniversary anniversary(Long id, String description) {
         Anniversary anniversary = new Anniversary();
         anniversary.setId(id);
-        anniversary.setDescription(description);
+        // anniversary.setDescription(description);
         return anniversary;
     }
 

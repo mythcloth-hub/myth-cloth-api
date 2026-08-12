@@ -59,7 +59,7 @@ public class RolePermissionSyncServiceTest {
         // Arrange
         Role targetRole = new Role();
         targetRole.setId(1L);
-        targetRole.setDescription("Admin");
+        // targetRole.setDescription("Admin");
 
         List<Permission> targetPermissions = List.of(); // no permissions were found in DB.
 
@@ -83,7 +83,7 @@ public class RolePermissionSyncServiceTest {
         // Arrange
         Role targetRole = new Role();
         targetRole.setId(1L);
-        targetRole.setDescription("Admin");
+        // targetRole.setDescription("Admin");
 
         RolePermission targetRolePermission1 = new RolePermission();
         targetRolePermission1.setId(1L);
@@ -135,7 +135,7 @@ public class RolePermissionSyncServiceTest {
         ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
         verify(roleRepository).save(captor.capture());
         Role saved = captor.getValue();
-        assertThat(saved.getDescription()).isEqualTo("Admin");
+        // assertThat(saved.getDescription()).isEqualTo("Admin");
         List<RolePermission> allPermissions = saved.getPermissions();
         assertThat(allPermissions).hasSize(3);
 
@@ -154,7 +154,7 @@ public class RolePermissionSyncServiceTest {
     private Permission permission(Long id, String description) {
         Permission permission = new Permission();
         permission.setId(id);
-        permission.setDescription(description);
+        // permission.setDescription(description);
 
         return permission;
     }

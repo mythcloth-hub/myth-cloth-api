@@ -1,10 +1,16 @@
 logging:
   level:
     root: INFO
-    org.hibernate.SQL: DEBUG  # <- Shows SQL statements
-    org.hibernate.orm.jdbc.bind: TRACE   # <- Shows query parameters
+    org.hibernate.SQL: INFO  # <- Shows SQL statements
+    org.hibernate.orm.jdbc.bind: INFO  # <- Shows query parameters
 
 myth-cloth:
+  bootstrap:
+    admin:
+      FACEBOOK: 123456
+      GOOGLE: 123456
+      LOCAL: 123456
+
   demo:
     enabled: false
     provider-user-id: 11111
@@ -14,6 +20,14 @@ myth-cloth:
   facebook:
     app-id: "0000"
     app-secret: "1111"
+    graph-url: http://localhost.facebook.com/
+
+  google:
+    client-id: "90909090"
+
+  import:
+    drive-url: http://localhost:9090/spreadsheets/d/%s/export?format=csv
+    file-id: fake
 
   rabbit:
     enabled: false
@@ -22,14 +36,19 @@ myth-cloth:
     jwt:
       secret: "WWOAnyRkezhKw5xeoCJZ1J/0+qy6I7azOjt19SlfC4M="
       # Use the following command to generate a new secret:  `openssl rand -base64 32`
-    cors-url: "http://localhost:5173"
+    cors-urls:
+      - "http://localhost:5173"
 
 spring:
+
   rabbitmq:
     host: localhost
     username: intg-mythcloth
     password: intg-mythcloth
+    virtual-host: /
+    ssl:
+      enabled: false
 
   sql:
     init:
-      mode: never   # FORCE data.sql to run with 'always'
+      mode: never   # Do not run db/*.sql on startup in integration

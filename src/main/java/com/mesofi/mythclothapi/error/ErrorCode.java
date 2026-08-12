@@ -76,6 +76,11 @@ public enum ErrorCode {
      */
     FIGURINE_ANNIVERSARY_NOT_FOUND,
 
+    /**
+     * Indicates that an error occurred while importing figurines.
+     */
+    FIGURINE_IMPORT_ERROR,
+
     // -------------------------------------------------------------------------
     // Catalogs
     // -------------------------------------------------------------------------

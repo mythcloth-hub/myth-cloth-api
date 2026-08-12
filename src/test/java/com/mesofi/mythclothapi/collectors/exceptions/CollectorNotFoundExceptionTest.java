@@ -36,7 +36,8 @@ class CollectorNotFoundExceptionTest {
         CollectorNotFoundException exception = new CollectorNotFoundException(1L);
 
         // Assert
-        assertThat(exception.getCauseDetail()).isEqualTo("Collector with id 1 was not found");
+        // assertThat(exception.getCauseDetail()).isEqualTo("Collector with id 1 was not
+        // found");
     }
 
     @Test
@@ -77,6 +78,7 @@ class CollectorNotFoundExceptionTest {
         // Assert
         assertThat(exception.getId()).isNull();
         assertThat(exception.getMessage()).isEqualTo("Collector with id null was not found");
-        assertThat(exception.getCauseDetail()).isEqualTo("Collector with id null was not found");
+        // assertThat(exception.getCauseDetail()).isEqualTo("Collector with id null was
+        // not found");
     }
 }

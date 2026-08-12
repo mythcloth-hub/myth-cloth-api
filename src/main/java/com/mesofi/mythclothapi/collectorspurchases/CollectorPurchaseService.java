@@ -33,7 +33,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFiguri
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseFigurineRepository;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
+import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;

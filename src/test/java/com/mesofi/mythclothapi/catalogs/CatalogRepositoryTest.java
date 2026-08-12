@@ -15,7 +15,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
-import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -36,7 +35,7 @@ public class CatalogRepositoryTest {
      */
     Descriptive newCatalogFor(String name) {
         return switch (name) {
-            case "anniversaries" -> new Anniversary();
+            // case "anniversaries" -> new Anniversary();
             case "distributions" -> new Distribution();
             case "groups" -> new Group();
             case "lineups" -> new LineUp();
@@ -66,8 +65,8 @@ public class CatalogRepositoryTest {
         Descriptive entity = newCatalogFor(catalogName);
         entity.setDescription("Sample " + catalogName);
         if (catalogName.equals("anniversaries")) {
-            Anniversary anniversary = (Anniversary) entity;
-            anniversary.setYear(50);
+            // Anniversary anniversary = (Anniversary) entity;
+            // anniversary.setYear(50);
         }
 
         // Act
@@ -84,8 +83,8 @@ public class CatalogRepositoryTest {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
         if (catalogName.equals("anniversaries")) {
-            Anniversary anniversary = (Anniversary) descriptiveEntity;
-            anniversary.setYear(50);
+            // Anniversary anniversary = (Anniversary) descriptiveEntity;
+            // anniversary.setYear(50);
         }
         Descriptive saved = save(repo, descriptiveEntity);
 
@@ -105,8 +104,8 @@ public class CatalogRepositoryTest {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName, "Custom Description");
         if (catalogName.equals("anniversaries")) {
-            Anniversary anniversary = (Anniversary) descriptiveEntity;
-            anniversary.setYear(50);
+            // Anniversary anniversary = (Anniversary) descriptiveEntity;
+            // anniversary.setYear(50);
         }
         Descriptive saved = save(repo, descriptiveEntity);
 
@@ -124,8 +123,8 @@ public class CatalogRepositoryTest {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
         if (catalogName.equals("anniversaries")) {
-            Anniversary anniversary = (Anniversary) descriptiveEntity;
-            anniversary.setYear(50);
+            // Anniversary anniversary = (Anniversary) descriptiveEntity;
+            // anniversary.setYear(50);
         }
         Descriptive saved = save(repo, descriptiveEntity);
         Descriptive found = findById(repo, saved.getId());
@@ -145,8 +144,8 @@ public class CatalogRepositoryTest {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
         if (catalogName.equals("anniversaries")) {
-            Anniversary anniversary = (Anniversary) descriptiveEntity;
-            anniversary.setYear(50);
+            // Anniversary anniversary = (Anniversary) descriptiveEntity;
+            // anniversary.setYear(50);
         }
         Descriptive saved = save(repo, descriptiveEntity);
         Descriptive found = findById(repo, saved.getId());

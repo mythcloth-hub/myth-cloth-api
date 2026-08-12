@@ -1,7 +1,10 @@
 package com.mesofi.mythclothapi.anniversaries;
 
+import static com.mesofi.mythclothapi.catalogs.CatalogService.CATALOG_CONTEXT_CACHE;
+
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class AnniversaryService {
     private final AnniversaryMapper mapper;
 
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public AnniversaryResp createAnniversary(AnniversaryReq request) {
         log.info("Creating anniversary: {} - {}", request.description(), request.year());
 
@@ -43,6 +47,7 @@ public class AnniversaryService {
     }
 
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public AnniversaryResp updateAnniversary(Long id, AnniversaryReq request) {
         log.info("Updating anniversary {} to {}", id, request.description());
         var existing = repository.findById(id).orElseThrow(() -> new AnniversaryNotFoundException(id));
@@ -55,6 +60,8 @@ public class AnniversaryService {
         return mapper.toAnniversaryResp(saved);
     }
 
+    @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public void removeAnniversary(Long id) {
         log.warn("Removing anniversary {}", id);
 

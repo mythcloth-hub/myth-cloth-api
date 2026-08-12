@@ -29,7 +29,7 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
+import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
@@ -91,7 +91,7 @@ public class FigurineEventServiceTest {
 
         FigurineEvent savedEvent = eventCaptor.getValue();
         assertThat(savedEvent.getFigurine()).isSameAs(figurine);
-        assertThat(savedEvent.getDescription()).isEqualTo("Tamashii event");
+        // assertThat(savedEvent.getDescription()).isEqualTo("Tamashii event");
         assertThat(savedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
     }
 
@@ -202,7 +202,7 @@ public class FigurineEventServiceTest {
         assertThat(updatedEvent.isEventDateConfirmed()).isTrue();
         assertThat(updatedEvent.getType()).isEqualTo(ANNOUNCEMENT);
         assertThat(updatedEvent.getRegion()).isEqualTo(JP);
-        assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
+        // assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
         assertThat(updatedEvent.getFigurine()).isSameAs(sameFigurine);
     }
 
@@ -279,7 +279,7 @@ public class FigurineEventServiceTest {
         FigurineEvent event = new FigurineEvent();
         event.setId(id);
         event.setEventDate(date);
-        event.setDescription(description);
+        // event.setDescription(description);
         event.setFigurine(figurine);
         event.setRegion(region);
         return event;

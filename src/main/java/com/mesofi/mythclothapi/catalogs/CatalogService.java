@@ -9,18 +9,25 @@ import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
+import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
+import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.common.Descriptive;
+import com.mesofi.mythclothapi.distributors.DistributorRepository;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +38,13 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CatalogService {
 
+    public static final String CATALOG_CONTEXT_CACHE = "catalogContext";
+
     private final Map<String, IdDescRepository<?, Long>> repositories;
     private final CatalogMapper mapper;
+
+    private final DistributorRepository distributorRepository;
+    private final AnniversaryRepository anniversaryRepository;
 
     /** Maps resource names to entity-conversion functions. */
     private Map<CatalogType, Function<CatalogReq, Descriptive>> entityFactories;
@@ -44,6 +56,7 @@ public class CatalogService {
     }
 
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public CatalogResp createCatalog(@NotEmpty String catalogName, @NotNull CatalogReq request) {
         Descriptive saved = saveEntry(catalogName, mapToEntity(catalogName, request));
         return mapper.toCatalogResp(saved);
@@ -66,7 +79,22 @@ public class CatalogService {
         return findByDescription(catalogName, description);
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(value = CATALOG_CONTEXT_CACHE)
+    public CatalogContext retrieveCatalogContext() {
+
+        List<Distributor> distributors = distributorRepository.findAll();
+        List<Descriptive> distributions = findAll(CatalogType.distributions.name());
+        List<Descriptive> lineUps = findAll(CatalogType.lineups.name());
+        List<Descriptive> series = findAll(CatalogType.series.name());
+        List<Descriptive> groups = findAll(CatalogType.groups.name());
+        List<Anniversary> anniversaries = anniversaryRepository.findAll();
+
+        return new CatalogContext(distributors, distributions, lineUps, series, groups, anniversaries);
+    }
+
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public CatalogResp updateCatalog(@NotEmpty String catalogName, @NotNull Long id, @NotNull CatalogReq request) {
         Descriptive existing = findByIdEntry(catalogName, id);
         // updates the description
@@ -76,6 +104,7 @@ public class CatalogService {
     }
 
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public void deleteCatalog(@NotEmpty String catalogName, @NotNull Long id) {
         Descriptive existing = findByIdEntry(catalogName, id);
         deleteEntry(catalogName, existing);

@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines;
+package com.mesofi.mythclothapi.figurineimports;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -13,6 +13,7 @@ import lombok.Data;
 @Data
 @ConfigurationProperties(prefix = "myth-cloth.import")
 public class FigurineImportProperties {
+
     /**
      * URL template used to fetch the CSV, expected to contain a {@code %s}
      * placeholder for the configured file id.

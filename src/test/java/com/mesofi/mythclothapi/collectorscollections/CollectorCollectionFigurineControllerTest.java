@@ -191,7 +191,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void assignFigurinesToCollections_shouldReturnNotFound_whenCollectorDoesNotExist() throws Exception {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("test", "test desc"));
+                new CollectorCollectionReq("test", "test desc", null));
 
         doThrow(new CollectorNotFoundException(123L)).when(service).assignFigurinesToCollections(123L, req);
 
@@ -214,7 +214,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void assignFigurinesToCollections_shouldReturnConflict_whenCollectionAlreadyExists() throws Exception {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("my collection", "test desc"));
+                new CollectorCollectionReq("my collection", "test desc", null));
 
         doThrow(new CollectorCollectionAlreadyExistsException("my collection")).when(service)
                 .assignFigurinesToCollections(123L, req);
@@ -292,7 +292,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void retrieveCollections_shouldReturnCollectorCollections_whenRequestIsAuthenticated() throws Exception {
 
-        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", "test desc", 1, List.of(1L));
+        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", "test desc", null, 1, List.of(1L));
         when(service.retrieveCollections(123L)).thenReturn(List.of(resp));
 
         mockMvc.perform(get("/collections").contentType(MediaType.APPLICATION_JSON)
@@ -356,8 +356,8 @@ class CollectorCollectionFigurineControllerTest {
 
     @Test
     void updateCollection_shouldReturnUpdatedCollection_whenRequestIsAuthenticated() throws Exception {
-        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", "Updated desc", 0, List.of());
-        when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", "Updated desc")))
+        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", "Updated desc", null, 0, List.of());
+        when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc")))
                 .thenReturn(resp);
 
         mockMvc.perform(put("/collections/2").contentType(MediaType.APPLICATION_JSON)
@@ -368,7 +368,7 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(jsonPath("$.name").value("Updated"))
                 .andExpect(jsonPath("$.description").value("Updated desc"));
 
-        verify(service).updateCollection(123L, 2L, new CollectorCollectionReq("Updated", "Updated desc"));
+        verify(service).updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc"));
     }
 
     @Test
