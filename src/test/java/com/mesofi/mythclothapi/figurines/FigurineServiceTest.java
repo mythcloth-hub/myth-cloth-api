@@ -72,11 +72,11 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
-import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
@@ -110,7 +110,7 @@ public class FigurineServiceTest {
     @MockitoBean
     private CurrencyRegionResolver currencyRegionResolver;
     @MockitoBean
-    private FigurineCsvSource figurineCsvSource;
+    private FigurineImportCsvSource figurineImportCsvSource;
     @MockitoBean
     private CollectorRepository collectorRepository;
     @MockitoBean
@@ -122,7 +122,7 @@ public class FigurineServiceTest {
         mockCatalogRepositories();
 
         IOException rootCause = new IOException("boom");
-        when(figurineCsvSource.openReader()).thenThrow(rootCause);
+        when(figurineImportCsvSource.openReader()).thenThrow(rootCause);
 
         // Act + Assert
         // assertThatThrownBy(() -> figurineService.importAllFigurinesFromPublicDrive())
@@ -144,7 +144,7 @@ public class FigurineServiceTest {
 
         String filename = "MythCloth Catalog - CatalogMyth.csv";
         mockCatalogRepositories();
-        when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
+        when(figurineImportCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
         when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
         // Act
@@ -152,7 +152,7 @@ public class FigurineServiceTest {
 
         // Verify
         verifyCatalogRepositoryInteractions();
-        verify(figurineCsvSource).openReader();
+        verify(figurineImportCsvSource).openReader();
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);
@@ -174,7 +174,7 @@ public class FigurineServiceTest {
 
         String filename = "MythCloth Catalog - CatalogMythDuplicates.csv";
         mockCatalogRepositories();
-        when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
+        when(figurineImportCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
         when(figurineRepository.saveAllAndFlush(any())).thenReturn(figurines);
 
         // Act
@@ -182,7 +182,7 @@ public class FigurineServiceTest {
 
         // Verify
         verifyCatalogRepositoryInteractions();
-        verify(figurineCsvSource).openReader();
+        verify(figurineImportCsvSource).openReader();
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Iterable<Figurine>> captor = ArgumentCaptor.forClass(Iterable.class);

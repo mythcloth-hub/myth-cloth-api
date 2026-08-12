@@ -9,6 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.mesofi.mythclothapi.figurineimports.FigurineImportProperties;
+
 import io.micrometer.core.aop.TimedAspect;
 
 @ActiveProfiles("test")

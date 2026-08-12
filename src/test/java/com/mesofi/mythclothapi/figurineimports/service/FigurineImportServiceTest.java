@@ -28,8 +28,8 @@ import com.mesofi.mythclothapi.figurineimports.FigurineImport;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportException;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportRepository;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportResp;
+import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
 import com.mesofi.mythclothapi.figurines.FigurineService;
-import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -51,7 +51,7 @@ public class FigurineImportServiceTest {
     @MockitoBean
     private FigurineRepository figurineRepository;
     @MockitoBean
-    private FigurineCsvSource figurineCsvSource;
+    private FigurineImportCsvSource figurineImportCsvSource;
     @MockitoBean
     private FigurineImportHistoryService figurineImportHistoryService;
     @MockitoBean
@@ -61,7 +61,7 @@ public class FigurineImportServiceTest {
     void importFromPublicDrive_shouldThrowFigurineImportException_whenCsvSourceOpenFails() throws IOException {
 
         IOException rootCause = new IOException("boom");
-        when(figurineCsvSource.openReader()).thenThrow(rootCause);
+        when(figurineImportCsvSource.openReader()).thenThrow(rootCause);
 
         // Act + Assert
         assertThatThrownBy(() -> figurineImportService.importAllFigurinesFromPublicDrive())
@@ -74,7 +74,7 @@ public class FigurineImportServiceTest {
     @Test
     void importFromPublicDrive_shouldThrowFigurineImportException_whenUnhandledExceptionOccurs() throws IOException {
 
-        when(figurineCsvSource.openReader()).thenThrow(new RuntimeException("boom"));
+        when(figurineImportCsvSource.openReader()).thenThrow(new RuntimeException("boom"));
 
         // Act + Assert
         assertThatThrownBy(() -> figurineImportService.importAllFigurinesFromPublicDrive())
@@ -97,7 +97,7 @@ public class FigurineImportServiceTest {
         List<Figurine> existingFigurines = getExistingFigurines(figurines.subList(0, figurines.size()));
 
         when(catalogService.retrieveCatalogContext()).thenReturn(catalogContext);
-        when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
+        when(figurineImportCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
         when(figurineRepository
                 .findByLegacyNameInOrderById(figurinesCsv.stream().map(FigurineCsv::getOriginalName).toList()))
                 .thenReturn(existingFigurines);
@@ -112,7 +112,7 @@ public class FigurineImportServiceTest {
         verify(figurineImportHistoryService).saveFigurineImport(12, null);
         verify(figurineService).rebuildRestockHistory(any());
         verify(catalogService).retrieveCatalogContext();
-        verify(figurineCsvSource).openReader();
+        verify(figurineImportCsvSource).openReader();
         verify(figurineRepository)
                 .findByLegacyNameInOrderById(figurinesCsv.stream().map(FigurineCsv::getOriginalName).toList());
         verify(figurineService, times(12)).initializeFigurineForUpdate(any(Figurine.class), any(Figurine.class));
@@ -132,7 +132,7 @@ public class FigurineImportServiceTest {
         List<Figurine> existingFigurines = getExistingFigurines(figurines.subList(3, 6));
 
         when(catalogService.retrieveCatalogContext()).thenReturn(catalogContext);
-        when(figurineCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
+        when(figurineImportCsvSource.openReader()).thenReturn(loadImportCsvFixture(filename));
         when(figurineRepository
                 .findByLegacyNameInOrderById(figurinesCsv.stream().map(FigurineCsv::getOriginalName).toList()))
                 .thenReturn(existingFigurines);
@@ -149,7 +149,7 @@ public class FigurineImportServiceTest {
         verify(figurineImportHistoryService).saveFigurineImport(12, null);
         verify(figurineService).rebuildRestockHistory(any());
         verify(catalogService).retrieveCatalogContext();
-        verify(figurineCsvSource).openReader();
+        verify(figurineImportCsvSource).openReader();
         verify(figurineRepository)
                 .findByLegacyNameInOrderById(figurinesCsv.stream().map(FigurineCsv::getOriginalName).toList());
         verify(figurineService, times(9)).initializeFigurineForCreate(any(Figurine.class));

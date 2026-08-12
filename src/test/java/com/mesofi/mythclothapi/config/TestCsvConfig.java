@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 
-import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
+import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
 
 /**
  * Test-only configuration that provides a deterministic CSV source fixture for
@@ -16,13 +16,13 @@ import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
 public class TestCsvConfig {
 
     /**
-     * Creates a {@link FigurineCsvSource} backed by the catalog CSV file bundled in
-     * test resources.
+     * Creates a {@link FigurineImportCsvSource} backed by the catalog CSV file
+     * bundled in test resources.
      *
      * @return CSV source for import-related tests
      */
     @Bean
-    public FigurineCsvSource testCsvSource() {
+    public FigurineImportCsvSource testCsvSource() {
         return () -> {
             ClassPathResource resource = new ClassPathResource("import/figurines/MythCloth Catalog - CatalogMyth.csv");
             return new InputStreamReader(resource.getInputStream());

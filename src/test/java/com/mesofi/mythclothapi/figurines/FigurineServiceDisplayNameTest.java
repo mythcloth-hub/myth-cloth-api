@@ -28,7 +28,7 @@ import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
-import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
+import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -39,7 +39,7 @@ class FigurineServiceDisplayNameTest {
     @Mock
     private FigurineMapper mapper;
     @Mock
-    private FigurineCsvSource csvSource;
+    private FigurineImportCsvSource figurineImportCsvSource;
     @Mock
     private DistributorRepository distributorRepository;
     @Mock

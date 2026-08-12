@@ -15,7 +15,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import com.mesofi.mythclothapi.figurines.FigurineImportProperties;
+import com.mesofi.mythclothapi.figurineimports.FigurineImportProperties;
+import com.mesofi.mythclothapi.figurineimports.csvsource.GoogleDriveImportCsvSource;
 
 class GoogleDriveCsvSourceTest {
 
@@ -23,7 +24,7 @@ class GoogleDriveCsvSourceTest {
     void openReader_shouldReturnReaderForResolvedUrl() throws IOException {
         // Arrange
         FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
-        GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
+        GoogleDriveImportCsvSource source = new GoogleDriveImportCsvSource(properties);
         Path csvPath = Files.createTempFile("google-drive-csv-source", ".csv");
         Files.writeString(csvPath, "id,name\n1,Aiolos", StandardCharsets.UTF_8);
         when(properties.buildUrl()).thenReturn(csvPath.toUri().toString());
@@ -44,7 +45,7 @@ class GoogleDriveCsvSourceTest {
     void openReader_shouldPropagateIOException_whenUrlCannotBeOpened() {
         // Arrange
         FigurineImportProperties properties = Mockito.mock(FigurineImportProperties.class);
-        GoogleDriveCsvSource source = new GoogleDriveCsvSource(properties);
+        GoogleDriveImportCsvSource source = new GoogleDriveImportCsvSource(properties);
         when(properties.buildUrl()).thenReturn("file:///path/that/does/not/exist.csv");
 
         // Act + Assert
