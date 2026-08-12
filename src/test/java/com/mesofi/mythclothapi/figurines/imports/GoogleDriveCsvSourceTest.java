@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import com.mesofi.mythclothapi.figurineimports.FigurineImportProperties;
+import com.mesofi.mythclothapi.figurineimports.config.FigurineImportProperties;
 import com.mesofi.mythclothapi.figurineimports.csvsource.GoogleDriveImportCsvSource;
 
 class GoogleDriveCsvSourceTest {

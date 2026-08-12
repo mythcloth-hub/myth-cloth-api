@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurineimports;
+package com.mesofi.mythclothapi.figurineimports.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

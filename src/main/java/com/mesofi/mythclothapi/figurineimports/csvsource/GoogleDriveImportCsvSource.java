@@ -8,7 +8,7 @@ import java.net.URI;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.mesofi.mythclothapi.figurineimports.FigurineImportProperties;
+import com.mesofi.mythclothapi.figurineimports.config.FigurineImportProperties;
 
 import lombok.RequiredArgsConstructor;
 
