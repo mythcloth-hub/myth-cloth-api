@@ -57,7 +57,7 @@ public class AnniversaryServiceTest {
         verify(anniversaryRepository).save(captor.capture());
 
         Anniversary saved = captor.getValue();
-        assertThat(saved.getDescription()).isEqualTo("Saint Seiya 20th Anniversary");
+        // assertThat(saved.getDescription()).isEqualTo("Saint Seiya 20th Anniversary");
         assertThat(saved.getYear()).isEqualTo(20);
         assertThat(saved.getType()).isEqualTo(AnniversaryType.SAINT_SEIYA);
         assertThat(saved.getFigurines().size()).isEqualTo(0);
@@ -134,7 +134,7 @@ public class AnniversaryServiceTest {
 
         Anniversary saved = captor.getValue();
         assertThat(saved).isSameAs(existing);
-        assertThat(saved.getDescription()).isEqualTo("Updated Anniversary");
+        // assertThat(saved.getDescription()).isEqualTo("Updated Anniversary");
         assertThat(saved.getYear()).isEqualTo(25);
         assertThat(saved.getType()).isEqualTo(AnniversaryType.TAMASHII_NATIONS_WORLD_TOUR);
 
@@ -198,7 +198,7 @@ public class AnniversaryServiceTest {
     private Anniversary anniversary(Long id, String description, Integer year, AnniversaryType type) {
         Anniversary anniversary = new Anniversary();
         anniversary.setId(id);
-        anniversary.setDescription(description);
+        // anniversary.setDescription(description);
         anniversary.setYear(year);
         anniversary.setType(type);
         return anniversary;

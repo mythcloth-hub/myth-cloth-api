@@ -61,7 +61,7 @@ class ApiTokenServiceTest {
         when(jwtEncoder.encode(captor.capture())).thenReturn(encodedJwt);
 
         Role role = new Role();
-        role.setDescription("Admin");
+        // role.setDescription("Admin");
 
         Collector collector = new Collector();
         collector.setId(77L);

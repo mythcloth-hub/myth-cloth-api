@@ -6,17 +6,17 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.mesofi.mythclothapi.figurines.FigurineService;
+import com.mesofi.mythclothapi.figurineimports.service.FigurineImportService;
 
 @Component
 @Profile("local")
 public class StartupRunner {
     @Autowired
-    private FigurineService figurineService;
+    private FigurineImportService figurineImportService;
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
 
-        figurineService.importAllFigurinesFromPublicDrive();
+        figurineImportService.importAllFigurinesFromPublicDrive();
     }
 }

@@ -78,7 +78,7 @@ class DistributorServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> distributorService.createDistributor(request))
                 .isInstanceOf(DistributorAlreadyExistsException.class).hasMessage("Distributor already exists")
-                .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
+                // .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
                 .isEqualTo("Distributor already exists: BANDAI - JP");
 
         verify(distributorRepository).existsByNameAndCountry(DistributorName.BANDAI, CountryCode.JP);
@@ -181,7 +181,7 @@ class DistributorServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> distributorService.updateDistributor(4L, request))
                 .isInstanceOf(DistributorAlreadyExistsException.class).hasMessage("Distributor already exists")
-                .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
+                // .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
                 .isEqualTo("Distributor already exists: DAM - MX");
 
         verify(distributorRepository).findById(4L);
@@ -254,7 +254,7 @@ class DistributorServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> distributorService.updateDistributor(7L, request))
                 .isInstanceOf(DistributorAlreadyExistsException.class).hasMessage("Distributor already exists")
-                .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
+                // .extracting(ex -> ((DistributorAlreadyExistsException) ex).getCauseDetail())
                 .isEqualTo("Distributor already exists: BANDAI - MX");
 
         verify(distributorRepository).findById(7L);

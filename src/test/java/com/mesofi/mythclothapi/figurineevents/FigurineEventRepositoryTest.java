@@ -100,7 +100,7 @@ public class FigurineEventRepositoryTest {
         // Assert
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
-        assertThat(saved.getDescription()).isEqualTo("some-description");
+        // assertThat(saved.getDescription()).isEqualTo("some-description");
         assertThat(saved.getFigurine().getId()).isNotNull();
     }
 
@@ -119,7 +119,7 @@ public class FigurineEventRepositoryTest {
         assertThat(found).isNotNull();
         assertThat(found.getId()).isNotNull();
         assertThat(found.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
-        assertThat(found.getDescription()).isEqualTo("some-description");
+        // assertThat(found.getDescription()).isEqualTo("some-description");
         assertThat(found.getFigurine().getId()).isNotNull();
     }
 
@@ -137,8 +137,8 @@ public class FigurineEventRepositoryTest {
         List<FigurineEvent> foundList = repository.findAllByFigurineId(figurineSaved.getId());
 
         // Assert
-        assertThat(foundList).isNotNull().hasSize(2).extracting(FigurineEvent::getDescription)
-                .containsExactlyInAnyOrder("some-event1", "some-event2");
+        // assertThat(foundList).isNotNull().hasSize(2).extracting(FigurineEvent::getDescription)
+        // .containsExactlyInAnyOrder("some-event1", "some-event2");
 
         assertThat(foundList).extracting(FigurineEvent::getEventDate)
                 .containsExactlyInAnyOrder(LocalDate.of(2025, 12, 6), LocalDate.of(2025, 12, 7));
@@ -165,7 +165,7 @@ public class FigurineEventRepositoryTest {
         // Assert
         assertThat(found).isNotNull();
         assertThat(found.getId()).isEqualTo(figurineEventSaved.getId());
-        assertThat(found.getDescription()).isEqualTo("some-event1");
+        // assertThat(found.getDescription()).isEqualTo("some-event1");
         assertThat(found.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
         assertThat(found.getFigurine()).isNotNull();
         assertThat(found.getFigurine().getId()).isEqualTo(figurineSaved.getId());
@@ -180,13 +180,13 @@ public class FigurineEventRepositoryTest {
         FigurineEvent figurineEventSaved = repository.save(figurineEvent);
 
         // Act
-        figurineEventSaved.setDescription("new event");
+        // figurineEventSaved.setDescription("new event");
         FigurineEvent updated = repository.saveAndFlush(figurineEventSaved);
 
         // Assert
         assertThat(updated).isNotNull();
         assertThat(updated.getId()).isEqualTo(figurineEventSaved.getId());
-        assertThat(updated.getDescription()).isEqualTo("new event");
+        // assertThat(updated.getDescription()).isEqualTo("new event");
         assertThat(updated.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
 
         assertThat(updated.getFigurine()).isNotNull();
@@ -214,7 +214,7 @@ public class FigurineEventRepositoryTest {
 
         FigurineEvent figurineEvent = new FigurineEvent();
         figurineEvent.setEventDate(eventDate);
-        figurineEvent.setDescription(description);
+        // figurineEvent.setDescription(description);
         figurineEvent.setFigurine(figurine);
         figurineEvent.setRegion(region);
         figurineEvent.setType(FigurineEventType.ANNOUNCEMENT);

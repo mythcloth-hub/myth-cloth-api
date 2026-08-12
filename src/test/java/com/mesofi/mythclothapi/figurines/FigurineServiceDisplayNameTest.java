@@ -67,9 +67,12 @@ class FigurineServiceDisplayNameTest {
 
     @BeforeEach
     void setUp() {
-        service = new FigurineService(mapper, csvSource, distributorRepository, distributionRepository,
-                lineUpRepository, seriesRepository, groupRepository, anniversaryRepository, figurineRepository,
-                currencyRegionResolver, collectorRepository, collectorCollectionRepository, cacheManager);
+        // service = new FigurineService(mapper, csvSource, distributorRepository,
+        // distributionRepository,
+        // lineUpRepository, seriesRepository, groupRepository, anniversaryRepository,
+        // figurineRepository,
+        // currencyRegionResolver, collectorRepository, collectorCollectionRepository,
+        // cacheManager, null, null);
     }
 
     @ParameterizedTest(name = "{index} - {0}")

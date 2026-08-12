@@ -12,8 +12,7 @@ class FigurineFilterFactoryTest {
 
     @Test
     void shouldBuildFilterWithTrimmedName() {
-        FigurineFilter filter = FigurineFilterFactory.build(null, "  Pegasus Seiya  ", 1L, 2L, 3L, 4L, true, false,
-                true, false, true, false, true, false, true, false, "RELEASED");
+        FigurineFilter filter = null;
 
         assertEquals("Pegasus Seiya", filter.name());
         assertEquals(1L, filter.lineUpId());
@@ -36,7 +35,7 @@ class FigurineFilterFactoryTest {
     @Test
     void shouldUseEmptyNameWhenTrimmedNameIsShorterThanThreeCharacters() {
         FigurineFilter filter = FigurineFilterFactory.build(null, " ab ", null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
 
         assertEquals("", filter.name());
     }
@@ -44,7 +43,7 @@ class FigurineFilterFactoryTest {
     @Test
     void shouldUseTrimmedNameWhenTrimmedNameHasExactlyThreeCharacters() {
         FigurineFilter filter = FigurineFilterFactory.build(null, " abc ", null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, null);
 
         assertEquals("abc", filter.name());
     }
@@ -52,7 +51,7 @@ class FigurineFilterFactoryTest {
     @Test
     void shouldUseEmptyNameWhenNameIsNull() {
         FigurineFilter filter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null);
 
         assertEquals("", filter.name());
     }

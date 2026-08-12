@@ -1,7 +1,10 @@
 package com.mesofi.mythclothapi.distributors;
 
+import static com.mesofi.mythclothapi.catalogs.CatalogService.CATALOG_CONTEXT_CACHE;
+
 import java.util.List;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +48,7 @@ public class DistributorService {
      *             if a distributor with the same name and country already exists
      */
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public DistributorResp createDistributor(DistributorReq request) {
         log.info("Creating distributor: {} - {}", request.name(), request.countryCode());
 
@@ -104,6 +108,7 @@ public class DistributorService {
      *             distributor
      */
     @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public DistributorResp updateDistributor(Long id, DistributorReq request) {
         log.info("Updating distributor {} to {} - {}", id, request.name(), request.countryCode());
         var existing = repository.findById(id).orElseThrow(() -> new DistributorNotFoundException(id));
@@ -133,6 +138,8 @@ public class DistributorService {
      * @throws DistributorNotFoundException
      *             if no distributor with the given ID exists
      */
+    @Transactional
+    @CacheEvict(value = CATALOG_CONTEXT_CACHE, allEntries = true)
     public void removeDistributor(Long id) {
         log.warn("Removing distributor {}", id);
 

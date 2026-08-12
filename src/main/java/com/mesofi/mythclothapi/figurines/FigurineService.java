@@ -12,8 +12,6 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RUMORED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 import static com.mesofi.mythclothapi.figurines.utils.FigurineComparisonUtils.isRestock;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -24,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -44,6 +41,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.CatalogService;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
@@ -63,26 +61,19 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
-import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
+import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
+import com.mesofi.mythclothapi.figurineimports.service.FigurineImportHistoryService;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineImportException;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
-import com.mesofi.mythclothapi.figurines.imports.FigurineCsvSource;
-import com.mesofi.mythclothapi.figurines.mapper.CatalogContext;
-import com.mesofi.mythclothapi.figurines.mapper.FigurineCsv;
 import com.mesofi.mythclothapi.figurines.mapper.FigurineMapper;
 import com.mesofi.mythclothapi.figurines.model.CachedFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
-import com.mesofi.mythclothapi.figurines.model.FigurineImport;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
-import com.mesofi.mythclothapi.figurines.repository.FigurineImportRepository;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
-import com.opencsv.bean.CsvToBeanBuilder;
 
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -121,8 +112,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class FigurineService {
 
-    private static final String FIGURINE_CACHE = "figurines";
-    private static final String FIGURINE_SUMMARY_CACHE = "figurine-summary";
+    public static final String FIGURINE_CACHE = "figurines";
+    public static final String FIGURINE_SUMMARY_CACHE = "figurine-summary";
 
     private static final String BY_MYTH_CLOTH_EX_KEY = "by-mythcloth-ex";
     private static final String BY_MYTH_CLOTH_KEY = "by-mythcloth";
@@ -135,10 +126,9 @@ public class FigurineService {
     private static final String BY_SAINT_CLOTH_SERIES_KEY = "by-saint-cloth-series";
 
     private final FigurineMapper mapper;
-    private final FigurineCsvSource csvSource;
+    private final FigurineImportCsvSource figurineImportCsvSource;
 
     private final FigurineImportHistoryService figurineImportHistoryService;
-    private final FigurineImportRepository figurineImportRepository;
     private final DistributorRepository distributorRepository;
     private final DistributionRepository distributionRepository;
     private final LineUpRepository lineUpRepository;
@@ -150,6 +140,7 @@ public class FigurineService {
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CacheManager cacheManager;
+    private final CatalogService catalogService;
 
     private final String ANN_MSG = "First announced as a possible future release.";
     private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
@@ -190,92 +181,6 @@ public class FigurineService {
     private static final Predicate<Figurine> IS_RELEASED_OR_ANNOUNCED = figurine -> figurine
             .getCurrentReleaseStatus() == RELEASED || figurine.getCurrentReleaseStatus() == ANNOUNCED;
 
-    @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
-    public void importAllFigurinesFromPublicDrive(boolean overwriteExisting) {
-        log.info("Loading all figurines ...");
-
-        List<Figurine> importedFigurines = List.of();
-        CatalogContext catalogContext = loadCatalogs();
-
-        String errorMessage = null;
-        int totalImported = 0;
-        int totalSkipped = 0;
-
-        try (Reader reader = csvSource.openReader()) {
-            List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
-                    .withIgnoreLeadingWhiteSpace(true).build().parse();
-
-            log.info("Importing {} figurines from CSV file.", csvRows.size());
-            if (overwriteExisting) {
-                List<Figurine> existingFigurines = repository
-                        .findByLegacyNameIn(csvRows.stream().map(FigurineCsv::getOriginalName).toList());
-
-                Map<String, Figurine> figurinesByLegacyName = existingFigurines.stream()
-                        .collect(Collectors.toMap(Figurine::getLegacyName, Function.identity()));
-
-                List<Figurine> allFigurines = new ArrayList<>();
-                for (FigurineCsv csv : csvRows) {
-                    Figurine existingFigurine = figurinesByLegacyName.get(csv.getOriginalName());
-
-                    if (existingFigurine == null) {
-                        existingFigurine = mapper.toFigurine(csv, catalogContext);
-                    } else {
-                        Figurine incoming = mapper.toFigurine(csv, catalogContext);
-                        // Update existing figurine with new data from CSV
-                        mapper.updateFigurineNew(existingFigurine, incoming, true);
-                    }
-
-                    prepareForPersistence(existingFigurine);
-                    allFigurines.add(existingFigurine);
-                    totalImported++;
-                }
-                importedFigurines = repository.saveAll(allFigurines);
-            } else {
-
-            }
-        } catch (IOException ex) {
-            log.error("Error while reading csv file.", ex);
-            errorMessage = "Unable to load all figurines: " + ex.getMessage();
-            throw new FigurineImportException();
-        } catch (Exception ex) {
-            log.error("Unexpected error while importing figurines.", ex);
-            errorMessage = "Unexpected error: " + ex.getMessage();
-            throw new FigurineImportException();
-        } finally {
-            figurineImportHistoryService.saveFigurineImport(totalImported, totalSkipped, errorMessage);
-        }
-
-        // Rebuild restock history for all imported figurines
-        // rebuildRestockHistory(importedFigurines);
-    }
-
-    /*
-     * overwriteExisting = true If the figurine already exists in the DB, retrieve
-     * it and update its fields with the new data from the CSV. if the figurine does
-     * not exist in the DB, create a new one and persist it.
-     *
-     * overwriteExisting = false if the figurine already exists in the DB, skip it
-     * and do not update its fields (as long as someone else already edited the
-     * figurine). if the figurine does not exist in the DB, create a new one and
-     * persist it.
-     */
-
-    /**
-     * Retrieves up to 20 figurine import records.
-     * <p>
-     * The retrieved entities are mapped to {@link FigurineImportResp} instances
-     * before being returned.
-     * </p>
-     *
-     * @return a list containing up to 20 figurine import records.
-     */
-    public List<FigurineImportResp> getAllFigurineImports() {
-        return figurineImportRepository.findAll().stream().limit(20)
-                .sorted(Comparator.comparing(FigurineImport::getCompletedAt).reversed())
-                .map(mapper::toFigurineImportResp).toList();
-    }
-
     /**
      * Imports all figurines from the public Google Drive CSV source.
      *
@@ -295,30 +200,53 @@ public class FigurineService {
      * @throws IllegalStateException
      *             if the CSV source cannot be read
      */
-    @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
-    public void importAllFigurinesFromPublicDrive() {
-        CatalogContext catalogContext = loadCatalogs();
-
-        List<Figurine> importedFigurines;
-
-        try (Reader reader = csvSource.openReader()) {
-            List<FigurineCsv> csvRows = new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
-                    .withIgnoreLeadingWhiteSpace(true).build().parse();
-
-            log.info("Importing {} figurines from CSV file.", csvRows.size());
-            List<Figurine> figurines = csvRows.stream().map(csv -> mapper.toFigurine(csv, catalogContext))
-                    .peek(this::prepareForPersistence).toList();
-
-            log.info("{} figurines have been prepared for persistence.", figurines.size());
-            importedFigurines = repository.saveAllAndFlush(figurines);
-
-            log.info("{} figurines have been imported", importedFigurines.size());
-        } catch (IOException ex) {
-            throw new IllegalStateException("Unable to read CSV from Google Drive", ex);
-        }
-
-        rebuildRestockHistory(importedFigurines);
+    /*
+     * @Transactional
+     *
+     * @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE,
+     * COLLECTOR_FIGURINE_CACHE}, allEntries = true) public void
+     * importAllFigurinesFromPublicDrive() { log.info("Loading all figurines ...");
+     *
+     * List<Figurine> importedFigurines; List<Figurine> allFigurines = new
+     * ArrayList<>();
+     *
+     * CatalogContext catalogContext = loadCatalogs();
+     *
+     * String errorMessage = null; int totalImported = 0;
+     *
+     * try (Reader reader = csvSource.openReader()) { List<FigurineCsv> csvRows =
+     * new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
+     * .withIgnoreLeadingWhiteSpace(true).build().parse();
+     *
+     * log.info("Importing {} figurines from CSV file.", csvRows.size());
+     *
+     * Map<String, Figurine> existingFigurinesByLegacyName = repository
+     * .findByLegacyNameInOrderById(csvRows.stream().map(FigurineCsv::
+     * getOriginalName).toList()).stream()
+     * .collect(Collectors.toMap(Figurine::getLegacyName, Function.identity()));
+     *
+     * Figurine newOrExisting; for (FigurineCsv csv : csvRows) { if
+     * (isNewFigurine(existingFigurinesByLegacyName, csv.getOriginalName())) {
+     * newOrExisting = initializeFigurineForCreate(mapper.toFigurine(csv,
+     * catalogContext)); } else { Figurine existing =
+     * existingFigurinesByLegacyName.get(csv.getOriginalName()); Figurine incoming =
+     * mapper.toFigurine(csv, catalogContext); newOrExisting =
+     * initializeFigurineForUpdate(existing, incoming); }
+     * allFigurines.add(newOrExisting); totalImported++; } importedFigurines =
+     * repository.saveAllAndFlush(allFigurines); } catch (IOException ex) {
+     * log.error("Error while reading csv file.", ex); errorMessage =
+     * "Unable to load all figurines: " + ex.getMessage(); throw new
+     * FigurineImportException(); } catch (Exception ex) {
+     * log.error("Unexpected error while importing figurines.", ex); errorMessage =
+     * "Unexpected error: " + ex.getMessage(); throw new FigurineImportException();
+     * } finally { figurineImportHistoryService.saveFigurineImport(totalImported,
+     * errorMessage); }
+     *
+     * // Rebuild restock history for all imported figurines
+     * rebuildRestockHistory(importedFigurines); }
+     */
+    private boolean isNewFigurine(Map<String, Figurine> figurinesByLegacyName, String originalName) {
+        return !figurinesByLegacyName.containsKey(originalName);
     }
 
     void assignPreviousRelease(Figurine figurine, List<Figurine> releasedFigurines) {
@@ -361,18 +289,16 @@ public class FigurineService {
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
-        CatalogContext catalogContext = loadCatalogs();
-
-        Figurine newFigurine = mapper.toFigurine(request, catalogContext);
-        prepareForPersistence(newFigurine);
+        Figurine newFigurine = initializeFigurineForCreate(
+                mapper.toFigurine(request, catalogService.retrieveCatalogContext()));
 
         var saved = repository.saveAndFlush(newFigurine);
 
-        postPersist(saved);
+        linkToPreviousRelease(saved);
         return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
-    private void postPersist(Figurine persistedFigurine) {
+    private void linkToPreviousRelease(Figurine persistedFigurine) {
         if (IS_RELEASED_OR_ANNOUNCED.test(persistedFigurine)) {
             assignPreviousRelease(persistedFigurine, repository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc());
         }
@@ -562,44 +488,10 @@ public class FigurineService {
     @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
-        var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
 
-        // Ask MapStruct to update fields
-        Figurine incoming = mapper.toFigurine(request, loadCatalogs());
-        mapper.updateFigurine(existing, incoming);
-
-        // update the distributors' info.
-        updateDistributors(existing, incoming.getDistributors());
-
-        // update the events in case it was updated.
-        existing.getDistributors().stream().findFirst().ifPresent(fd -> {
-            existing.getEvents().stream().sorted(Comparator.comparing(FigurineEvent::getEventDate))
-                    .filter(e -> e.getType() == ANNOUNCEMENT).findFirst()
-                    .ifPresentOrElse(e -> e.setEventDate(fd.getAnnouncementDate()), () -> {
-                        if (Objects.nonNull(fd.getAnnouncementDate())) {
-                            addDefaultEvent(ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
-                        }
-                    });
-
-            existing.getEvents().stream().filter(e -> e.getType() == PREORDER_OPEN).findFirst()
-                    .ifPresentOrElse(e -> e.setEventDate(fd.getPreorderDate()), () -> {
-                        if (Objects.nonNull(fd.getPreorderDate())) {
-                            addDefaultEvent(PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
-                        }
-                    });
-
-            existing.getEvents().stream().filter(e -> e.getType() == RELEASE).findFirst().ifPresentOrElse(e -> {
-                e.setEventDate(fd.getReleaseDate());
-                e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
-            }, () -> {
-                if (Objects.nonNull(fd.getReleaseDate())) {
-                    addDefaultEvent(RELEASE_DATE_MSG, fd.getReleaseDate(), fd.isReleaseDateConfirmed(), RELEASE,
-                            existing);
-                }
-            });
-
-            existing.getEvents().forEach(e -> e.setFigurine(existing));
-        });
+        Figurine existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
+        Figurine incoming = mapper.toFigurine(request, catalogService.retrieveCatalogContext());
+        initializeFigurineForUpdate(existing, incoming);
 
         var updated = repository.saveAndFlush(existing);
 
@@ -625,7 +517,7 @@ public class FigurineService {
      * @param existingFigurines
      *            the figurines to evaluate after the import
      */
-    private void rebuildRestockHistory(List<Figurine> existingFigurines) {
+    public void rebuildRestockHistory(List<Figurine> existingFigurines) {
         List<Figurine> releasedFigurines = repository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc();
         log.info("Found {} released figurines", releasedFigurines.size());
 
@@ -1181,12 +1073,62 @@ public class FigurineService {
      * <li>Initializing audit timestamps
      * </ul>
      *
-     * @param figurine
+     * @param incoming
      *            figurine to prepare
      */
-    private void prepareForPersistence(Figurine figurine) {
-        createDefaultEvents(figurine);
-        linkReferences(figurine);
+    public Figurine initializeFigurineForCreate(Figurine incoming) {
+        createDefaultEvents(incoming);
+        linkReferences(incoming);
+
+        return incoming;
+    }
+
+    public Figurine initializeFigurineForUpdate(Figurine existing, Figurine incoming) {
+        // Ask MapStruct to update fields
+        mapper.updateFigurine(existing, incoming);
+
+        // update the distributors' info.
+        updateDistributors(existing, incoming.getDistributors());
+
+        // update the events in case it was updated.
+        existing.getDistributors().stream().findFirst().ifPresent(fd -> {
+            existing.getEvents().stream().sorted(Comparator.comparing(FigurineEvent::getEventDate))
+                    .filter(e -> e.getType() == ANNOUNCEMENT).findFirst().ifPresentOrElse(e -> {
+                        if (Objects.nonNull(fd.getAnnouncementDate())) {
+                            e.setEventDate(fd.getAnnouncementDate());
+                        }
+                    }, () -> {
+                        if (Objects.nonNull(fd.getAnnouncementDate())) {
+                            addDefaultEvent(ANN_MSG, fd.getAnnouncementDate(), true, ANNOUNCEMENT, existing);
+                        }
+                    });
+
+            existing.getEvents().stream().filter(e -> e.getType() == PREORDER_OPEN).findFirst().ifPresentOrElse(e -> {
+                if (Objects.nonNull(fd.getPreorderDate())) {
+                    e.setEventDate(fd.getPreorderDate());
+                }
+            }, () -> {
+                if (Objects.nonNull(fd.getPreorderDate())) {
+                    addDefaultEvent(PRE_ORDER_MSG, fd.getPreorderDate(), true, PREORDER_OPEN, existing);
+                }
+            });
+
+            existing.getEvents().stream().filter(e -> e.getType() == RELEASE).findFirst().ifPresentOrElse(e -> {
+                if (Objects.nonNull(fd.getReleaseDate())) {
+                    e.setEventDate(fd.getReleaseDate());
+                }
+                e.setEventDateConfirmed(fd.isReleaseDateConfirmed());
+            }, () -> {
+                if (Objects.nonNull(fd.getReleaseDate())) {
+                    addDefaultEvent(RELEASE_DATE_MSG, fd.getReleaseDate(), fd.isReleaseDateConfirmed(), RELEASE,
+                            existing);
+                }
+            });
+
+            existing.getEvents().forEach(e -> e.setFigurine(existing));
+        });
+
+        return existing;
     }
 
     /**
@@ -1259,17 +1201,5 @@ public class FigurineService {
             figurine.getDistributors().forEach(d -> d.setFigurine(figurine));
         }
         figurine.getEvents().forEach(e -> e.setFigurine(figurine));
-    }
-
-    /**
-     * Loads all catalog entities into memory to optimize lookup during import and
-     * creation flows.
-     *
-     * @return populated {@link CatalogContext}
-     */
-    private CatalogContext loadCatalogs() {
-        return new CatalogContext(distributorRepository.findAll(), distributionRepository.findAll(),
-                lineUpRepository.findAll(), seriesRepository.findAll(), groupRepository.findAll(),
-                anniversaryRepository.findAll());
     }
 }

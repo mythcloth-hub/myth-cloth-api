@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
@@ -71,60 +70,6 @@ import lombok.extern.slf4j.Slf4j;
 public class FigurineController {
 
     private final FigurineService service;
-
-    /**
-     * Triggers a bulk import of all figurines from the public Google Drive CSV
-     * source.
-     *
-     * <p>
-     * This endpoint:
-     *
-     * <ul>
-     * <li>Reads the configured Google Drive CSV file
-     * <li>Maps each row to a {@link Figurine} entity, resolving catalog references
-     * <li>Upserts each figurine: updates existing records (matched by legacy name)
-     * or inserts new ones
-     * <li>Rebuilds the restocking history after the import
-     * </ul>
-     *
-     * <p>
-     * The operation is accepted asynchronously and returns {@code 202 Accepted}
-     * immediately. Requires the {@code figurines:load} authority.
-     *
-     * @param overwriteExisting
-     *            when {@code true}, forces all figurines to be replaced even if
-     *            they already exist; when {@code false} (default) only new or
-     *            changed figurines are persisted
-     * @return {@link ResponseEntity} with status {@code 202 Accepted} and nobody
-     */
-    @PostMapping("/load")
-    @PreAuthorize("hasAuthority('figurines:load')")
-    public ResponseEntity<Void> loadAllFigurines(
-            @RequestParam(name = "overwriteExisting", defaultValue = "false") boolean overwriteExisting) {
-        log.info("Loading all figurines ...");
-
-        service.importAllFigurinesFromPublicDrive(overwriteExisting);
-        return ResponseEntity.accepted().build();
-    }
-
-    /**
-     * Retrieves the history of all past figurine import operations.
-     *
-     * <p>
-     * Each entry in the returned list represents a single import run, including
-     * metadata such as when the import occurred and how many figurines were
-     * processed. Requires the {@code figurines:load} authority.
-     *
-     * @return list of {@link FigurineImportResp} records describing each import
-     *         run, ordered from most recent to oldest
-     */
-    @GetMapping("/imports")
-    @PreAuthorize("hasAuthority('figurines:load')")
-    public List<FigurineImportResp> getFigurineImports() {
-        log.info("Retrieving all figurine imports ...");
-
-        return service.getAllFigurineImports();
-    }
 
     /**
      * Creates a new {@link Figurine} resource.

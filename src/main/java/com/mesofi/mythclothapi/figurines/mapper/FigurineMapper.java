@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 import com.mesofi.mythclothapi.anniversaries.AnniversaryMapper;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
+import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -36,15 +37,15 @@ import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+import com.mesofi.mythclothapi.figurineimports.FigurineImport;
+import com.mesofi.mythclothapi.figurineimports.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
-import com.mesofi.mythclothapi.figurines.dto.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.FigurineImport;
 
 /**
  * MapStruct mapper responsible for converting between:
@@ -76,7 +77,6 @@ public interface FigurineMapper {
     DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("M/d/yyyy");
 
     @Mapping(target = "imported", source = "totalImported")
-    @Mapping(target = "skipped", source = "totalSkipped")
     FigurineImportResp toFigurineImportResp(FigurineImport importResult);
 
     /*
@@ -117,7 +117,7 @@ public interface FigurineMapper {
     /**
      * Resolves a {@link Distribution} by description.
      *
-     * @param desc
+     * @param description
      *            distribution description
      * @param catalogs
      *            catalog context
@@ -125,10 +125,14 @@ public interface FigurineMapper {
      * @throws IllegalArgumentException
      *             if the description does not exist
      */
-    default Distribution toDistribution(String desc, @Context CatalogContext catalogs) {
-        String msg = "Distribution not found for desc=" + desc;
-        return Optional.ofNullable(desc).filter($ -> !desc.isBlank())
-                .map($ -> find(catalogs.distributions(), l -> desc.equals(l.getDescription()), msg)).orElse(null);
+    default Distribution toDistribution(String description, @Context CatalogContext catalogs) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+
+        String msg = "Distribution not found for description=" + description;
+        return (Distribution) find(catalogs.distributions(),
+                descriptive -> description.equals(descriptive.getDescription()), msg);
     }
 
     /**
@@ -138,7 +142,7 @@ public interface FigurineMapper {
      * This variant is primarily used during CSV imports where catalog references
      * are provided as human-readable descriptions rather than identifiers.
      *
-     * @param desc
+     * @param description
      *            lineup description
      * @param catalogs
      *            catalog context containing cached lineups
@@ -147,16 +151,19 @@ public interface FigurineMapper {
      * @throws IllegalArgumentException
      *             if the description does not exist in the catalog
      */
-    default LineUp toLineUp(String desc, @Context CatalogContext catalogs) {
-        String msg = "LineUp not found for desc=" + desc;
-        return Optional.ofNullable(desc).filter($ -> !desc.isBlank())
-                .map($ -> find(catalogs.lineUps(), l -> desc.equals(l.getDescription()), msg)).orElse(null);
+    default LineUp toLineUp(String description, @Context CatalogContext catalogs) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+
+        String msg = "LineUp not found for description=" + description;
+        return (LineUp) find(catalogs.lineUps(), descriptive -> description.equals(descriptive.getDescription()), msg);
     }
 
     /**
      * Resolves a {@link Series} catalog entry using its textual description.
      *
-     * @param desc
+     * @param description
      *            series description
      * @param catalogs
      *            catalog context containing cached series
@@ -165,16 +172,19 @@ public interface FigurineMapper {
      * @throws IllegalArgumentException
      *             if the description does not exist in the catalog
      */
-    default Series toSeries(String desc, @Context CatalogContext catalogs) {
-        String msg = "Series not found for desc=" + desc;
-        return Optional.ofNullable(desc).filter($ -> !desc.isBlank())
-                .map($ -> find(catalogs.series(), l -> desc.equals(l.getDescription()), msg)).orElse(null);
+    default Series toSeries(String description, @Context CatalogContext catalogs) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+
+        String msg = "Series not found for description=" + description;
+        return (Series) find(catalogs.series(), descriptive -> description.equals(descriptive.getDescription()), msg);
     }
 
     /**
      * Resolves a {@link Group} catalog entry using its textual description.
      *
-     * @param desc
+     * @param description
      *            group description
      * @param catalogs
      *            catalog context containing cached groups
@@ -183,10 +193,13 @@ public interface FigurineMapper {
      * @throws IllegalArgumentException
      *             if the description does not exist in the catalog
      */
-    default Group toGroup(String desc, @Context CatalogContext catalogs) {
-        String msg = "Group not found for desc=" + desc;
-        return Optional.ofNullable(desc).filter($ -> !desc.isBlank())
-                .map($ -> find(catalogs.groups(), l -> desc.equals(l.getDescription()), msg)).orElse(null);
+    default Group toGroup(String description, @Context CatalogContext catalogs) {
+        if (description == null || description.isBlank()) {
+            return null;
+        }
+
+        String msg = "Group not found for description=" + description;
+        return (Group) find(catalogs.groups(), descriptive -> description.equals(descriptive.getDescription()), msg);
     }
 
     /**
@@ -359,30 +372,42 @@ public interface FigurineMapper {
      *             if the id does not exist in the catalog
      */
     default Distribution toDistribution(Long id, @Context CatalogContext catalogs) {
+        if (Objects.isNull(id)) {
+            return null;
+        }
         String msg = "Distribution not found for id=" + id;
-        return Optional.ofNullable(id).map($ -> find(catalogs.distributions(), l -> Objects.equals(l.getId(), id), msg))
-                .orElse(null);
+
+        return (Distribution) find(catalogs.distributions(), descriptive -> descriptive.getId().equals(id), msg);
     }
 
     /** Resolves a {@link LineUp} catalog entry by its identifier. */
     default LineUp toLineUp(Long id, @Context CatalogContext catalogs) {
+        if (Objects.isNull(id)) {
+            return null;
+        }
         String msg = "LineUp not found for id=" + id;
-        return Optional.ofNullable(id).map($ -> find(catalogs.lineUps(), l -> Objects.equals(l.getId(), id), msg))
-                .orElse(null);
+
+        return (LineUp) find(catalogs.lineUps(), descriptive -> descriptive.getId().equals(id), msg);
     }
 
     /** Resolves a {@link Series} catalog entry by its identifier. */
     default Series toSeries(Long id, @Context CatalogContext catalogs) {
+        if (Objects.isNull(id)) {
+            return null;
+        }
         String msg = "Series not found for id=" + id;
-        return Optional.ofNullable(id).map($ -> find(catalogs.series(), l -> Objects.equals(l.getId(), id), msg))
-                .orElse(null);
+
+        return (Series) find(catalogs.series(), descriptive -> descriptive.getId().equals(id), msg);
     }
 
     /** Resolves a {@link Group} catalog entry by its identifier. */
     default Group toGroup(Long id, @Context CatalogContext catalogs) {
+        if (Objects.isNull(id)) {
+            return null;
+        }
         String msg = "Group not found for id=" + id;
-        return Optional.ofNullable(id).map($ -> find(catalogs.groups(), l -> Objects.equals(l.getId(), id), msg))
-                .orElse(null);
+
+        return (Group) find(catalogs.groups(), descriptive -> descriptive.getId().equals(id), msg);
     }
 
     /** Resolves an {@link Anniversary} catalog entry by its identifier. */
@@ -554,45 +579,18 @@ public interface FigurineMapper {
      *            new values
      */
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "distributors", ignore = true) // it is OK, distributors can be managed manually.
-    @Mapping(target = "events", ignore = true) // it is OK, events can be managed separately in their own resource.
-    @Mapping(target = "creationDate", ignore = true)
-    @Mapping(target = "updateDate", expression = "java(java.time.Instant.now())")
-    void updateFigurine(@MappingTarget Figurine target, Figurine source);
-
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "legacyName", ignore = true)
-    // @Mapping(target = "normalizedName", ignore = true)
     @Mapping(target = "displayName", ignore = true)
-    @Mapping(target = "distributors", ignore = true)
+    @Mapping(target = "distributors", ignore = true) // it is OK, distributors can be managed manually.
     @Mapping(target = "collections", ignore = true)
     @Mapping(target = "stores", ignore = true)
-    @Mapping(target = "tamashiiUrl", ignore = true)
-    @Mapping(target = "distribution", ignore = true)
-    @Mapping(target = "lineup", ignore = true)
-    @Mapping(target = "series", ignore = true)
-    @Mapping(target = "group", ignore = true)
-    @Mapping(target = "anniversary", ignore = true)
     @Mapping(target = "currentReleaseStatus", ignore = true)
-    @Mapping(target = "metalBody", ignore = true)
-    @Mapping(target = "oce", ignore = true)
-    @Mapping(target = "revival", ignore = true)
-    @Mapping(target = "plainCloth", ignore = true)
-    @Mapping(target = "broken", ignore = true)
-    @Mapping(target = "golden", ignore = true)
-    @Mapping(target = "gold", ignore = true)
-    @Mapping(target = "manga", ignore = true)
-    @Mapping(target = "set", ignore = true)
-    @Mapping(target = "articulable", ignore = true)
-    @Mapping(target = "remarks", ignore = true)
-    @Mapping(target = "events", ignore = true)
+    @Mapping(target = "events", ignore = true) // it is OK, events can be managed separately in their own resource.
     @Mapping(target = "previousRelease", ignore = true)
     @Mapping(target = "subsequentReleases", ignore = true)
-    @Mapping(target = "officialImages", ignore = true)
-    @Mapping(target = "nonOfficialImages", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
-    void updateFigurineNew(@MappingTarget Figurine target, Figurine source, boolean b);
+    void updateFigurine(@MappingTarget Figurine target, Figurine source);
 
     /**
      * Updates a {@link FigurineDistributor} entity using values from another

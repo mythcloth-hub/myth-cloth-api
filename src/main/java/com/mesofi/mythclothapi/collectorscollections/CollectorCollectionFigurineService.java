@@ -34,8 +34,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
+import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.FigurineService;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;

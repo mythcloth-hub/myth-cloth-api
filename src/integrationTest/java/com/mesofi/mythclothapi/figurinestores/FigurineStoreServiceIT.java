@@ -27,6 +27,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
@@ -38,7 +39,6 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
 import com.mesofi.mythclothapi.it.ControllerBaseIT;
-import com.mesofi.mythclothapi.messaging.pricing.model.LineUpType;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;

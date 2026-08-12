@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,7 +40,8 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long>, FigurineRepositoryCustom {
 
-    List<Figurine> findByLegacyNameIn(List<String> legacyNames);
+    List<Figurine> findByLegacyNameInOrderById(List<String> legacyNames);
+    List<Figurine> findByLegacyNameInAndUpdateDateLessThanOrderById(List<String> legacyNames, Instant updateDate);
 
     List<Figurine> findAllByLineup(LineUp lineUP);
 

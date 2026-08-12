@@ -29,7 +29,7 @@ import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollect
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
-import com.mesofi.mythclothapi.figurines.exceptions.FigurineImportException;
+import com.mesofi.mythclothapi.figurineimports.FigurineImportException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;

@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines.exceptions;
+package com.mesofi.mythclothapi.figurines;
 
 import java.io.Serial;
 
