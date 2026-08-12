@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.security;
+package com.mesofi.mythclothapi.security.config;
 
 /**
  * Configuration properties for JWT-based security settings.

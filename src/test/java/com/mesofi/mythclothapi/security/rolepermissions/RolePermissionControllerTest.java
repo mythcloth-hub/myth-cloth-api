@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.security.rolepermissions;
 
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -22,6 +23,7 @@ import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
+import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -39,6 +41,18 @@ public class RolePermissionControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Test
+    void addPermissionToRole_shouldReturn409_whenRolePermissionAlreadyExists() throws Exception {
+        doThrow(new RolePermissionAlreadyExistsException(1L, 2L)).when(roleService).addPermissionToRole(1L, 2L);
+
+        RolePermissionReq request = new RolePermissionReq(2L);
+
+        mockMvc.perform(post("/roles/{roleId}/permissions", 1L).contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))).andExpect(status().isConflict());
+
+        verify(roleService).addPermissionToRole(1L, 2L);
+    }
 
     @Test
     void addPermissionToRole_shouldReturn204_whenPermissionAddedToRole() throws Exception {

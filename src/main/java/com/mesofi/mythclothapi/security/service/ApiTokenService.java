@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.security;
+package com.mesofi.mythclothapi.security.service;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,8 +12,9 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.security.config.SecurityProperties;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 
 import lombok.RequiredArgsConstructor;
 

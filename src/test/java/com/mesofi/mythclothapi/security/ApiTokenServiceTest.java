@@ -20,7 +20,10 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 
 import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.security.config.JwtProperties;
+import com.mesofi.mythclothapi.security.config.SecurityProperties;
 import com.mesofi.mythclothapi.security.roles.model.Role;
+import com.mesofi.mythclothapi.security.service.ApiTokenService;
 
 @ExtendWith(MockitoExtension.class)
 class ApiTokenServiceTest {
@@ -61,7 +64,7 @@ class ApiTokenServiceTest {
         when(jwtEncoder.encode(captor.capture())).thenReturn(encodedJwt);
 
         Role role = new Role();
-        // role.setDescription("Admin");
+        role.setName("Admin");
 
         Collector collector = new Collector();
         collector.setId(77L);

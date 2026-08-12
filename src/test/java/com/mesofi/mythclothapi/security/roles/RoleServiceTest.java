@@ -25,7 +25,7 @@ import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
@@ -49,14 +49,14 @@ public class RoleServiceTest {
     void createRole_shouldThrowRoleAlreadyExistsException_whenRoleAlreadyExists() {
         // Arrange
         Role existingRole = role(1L, "Admin");
-        // when(roleRepository.findByDescription("Admin")).thenReturn(Optional.of(existingRole));
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.of(existingRole));
 
         RoleReq request = new RoleReq("Admin");
 
         // Act + Assert
         assertThatThrownBy(() -> roleService.createRole(request))
                 .isInstanceOfSatisfying(RoleAlreadyExistsException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Duplicate Role with description: 'Admin'");
+                    assertThat(ex.getMessage()).isEqualTo("Role with description 'Admin' already exists");
                     assertThat(ex.getDescription()).isEqualTo("Admin");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                 });
@@ -65,7 +65,7 @@ public class RoleServiceTest {
     @Test
     void createRole_shouldPersistAndReturnMappedResponse_whenRequestIsValid() {
         // Arrange
-        // when(roleRepository.findByDescription("Admin")).thenReturn(Optional.empty());
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.empty());
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> {
             Role entity = invocation.getArgument(0);
             entity.setId(1L);
@@ -84,7 +84,7 @@ public class RoleServiceTest {
         verify(roleRepository).save(captor.capture());
 
         Role saved = captor.getValue();
-        // assertThat(saved.getDescription()).isEqualTo("Admin");
+        assertThat(saved.getName()).isEqualTo("Admin");
     }
 
     @Test
@@ -95,7 +95,7 @@ public class RoleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> roleService.retrieveRole(99L)).isInstanceOfSatisfying(RoleNotFoundException.class,
                 ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role not found");
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 99 was not found");
                     assertThat(ex.getId()).isEqualTo(99L);
                 });
 
@@ -140,7 +140,7 @@ public class RoleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> roleService.updateRole(77L, request))
                 .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role not found");
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 
@@ -151,8 +151,8 @@ public class RoleServiceTest {
     @Test
     void updateRole_shouldUpdateExistingEntityAndReturnMappedResponse_whenRequestIsValid() {
         // Arrange
-        Role existing = role(3L, "Old Description");
-        RoleReq request = new RoleReq("Updated Role");
+        Role existing = role(3L, "Old Name");
+        RoleReq request = new RoleReq("Updated Name");
 
         when(roleRepository.findById(3L)).thenReturn(Optional.of(existing));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -161,14 +161,14 @@ public class RoleServiceTest {
         RoleResp response = roleService.updateRole(3L, request);
 
         // Assert
-        assertThat(response).isEqualTo(new RoleResp(3L, "Updated Role"));
+        assertThat(response).isEqualTo(new RoleResp(3L, "Updated Name"));
 
         ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
         verify(roleRepository).save(captor.capture());
 
         Role saved = captor.getValue();
         assertThat(saved).isSameAs(existing);
-        // assertThat(saved.getDescription()).isEqualTo("Updated Role");
+        assertThat(saved.getName()).isEqualTo("Updated Name");
 
         verify(roleRepository).findById(3L);
     }
@@ -181,7 +181,7 @@ public class RoleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
                 .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role not found");
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 
@@ -198,7 +198,7 @@ public class RoleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
                 .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Permission not found");
+                    assertThat(ex.getMessage()).isEqualTo("Permission with id 88 was not found");
                     assertThat(ex.getId()).isEqualTo(88L);
                 });
 
@@ -282,7 +282,7 @@ public class RoleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> roleService.retrievePermissionsByRoleId(77L))
                 .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role not found");
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 
@@ -313,18 +313,18 @@ public class RoleServiceTest {
         verify(roleRepository).findById(77L);
     }
 
-    private Role role(Long id, String description) {
+    private Role role(Long id, String name) {
         Role role = new Role();
         role.setId(id);
-        // role.setDescription(description);
+        role.setName(name);
 
         return role;
     }
 
-    private Permission permission(Long id, String description) {
+    private Permission permission(Long id, String name) {
         Permission permission = new Permission();
         permission.setId(id);
-        // permission.setDescription(description);
+        permission.setName(name);
 
         return permission;
     }

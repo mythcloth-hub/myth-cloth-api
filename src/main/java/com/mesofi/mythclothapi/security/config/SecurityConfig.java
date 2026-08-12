@@ -29,8 +29,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.mesofi.mythclothapi.security.SecurityProperties;
-
 /**
  * Configures application security using Spring Security with JWT-based
  * authentication and authorization.

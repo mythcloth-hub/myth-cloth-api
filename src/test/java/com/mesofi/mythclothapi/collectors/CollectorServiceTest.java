@@ -34,9 +34,9 @@ import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
-import com.mesofi.mythclothapi.security.ApiTokenService;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.model.Role;
+import com.mesofi.mythclothapi.security.service.ApiTokenService;
 
 @ExtendWith(MockitoExtension.class)
 class CollectorServiceTest {

@@ -11,7 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.common.Auditable;
-import com.mesofi.mythclothapi.security.rolepermissions.model.RolePermission;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

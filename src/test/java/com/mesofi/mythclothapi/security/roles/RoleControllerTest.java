@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 
 import tools.jackson.databind.ObjectMapper;
@@ -87,6 +88,23 @@ public class RoleControllerTest {
     }
 
     @Test
+    void createRole_shouldReturn409_whenRoleAlreadyExists() throws Exception {
+        RoleReq request = new RoleReq("Admin");
+
+        when(service.createRole(request)).thenThrow(new RoleAlreadyExistsException("Admin"));
+
+        mockMvc.perform(post("/roles").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Role with description 'Admin' already exists"))
+                .andExpect(jsonPath("$.instance").value("/roles")).andExpect(jsonPath("$.status").value("409"))
+                .andExpect(jsonPath("$.title").value("Role with description 'Admin' already exists"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("ROLE_ALREADY_EXISTS"));
+
+        verify(service).createRole(request);
+    }
+
+    @Test
     void createRole_shouldReturn201AndLocationHeader() throws Exception {
         RoleReq request = new RoleReq("Admin");
         RoleResp response = new RoleResp(1L, "Admin");
@@ -118,9 +136,10 @@ public class RoleControllerTest {
         when(service.retrieveRole(7L)).thenThrow(new RoleNotFoundException(7L));
 
         mockMvc.perform(get("/roles/{id}", 7L)).andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Role not found"))
+                .andExpect(jsonPath("$.detail").value("Role with id 7 was not found"))
                 .andExpect(jsonPath("$.instance").value("/roles/7")).andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Role not found")).andExpect(jsonPath("$.timestamp").exists());
+                .andExpect(jsonPath("$.title").value("Role not found")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("ROLE_NOT_FOUND"));
 
         verify(service).retrieveRole(7L);
     }
