@@ -40,14 +40,15 @@ public class PermissionServiceTest {
     void createPermission_shouldThrowPermissionAlreadyExistsException_whenPermissionAlreadyExists() {
         // Arrange
         Permission existingPermission = permission(1L, "figurines:create");
-        // when(permissionRepository.findByDescription("figurines:create")).thenReturn(Optional.of(existingPermission));
+        when(permissionRepository.findByName("figurines:create")).thenReturn(Optional.of(existingPermission));
 
         PermissionReq request = new PermissionReq("figurines:create");
 
         // Act + Assert
         assertThatThrownBy(() -> permissionService.createPermission(request))
                 .isInstanceOfSatisfying(PermissionAlreadyExistsException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Duplicate Permission with description: 'figurines:create'");
+                    assertThat(ex.getMessage())
+                            .isEqualTo("Permission with description 'figurines:create' already exists");
                     assertThat(ex.getDescription()).isEqualTo("figurines:create");
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                 });
@@ -56,7 +57,7 @@ public class PermissionServiceTest {
     @Test
     void createPermission_shouldPersistAndReturnMappedResponse_whenRequestIsValid() {
         // Arrange
-        // when(permissionRepository.findByDescription("figurines:create")).thenReturn(Optional.empty());
+        when(permissionRepository.findByName("figurines:create")).thenReturn(Optional.empty());
         when(permissionRepository.save(any(Permission.class))).thenAnswer(invocation -> {
             Permission entity = invocation.getArgument(0);
             entity.setId(1L);
@@ -75,7 +76,7 @@ public class PermissionServiceTest {
         verify(permissionRepository).save(captor.capture());
 
         Permission saved = captor.getValue();
-        // assertThat(saved.getDescription()).isEqualTo("figurines:create");
+        assertThat(saved.getName()).isEqualTo("figurines:create");
     }
 
     @Test
@@ -86,7 +87,7 @@ public class PermissionServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> permissionService.retrievePermission(99L))
                 .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Permission not found");
+                    assertThat(ex.getMessage()).isEqualTo("Permission with id 99 was not found");
                     assertThat(ex.getId()).isEqualTo(99L);
                 });
 
@@ -133,7 +134,7 @@ public class PermissionServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> permissionService.updatePermission(77L, request))
                 .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Permission not found");
+                    assertThat(ex.getMessage()).isEqualTo("Permission with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 
@@ -161,7 +162,7 @@ public class PermissionServiceTest {
 
         Permission saved = captor.getValue();
         assertThat(saved).isSameAs(existing);
-        // assertThat(saved.getDescription()).isEqualTo("Updated Permission");
+        assertThat(saved.getName()).isEqualTo("Updated Permission");
 
         verify(permissionRepository).findById(3L);
     }
@@ -174,7 +175,7 @@ public class PermissionServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> permissionService.removePermission(1L))
                 .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Permission not found");
+                    assertThat(ex.getMessage()).isEqualTo("Permission with id 1 was not found");
                     assertThat(ex.getId()).isEqualTo(1L);
                     assertThat(ex.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
                 });
@@ -201,10 +202,10 @@ public class PermissionServiceTest {
         assertThat(saved).isEqualTo(1L);
     }
 
-    private Permission permission(Long id, String description) {
+    private Permission permission(Long id, String name) {
         Permission permission = new Permission();
         permission.setId(id);
-        // permission.setDescription(description);
+        permission.setName(name);
 
         return permission;
     }

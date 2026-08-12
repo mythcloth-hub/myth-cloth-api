@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
+import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 
 import tools.jackson.databind.ObjectMapper;
@@ -75,6 +76,22 @@ public class PermissionControllerTest {
     }
 
     @Test
+    void createPermission_shouldReturn409_whenPermissionAlreadyExists() throws Exception {
+        PermissionReq request = new PermissionReq("figurines:read");
+        when(service.createPermission(request)).thenThrow(new PermissionAlreadyExistsException("figurines:read"));
+
+        mockMvc.perform(post("/permissions").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Permission with description 'figurines:read' already exists"))
+                .andExpect(jsonPath("$.instance").value("/permissions")).andExpect(jsonPath("$.status").value("409"))
+                .andExpect(jsonPath("$.title").value("Permission with description 'figurines:read' already exists"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("PERMISSION_ALREADY_EXISTS"));
+
+        verify(service).createPermission(request);
+    }
+
+    @Test
     void createPermission_shouldReturn201AndLocationHeader() throws Exception {
         PermissionReq request = new PermissionReq("figurines:read");
         PermissionResp response = new PermissionResp(1L, "figurines:read");
@@ -106,10 +123,11 @@ public class PermissionControllerTest {
         when(service.retrievePermission(7L)).thenThrow(new PermissionNotFoundException(7L));
 
         mockMvc.perform(get("/permissions/{id}", 7L)).andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Permission not found"))
+                .andExpect(jsonPath("$.detail").value("Permission with id 7 was not found"))
                 .andExpect(jsonPath("$.instance").value("/permissions/7")).andExpect(jsonPath("$.status").value("404"))
                 .andExpect(jsonPath("$.title").value("Permission not found"))
-                .andExpect(jsonPath("$.timestamp").exists());
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("PERMISSION_NOT_FOUND"));
 
         verify(service).retrievePermission(7L);
     }

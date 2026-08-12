@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.security;
+package com.mesofi.mythclothapi.security.service;
 
 import static com.mesofi.mythclothapi.security.roles.model.RoleType.ADMIN;
 import static com.mesofi.mythclothapi.security.roles.model.RoleType.COLLECTOR;

@@ -27,11 +27,11 @@ import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
-import com.mesofi.mythclothapi.security.ApiTokenService;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 import com.mesofi.mythclothapi.security.roles.model.RoleType;
+import com.mesofi.mythclothapi.security.service.ApiTokenService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

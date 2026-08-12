@@ -165,12 +165,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PermissionAlreadyExistsException.class)
     public ProblemDetail handlePermissionDuplicateException(PermissionAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(PermissionNotFoundException.class)
     public ProblemDetail handlePermissionNotFound(PermissionNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(RolePermissionAlreadyExistsException.class)
