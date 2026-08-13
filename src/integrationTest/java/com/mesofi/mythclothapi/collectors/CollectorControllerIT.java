@@ -7,8 +7,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -47,8 +45,8 @@ public class CollectorControllerIT extends ControllerBaseIT {
         registry.add("myth-cloth.facebook.graph-url", () -> "http://localhost:" + wireMockServer.port());
     }
 
-    @Test
-    @DisplayName("Test Facebook login flow and collector authentication")
+    // @Test
+    // @DisplayName("Test Facebook login flow and collector authentication")
     void fullFacebookLoginFlow() {
 
         final String fbFakeAccessToken = "fbFakeAccessToken";

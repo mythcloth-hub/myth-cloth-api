@@ -154,6 +154,10 @@ pitest {
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
             'com.mesofi.mythclothapi.figurines.repository.FigurineRepositoryImpl',
             'com.mesofi.mythclothapi.security.SecurityMapperImpl',
+            'com.mesofi.mythclothapi.stores.StoreMapper',
+            'com.mesofi.mythclothapi.stores.StoreMapperImpl',
+            'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapper',
+            'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapperImpl',
             'com.mesofi.mythclothapi.StartupRunner'
     ]
 

@@ -27,7 +27,7 @@ class RepositoryNotFoundExceptionTest {
         CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Repository not found: myth-cloth-repo");
+        assertThat(exception.getMessage()).isEqualTo("Catalog repository 'myth-cloth-repo' was not found");
     }
 
     @Test
@@ -77,7 +77,7 @@ class RepositoryNotFoundExceptionTest {
 
         // Assert
         assertThat(exception.getName()).isNull();
-        assertThat(exception.getMessage()).isEqualTo("Repository not found: null");
+        assertThat(exception.getMessage()).isEqualTo("Catalog repository 'null' was not found");
         // assertThat(exception.getCauseDetail()).isEqualTo("Repository not found:
         // null");
     }

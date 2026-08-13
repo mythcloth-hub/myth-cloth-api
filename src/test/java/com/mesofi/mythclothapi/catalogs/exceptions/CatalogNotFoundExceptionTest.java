@@ -27,7 +27,7 @@ class CatalogNotFoundExceptionTest {
         CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Catalog not found: saint-seiya-catalog");
+        assertThat(exception.getMessage()).isEqualTo("Catalog 'saint-seiya-catalog' was not found");
     }
 
     @Test
@@ -77,7 +77,7 @@ class CatalogNotFoundExceptionTest {
 
         // Assert
         assertThat(exception.getName()).isNull();
-        assertThat(exception.getMessage()).isEqualTo("Catalog not found: null");
+        assertThat(exception.getMessage()).isEqualTo("Catalog 'null' was not found");
         // assertThat(exception.getCauseDetail()).isEqualTo("Catalog not found: null");
     }
 }

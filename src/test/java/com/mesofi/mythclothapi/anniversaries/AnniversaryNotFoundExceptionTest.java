@@ -1,80 +1,31 @@
 package com.mesofi.mythclothapi.anniversaries;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 
-import com.mesofi.mythclothapi.error.ApiException;
+import com.mesofi.mythclothapi.error.ErrorCode;
 
 class AnniversaryNotFoundExceptionTest {
 
     @Test
-    void constructor_shouldSetIdCorrectly_whenCreatedWithGivenId() {
-        // Arrange
-        Long id = 42L;
+    void constructor_shouldPopulateState_andOverrideApiMetadata() {
+        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(42L);
 
-        // Act
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(id);
-
-        // Assert
-        assertThat(exception.getId()).isEqualTo(id);
+        assertThat(exception.getId()).isEqualTo(42L);
+        assertThat(exception.getMessage()).isEqualTo("Anniversary with id 42 was not found");
+        assertThat(exception.getDetail()).isEqualTo("Anniversary with id 42 was not found");
+        assertThat(exception.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(exception.getTitle()).isEqualTo("Anniversary not found");
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.FIGURINE_ANNIVERSARY_NOT_FOUND);
     }
 
     @Test
-    void constructor_shouldSetMessageCorrectly_whenCreated() {
-        // Arrange & Act
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(1L);
-
-        // Assert
-        assertThat(exception.getMessage()).isEqualTo("Anniversary not found");
-    }
-
-    @Test
-    void constructor_shouldSetCauseDetailCorrectly_whenCreated() {
-        // Arrange & Act
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(1L);
-
-        // Assert
-        // assertThat(exception.getCauseDetail()).isEqualTo("Anniversary not found");
-    }
-
-    @Test
-    void getStatus_shouldReturnNotFound_whenCalled() {
-        // Arrange
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(1L);
-
-        // Act
-        HttpStatus status = exception.getStatus();
-
-        // Assert
-        assertThat(status).isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    void exception_shouldBeInstanceOfApiException_whenCreated() {
-        // Arrange & Act
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(1L);
-
-        // Assert
-        assertThat(exception).isInstanceOf(ApiException.class);
-    }
-
-    @Test
-    void exception_shouldBeInstanceOfRuntimeException_whenCreated() {
-        // Arrange & Act
-        AnniversaryNotFoundException exception = new AnniversaryNotFoundException(1L);
-
-        // Assert
-        assertThat(exception).isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    void constructor_shouldHandleNullId_whenCreatedWithNullId() {
-        // Arrange & Act
+    void constructor_shouldAllowNullId() {
         AnniversaryNotFoundException exception = new AnniversaryNotFoundException(null);
 
-        // Assert
         assertThat(exception.getId()).isNull();
+        assertThat(exception.getMessage()).isEqualTo("Anniversary with id null was not found");
     }
 }

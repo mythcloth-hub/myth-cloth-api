@@ -17,46 +17,56 @@ import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 /**
- * Custom repository implementation responsible for executing advanced figurine
- * queries.
+ * Custom repository implementation for executing advanced figurine queries.
  *
  * <p>
  * This repository uses native SQL queries through {@link EntityManager} to
  * support dynamic filtering, custom sorting, and pagination requirements that
- * are not easily handled through Spring Data derived queries.
+ * are not easily handled by Spring Data derived queries.
+ * </p>
  *
  * <p>
- * The repository provides:
- *
+ * The repository supports:
+ * </p>
  * <ul>
- * <li>Dynamic filtering based on {@link FigurineFilter}.
- * <li>Pagination support through Spring Data {@link Pageable}.
- * <li>Custom ordering based on figurine release status.
- * <li>Calculation of total figurines and total collectable figurines.
- * <li>Queries optimized to retrieve the first distributor information
- * associated with each figurine.
+ * <li>Dynamic filtering based on {@link FigurineFilter}.</li>
+ * <li>Pagination through Spring Data {@link Pageable}.</li>
+ * <li>Custom ordering based on figurine release status and dates.</li>
+ * <li>Counting total and collectable figurines.</li>
+ * <li>Filtering figurines by release year.</li>
  * </ul>
  *
  * <p>
- * Figurines are categorized into release statuses:
- *
+ * Figurines are categorized by their calculated release status:
+ * </p>
  * <ul>
- * <li>{@code RELEASED}: Figurines with a release date in the past or present.
- * <li>{@code ANNOUNCED}: Figurines with a future release date.
+ * <li>{@code RELEASED}: Figurines with a release date in the past or
+ * present.</li>
+ * <li>{@code ANNOUNCED}: Figurines with a future release date.</li>
  * <li>{@code PROTOTYPE}: Figurines with an announcement date but no release
- * date.
- * <li>{@code RUMORED}: Figurines without announcement or release information.
+ * date.</li>
+ * <li>{@code RUMORED}: Figurines without announcement or release
+ * information.</li>
  * </ul>
  *
- * @see FigurineRepositoryCustom
+ * @see FigurineQueryRepository
  * @see FigurineFilter
  */
 @Repository
-public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
+public class FigurineRepositoryImpl implements FigurineQueryRepository {
 
     @PersistenceContext
     private EntityManager em;
 
+    /**
+     * Base SQL query used as the starting point for dynamic figurine queries.
+     *
+     * <p>
+     * The query calculates the release status for each figurine and retrieves the
+     * first distributor associated with each figurine. Additional filtering,
+     * sorting, and pagination clauses are appended dynamically.
+     * </p>
+     */
     private final String BASE_SQL = """
             SELECT
                 t.*
@@ -86,20 +96,27 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
             """;
 
     /**
-     * Retrieves a paginated list of figurines using the provided search criteria.
+     * Retrieves a paginated list of figurines matching the specified filter.
      *
      * <p>
-     * The result includes pagination metadata and the total number of collectable
-     * figurines. Collectable figurines are those with a release status of
+     * In addition to the requested page of figurines, the returned page contains
+     * the total number of matching figurines and the total number of collectable
+     * figurines.
+     * </p>
+     *
+     * <p>
+     * A figurine is considered collectable when its calculated release status is
      * {@code ANNOUNCED} or {@code RELEASED}.
+     * </p>
      *
      * @param filter
-     *            filtering criteria used to restrict the search results
+     *            the filtering criteria used to restrict the search results
      * @param pageable
-     *            pagination information including page size and offset
-     * @return a paginated result containing figurines and collectable count
-     *         information
+     *            the pagination information, including page size and offset
+     * @return a paginated result containing the matching figurines and collectable
+     *         figurine count
      */
+    @Override
     public CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable) {
         SearchQueryContext queryContext = getSearchQueryContext(filter);
 
@@ -110,6 +127,7 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
                 pageable);
 
         long totalFigurines = executeAndGetTotal(buildCountStatement().formatted(sqlBuilder), params);
+
         long totalCollectableFigurines = executeAndGetTotal(
                 buildCountStatement().formatted("%s %s".formatted(sqlBuilder, buildCollectablePredicate())), params);
 
@@ -117,15 +135,16 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     }
 
     /**
-     * Retrieves all figurines matching the provided filter criteria.
+     * Retrieves all figurines matching the specified filter criteria.
      *
      * <p>
-     * This method executes a dynamic native query without pagination and applies
-     * the default release status ordering.
+     * The results are ordered according to the repository's default release status
+     * ordering.
+     * </p>
      *
      * @param filter
-     *            filtering criteria used to restrict the figurines returned
-     * @return list of figurines matching the filter criteria
+     *            the filtering criteria used to restrict the results
+     * @return a list of matching figurines
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -146,11 +165,12 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
      *
      * <p>
      * The query filters figurines by the year extracted from their release date and
-     * applies the default release ordering.
+     * applies the default release status ordering.
+     * </p>
      *
      * @param year
-     *            release year used to filter figurines
-     * @return list of figurines released during the given year
+     *            the release year used to filter figurines
+     * @return a list of figurines released during the specified year
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -160,7 +180,7 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
         StringBuilder sql = queryContext.sql();
         Map<String, Object> params = queryContext.params();
 
-        sql.append(" ").append("AND EXTRACT(YEAR FROM t.release_date) = :year");
+        sql.append(" AND EXTRACT(YEAR FROM t.release_date) = :year");
         sql.append(" ").append(buildOrderByStatement());
         params.put("year", year);
 
@@ -171,15 +191,18 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     }
 
     /**
-     * Builds the SQL query and parameters based on the provided filter.
+     * Builds the SQL query and parameter map based on the supplied filter.
      *
      * <p>
-     * The generated query starts from the base figurine query and dynamically
-     * appends predicates only for filter values that are provided.
+     * Only predicates corresponding to non-null or non-empty filter values are
+     * appended to the base query.
+     * </p>
      *
      * @param filter
-     *            filter criteria used to build dynamic query conditions
-     * @return query context containing the generated SQL and bound parameters
+     *            the filter criteria used to build the dynamic query; may be
+     *            {@code null}
+     * @return a {@link SearchQueryContext} containing the generated SQL and its
+     *         named parameters
      */
     private SearchQueryContext getSearchQueryContext(FigurineFilter filter) {
         StringBuilder dynamicSql = new StringBuilder(BASE_SQL);
@@ -274,13 +297,16 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     }
 
     /**
-     * Builds the SQL ordering clause used to sort figurines by release priority.
+     * Builds the SQL {@code ORDER BY} clause used to sort figurines by release
+     * priority and relevant dates.
      *
      * <p>
      * The ordering prioritizes announced and released figurines before prototypes
-     * and rumored items, while sorting each group by the most relevant date.
+     * and rumored items. Within each status, the appropriate release, announcement,
+     * or creation date is used to determine the order.
+     * </p>
      *
-     * @return SQL order by statement
+     * @return the SQL {@code ORDER BY} clause
      */
     private String buildOrderByStatement() {
         return """
@@ -316,38 +342,46 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
      * Builds the SQL predicate used to identify collectable figurines.
      *
      * <p>
-     * A figurine is considered collectable when its release status is either:
-     * {@code ANNOUNCED} or {@code RELEASED}.
+     * A figurine is considered collectable when its calculated release status is
+     * either {@code ANNOUNCED} or {@code RELEASED}.
+     * </p>
      *
-     * @return SQL predicate filtering collectable figurines
+     * @return the SQL predicate for collectable figurines
      */
     private String buildCollectablePredicate() {
         return "AND RELEASE_STATUS IN ('ANNOUNCED', 'RELEASED')";
     }
 
     /**
-     * Creates a SQL count wrapper query.
+     * Creates a SQL count query template for a generated query.
      *
-     * @return SQL statement template used to count records from a generated query
+     * <p>
+     * The generated query is used as a subquery so that the total number of
+     * matching records can be calculated independently of pagination.
+     * </p>
+     *
+     * @return a SQL count query template containing a placeholder for the generated
+     *         query
      */
     private String buildCountStatement() {
         return "SELECT COUNT(*) FROM (%s) count_q";
     }
 
     /**
-     * Executes a paginated native SQL query and maps the result to {@link Figurine}
-     * entities.
+     * Executes a paginated native SQL query and maps the results to
+     * {@link Figurine} entities.
      *
      * @param sql
-     *            SQL query to execute
+     *            the SQL query to execute
      * @param params
-     *            query parameters
+     *            the named parameters and their values
      * @param pageable
-     *            pagination configuration
-     * @return list of figurines for the requested page
+     *            the pagination configuration
+     * @return the figurines contained in the requested page
      */
     @SuppressWarnings("unchecked")
     private List<Figurine> executeAndGetContent(String sql, Map<String, Object> params, Pageable pageable) {
+
         Query query = em.createNativeQuery(sql, Figurine.class);
         params.forEach(query::setParameter);
 
@@ -358,13 +392,13 @@ public class FigurineRepositoryImpl implements FigurineRepositoryCustom {
     }
 
     /**
-     * Executes a count query and returns the total number of matching records.
+     * Executes a native SQL count query.
      *
      * @param sql
-     *            SQL count query to execute
+     *            the SQL count query to execute
      * @param params
-     *            query parameters
-     * @return total number of matching records
+     *            the named parameters and their values
+     * @return the total number of matching records
      */
     private long executeAndGetTotal(String sql, Map<String, Object> params) {
         Query query = em.createNativeQuery(sql);

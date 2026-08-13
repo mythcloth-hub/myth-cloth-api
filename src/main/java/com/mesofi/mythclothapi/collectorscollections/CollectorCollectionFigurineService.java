@@ -35,7 +35,6 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
-import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -89,7 +88,6 @@ public class CollectorCollectionFigurineService {
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CollectorRepository collectorRepository;
     private final FigurineRepository figurineRepository;
-    private final FigurineService figurineService;
     private final CollectorMapper collectorMapper;
 
     /**

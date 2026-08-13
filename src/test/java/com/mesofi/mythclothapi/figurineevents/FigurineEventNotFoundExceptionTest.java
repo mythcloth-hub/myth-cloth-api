@@ -27,16 +27,7 @@ class FigurineEventNotFoundExceptionTest {
         FigurineEventNotFoundException exception = new FigurineEventNotFoundException(1L);
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Figurine Event not found");
-    }
-
-    @Test
-    void constructor_shouldSetCauseDetailCorrectly_whenCreated() {
-        // Arrange & Act
-        FigurineEventNotFoundException exception = new FigurineEventNotFoundException(1L);
-
-        // Assert
-        // assertThat(exception.getCauseDetail()).isEqualTo("Figurine Event not found");
+        assertThat(exception.getMessage()).isEqualTo("Figurine event with id 1 was not found");
     }
 
     @Test

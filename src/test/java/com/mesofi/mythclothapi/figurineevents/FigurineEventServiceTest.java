@@ -279,7 +279,9 @@ public class FigurineEventServiceTest {
         FigurineEvent event = new FigurineEvent();
         event.setId(id);
         event.setEventDate(date);
-        // event.setDescription(description);
+        event.setDetails(description);
+        event.setEventDateConfirmed(true);
+        event.setType(ANNOUNCEMENT);
         event.setFigurine(figurine);
         event.setRegion(region);
         return event;

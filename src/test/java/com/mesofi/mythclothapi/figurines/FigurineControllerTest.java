@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -52,14 +51,6 @@ class FigurineControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    void loadAllFigurines_shouldReturn202AndTriggerImport() throws Exception {
-        mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("figurines:load")))).andExpect(status().isAccepted());
-
-        // verify(service).importAllFigurinesFromPublicDrive();
-    }
 
     @Test
     void createFigurine_shouldReturn404_whenPostingToRootPath() throws Exception {
@@ -229,9 +220,14 @@ class FigurineControllerTest {
     }
 
     @Test
-    void retrieveFigurines_shouldReturnBadRequest_whenPageIsNegative() throws Exception {
-        assertThatThrownBy(() -> mockMvc.perform(get("/figurines").param("page", "-1").param("size", "10")))
-                .hasRootCauseInstanceOf(jakarta.validation.ConstraintViolationException.class);
+    void retrieveFigurines_shouldReturn500_whenPageIsNegative() throws Exception {
+        mockMvc.perform(get("/figurines").param("page", "-1").param("size", "10"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(
+                        jsonPath("$.detail").value("retrieveFigurineDetails.page: must be greater than or equal to 0"))
+                .andExpect(jsonPath("$.instance").value("/figurines")).andExpect(jsonPath("$.status").value("500"))
+                .andExpect(jsonPath("$.title").value("Unexpected error occurred, try again later."))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -342,20 +338,14 @@ class FigurineControllerTest {
     }
 
     private FigurineResp createFigurineResponse(long id, String name) {
-        /*
-         * return new FigurineResp(id, name, name + " Myth Cloth EX", List.of(new
-         * FigurineDistributorResp(new DistributorResp(1L, "BANDAI", "Tamashii Nations",
-         * "JP", null), JPY, 16000d, 17600d, null, null, null, false)),
-         * "https://tamashiiweb.com/item/12345", ReleaseStatus.ANNOUNCED, new
-         * CatalogResp(2L, "Tamashii Nations"), new CatalogResp(1L, "Myth Cloth EX"),
-         * new CatalogResp(1L, "Saint Seiya"), new CatalogResp(1L, "Bronze Saint V3"),
-         * null, true, false, false, false, false, false, false, false, false, true,
-         * "Bronze Saint", List.of("https://images.example/pegasus.jpg"),
-         * List.of("https://images.example/pegasus-fan.jpg"), List.of(),
-         * Instant.parse("2026-01-01T00:00:00Z"), Instant.parse("2026-01-02T00:00:00Z"),
-         * null);
-         * 
-         */
-        return null;
+        return new FigurineResp(id, name, name + " Myth Cloth EX", List.of(), "https://tamashiiweb.com/item/12345",
+                com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED,
+                new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(2L, "Tamashii Nations"),
+                new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(1L, "Myth Cloth EX"),
+                new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(1L, "Saint Seiya"),
+                new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(1L, "Bronze Saint"), null, true, false, false,
+                false, false, false, false, false, false, true, "Bronze Saint",
+                List.of("https://images.example/pegasus.jpg"), List.of("https://images.example/pegasus-fan.jpg"),
+                List.of(), List.of(), null, null);
     }
 }

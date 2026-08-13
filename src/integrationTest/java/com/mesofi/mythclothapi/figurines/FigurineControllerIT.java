@@ -25,7 +25,7 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
-import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
+import com.mesofi.mythclothapi.figurines.dto.PaginatedResp;
 import com.mesofi.mythclothapi.it.CatalogSelector;
 import com.mesofi.mythclothapi.it.FigurineScenario;
 import com.mesofi.mythclothapi.it.FigurineScenarioContext;
@@ -455,9 +455,9 @@ public class FigurineControllerIT {
         JsonNode jsonNodeResp = findJsonNodeById(ctx, "p-resp");
 
         // Execute GET /figurines
-        ResponseEntity<PaginatedResponse> response = rest.get()
+        ResponseEntity<PaginatedResp> response = rest.get()
                 .uri(uriBuilder -> uriBuilder.path(FIGURINES).queryParam("page", 0).queryParam("size", 10).build())
-                .retrieve().toEntity(PaginatedResponse.class);
+                .retrieve().toEntity(PaginatedResp.class);
 
         // Basic HTTP contract assertions
         HttpHeaders httpHeaders = response.getHeaders();

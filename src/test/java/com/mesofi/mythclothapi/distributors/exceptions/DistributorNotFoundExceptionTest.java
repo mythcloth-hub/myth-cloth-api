@@ -27,7 +27,7 @@ class DistributorNotFoundExceptionTest {
         DistributorNotFoundException exception = new DistributorNotFoundException(1L);
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Distributor not found");
+        assertThat(exception.getMessage()).isEqualTo("Distributor with id 1 was not found");
     }
 
     @Test

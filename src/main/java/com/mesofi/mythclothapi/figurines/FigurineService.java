@@ -6,10 +6,7 @@ import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PRE
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
 import static com.mesofi.mythclothapi.figurines.FigurineSimilarityUtils.calculateSimilarity;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RUMORED;
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 import static com.mesofi.mythclothapi.figurines.utils.FigurineComparisonUtils.isRestock;
 
 import java.math.BigDecimal;
@@ -17,7 +14,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,15 +35,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
-import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
 import com.mesofi.mythclothapi.catalogs.CatalogService;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.LineUpType;
-import com.mesofi.mythclothapi.catalogs.repository.DistributionRepository;
-import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
-import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
@@ -55,14 +46,10 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.distributors.DistributorRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
-import com.mesofi.mythclothapi.figurineimports.csvsource.FigurineImportCsvSource;
-import com.mesofi.mythclothapi.figurineimports.service.FigurineImportHistoryService;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
@@ -126,15 +113,8 @@ public class FigurineService {
     private static final String BY_SAINT_CLOTH_SERIES_KEY = "by-saint-cloth-series";
 
     private final FigurineMapper mapper;
-    private final FigurineImportCsvSource figurineImportCsvSource;
 
-    private final FigurineImportHistoryService figurineImportHistoryService;
-    private final DistributorRepository distributorRepository;
-    private final DistributionRepository distributionRepository;
     private final LineUpRepository lineUpRepository;
-    private final SeriesRepository seriesRepository;
-    private final GroupRepository groupRepository;
-    private final AnniversaryRepository anniversaryRepository;
     private final FigurineRepository repository;
     private final CurrencyRegionResolver currencyRegionResolver;
     private final CollectorRepository collectorRepository;
@@ -145,24 +125,6 @@ public class FigurineService {
     private final String ANN_MSG = "First announced as a possible future release.";
     private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
     private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
-
-    private static final Map<String, String> ddNames = new HashMap<>();
-
-    static {
-        ddNames.put("gemini", "{name} -the Pope's Chamber-");
-        ddNames.put("pegasus", "{name} -Pegasus Meteor Punches-");
-        ddNames.put("virgo", "{name} -The Temple of the Maiden-");
-        ddNames.put("phoenix", "{name} -Flying Phoenix-");
-        ddNames.put("leo", "Lightning in the Palace of the Lion -{name}-");
-        ddNames.put("cancer", "Desperate Battle in the Palace of the Giant Crab -{name}-");
-        ddNames.put("dragon", "Rozan Rising Dragon Blow -{name}-");
-        ddNames.put("sagittarius", "Commitment of Aiolos’ Spirit in the Palace of the Centaur -{name}-");
-        ddNames.put("athena", "Golden Zodiac extension set Fire clock of the Sanctuary -{name}-");
-        ddNames.put("capricorn", "Glittering Excalibur in the Palace of the Rock Goat -{name}-");
-        ddNames.put("andromeda", "Nebula Chain -{name}-");
-        ddNames.put("pisces", "Blooming Roses in the Palace of the Twin Fish -{name}-");
-        ddNames.put("libra", "Guidance of the Palace of the Scale -{name}-");
-    }
 
     private static final Map<LineUpType, FigurineLineUpCacheConf> LINEUP_CONFIG = Map.of(LineUpType.MYTH_CLOTH_EX,
             new FigurineLineUpCacheConf(BY_MYTH_CLOTH_EX_KEY, "Myth Cloth EX"), LineUpType.MYTH_CLOTH,
@@ -180,74 +142,6 @@ public class FigurineService {
 
     private static final Predicate<Figurine> IS_RELEASED_OR_ANNOUNCED = figurine -> figurine
             .getCurrentReleaseStatus() == RELEASED || figurine.getCurrentReleaseStatus() == ANNOUNCED;
-
-    /**
-     * Imports all figurines from the public Google Drive CSV source.
-     *
-     * <p>
-     * This method:
-     *
-     * <ul>
-     * <li>Loads all catalog entities required to resolve references
-     * <li>Reads the public CSV file containing figurine data
-     * <li>Converts each CSV row into a fully prepared {@link Figurine} entity
-     * <li>Persists all imported figurines in a single batch
-     * </ul>
-     *
-     * <p>
-     * If the CSV cannot be read, an {@link IllegalStateException} is thrown.
-     *
-     * @throws IllegalStateException
-     *             if the CSV source cannot be read
-     */
-    /*
-     * @Transactional
-     *
-     * @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE,
-     * COLLECTOR_FIGURINE_CACHE}, allEntries = true) public void
-     * importAllFigurinesFromPublicDrive() { log.info("Loading all figurines ...");
-     *
-     * List<Figurine> importedFigurines; List<Figurine> allFigurines = new
-     * ArrayList<>();
-     *
-     * CatalogContext catalogContext = loadCatalogs();
-     *
-     * String errorMessage = null; int totalImported = 0;
-     *
-     * try (Reader reader = csvSource.openReader()) { List<FigurineCsv> csvRows =
-     * new CsvToBeanBuilder<FigurineCsv>(reader).withType(FigurineCsv.class)
-     * .withIgnoreLeadingWhiteSpace(true).build().parse();
-     *
-     * log.info("Importing {} figurines from CSV file.", csvRows.size());
-     *
-     * Map<String, Figurine> existingFigurinesByLegacyName = repository
-     * .findByLegacyNameInOrderById(csvRows.stream().map(FigurineCsv::
-     * getOriginalName).toList()).stream()
-     * .collect(Collectors.toMap(Figurine::getLegacyName, Function.identity()));
-     *
-     * Figurine newOrExisting; for (FigurineCsv csv : csvRows) { if
-     * (isNewFigurine(existingFigurinesByLegacyName, csv.getOriginalName())) {
-     * newOrExisting = initializeFigurineForCreate(mapper.toFigurine(csv,
-     * catalogContext)); } else { Figurine existing =
-     * existingFigurinesByLegacyName.get(csv.getOriginalName()); Figurine incoming =
-     * mapper.toFigurine(csv, catalogContext); newOrExisting =
-     * initializeFigurineForUpdate(existing, incoming); }
-     * allFigurines.add(newOrExisting); totalImported++; } importedFigurines =
-     * repository.saveAllAndFlush(allFigurines); } catch (IOException ex) {
-     * log.error("Error while reading csv file.", ex); errorMessage =
-     * "Unable to load all figurines: " + ex.getMessage(); throw new
-     * FigurineImportException(); } catch (Exception ex) {
-     * log.error("Unexpected error while importing figurines.", ex); errorMessage =
-     * "Unexpected error: " + ex.getMessage(); throw new FigurineImportException();
-     * } finally { figurineImportHistoryService.saveFigurineImport(totalImported,
-     * errorMessage); }
-     *
-     * // Rebuild restock history for all imported figurines
-     * rebuildRestockHistory(importedFigurines); }
-     */
-    private boolean isNewFigurine(Map<String, Figurine> figurinesByLegacyName, String originalName) {
-        return !figurinesByLegacyName.containsKey(originalName);
-    }
 
     void assignPreviousRelease(Figurine figurine, List<Figurine> releasedFigurines) {
         Figurine self = null;
@@ -696,267 +590,6 @@ public class FigurineService {
     }
 
     /**
-     * Builds a human-readable display name for a figurine.
-     *
-     * @param figurine
-     *            figurine entity
-     * @return displayable name
-     */
-    @Deprecated
-    public String createDisplayableName(Figurine figurine) {
-
-        String name = figurine.getNormalizedName();
-
-        String lineUpString = Optional.ofNullable(figurine.getLineup().getDescription()).orElse("");
-        String seriesString = Optional.ofNullable(figurine.getSeries().getDescription()).orElse("");
-        String groupString = Optional.ofNullable(figurine.getGroup()).map(Descriptive::getDescription).orElse("");
-        String distribution = Optional.ofNullable(figurine.getDistribution()).map(Descriptive::getDescription)
-                .orElse("");
-        int year = Optional.ofNullable(figurine.getDistributors())
-                .map(list -> list.isEmpty() ? null : list.getFirst().getReleaseDate()).map(LocalDate::getYear)
-                .orElse(0);
-
-        boolean oce = Optional.ofNullable(figurine.getOce()).orElse(false);
-        boolean revival = Optional.ofNullable(figurine.getRevival()).orElse(false);
-        boolean golden = Optional.ofNullable(figurine.getGolden()).orElse(false);
-        boolean gold = Optional.ofNullable(figurine.getGold()).orElse(false);
-        boolean set = Optional.ofNullable(figurine.getSet()).orElse(false);
-        boolean manga = Optional.ofNullable(figurine.getManga()).orElse(false);
-        boolean metal = Optional.ofNullable(figurine.getMetalBody()).orElse(false);
-        boolean broken = Optional.ofNullable(figurine.getBroken()).orElse(false);
-        boolean plainCloth = Optional.ofNullable(figurine.getPlainCloth()).orElse(false);
-        boolean anniversary = Optional.ofNullable(figurine.getAnniversary()).isPresent();
-        boolean anniversary15 = isAnniversaryEdition(figurine.getAnniversary(), 15);
-        boolean anniversary10 = isAnniversaryEdition(figurine.getAnniversary(), 10);
-        boolean anniversary40 = isAnniversaryEdition(figurine.getAnniversary(), 40);
-
-        // Figuarts Zero
-        if (lineUpString.equalsIgnoreCase("Figuarts Zero Metallic Touch")) {
-            return "Figuarts Zero Touche Métallique " + name;
-        }
-        // DD Panoramation
-        if (lineUpString.equalsIgnoreCase("DD Panoramation")) {
-            final String simpleName = name.toLowerCase();
-
-            return ddNames.keySet().stream().filter(simpleName::contains).findFirst()
-                    .map(key -> ddNames.get(key).replace("{name}", figurine.getNormalizedName())).orElse(name);
-        }
-
-        // Myth Cloth EX
-        if (lineUpString.equalsIgnoreCase("Myth Cloth EX")) {
-            if (seriesString.equalsIgnoreCase("Saint Seiya Legend Of Sanctuary")) {
-                return name + " ~Legend of Sanctuary Edition~";
-            }
-            if (seriesString.equalsIgnoreCase("Saintia Sho")) {
-                return name + " Saintia Sho Color Edition";
-            }
-            if (seriesString.equalsIgnoreCase("Soul of Gold")) {
-                if (groupString.equalsIgnoreCase("God Robe")) {
-                    return name + " God Robe";
-                } else {
-                    if (groupString.equalsIgnoreCase("Accessories")) {
-                        return name + " Set";
-                    } else {
-                        name += " (God Cloth)";
-                        if (set) {
-                            name += " Saga Saga Premium Set";
-                        }
-                        return name;
-                    }
-                }
-            }
-            if (gold) {
-                return name + " Gold 24";
-            }
-            if (seriesString.equalsIgnoreCase("Saint Seiya The Beginning")) {
-                return name + " -Knights of the Zodiac-";
-            }
-            if (groupString.equalsIgnoreCase("God") && anniversary && set) {
-                return name + " -Divine Saga Premium Set-";
-            }
-            if (groupString.equalsIgnoreCase("Gold Inheritor")) {
-                return name + " ~Inheritor of the Gold Cloth~";
-            }
-            if (groupString.equalsIgnoreCase("God Robe")) {
-                if (anniversary40) {
-                    return name + " 40th Anniversary Ver.";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Poseidon Scale")) {
-                if (oce) {
-                    return name + " ~Original Color Edition~";
-                }
-                if (name.toLowerCase().contains("sorrento") && !metal && year == 2021) {
-                    return name + " <Asgard Final Battle Ver.>";
-                }
-                if (set) {
-                    return name + " Imperial Throne Set";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Judge")) {
-                if (oce) {
-                    return name + " -Original Color Edition-";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
-                return name + " (Initial Bronze Cloth)";
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
-                if (golden) {
-                    return name + " (New Bronze Cloth) ~Golden Limited Edition~";
-                } else if (revival) {
-                    return name + " [New Bronze Cloth] <Revival Ver.>";
-                } else if (oce) {
-                    if (anniversary) {
-                        return name + " ~(New Bronze Cloth) 40th Anniversary Edition~";
-                    } else {
-                        return name + " ~Original Color Edition~";
-                    }
-                } else {
-                    return name + " (New Bronze Cloth)";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
-                name += " [Final Bronze Cloth]";
-                if (oce) {
-                    name += " ~Original Color Edition~";
-                } else if (golden) {
-                    name += " ~Golden Limited Edition~";
-                }
-                return name;
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
-                return name + " [God Cloth]";
-            }
-            if (groupString.equalsIgnoreCase("God")) {
-                if (oce) {
-                    return name + " ~Original Color Edition~";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Gold Saint")) {
-                if (oce) {
-                    return name + " ~Original Color Edition~";
-                }
-                if (revival && anniversary) {
-                    return name + " <20th Revival Ver.>";
-                }
-                if (revival) {
-                    return name + " <Revival Ver.>";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Surplice Saint") && !set) {
-                name += " (Surplice)";
-                if (revival) {
-                    name += " <20th Revival Ver.>";
-                }
-                return name;
-            }
-            if (groupString.equalsIgnoreCase("Surplice Saint") && set) {
-                return name + " Set";
-            }
-        }
-
-        // Myth Cloth
-        if (lineUpString.equalsIgnoreCase("Myth Cloth")) {
-            if (name.toLowerCase().contains("hilda") && distribution.toLowerCase().contains("stores")) {
-                return name + " -The Earth Representative of Odin-";
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V1")) {
-                if (manga) {
-                    return name + " Comic Ver.";
-                }
-                if (anniversary && !oce) {
-                    return name + " 20th Anniversary Ver.";
-                }
-                if (revival) {
-                    return name + " Early Bronze Cloth <Revival Ver.>";
-                }
-                if (golden) {
-                    return name + " ~Limited Gold~";
-                }
-                if (oce) {
-                    return name + " ~Original Color Edition~";
-                }
-                if (!seriesString.equalsIgnoreCase("The Lost Canvas")) {
-                    return name + " (Initial Bronze Cloth)";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V2")) {
-                if (golden) {
-                    return name + " Power of Gold";
-                }
-                if (broken) {
-                    return name + " ~Broken Version~";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V3")) {
-                if (gold) {
-                    return name + " Golden Genealogy";
-                }
-                if (!oce) {
-                    return name + " (Final Bronze Cloth)";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V4")) {
-                if (anniversary10) {
-                    return name + " (God Cloth) -10th Anniversary Edition-";
-                }
-                name += " God Cloth";
-                if (oce) {
-                    return name + " ~Original Color Edition~";
-                }
-            }
-            if (groupString.equalsIgnoreCase("Surplice Saint") && !oce) {
-                return name + " (Surplice)";
-            }
-            if (groupString.equalsIgnoreCase("Specter")) {
-                if (set) {
-                    return name + " Complete Set";
-                }
-            }
-            if (revival) {
-                return name + " <Revival Ver.>";
-            }
-            if (groupString.equalsIgnoreCase("Bronze Saint V5")) {
-                return name + " (Heaven Chapter)";
-            }
-            if (anniversary15) {
-                return name + " 15th Anniversary Ver.";
-            }
-
-            if (oce) {
-                return name + " ~Original Color Edition~";
-            }
-        }
-        // Appendix
-        if (lineUpString.equalsIgnoreCase("Appendix")) {
-            if (oce) {
-                return name + " ~Original Color Edition~";
-            }
-            if (plainCloth) {
-                return name + " (Plain Cloth)";
-            }
-        }
-
-        return name;
-    }
-
-    /**
-     * Determines whether the supplied anniversary matches the specified edition
-     * year.
-     *
-     * @param anniversary
-     *            anniversary associated with the figurine; may be {@code null}
-     * @param year
-     *            anniversary edition year to verify
-     * @return {@code true} if the anniversary exists and matches the specified
-     *         year; {@code false} otherwise
-     */
-    private boolean isAnniversaryEdition(Anniversary anniversary, int year) {
-        return Optional.ofNullable(anniversary).map(a -> a.getYear() == year).orElse(false);
-    }
-
-    /**
      * Calculates the final price including regional taxes based on currency.
      *
      * <p>
@@ -979,57 +612,6 @@ public class FigurineService {
             case USD -> figurineDistributor.getPrice(); // no VAT by default
             default -> figurineDistributor.getPrice();
         };
-    }
-
-    /**
-     * Determines the {@link ReleaseStatus} of a figurine based on its distributor
-     * data and dates.
-     *
-     * <p>
-     * The status is resolved using the following rules:
-     *
-     * <ul>
-     * <li>{@link ReleaseStatus#RUMORED} – no Japanese distributor ({@code JPY}) is
-     * found
-     * <li>{@link ReleaseStatus#PROTOTYPE} – announced but not yet released, and the
-     * announcement is less than 5 years ago
-     * <li>{@link ReleaseStatus#UNRELEASED} – announced but not yet released, and
-     * the announcement is 5 or more years ago
-     * <li>{@link ReleaseStatus#ANNOUNCED} – has a release date that is in the
-     * future (not yet released)
-     * <li>{@link ReleaseStatus#RELEASED} – has a release date that is today or in
-     * the past (already released)
-     * </ul>
-     *
-     * @param figurine
-     *            the figurine whose release status is to be determined
-     * @return the computed {@link ReleaseStatus}
-     */
-    @Deprecated
-    public ReleaseStatus calculateReleaseStatus(Figurine figurine) {
-        List<FigurineDistributor> figurineDistributors = figurine.getDistributors();
-
-        Optional<FigurineDistributor> jp = Objects.isNull(figurineDistributors)
-                ? Optional.empty()
-                : figurineDistributors.stream().findFirst();
-
-        if (jp.isEmpty()) {
-            return RUMORED;
-        } else {
-            FigurineDistributor fd = jp.get();
-            LocalDate relDate = fd.getReleaseDate();
-            LocalDate annDate = fd.getAnnouncementDate();
-
-            if (Objects.isNull(relDate) && Objects.isNull(annDate)) {
-                return RUMORED;
-            }
-
-            if (Objects.nonNull(annDate) && Objects.isNull(relDate)) {
-                return LocalDate.now().getYear() - annDate.getYear() >= 5 ? UNRELEASED : PROTOTYPE;
-            } else {
-                return relDate.isAfter(LocalDate.now()) ? ANNOUNCED : RELEASED;
-            }
-        }
     }
 
     /**

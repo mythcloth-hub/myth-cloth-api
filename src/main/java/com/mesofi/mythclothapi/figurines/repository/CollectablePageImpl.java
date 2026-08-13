@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
+import java.io.Serial;
 import java.util.List;
 
 import org.springframework.data.domain.PageImpl;
@@ -21,6 +22,10 @@ import lombok.Getter;
  */
 @Getter
 public class CollectablePageImpl<T> extends PageImpl<T> {
+
+    @Serial
+    private static final long serialVersionUID = -351581989802463989L;
+
     /** Total number of collectable items available. */
     private final long totalCollectables;
 
