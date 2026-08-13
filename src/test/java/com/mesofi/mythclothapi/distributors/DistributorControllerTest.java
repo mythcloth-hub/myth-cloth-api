@@ -169,7 +169,7 @@ class DistributorControllerTest {
                         new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.detail").value("Distributor already exists: BANDAI - JP"))
+                .andExpect(jsonPath("$.detail").value("Distributor 'BANDAI' already exists in country 'JP'"))
                 .andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("409"))
                 .andExpect(jsonPath("$.title").value("Distributor already exists"))
                 .andExpect(jsonPath("$.timestamp").exists());
@@ -185,9 +185,10 @@ class DistributorControllerTest {
         mockMvc.perform(get("/distributors/{id}", 0L)
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
                         new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:read"))))
-                .andExpect(status().isNotFound()).andExpect(jsonPath("$.detail").value("Distributor not found"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Distributor with id -1 was not found"))
                 .andExpect(jsonPath("$.instance").value("/distributors/0")).andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Distributor not found"))
+                .andExpect(jsonPath("$.title").value("Distributor with id -1 was not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).retrieveDistributor(0L);

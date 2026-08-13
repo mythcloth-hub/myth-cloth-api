@@ -3,9 +3,11 @@ package com.mesofi.mythclothapi.distributors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -13,7 +15,7 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.distributors.model.DistributorName;
 
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
 public class DistributorRepositoryTest {
     @Autowired
@@ -138,6 +140,8 @@ public class DistributorRepositoryTest {
         e.setName(name);
         e.setCountry(country);
         e.setWebsite(website);
+        e.setUpdateDate(Instant.now());
+        e.setCreationDate(Instant.now());
         return e;
     }
 }

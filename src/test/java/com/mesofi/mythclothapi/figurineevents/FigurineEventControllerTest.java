@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.figurineevents;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -142,9 +141,13 @@ class FigurineEventControllerTest {
     }
 
     @Test
-    void retrieveEvents_shouldReturnBadRequest_whenFigurineIdIsNotPositive() {
-        assertThatThrownBy(() -> mockMvc.perform(get("/figurines/{figurineId}/events", 0L)))
-                .hasRootCauseInstanceOf(jakarta.validation.ConstraintViolationException.class);
+    void retrieveEvents_shouldReturnBadRequest_whenFigurineIdIsNotPositive() throws Exception {
+        mockMvc.perform(get("/figurines/{figurineId}/events", 0L)).andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.detail").value("retrieveEvents.figurineId: must be greater than 0"))
+                .andExpect(jsonPath("$.instance").value("/figurines/0/events"))
+                .andExpect(jsonPath("$.status").value("500"))
+                .andExpect(jsonPath("$.title").value("Unexpected error occurred, try again later."))
+                .andExpect(jsonPath("$.timestamp").exists());
 
         verifyNoInteractions(service);
     }

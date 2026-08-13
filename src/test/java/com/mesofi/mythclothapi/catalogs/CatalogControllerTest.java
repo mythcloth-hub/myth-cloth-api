@@ -139,10 +139,10 @@ class CatalogControllerTest {
 
         mockMvc.perform(post("/catalogs/groups").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))).andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Repository not found: groups"))
+                .andExpect(jsonPath("$.detail").value("Catalog repository 'groups' was not found"))
                 .andExpect(jsonPath("$.instance").value("/catalogs/groups"))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Repository not found: groups"))
+                .andExpect(jsonPath("$.title").value("Catalog repository 'groups' was not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).createCatalog("groups", request);
@@ -165,10 +165,10 @@ class CatalogControllerTest {
         when(service.retrieveCatalog("groups", 7L)).thenThrow(new CatalogNotFoundException("groups"));
 
         mockMvc.perform(get("/catalogs/groups/{id}", 7L)).andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Catalog not found: groups"))
+                .andExpect(jsonPath("$.detail").value("Catalog 'groups' was not found"))
                 .andExpect(jsonPath("$.instance").value("/catalogs/groups/7"))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Catalog not found: groups"))
+                .andExpect(jsonPath("$.title").value("Catalog 'groups' was not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).retrieveCatalog("groups", 7L);

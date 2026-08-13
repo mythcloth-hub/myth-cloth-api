@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.mesofi.mythclothapi.BootstrapProperties;
 import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProviderRepository;
 import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
@@ -35,6 +37,7 @@ import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 import com.mesofi.mythclothapi.security.service.ApiTokenService;
 
@@ -50,6 +53,8 @@ class CollectorServiceTest {
     private CollectorAuthProviderRepository collectorAuthProviderRepository;
     @Mock
     private FbApiClient fbApiClient;
+    @Mock
+    private BootstrapProperties bootstrapProperties;
     @Mock
     private FcCredentialsProperties fcCredentials;
     @Mock
@@ -100,14 +105,15 @@ class CollectorServiceTest {
         when(demoProperties.providerUserId()).thenReturn("demo-user-1");
         when(demoProperties.name()).thenReturn("Demo Collector");
         when(demoProperties.email()).thenReturn("demo@example.com");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-user-1", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.LOCAL, "demo-user-1"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(7L);
 
         Role adminRole = new Role();
         adminRole.setId(99L);
-        // adminRole.setDescription("Admin");
-        // when(roleRepository.findByDescription("Admin")).thenReturn(Optional.of(adminRole));
+        adminRole.setName("Admin");
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.of(adminRole));
 
         Collector savedCollector = collector(55L, "Demo Collector", "demo@example.com", null);
         when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
@@ -133,6 +139,38 @@ class CollectorServiceTest {
         assertThat(providerCaptor.getValue().getProviderUserId()).isEqualTo("demo-user-1");
         assertThat(providerCaptor.getValue().getEmail()).isEqualTo("demo@example.com");
         assertThat(providerCaptor.getValue().getEmailVerified()).isTrue();
+    }
+
+    @Test
+    void loginWithLocal_shouldAssignDemoRole_whenUserIsNotConfiguredAdmin() {
+        when(demoProperties.providerUserId()).thenReturn("demo-user-2");
+        when(demoProperties.name()).thenReturn("Demo Visitor");
+        when(demoProperties.email()).thenReturn("visitor@example.com");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
+        when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.LOCAL, "demo-user-2"))
+                .thenReturn(Optional.empty());
+
+        Role demoRole = new Role();
+        demoRole.setId(42L);
+        demoRole.setName("Demo");
+        when(roleRepository.findByName("Demo")).thenReturn(Optional.of(demoRole));
+
+        Collector savedCollector = collector(88L, "Demo Visitor", "visitor@example.com", null);
+        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
+        when(apiTokenService.generateToken(savedCollector, "LOCAL", "demo-user-2", "visitor@example.com"))
+                .thenReturn("jwt-demo");
+        when(apiTokenService.ttlSeconds()).thenReturn(900L);
+
+        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
+
+        assertThat(response.collectorId()).isEqualTo(88L);
+        assertThat(response.accessToken()).isEqualTo("jwt-demo");
+        assertThat(response.expiresInSeconds()).isEqualTo(900L);
+
+        ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
+        verify(collectorRepository).save(collectorCaptor.capture());
+        assertThat(collectorCaptor.getValue().getRole()).isEqualTo(demoRole);
     }
 
     @Test
@@ -210,20 +248,20 @@ class CollectorServiceTest {
     @Test
     void loginWithFacebook_shouldCreateCollectorAndProvider_whenProviderLinkDoesNotExist() {
         when(fcCredentials.appId()).thenReturn("myth-app-id");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
         when(fbApiClient.validateAccessToken("fb-access-token"))
                 .thenReturn(new FbTokenResponse(fbTokenData("myth-app-id", true, "fb-123")));
         when(fbApiClient.getUserInfo("fb-access-token"))
                 .thenReturn(new FbUserInfoResponse("fb-123", "Seiya", "seiya@example.com"));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-123"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(5L);
 
         Collector savedCollector = collector(11L, "Seiya", "seiya@example.com", null);
         Role basicRole = new Role();
         basicRole.setId(2L);
-        // basicRole.setDescription("Basic Collector");
-        // when(roleRepository.findByDescription("Basic
-        // Collector")).thenReturn(Optional.of(basicRole));
+        basicRole.setName("Collector");
+        when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
         when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
         when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-123", "seiya@example.com"))
                 .thenReturn("jwt-created");
@@ -327,18 +365,18 @@ class CollectorServiceTest {
     @Test
     void loginWithGoogle_shouldCreateCollectorAndProvider_whenTokenIsValid() {
         when(googleCredentials.clientId()).thenReturn("expected-client");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(new GoogleTokenInfoResponse(
                 "accounts.google.com", "expected-client", "sub-456", "hyoga@example.com", "false", "Hyoga",
                 "https://img/hyoga.jpg", String.valueOf(Instant.now().plusSeconds(1200).getEpochSecond())));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.GOOGLE, "sub-456"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(3L);
 
         Role basicRole = new Role();
         basicRole.setId(2L);
-        // basicRole.setDescription("Basic Collector");
-        // when(roleRepository.findByDescription("Basic
-        // Collector")).thenReturn(Optional.of(basicRole));
+        basicRole.setName("Collector");
+        when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
 
         Collector savedCollector = collector(20L, "Hyoga", "hyoga@example.com", "https://img/hyoga.jpg");
         when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
@@ -404,19 +442,20 @@ class CollectorServiceTest {
     @Test
     void loginWithFacebook_shouldAssignAdminRole_whenFirstCollectorIsCreated() {
         when(fcCredentials.appId()).thenReturn("myth-app-id");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-100", ProviderType.GOOGLE, "google-admin"));
         when(fbApiClient.validateAccessToken("fb-access-token"))
                 .thenReturn(new FbTokenResponse(fbTokenData("myth-app-id", true, "fb-100")));
         when(fbApiClient.getUserInfo("fb-access-token"))
                 .thenReturn(new FbUserInfoResponse("fb-100", "Mu", "mu@example.com"));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-100"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(0L);
 
         Collector savedCollector = collector(1L, "Mu", "mu@example.com", null);
         Role adminRole = new Role();
         adminRole.setId(1L);
-        // adminRole.setDescription("Admin");
-        // when(roleRepository.findByDescription("Admin")).thenReturn(Optional.of(adminRole));
+        adminRole.setName("Admin");
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.of(adminRole));
         when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
         when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-100", "mu@example.com"))
                 .thenReturn("jwt-admin");
@@ -435,20 +474,20 @@ class CollectorServiceTest {
     @Test
     void loginWithFacebook_shouldAssignBasicCollectorRole_whenNonFirstCollectorIsCreated() {
         when(fcCredentials.appId()).thenReturn("myth-app-id");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
         when(fbApiClient.validateAccessToken("fb-access-token"))
                 .thenReturn(new FbTokenResponse(fbTokenData("myth-app-id", true, "fb-200")));
         when(fbApiClient.getUserInfo("fb-access-token"))
                 .thenReturn(new FbUserInfoResponse("fb-200", "Camus", "camus@example.com"));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-200"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(5L);
 
         Collector savedCollector = collector(6L, "Camus", "camus@example.com", null);
         Role basicRole = new Role();
         basicRole.setId(2L);
-        // basicRole.setDescription("Basic Collector");
-        // when(roleRepository.findByDescription("Basic
-        // Collector")).thenReturn(Optional.of(basicRole));
+        basicRole.setName("Collector");
+        when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
         when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
         when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-200", "camus@example.com"))
                 .thenReturn("jwt-basic");
@@ -464,38 +503,22 @@ class CollectorServiceTest {
     }
 
     @Test
-    void loginWithGoogle_shouldCreateRoleWhenNotFound_forFirstCollector() {
+    void loginWithGoogle_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
         when(googleCredentials.clientId()).thenReturn("expected-client");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "sub-role-1"));
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(new GoogleTokenInfoResponse(
                 "accounts.google.com", "expected-client", "sub-role-1", "aiolia@example.com", "true", "Aiolia",
                 "https://img/aiolia.jpg", String.valueOf(Instant.now().plusSeconds(1200).getEpochSecond())));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.GOOGLE, "sub-role-1"))
                 .thenReturn(Optional.empty());
-        when(collectorRepository.count()).thenReturn(0L);
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.empty());
 
-        Role adminRole = new Role();
-        adminRole.setId(3L);
-        // adminRole.setDescription("Admin");
-        // when(roleRepository.findByDescription("Admin")).thenReturn(Optional.empty());
-        when(roleRepository.save(any(Role.class))).thenReturn(adminRole);
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+                .isInstanceOf(RoleNotFoundException.class).hasMessage("Role with name Admin was not found");
 
-        Collector savedCollector = collector(10L, "Aiolia", "aiolia@example.com", "https://img/aiolia.jpg");
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "GOOGLE", "sub-role-1", "aiolia@example.com"))
-                .thenReturn("jwt-new-role");
-        when(apiTokenService.ttlSeconds()).thenReturn(1800L);
-
-        CollectorLoginResp response = service.login("google", new CollectorLoginReq("google-id-token", null));
-
-        assertThat(response.collectorId()).isEqualTo(10L);
-
-        ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
-        verify(roleRepository).save(roleCaptor.capture());
-        // assertThat(roleCaptor.getValue().getDescription()).isEqualTo("Admin");
-
-        ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
-        verify(collectorRepository).save(collectorCaptor.capture());
-        assertThat(collectorCaptor.getValue().getRole()).isEqualTo(adminRole);
+        verify(collectorRepository, never()).save(any(Collector.class));
+        verify(collectorAuthProviderRepository, never()).save(any(CollectorAuthProvider.class));
     }
 
     private FbTokenData fbTokenData(String appId, boolean valid, String userId) {

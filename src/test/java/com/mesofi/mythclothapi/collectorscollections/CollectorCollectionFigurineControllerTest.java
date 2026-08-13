@@ -191,7 +191,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void assignFigurinesToCollections_shouldReturnNotFound_whenCollectorDoesNotExist() throws Exception {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("test", "test desc", null));
+                new CollectorCollectionReq("test", null, "test desc"));
 
         doThrow(new CollectorNotFoundException(123L)).when(service).assignFigurinesToCollections(123L, req);
 
@@ -205,7 +205,7 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(jsonPath("$.detail").value("Collector with id 123 was not found"))
                 .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector with id 123 was not found"))
+                .andExpect(jsonPath("$.title").value("Collector not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).assignFigurinesToCollections(123L, req);
@@ -214,7 +214,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void assignFigurinesToCollections_shouldReturnConflict_whenCollectionAlreadyExists() throws Exception {
         AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("my collection", "test desc", null));
+                new CollectorCollectionReq("my collection", null, "test desc"));
 
         doThrow(new CollectorCollectionAlreadyExistsException("my collection")).when(service)
                 .assignFigurinesToCollections(123L, req);
@@ -226,10 +226,10 @@ class CollectorCollectionFigurineControllerTest {
                         .with(jwt().jwt(jwt -> jwt.subject("123"))
                                 .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.detail").value("Collection with name 'my collection' already exists"))
+                .andExpect(jsonPath("$.detail").value("Collector collection with name 'my collection' already exists"))
                 .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
                 .andExpect(jsonPath("$.status").value("409"))
-                .andExpect(jsonPath("$.title").value("Collection with name 'my collection' already exists"))
+                .andExpect(jsonPath("$.title").value("Collector collection with name 'my collection' already exists"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).assignFigurinesToCollections(123L, req);
@@ -249,10 +249,10 @@ class CollectorCollectionFigurineControllerTest {
                         .with(jwt().jwt(jwt -> jwt.subject("123"))
                                 .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Collection with id 2 was not found"))
+                .andExpect(jsonPath("$.detail").value("Collector collection with id 2 was not found"))
                 .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collection with id 2 was not found"))
+                .andExpect(jsonPath("$.title").value("Collector collection with id 2 was not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).assignFigurinesToCollections(123L, req);
@@ -283,7 +283,7 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Collector with id 123 was not found"))
                 .andExpect(jsonPath("$.instance").value("/collections")).andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector with id 123 was not found"))
+                .andExpect(jsonPath("$.title").value("Collector not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).retrieveCollections(123L);
@@ -298,9 +298,7 @@ class CollectorCollectionFigurineControllerTest {
         mockMvc.perform(get("/collections").contentType(MediaType.APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("collections:read"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("test"))
-                .andExpect(jsonPath("$[0].description").value("test desc"))
-                .andExpect(jsonPath("$[0].totalFigurines").value(1))
+                .andExpect(jsonPath("$[0].name").value("test")).andExpect(jsonPath("$[0].totalFigurines").value(1))
                 .andExpect(jsonPath("$[0].figurineIds[0]").value(1));
 
         verify(service).retrieveCollections(123L);
@@ -356,7 +354,7 @@ class CollectorCollectionFigurineControllerTest {
 
     @Test
     void updateCollection_shouldReturnUpdatedCollection_whenRequestIsAuthenticated() throws Exception {
-        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", "Updated desc", null, 0, List.of());
+        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", null, "Updated desc", 0, List.of());
         when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc")))
                 .thenReturn(resp);
 

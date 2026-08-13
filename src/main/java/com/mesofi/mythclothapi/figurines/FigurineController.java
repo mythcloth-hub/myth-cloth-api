@@ -28,7 +28,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
-import com.mesofi.mythclothapi.figurines.dto.PaginatedResponse;
+import com.mesofi.mythclothapi.figurines.dto.PaginatedResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 
@@ -194,11 +194,11 @@ public class FigurineController {
      * @param size
      *            number of elements per page; must be between {@code 1} and
      *            {@code 100}
-     * @return {@link ResponseEntity} containing a {@link PaginatedResponse} with
-     *         the matched figurines and pagination metadata
+     * @return {@link ResponseEntity} containing a {@link PaginatedResp} with the
+     *         matched figurines and pagination metadata
      */
     @GetMapping
-    public ResponseEntity<PaginatedResponse> retrieveFigurineDetails(Authentication authentication,
+    public ResponseEntity<PaginatedResp> retrieveFigurineDetails(Authentication authentication,
             @RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
             @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
             @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
@@ -224,7 +224,7 @@ public class FigurineController {
         result = service.filterFigurines(figurineFilter, page, size);
 
         log.info("Total figurines retrieved: {}", result.getContent().size());
-        return ResponseEntity.ok(new PaginatedResponse(result.getContent(), result.getNumber(), result.getSize(),
+        return ResponseEntity.ok(new PaginatedResp(result.getContent(), result.getNumber(), result.getSize(),
                 result.getTotalElements(), result.getTotalCollectables(), result.getTotalPages()));
     }
 

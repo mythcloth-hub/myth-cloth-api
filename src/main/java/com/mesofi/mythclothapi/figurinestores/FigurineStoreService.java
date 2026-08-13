@@ -32,7 +32,6 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
-import com.mesofi.mythclothapi.figurinestores.mapper.FigurineStoreMapper;
 import com.mesofi.mythclothapi.figurinestores.model.CachedStores;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStorePricing;

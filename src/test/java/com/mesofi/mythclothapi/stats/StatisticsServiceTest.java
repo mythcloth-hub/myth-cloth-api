@@ -1,17 +1,17 @@
 package com.mesofi.mythclothapi.stats;
 
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,11 +32,12 @@ import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
+import com.mesofi.mythclothapi.stats.dto.LineUpCountResp;
 import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
+import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 
@@ -63,96 +64,6 @@ class StatisticsServiceTest {
     private AnniversaryRepository anniversaryRepository;
     @Mock
     private CurrencyConversionService currencyConversionService;
-
-    @Test
-    void retrieveStatistics_shouldAggregateCatalogsAndStatuses() {
-        LineUp ex = lineUp(1L, "Myth Cloth EX");
-        LineUp myth = lineUp(2L, "Myth Cloth");
-        Series hades = series(11L, "Hades");
-        Series sanctuary = series(12L, "Sanctuary");
-        Group gold = group(21L, "Gold");
-        Group bronze = group(22L, "Bronze");
-        Anniversary ann10 = anniversary(31L, "10th");
-        Anniversary ann20 = anniversary(32L, "20th");
-
-        Figurine shiryu = figurine(1L, "Shiryu", ex, "https://img/shiryu.jpg");
-        shiryu.setSeries(hades);
-        shiryu.setGroup(gold);
-        shiryu.setAnniversary(ann10);
-
-        Figurine ikki = figurine(2L, "Ikki", ex, "https://img/ikki.jpg");
-        ikki.setSeries(sanctuary);
-        ikki.setGroup(bronze);
-        ikki.setAnniversary(ann20);
-
-        Figurine hyoga = figurine(3L, "Hyoga", myth, "https://img/hyoga.jpg");
-        hyoga.setSeries(hades);
-        hyoga.setGroup(gold);
-        hyoga.setAnniversary(ann10);
-
-        Figurine skippedCatalog = figurine(4L, "No Catalog", null, "https://img/no.jpg");
-
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(shiryu, ikki, hyoga, skippedCatalog));
-        when(lineUpRepository.findAll()).thenReturn(List.of(ex, myth));
-        when(seriesRepository.findAll()).thenReturn(List.of(hades, sanctuary));
-        when(groupRepository.findAll()).thenReturn(List.of(gold, bronze));
-        when(anniversaryRepository.findAll()).thenReturn(List.of(ann10, ann20));
-
-        when(figurineService.calculateReleaseStatus(shiryu)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(ikki)).thenReturn(ReleaseStatus.ANNOUNCED);
-        when(figurineService.calculateReleaseStatus(hyoga)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(skippedCatalog)).thenReturn(ReleaseStatus.PROTOTYPE);
-
-        var result = service.retrieveStatistics(EMPTY_FILTER);
-
-        assertThat(result.totalFigurines()).isEqualTo(4);
-        assertThat(result.countByLineUp())
-                .containsExactlyInAnyOrderEntriesOf(Map.of("Myth Cloth EX", 2, "Myth Cloth", 1));
-        assertThat(result.countBySeries()).containsExactlyInAnyOrderEntriesOf(Map.of("Hades", 2, "Sanctuary", 1));
-        assertThat(result.countByGroup()).containsExactlyInAnyOrderEntriesOf(Map.of("Gold", 2, "Bronze", 1));
-        assertThat(result.countByAnniversary()).containsExactlyInAnyOrderEntriesOf(Map.of("10th", 2, "20th", 1));
-        assertThat(result.totalByReleaseStatus())
-                .containsExactlyInAnyOrderEntriesOf(Map.of("RELEASED", 2, "ANNOUNCED", 1, "PROTOTYPE", 1));
-
-        verify(repository).findAll(EMPTY_FILTER);
-    }
-
-    @Test
-    void retrieveStatisticsByReleases_shouldCountReleasedByFirstDistributorYearAndLineup() {
-        LineUp ex = lineUp(1L, "Myth Cloth EX");
-        LineUp myth = lineUp(2L, "Myth Cloth");
-
-        Figurine saga = figurine(10L, "Saga", ex, "https://img/saga.jpg");
-        saga.setDistributors(List.of(distributor(LocalDate.of(2024, 4, 1)), distributor(LocalDate.of(2025, 1, 1))));
-
-        Figurine mu = figurine(11L, "Mu", ex, "https://img/mu.jpg");
-        mu.setDistributors(List.of(distributor(LocalDate.of(2024, 6, 1))));
-
-        Figurine aiolos = figurine(12L, "Aiolos", myth, "https://img/aiolos.jpg");
-        aiolos.setDistributors(List.of(distributor(LocalDate.of(2024, 2, 1))));
-
-        Figurine announced = figurine(13L, "Announced", ex, "https://img/a.jpg");
-        announced.setDistributors(List.of(distributor(LocalDate.of(2024, 3, 1))));
-
-        Figurine noDistributor = figurine(14L, "No Distributor", myth, "https://img/nd.jpg");
-        noDistributor.setDistributors(List.of());
-
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(saga, mu, aiolos, announced, noDistributor));
-        when(figurineService.calculateReleaseStatus(saga)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(mu)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(aiolos)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(announced)).thenReturn(ReleaseStatus.ANNOUNCED);
-        when(figurineService.calculateReleaseStatus(noDistributor)).thenReturn(ReleaseStatus.RELEASED);
-
-        List<YearStatisticsResp> result = service.retrieveStatisticsByReleases(EMPTY_FILTER);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().year()).isEqualTo(2024);
-        assertThat(result.getFirst().lineUp()).extracting("line", "count")
-                .containsExactlyInAnyOrder(tuple("Myth Cloth EX", 2), tuple("Myth Cloth", 1));
-
-        verify(repository).findAll(EMPTY_FILTER);
-    }
 
     @Test
     void retrieveStatisticsByYear_shouldGroupByMonthAndLineupAndApplyFallbacks() {
@@ -216,89 +127,129 @@ class StatisticsServiceTest {
     }
 
     @Test
-    void retrieveYearlyReleasePrices_shouldAggregateAndConvertToJpy() {
-        LineUp ex = lineUp(1L, "Myth Cloth EX");
+    void retrieveStatistics_shouldAggregateCatalogsAndReleaseStatusTotals() {
+        LineUp bronze = lineUp(1L, "Bronze");
+        LineUp gold = lineUp(2L, "Gold");
+        Series series = series(10L, "Classic");
+        Group group = group(20L, "Saints");
+        Anniversary anniversary = anniversary(30L, "Saints Day");
 
-        Figurine jpyFigurine = figurine(100L, "Aldebaran", ex, "https://img/aldebaran.jpg");
-        jpyFigurine.setDistributors(List.of(distributor(LocalDate.of(2025, 1, 10), 11000.0, CurrencyCode.JPY)));
+        Figurine shun = figurine(42L, "Andromeda Shun", bronze, null);
+        shun.setSeries(series);
+        shun.setGroup(group);
+        shun.setAnniversary(anniversary);
+        shun.setCurrentReleaseStatus(RELEASED);
 
-        Figurine usdFigurine = figurine(101L, "Dohko", ex, "https://img/dohko.jpg");
-        usdFigurine.setDistributors(List.of(distributor(LocalDate.of(2025, 2, 15), 100.0, CurrencyCode.USD)));
+        Figurine ikki = figurine(44L, "Phoenix Ikki", bronze, "https://img/ikki.jpg");
+        ikki.setSeries(null);
+        ikki.setGroup(group);
+        ikki.setCurrentReleaseStatus(ANNOUNCED);
 
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(jpyFigurine, usdFigurine));
-        when(figurineService.calculateReleaseStatus(jpyFigurine)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(usdFigurine)).thenReturn(ReleaseStatus.RELEASED);
-        when(currencyConversionService.convert(any(BigDecimal.class), eq("USD"), eq("JPY")))
-                .thenReturn(new BigDecimal("15000.0"));
+        Figurine shaka = figurine(36L, "Virgo Shaka", gold, null);
+        shaka.setSeries(series);
+        shaka.setGroup(null);
+        shaka.setAnniversary(anniversary);
+        shaka.setCurrentReleaseStatus(RELEASED);
 
-        List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
+        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(shun, ikki, shaka));
+        when(lineUpRepository.findAll()).thenReturn(List.of(bronze, gold));
+        when(seriesRepository.findAll()).thenReturn(List.of(series));
+        when(groupRepository.findAll()).thenReturn(List.of(group));
+        when(anniversaryRepository.findAll()).thenReturn(List.of(anniversary));
 
-        assertThat(result).hasSize(1);
-        YearReleasePriceResp yearly = result.getFirst();
-        assertThat(yearly.year()).isEqualTo(2025);
-        assertThat(yearly.averageReleasePrice()).isEqualByComparingTo("13000.00");
-        assertThat(yearly.highestReleasePrice()).isEqualByComparingTo("15000.00");
-        assertThat(yearly.lowestReleasePrice()).isEqualByComparingTo("11000.00");
-        assertThat(yearly.releaseCount()).isEqualTo(2);
-        assertThat(yearly.highestPriceFigurines().id()).isEqualTo(101L);
-        assertThat(yearly.lowestPriceFigurines().id()).isEqualTo(100L);
+        StatisticsResp result = service.retrieveStatistics(EMPTY_FILTER);
 
-        verify(currencyConversionService).convert(any(BigDecimal.class), eq("USD"), eq("JPY"));
+        assertThat(result.totalFigurines()).isEqualTo(3);
+        assertThat(result.countByLineUp()).containsEntry("Bronze", 2).containsEntry("Gold", 1);
+        assertThat(result.countBySeries()).containsEntry("Classic", 2);
+        assertThat(result.countByGroup()).containsEntry("Saints", 2);
+        assertThat(result.countByAnniversary()).containsEntry("Saints Day", 2);
+        assertThat(result.totalByReleaseStatus()).containsEntry("RELEASED", 2).containsEntry("ANNOUNCED", 1);
     }
 
     @Test
-    void retrieveYearlyReleasePrices_shouldSkipNullPricesAndIgnoreNonReleased() {
-        LineUp ex = lineUp(1L, "Myth Cloth EX");
+    void retrieveStatisticsByReleases_shouldOnlyIncludeReleasedFigurinesAndUseFirstDistributorYear() {
+        LineUp bronze = lineUp(1L, "Bronze");
+        LineUp gold = lineUp(2L, "Gold");
 
-        Figurine nullPrice = figurine(200L, "Shaka", ex, "https://img/shaka.jpg");
-        nullPrice.setDistributors(List.of(distributor(LocalDate.of(2026, 4, 1), null, CurrencyCode.JPY)));
+        Figurine shun = figurine(42L, "Andromeda Shun", bronze, null);
+        shun.setCurrentReleaseStatus(RELEASED);
+        shun.setDistributors(List.of(distributor(LocalDate.of(2025, 11, 10)), distributor(LocalDate.of(2026, 1, 10))));
 
-        Figurine announced = figurine(201L, "Milo", ex, "https://img/milo.jpg");
-        announced.setDistributors(List.of(distributor(LocalDate.of(2026, 4, 1), 12000.0, CurrencyCode.JPY)));
+        Figurine ikki = figurine(44L, "Phoenix Ikki", bronze, null);
+        ikki.setCurrentReleaseStatus(RELEASED);
+        ikki.setDistributors(List.of(distributor(LocalDate.of(2026, 4, 22))));
 
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(nullPrice, announced));
-        when(figurineService.calculateReleaseStatus(nullPrice)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(announced)).thenReturn(ReleaseStatus.ANNOUNCED);
+        Figurine shaka = figurine(36L, "Virgo Shaka", gold, null);
+        shaka.setCurrentReleaseStatus(RELEASED);
+        shaka.setDistributors(List.of(distributor(LocalDate.of(2026, 2, 2))));
 
-        List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
+        Figurine anotherGold = figurine(37L, "Leo Aiolia", gold, null);
+        anotherGold.setCurrentReleaseStatus(RELEASED);
+        anotherGold.setDistributors(List.of(distributor(LocalDate.of(2026, 3, 7))));
 
-        assertThat(result).isEmpty();
-        verify(currencyConversionService, never()).convert(any(BigDecimal.class), eq("JPY"), eq("JPY"));
+        Figurine announced = figurine(38L, "Gemini Saga", gold, null);
+        announced.setCurrentReleaseStatus(ANNOUNCED);
+        announced.setDistributors(List.of(distributor(LocalDate.of(2026, 6, 1))));
+
+        Figurine missing = figurine(50L, "Unknown Fighter", gold, null);
+        missing.setCurrentReleaseStatus(RELEASED);
+        missing.setDistributors(List.of());
+
+        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(shun, ikki, shaka, anotherGold, announced, missing));
+
+        List<YearStatisticsResp> result = service.retrieveStatisticsByReleases(EMPTY_FILTER);
+
+        assertThat(result).extracting(YearStatisticsResp::year).containsExactly(2025, 2026);
+        assertThat(result.getFirst().lineUp()).extracting(LineUpCountResp::line, LineUpCountResp::count)
+                .containsExactly(tuple("Bronze", 1));
+        assertThat(result.get(1).lineUp()).extracting(LineUpCountResp::line, LineUpCountResp::count)
+                .containsExactlyInAnyOrder(tuple("Bronze", 1), tuple("Gold", 2));
     }
 
     @Test
-    void retrieveYearlyReleasePrices_shouldUpdateLowestPriceAndLowestFigurineOnLowerAndEqualValues() {
-        LineUp ex = lineUp(1L, "Myth Cloth EX");
+    void retrieveYearlyReleasePrices_shouldNormalizePricesAndKeepHighestLowestByEquality() {
+        LineUp bronze = lineUp(1L, "Bronze");
 
-        Figurine high = figurine(300L, "Aiolia", ex, "https://img/aiolia.jpg");
-        high.setDistributors(List.of(distributor(LocalDate.of(2025, 1, 1), 15000.0, CurrencyCode.JPY)));
+        Figurine primaryHigh = figurine(101L, "Primary High", bronze, "https://img/high-1.jpg");
+        primaryHigh.setCurrentReleaseStatus(RELEASED);
+        primaryHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 2, 10), 2000.0, CurrencyCode.USD)));
 
-        Figurine lower = figurine(301L, "Milo", ex, "https://img/milo.jpg");
-        lower.setDistributors(List.of(distributor(LocalDate.of(2025, 2, 1), 100.0, CurrencyCode.USD)));
+        Figurine secondaryHigh = figurine(102L, "Secondary High", bronze, "https://img/high-2.jpg");
+        secondaryHigh.setCurrentReleaseStatus(RELEASED);
+        secondaryHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 3, 10), 3000.0, CurrencyCode.JPY)));
 
-        Figurine equalLowest = figurine(302L, "Aphrodite", ex, "https://img/aphrodite.jpg");
-        equalLowest.setDistributors(List.of(distributor(LocalDate.of(2025, 3, 1), 10000.0, CurrencyCode.JPY)));
+        Figurine tiedHigh = figurine(103L, "Tied High", bronze, "https://img/tied-high.jpg");
+        tiedHigh.setCurrentReleaseStatus(RELEASED);
+        tiedHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 4, 10), 3000.0, CurrencyCode.JPY)));
 
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(high, lower, equalLowest));
-        when(figurineService.calculateReleaseStatus(high)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(lower)).thenReturn(ReleaseStatus.RELEASED);
-        when(figurineService.calculateReleaseStatus(equalLowest)).thenReturn(ReleaseStatus.RELEASED);
+        Figurine cheap = figurine(104L, "Cheap", bronze, "https://img/cheap.jpg");
+        cheap.setCurrentReleaseStatus(RELEASED);
+        cheap.setDistributors(List.of(distributor(LocalDate.of(2024, 5, 10), 1000.0, CurrencyCode.JPY)));
+
+        Figurine missingPrice = figurine(105L, "No Price", bronze, "https://img/no-price.jpg");
+        missingPrice.setCurrentReleaseStatus(RELEASED);
+        missingPrice.setDistributors(List.of(distributor(LocalDate.of(2024, 6, 10), null, null)));
+
+        Figurine announced = figurine(106L, "Announced", bronze, "https://img/announced.jpg");
+        announced.setCurrentReleaseStatus(ANNOUNCED);
+        announced.setDistributors(List.of(distributor(LocalDate.of(2025, 1, 1), 5000.0, CurrencyCode.JPY)));
+
+        when(repository.findAll(EMPTY_FILTER))
+                .thenReturn(List.of(primaryHigh, secondaryHigh, tiedHigh, cheap, missingPrice, announced));
         when(currencyConversionService.convert(any(BigDecimal.class), eq("USD"), eq("JPY")))
-                .thenReturn(new BigDecimal("10000.0"));
+                .thenReturn(new BigDecimal("2400.00"));
 
         List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
 
-        assertThat(result).hasSize(1);
-        YearReleasePriceResp yearly = result.getFirst();
-        assertThat(yearly.year()).isEqualTo(2025);
-        assertThat(yearly.averageReleasePrice()).isEqualByComparingTo("11666.67");
-        assertThat(yearly.highestReleasePrice()).isEqualByComparingTo("15000.00");
-        assertThat(yearly.lowestReleasePrice()).isEqualByComparingTo("10000.00");
-        assertThat(yearly.releaseCount()).isEqualTo(3);
-        assertThat(yearly.highestPriceFigurines().id()).isEqualTo(300L);
-        assertThat(yearly.lowestPriceFigurines().id()).isEqualTo(302L);
-
-        verify(currencyConversionService).convert(any(BigDecimal.class), eq("USD"), eq("JPY"));
+        assertThat(result).extracting(YearReleasePriceResp::year).containsExactly(2024);
+        YearReleasePriceResp year2024 = result.getFirst();
+        assertThat(year2024.averageReleasePrice()).isEqualByComparingTo("2350.00");
+        assertThat(year2024.highestReleasePrice()).isEqualByComparingTo("3000.00");
+        assertThat(year2024.lowestReleasePrice()).isEqualByComparingTo("1000.00");
+        assertThat(year2024.highestPriceFigurines().name()).isEqualTo("Tied High");
+        assertThat(year2024.lowestPriceFigurines().name()).isEqualTo("Cheap");
+        assertThat(year2024.releaseCount()).isEqualTo(4);
     }
 
     private Figurine figurine(Long id, String name, LineUp lineUp, String imageUrl) {
@@ -335,7 +286,7 @@ class StatisticsServiceTest {
     private Anniversary anniversary(Long id, String description) {
         Anniversary anniversary = new Anniversary();
         anniversary.setId(id);
-        // anniversary.setDescription(description);
+        anniversary.setName(description);
         return anniversary;
     }
 

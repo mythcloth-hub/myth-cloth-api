@@ -53,10 +53,7 @@ public class MessageConsumer {
 
     private BigDecimal getBigDecimal(Object number) {
         return switch (number) {
-            case null -> null;
-            case Double v -> BigDecimal.valueOf(v);
             case Integer i -> new BigDecimal(i);
-            case Long l -> new BigDecimal(l);
             case String s -> new BigDecimal(s);
             default -> throw new IllegalArgumentException("Unsupported price type: " + number.getClass());
         };

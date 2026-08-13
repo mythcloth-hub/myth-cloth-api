@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,9 +24,10 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -45,12 +46,18 @@ public class FigurineEventRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        Instant now = Instant.now();
+
         LineUp lineUp = new LineUp();
         lineUp.setDescription("lineUp");
+        lineUp.setCreationDate(now);
+        lineUp.setUpdateDate(now);
         savedLineUp = lineUpRepository.saveAndFlush(lineUp);
 
         Series series = new Series();
         series.setDescription("series");
+        series.setCreationDate(now);
+        series.setUpdateDate(now);
         savedSeries = seriesRepository.saveAndFlush(series);
     }
 
@@ -73,7 +80,7 @@ public class FigurineEventRepositoryTest {
         // Act + Assert
         assertThatThrownBy(() -> repository.saveAndFlush(figurineEvent))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .matches(ex -> ex.getMessage().contains("NULL not allowed for column \"DESCRIPTION\"")
+                .matches(ex -> ex.getMessage().contains("NULL not allowed for column \"DETAILS\"")
                         || ex.getMessage().contains("NULL not allowed for column \"FIGURINE_ID\""));
     }
 
@@ -165,7 +172,7 @@ public class FigurineEventRepositoryTest {
         // Assert
         assertThat(found).isNotNull();
         assertThat(found.getId()).isEqualTo(figurineEventSaved.getId());
-        // assertThat(found.getDescription()).isEqualTo("some-event1");
+        assertThat(found.getDetails()).isEqualTo("some-event1");
         assertThat(found.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
         assertThat(found.getFigurine()).isNotNull();
         assertThat(found.getFigurine().getId()).isEqualTo(figurineSaved.getId());
@@ -180,13 +187,13 @@ public class FigurineEventRepositoryTest {
         FigurineEvent figurineEventSaved = repository.save(figurineEvent);
 
         // Act
-        // figurineEventSaved.setDescription("new event");
+        figurineEventSaved.setDetails("new-event");
         FigurineEvent updated = repository.saveAndFlush(figurineEventSaved);
 
         // Assert
         assertThat(updated).isNotNull();
         assertThat(updated.getId()).isEqualTo(figurineEventSaved.getId());
-        // assertThat(updated.getDescription()).isEqualTo("new event");
+        assertThat(updated.getDetails()).isEqualTo("new-event");
         assertThat(updated.getEventDate()).isEqualTo(LocalDate.of(2025, 12, 6));
 
         assertThat(updated.getFigurine()).isNotNull();
@@ -211,13 +218,16 @@ public class FigurineEventRepositoryTest {
 
     private FigurineEvent createFigurineEvent(LocalDate eventDate, String description, Figurine figurine,
             CountryCode region) {
+        Instant now = Instant.now();
 
         FigurineEvent figurineEvent = new FigurineEvent();
         figurineEvent.setEventDate(eventDate);
-        // figurineEvent.setDescription(description);
+        figurineEvent.setDetails(description);
         figurineEvent.setFigurine(figurine);
         figurineEvent.setRegion(region);
         figurineEvent.setType(FigurineEventType.ANNOUNCEMENT);
+        figurineEvent.setCreationDate(now);
+        figurineEvent.setUpdateDate(now);
 
         return figurineEvent;
     }
@@ -225,8 +235,10 @@ public class FigurineEventRepositoryTest {
     private Figurine createFigurine() {
         Figurine figurine = new Figurine();
         figurine.setNormalizedName("Seiya");
+        figurine.setDisplayName("Seiya");
         figurine.setLineup(savedLineUp);
         figurine.setSeries(savedSeries);
+        figurine.setCurrentReleaseStatus(ReleaseStatus.ANNOUNCED);
         figurine.setCreationDate(Instant.now());
         figurine.setUpdateDate(Instant.now());
         return figurine;

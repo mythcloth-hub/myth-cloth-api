@@ -100,7 +100,7 @@ public class CollectorPurchaseServiceTest {
                         new CollectorPurchaseLineItemReq(102L, 1, new BigDecimal("130.00"), PurchaseType.RETAIL)));
 
         assertThatThrownBy(() -> service.createSummaryLineItem(123L, request))
-                .isInstanceOf(FigurineNotFoundException.class).hasMessage("Figurine not found");
+                .isInstanceOf(FigurineNotFoundException.class).hasMessage("Figurine with id 101 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).save(any());
@@ -323,9 +323,8 @@ public class CollectorPurchaseServiceTest {
                 List.of(new CollectorPurchaseLineItemReq(101L, 1, new BigDecimal("129.99"), PurchaseType.PREORDER)));
 
         assertThatThrownBy(() -> service.updateSummaryLineItem(123L, 500L, request))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
-                .hasMessage("Collector purchase not found for this id: 500");
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
+                .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
@@ -647,9 +646,8 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.retrieveSummaryLineItem(123L, 500L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
-                .hasMessage("Collector purchase not found for this id: 500");
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
+                .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
@@ -711,9 +709,8 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteSummaryLineItem(123L, 500L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
-                .hasMessage("Collector purchase not found for this id: 500");
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
+                .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
@@ -796,13 +793,13 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
-                .hasMessage("Collector purchase not found for this id: 500");
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
+                .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);
-        verifyNoInteractions(collectorPurchaseFigurineRepository, collectorCollectionRepository, figurineRepository);
+        verifyNoInteractions(collectorPurchaseFigurineRepository, collectorCollectionRepository,
+                collectorCollectionFigurineRepository, figurineRepository);
     }
 
     @Test
@@ -821,7 +818,7 @@ public class CollectorPurchaseServiceTest {
 
         assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
                 .isInstanceOf(CollectorCollectionNotFoundException.class)
-                .hasMessage("Collection with id 900 was not found");
+                .hasMessage("Collector collection with id 900 was not found");
 
         verify(collectorRepository).findById(123L);
         verify(collectorPurchaseRepository).findByIdAndCollectorId(500L, 123L);

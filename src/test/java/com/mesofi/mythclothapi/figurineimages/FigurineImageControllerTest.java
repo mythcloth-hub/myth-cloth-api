@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.figurineimages;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -160,9 +159,13 @@ class FigurineImageControllerTest {
     }
 
     @Test
-    void retrieveImages_shouldReturnBadRequest_whenFigurineIdIsNotPositive() {
-        assertThatThrownBy(() -> mockMvc.perform(get("/figurines/{figurineId}/images", 0L)))
-                .hasRootCauseInstanceOf(jakarta.validation.ConstraintViolationException.class);
+    void retrieveImages_shouldReturnBadRequest_whenFigurineIdIsNotPositive() throws Exception {
+        mockMvc.perform(get("/figurines/{figurineId}/images", 0L)).andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.detail").value("retrieveImages.figurineId: must be greater than 0"))
+                .andExpect(jsonPath("$.instance").value("/figurines/0/images"))
+                .andExpect(jsonPath("$.status").value("500"))
+                .andExpect(jsonPath("$.title").value("Unexpected error occurred, try again later."))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test

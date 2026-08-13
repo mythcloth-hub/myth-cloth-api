@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.catalogs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -11,7 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -22,7 +23,7 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.IdDescRepository;
 import com.mesofi.mythclothapi.common.Descriptive;
 
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CatalogRepositoryTest {
@@ -35,7 +36,6 @@ public class CatalogRepositoryTest {
      */
     Descriptive newCatalogFor(String name) {
         return switch (name) {
-            // case "anniversaries" -> new Anniversary();
             case "distributions" -> new Distribution();
             case "groups" -> new Group();
             case "lineups" -> new LineUp();
@@ -64,10 +64,8 @@ public class CatalogRepositoryTest {
         // Arrange
         Descriptive entity = newCatalogFor(catalogName);
         entity.setDescription("Sample " + catalogName);
-        if (catalogName.equals("anniversaries")) {
-            // Anniversary anniversary = (Anniversary) entity;
-            // anniversary.setYear(50);
-        }
+        entity.setCreationDate(Instant.now());
+        entity.setUpdateDate(Instant.now());
 
         // Act
         Descriptive saved = save(repo, entity);
@@ -82,10 +80,8 @@ public class CatalogRepositoryTest {
     void findById_shouldFindCatalogById_whenExists(String catalogName, IdDescRepository<?, Long> repo) {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
-        if (catalogName.equals("anniversaries")) {
-            // Anniversary anniversary = (Anniversary) descriptiveEntity;
-            // anniversary.setYear(50);
-        }
+        descriptiveEntity.setCreationDate(Instant.now());
+        descriptiveEntity.setUpdateDate(Instant.now());
         Descriptive saved = save(repo, descriptiveEntity);
 
         // Act
@@ -103,10 +99,8 @@ public class CatalogRepositoryTest {
             IdDescRepository<?, Long> repo) {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName, "Custom Description");
-        if (catalogName.equals("anniversaries")) {
-            // Anniversary anniversary = (Anniversary) descriptiveEntity;
-            // anniversary.setYear(50);
-        }
+        descriptiveEntity.setCreationDate(Instant.now());
+        descriptiveEntity.setUpdateDate(Instant.now());
         Descriptive saved = save(repo, descriptiveEntity);
 
         // Act
@@ -122,10 +116,8 @@ public class CatalogRepositoryTest {
     void update_shouldUpdateCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
-        if (catalogName.equals("anniversaries")) {
-            // Anniversary anniversary = (Anniversary) descriptiveEntity;
-            // anniversary.setYear(50);
-        }
+        descriptiveEntity.setCreationDate(Instant.now());
+        descriptiveEntity.setUpdateDate(Instant.now());
         Descriptive saved = save(repo, descriptiveEntity);
         Descriptive found = findById(repo, saved.getId());
         found.setDescription("Updated description");
@@ -143,10 +135,8 @@ public class CatalogRepositoryTest {
     void update_shouldDeleteCatalog_whenValidChangesProvided(String catalogName, IdDescRepository<?, Long> repo) {
         // Arrange
         Descriptive descriptiveEntity = createCatalog(catalogName);
-        if (catalogName.equals("anniversaries")) {
-            // Anniversary anniversary = (Anniversary) descriptiveEntity;
-            // anniversary.setYear(50);
-        }
+        descriptiveEntity.setCreationDate(Instant.now());
+        descriptiveEntity.setUpdateDate(Instant.now());
         Descriptive saved = save(repo, descriptiveEntity);
         Descriptive found = findById(repo, saved.getId());
 

@@ -15,15 +15,11 @@ public class FigurineSimilarityUtils {
         if (s1 == null || s2 == null) {
             return 0.0;
         }
-        if (s1.equals(s2)) {
+        if (s1.isEmpty() && s2.isEmpty()) {
             return 1.0;
         }
 
         int maxLength = Math.max(s1.length(), s2.length());
-        if (maxLength == 0) {
-            return 1.0; // Both strings are empty
-        }
-
         int distance = LEVENSHTEIN.apply(s1, s2);
 
         return 1.0 - ((double) distance / maxLength);

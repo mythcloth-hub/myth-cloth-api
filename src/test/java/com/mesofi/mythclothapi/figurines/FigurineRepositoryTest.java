@@ -13,7 +13,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -31,9 +31,10 @@ import com.mesofi.mythclothapi.distributors.model.DistributorName;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
-@SpringBootTest
+@DataJpaTest
 @ActiveProfiles("test")
 @Transactional
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -57,17 +58,25 @@ public class FigurineRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        Instant now = Instant.now();
+
         LineUp lineUp = new LineUp();
         lineUp.setDescription("Myth Cloth EX");
+        lineUp.setCreationDate(now);
+        lineUp.setUpdateDate(now);
         savedLineUp = lineUpRepository.saveAndFlush(lineUp);
 
         Series series = new Series();
         series.setDescription("Saint Seiya");
+        series.setCreationDate(now);
+        series.setUpdateDate(now);
         savedSeries = seriesRepository.saveAndFlush(series);
 
         Distributor distributor = new Distributor();
         distributor.setName(DistributorName.BANDAI);
         distributor.setCountry(CountryCode.JP);
+        distributor.setCreationDate(now);
+        distributor.setUpdateDate(now);
         savedDistributor = distributorRepository.saveAndFlush(distributor);
     }
 
@@ -315,13 +324,16 @@ public class FigurineRepositoryTest {
     // ─── Helper ───────────────────────────────────────────────────────────────
 
     private Figurine createValidFigurine(String legacyName) {
+        Instant now = Instant.now();
         Figurine figurine = new Figurine();
         figurine.setLegacyName(legacyName);
         figurine.setNormalizedName("pegasus-seiya-ex");
+        figurine.setDisplayName("Pegasus Seiya EX");
         figurine.setLineup(savedLineUp);
         figurine.setSeries(savedSeries);
-        figurine.setCreationDate(Instant.now());
-        figurine.setUpdateDate(Instant.now());
+        figurine.setCurrentReleaseStatus(ReleaseStatus.RUMORED);
+        figurine.setCreationDate(now);
+        figurine.setUpdateDate(now);
 
         // Add a valid distributor (required for release status logic)
         FigurineDistributor distributor = new FigurineDistributor();
@@ -329,6 +341,8 @@ public class FigurineRepositoryTest {
         distributor.setDistributor(savedDistributor);
         distributor.setCurrency(CurrencyCode.JPY);
         distributor.setReleaseDateConfirmed(false);
+        distributor.setCreationDate(now);
+        distributor.setUpdateDate(now);
         figurine.getDistributors().add(distributor);
 
         return figurine;

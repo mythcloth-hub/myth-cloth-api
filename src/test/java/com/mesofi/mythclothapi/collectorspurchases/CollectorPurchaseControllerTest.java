@@ -36,7 +36,6 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItem
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
-import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -274,10 +273,10 @@ public class CollectorPurchaseControllerTest {
                         .authorities(new SimpleGrantedAuthority("purchases:update")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Collector purchase not found for this id: 5002"))
+                .andExpect(jsonPath("$.detail").value("Collector purchase with id 5002 was not found"))
                 .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items/5002"))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector purchase not found for this id: 5002"))
+                .andExpect(jsonPath("$.title").value("Collector purchase with id 5002 was not found"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(service).updateSummaryLineItem(1L, 5002L, request);

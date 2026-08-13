@@ -92,7 +92,7 @@ public class FigurineImageServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> figurineImageService.retrieveFigurineImages(10L, true))
                 .isInstanceOfSatisfying(FigurineNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Figurine not found");
+                    assertThat(ex.getMessage()).isEqualTo("Figurine with id 10 was not found");
                     assertThat(ex.getId()).isEqualTo(10L);
                 });
     }
@@ -126,7 +126,8 @@ public class FigurineImageServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> figurineImageService.removeFigurineImage(1L, missingImage, true))
                 .isInstanceOfSatisfying(ImageNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Image not found");
+                    assertThat(ex.getMessage())
+                            .isEqualTo("Image with URI 'https://images.example/missing.jpg' was not found");
                     assertThat(ex.getUri()).isEqualTo(missingImage);
                 });
 
@@ -142,7 +143,7 @@ public class FigurineImageServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> figurineImageService.removeFigurineImage(3L, image, true))
                 .isInstanceOfSatisfying(FigurineNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Figurine not found");
+                    assertThat(ex.getMessage()).isEqualTo("Figurine with id 3 was not found");
                     assertThat(ex.getId()).isEqualTo(3L);
                 });
 
@@ -183,7 +184,8 @@ public class FigurineImageServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> figurineImageService.createFigurineImage(request(1L, duplicateRaw, true)))
                 .isInstanceOfSatisfying(ImageAlreadyExistsException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Image already exists");
+                    assertThat(ex.getMessage())
+                            .isEqualTo("Image with URI 'https://images.example/official/../seiya.jpg' already exists");
                     assertThat(ex.getUri()).isEqualTo(duplicateRaw);
                 });
 
@@ -199,7 +201,7 @@ public class FigurineImageServiceTest {
         assertThatThrownBy(() -> figurineImageService
                 .createFigurineImage(request(77L, URI.create("https://images.example/a.jpg"), true)))
                 .isInstanceOfSatisfying(FigurineNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Figurine not found");
+                    assertThat(ex.getMessage()).isEqualTo("Figurine with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 

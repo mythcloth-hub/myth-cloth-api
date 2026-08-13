@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurinestores.mapper;
+package com.mesofi.mythclothapi.figurinestores;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

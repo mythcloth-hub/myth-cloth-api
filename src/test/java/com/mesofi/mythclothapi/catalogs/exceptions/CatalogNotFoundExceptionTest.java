@@ -27,7 +27,7 @@ class CatalogNotFoundExceptionTest {
         CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Catalog not found: saint-seiya-catalog");
+        assertThat(exception.getMessage()).isEqualTo("Catalog 'saint-seiya-catalog' was not found");
     }
 
     @Test
@@ -71,13 +71,37 @@ class CatalogNotFoundExceptionTest {
     }
 
     @Test
+    void getTitle_shouldReturnCatalogNotFound_whenCalled() {
+        // Arrange
+        CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
+
+        // Act
+        String title = exception.getTitle();
+
+        // Assert
+        assertThat(title).isEqualTo("Catalog not found");
+    }
+
+    @Test
+    void getErrorCode_shouldReturnCatalogNotFound_whenCalled() {
+        // Arrange
+        CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
+
+        // Act
+        var errorCode = exception.getErrorCode();
+
+        // Assert
+        assertThat(errorCode.name()).isEqualTo("CATALOG_NOT_FOUND");
+    }
+
+    @Test
     void constructor_shouldHandleNullName_whenCreatedWithNullName() {
         // Arrange & Act
         CatalogNotFoundException exception = new CatalogNotFoundException(null);
 
         // Assert
         assertThat(exception.getName()).isNull();
-        assertThat(exception.getMessage()).isEqualTo("Catalog not found: null");
+        assertThat(exception.getMessage()).isEqualTo("Catalog 'null' was not found");
         // assertThat(exception.getCauseDetail()).isEqualTo("Catalog not found: null");
     }
 }

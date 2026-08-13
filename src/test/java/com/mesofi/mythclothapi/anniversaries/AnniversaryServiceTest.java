@@ -57,7 +57,7 @@ public class AnniversaryServiceTest {
         verify(anniversaryRepository).save(captor.capture());
 
         Anniversary saved = captor.getValue();
-        // assertThat(saved.getDescription()).isEqualTo("Saint Seiya 20th Anniversary");
+        assertThat(saved.getName()).isEqualTo("Saint Seiya 20th Anniversary");
         assertThat(saved.getYear()).isEqualTo(20);
         assertThat(saved.getType()).isEqualTo(AnniversaryType.SAINT_SEIYA);
         assertThat(saved.getFigurines().size()).isEqualTo(0);
@@ -87,7 +87,7 @@ public class AnniversaryServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> anniversaryService.retrieveAnniversary(99L))
                 .isInstanceOfSatisfying(AnniversaryNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Anniversary not found");
+                    assertThat(ex.getMessage()).isEqualTo("Anniversary with id 99 was not found");
                     assertThat(ex.getId()).isEqualTo(99L);
                 });
 
@@ -134,7 +134,7 @@ public class AnniversaryServiceTest {
 
         Anniversary saved = captor.getValue();
         assertThat(saved).isSameAs(existing);
-        // assertThat(saved.getDescription()).isEqualTo("Updated Anniversary");
+        assertThat(saved.getName()).isEqualTo("Updated Anniversary");
         assertThat(saved.getYear()).isEqualTo(25);
         assertThat(saved.getType()).isEqualTo(AnniversaryType.TAMASHII_NATIONS_WORLD_TOUR);
 
@@ -150,7 +150,7 @@ public class AnniversaryServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> anniversaryService.updateAnniversary(77L, request))
                 .isInstanceOfSatisfying(AnniversaryNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Anniversary not found");
+                    assertThat(ex.getMessage()).isEqualTo("Anniversary with id 77 was not found");
                     assertThat(ex.getId()).isEqualTo(77L);
                 });
 
@@ -179,7 +179,7 @@ public class AnniversaryServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> anniversaryService.removeAnniversary(8L))
                 .isInstanceOfSatisfying(AnniversaryNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Anniversary not found");
+                    assertThat(ex.getMessage()).isEqualTo("Anniversary with id 8 was not found");
                     assertThat(ex.getId()).isEqualTo(8L);
                 });
 
@@ -198,7 +198,7 @@ public class AnniversaryServiceTest {
     private Anniversary anniversary(Long id, String description, Integer year, AnniversaryType type) {
         Anniversary anniversary = new Anniversary();
         anniversary.setId(id);
-        // anniversary.setDescription(description);
+        anniversary.setName(description);
         anniversary.setYear(year);
         anniversary.setType(type);
         return anniversary;

@@ -29,7 +29,8 @@ class ImageNotFoundExceptionTest {
         ImageNotFoundException exception = new ImageNotFoundException(URI.create("https://images.example/pegasus.jpg"));
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Image not found");
+        assertThat(exception.getMessage())
+                .isEqualTo("Image with URI 'https://images.example/pegasus.jpg' was not found");
     }
 
     @Test

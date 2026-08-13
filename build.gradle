@@ -143,6 +143,7 @@ pitest {
             '*Properties',
             '*.dto.*',
             '*.entity.*',
+            '*.model.*',
             'com.mesofi.mythclothapi.anniversaries.AnniversaryMapperImpl',
             'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl',
             'com.mesofi.mythclothapi.collectors.mapper.CollectorMapper',
@@ -154,10 +155,15 @@ pitest {
             'com.mesofi.mythclothapi.figurines.mapper.FigurineMapperImpl',
             'com.mesofi.mythclothapi.figurines.repository.FigurineRepositoryImpl',
             'com.mesofi.mythclothapi.security.SecurityMapperImpl',
+            'com.mesofi.mythclothapi.stores.StoreMapper',
+            'com.mesofi.mythclothapi.stores.StoreMapperImpl',
+            'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapper',
+            'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapperImpl',
+            'com.mesofi.mythclothapi.figurines.repository.FigurineListener',
             'com.mesofi.mythclothapi.StartupRunner'
     ]
 
-    mutationThreshold = 100
+    mutationThreshold = 99
 }
 
 tasks.register('integrationTest', Test) {

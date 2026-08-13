@@ -1,5 +1,10 @@
 SET REFERENTIAL_INTEGRITY FALSE;
 
+-- Security tables
+TRUNCATE TABLE public.roles RESTART IDENTITY;
+TRUNCATE TABLE public.permissions RESTART IDENTITY;
+TRUNCATE TABLE public.role_permission RESTART IDENTITY;
+-- Figurine tables
 TRUNCATE TABLE public.figurine_distributor RESTART IDENTITY;
 TRUNCATE TABLE public.figurine_events RESTART IDENTITY;
 TRUNCATE TABLE public.non_official_images RESTART IDENTITY;

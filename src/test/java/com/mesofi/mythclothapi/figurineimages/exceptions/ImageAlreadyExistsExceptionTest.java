@@ -30,7 +30,8 @@ class ImageAlreadyExistsExceptionTest {
                 URI.create("https://images.example/pegasus.jpg"));
 
         // Assert
-        assertThat(exception.getMessage()).isEqualTo("Image already exists");
+        assertThat(exception.getMessage())
+                .isEqualTo("Image with URI 'https://images.example/pegasus.jpg' already exists");
     }
 
     @Test
@@ -44,7 +45,7 @@ class ImageAlreadyExistsExceptionTest {
     }
 
     @Test
-    void getStatus_shouldReturnBadRequest_whenCalled() {
+    void getStatus_shouldReturnConflict_whenCalled() {
         // Arrange
         ImageAlreadyExistsException exception = new ImageAlreadyExistsException(
                 URI.create("https://images.example/pegasus.jpg"));
@@ -53,7 +54,7 @@ class ImageAlreadyExistsExceptionTest {
         HttpStatus status = exception.getStatus();
 
         // Assert
-        assertThat(status).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(status).isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test

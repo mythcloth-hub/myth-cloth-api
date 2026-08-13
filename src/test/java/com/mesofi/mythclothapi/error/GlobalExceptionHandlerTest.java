@@ -132,13 +132,13 @@ class GlobalExceptionHandlerTest {
         assertThat(alreadyExists.getTitle()).isEqualTo("Distributor already exists");
 
         assertThat(notFound.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(notFound.getTitle()).isEqualTo("Distributor not found");
+        assertThat(notFound.getTitle()).isEqualTo("Distributor with id 1 was not found");
 
         assertThat(catalogNotFound.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(catalogNotFound.getTitle()).isEqualTo("Catalog not found: lineup");
+        assertThat(catalogNotFound.getTitle()).isEqualTo("Catalog 'lineup' was not found");
 
         assertThat(repositoryNotFound.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
-        assertThat(repositoryNotFound.getTitle()).isEqualTo("Repository not found: series");
+        assertThat(repositoryNotFound.getTitle()).isEqualTo("Catalog repository 'series' was not found");
 
         assertThat(invalidToken.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(invalidToken.getTitle()).isEqualTo("token invalid");
@@ -174,8 +174,8 @@ class GlobalExceptionHandlerTest {
         ProblemDetail result = handler.handleRoleDuplicateException(ex);
 
         assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
-        assertThat(result.getTitle()).isEqualTo("Duplicate Role with description: 'Admin'");
-        assertThat(result.getDetail()).isEqualTo("Duplicate Role with description: 'Admin'");
+        assertThat(result.getTitle()).isEqualTo("Role with description 'Admin' already exists");
+        assertThat(result.getDetail()).isEqualTo("Role with description 'Admin' already exists");
         assertThat(ex.getDescription()).isEqualTo("Admin");
     }
 
@@ -187,7 +187,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(result.getTitle()).isEqualTo("Role not found");
-        assertThat(result.getDetail()).isEqualTo("Role not found");
+        assertThat(result.getDetail()).isEqualTo("Role with id 1 was not found");
         assertThat(ex.getId()).isEqualTo(1L);
     }
 
@@ -198,8 +198,8 @@ class GlobalExceptionHandlerTest {
         ProblemDetail result = handler.handlePermissionDuplicateException(ex);
 
         assertThat(result.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
-        assertThat(result.getTitle()).isEqualTo("Duplicate Permission with description: 'catalogs:read'");
-        assertThat(result.getDetail()).isEqualTo("Duplicate Permission with description: 'catalogs:read'");
+        assertThat(result.getTitle()).isEqualTo("Permission with description 'catalogs:read' already exists");
+        assertThat(result.getDetail()).isEqualTo("Permission with description 'catalogs:read' already exists");
         assertThat(ex.getDescription()).isEqualTo("catalogs:read");
     }
 
@@ -211,7 +211,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(result.getTitle()).isEqualTo("Permission not found");
-        assertThat(result.getDetail()).isEqualTo("Permission not found");
+        assertThat(result.getDetail()).isEqualTo("Permission with id 1 was not found");
         assertThat(ex.getId()).isEqualTo(1L);
     }
 
