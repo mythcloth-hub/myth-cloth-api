@@ -71,6 +71,30 @@ class RepositoryNotFoundExceptionTest {
     }
 
     @Test
+    void getTitle_shouldReturnCatalogRepositoryNotFound_whenCalled() {
+        // Arrange
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
+
+        // Act
+        String title = exception.getTitle();
+
+        // Assert
+        assertThat(title).isEqualTo("Catalog repository not found");
+    }
+
+    @Test
+    void getErrorCode_shouldReturnCatalogRepositoryNotFound_whenCalled() {
+        // Arrange
+        CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException("myth-cloth-repo");
+
+        // Act
+        var errorCode = exception.getErrorCode();
+
+        // Assert
+        assertThat(errorCode.name()).isEqualTo("CATALOG_REPOSITORY_NOT_FOUND");
+    }
+
+    @Test
     void constructor_shouldHandleNullName_whenCreatedWithNullName() {
         // Arrange & Act
         CatalogRepositoryNotFoundException exception = new CatalogRepositoryNotFoundException(null);

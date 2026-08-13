@@ -323,8 +323,7 @@ public class CollectorPurchaseServiceTest {
                 List.of(new CollectorPurchaseLineItemReq(101L, 1, new BigDecimal("129.99"), PurchaseType.PREORDER)));
 
         assertThatThrownBy(() -> service.updateSummaryLineItem(123L, 500L, request))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
                 .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
@@ -647,8 +646,7 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.retrieveSummaryLineItem(123L, 500L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
                 .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
@@ -711,8 +709,7 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteSummaryLineItem(123L, 500L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
                 .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);
@@ -796,8 +793,7 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollectorId(500L, 123L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.syncPurchaseFigurineTotals(123L, 500L, 900L))
-                .isInstanceOf(
-                        com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException.class)
+                .isInstanceOf(com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException.class)
                 .hasMessage("Collector purchase with id 500 was not found");
 
         verify(collectorRepository).findById(123L);

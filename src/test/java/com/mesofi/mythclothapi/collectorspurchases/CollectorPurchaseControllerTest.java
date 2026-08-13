@@ -36,7 +36,6 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItem
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
-import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;

@@ -26,7 +26,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenExcept
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportException;

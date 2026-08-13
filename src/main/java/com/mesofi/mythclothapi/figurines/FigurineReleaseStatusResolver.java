@@ -25,9 +25,6 @@ public final class FigurineReleaseStatusResolver {
      */
     private static final int UNRELEASED_THRESHOLD_YEARS = 5;
 
-    private FigurineReleaseStatusResolver() {
-    }
-
     /**
      * Resolves the release status of the supplied figurine.
      *

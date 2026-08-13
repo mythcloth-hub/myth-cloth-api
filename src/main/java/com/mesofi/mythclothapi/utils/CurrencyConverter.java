@@ -21,10 +21,6 @@ public final class CurrencyConverter {
      */
     private static final Currency DEFAULT = Currency.getInstance("JPY");
 
-    private CurrencyConverter() {
-        // Utility class
-    }
-
     /**
      * Converts the specified ISO 4217 currency code to a {@link Currency}.
      * <p>

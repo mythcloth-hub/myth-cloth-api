@@ -626,6 +626,25 @@ class CollectorCollectionFigurineServiceTest {
     }
 
     @Test
+    void updateCollection_shouldAllowCurrentCollectionName_whenCheckingForDuplicateNames() {
+        CollectorCollection current = collection(2L, null, "Old", "old.png", "old description");
+        Collector collector = collector(1L, current);
+        CollectorCollectionReq request = new CollectorCollectionReq("Old", "new.png", "new description");
+        CollectorCollection saved = collection(2L, collector, "Old", "new.png", "new description");
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionRepository.save(current)).thenReturn(saved);
+
+        CollectorCollectionResp response = service.updateCollection(1L, 2L, request);
+
+        assertThat(response)
+                .isEqualTo(new CollectorCollectionResp(2L, "Old", "new.png", "new description", 0, List.of()));
+        assertThat(current.getImageUrl()).isEqualTo("new.png");
+        assertThat(current.getDescription()).isEqualTo("new description");
+        verify(collectorCollectionRepository).save(current);
+    }
+
+    @Test
     void updateCollection_shouldThrowCollectorCollectionAlreadyExistsException_whenAnotherCollectionUsesRequestedName() {
         CollectorCollection current = collection(2L, null, "Old", "old.png", "old description");
         CollectorCollection sibling = collection(3L, null, "New", null, null);

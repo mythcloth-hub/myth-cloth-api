@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.figurineevents;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
+import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,6 +97,17 @@ public class FigurineEventServiceTest {
     }
 
     @Test
+    void retrieveFigurineEvent_shouldThrowException_whenIdParametersAreNull() {
+        assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvent(null, 10L))
+                .isInstanceOf(ConstraintViolationException.class)
+                .hasMessageContaining("retrieveFigurineEvent.figurineId").hasMessageContaining("must not be null");
+
+        assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvent(10L, null))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("retrieveFigurineEvent.eventId")
+                .hasMessageContaining("must not be null");
+    }
+
+    @Test
     void retrieveFigurineEvent_shouldThrowException_whenEventIsMissing() {
         // Arrange
         when(figurineEventRepository.findByIdAndFigurineId(60L, 20L)).thenReturn(Optional.empty());
@@ -122,6 +134,13 @@ public class FigurineEventServiceTest {
     }
 
     @Test
+    void retrieveFigurineEvents_shouldThrowException_whenFigurineIdIsNull() {
+        assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvents(null))
+                .isInstanceOf(ConstraintViolationException.class)
+                .hasMessageContaining("retrieveFigurineEvents.figurineId").hasMessageContaining("must not be null");
+    }
+
+    @Test
     void retrieveFigurineEvents_shouldThrowException_whenEventsListIsEmpty() {
         // Arrange
         when(figurineEventRepository.findAllByFigurineId(33L)).thenReturn(List.of());
@@ -130,6 +149,23 @@ public class FigurineEventServiceTest {
         assertThatThrownBy(() -> figurineEventService.retrieveFigurineEvents(33L))
                 .isInstanceOf(FigurineNotFoundException.class)
                 .extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(33L);
+    }
+
+    @Test
+    void retrieveFigurineEvents_shouldReturnResponse_whenSingleEventExists() {
+        // Arrange
+        Figurine figurine = createFigurine(12L);
+        FigurineEvent event = createEvent(7L, LocalDate.of(2024, 3, 3), "Only event", MX, figurine);
+        when(figurineEventRepository.findAllByFigurineId(12L)).thenReturn(List.of(event));
+
+        // Act
+        List<FigurineEventResp> response = figurineEventService.retrieveFigurineEvents(12L);
+
+        // Assert
+        assertThat(response.size()).isEqualTo(1);
+        assertThat(response.getFirst().id()).isEqualTo(7L);
+        assertThat(response.getFirst().description()).isEqualTo("Only event");
+        assertThat(response.getFirst().region()).isEqualTo(MX);
     }
 
     @Test
@@ -147,6 +183,27 @@ public class FigurineEventServiceTest {
         assertThat(response.size()).isEqualTo(2);
         assertThat(response.getFirst().description()).isEqualTo("Announcement");
         assertThat(response.get(1).description()).isEqualTo("Release");
+    }
+
+    @Test
+    void updateFigurineEvent_shouldThrowException_whenIdParametersAreNull() {
+        FigurineEventReq request = createRequest(10L, "Updated", LocalDate.of(2025, 1, 1), true);
+
+        assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(null, 10L, request))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("updateFigurineEvent.figurineId")
+                .hasMessageContaining("must not be null");
+
+        assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, null, request))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("updateFigurineEvent.eventId")
+                .hasMessageContaining("must not be null");
+    }
+
+    @Test
+    void updateFigurineEvent_shouldThrowNullPointerException_whenRequestIsNull() {
+        // The service does not guard against a null request, so the runtime null
+        // dereference is the observable behavior.
+        assertThatThrownBy(() -> figurineEventService.updateFigurineEvent(10L, 6L, null))
+                .isInstanceOf(NullPointerException.class);
     }
 
     @Test
@@ -181,7 +238,10 @@ public class FigurineEventServiceTest {
         // Arrange
         Figurine sameFigurine = createFigurine(10L);
         FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", MX, sameFigurine);
+        existing.setEventDateConfirmed(false);
+        existing.setType(RELEASE);
         FigurineEventReq request = createRequest(10L, "Updated description", LocalDate.of(2025, 1, 1), true);
+        request.setType(RELEASE);
 
         when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
         when(figurineRepository.findById(10L)).thenReturn(Optional.of(sameFigurine));
@@ -200,9 +260,8 @@ public class FigurineEventServiceTest {
         FigurineEvent updatedEvent = eventCaptor.getValue();
         assertThat(updatedEvent.getEventDate()).isEqualTo(LocalDate.of(2025, 1, 1));
         assertThat(updatedEvent.isEventDateConfirmed()).isTrue();
-        assertThat(updatedEvent.getType()).isEqualTo(ANNOUNCEMENT);
+        assertThat(updatedEvent.getType()).isEqualTo(RELEASE);
         assertThat(updatedEvent.getRegion()).isEqualTo(JP);
-        // assertThat(updatedEvent.getDescription()).isEqualTo("Updated description");
         assertThat(updatedEvent.getFigurine()).isSameAs(sameFigurine);
     }
 
@@ -212,7 +271,10 @@ public class FigurineEventServiceTest {
         Figurine originalFigurine = createFigurine(10L);
         Figurine newFigurine = createFigurine(44L);
         FigurineEvent existing = createEvent(6L, LocalDate.of(2024, 1, 1), "Initial", JP, originalFigurine);
+        existing.setEventDateConfirmed(false);
+        existing.setType(ANNOUNCEMENT);
         FigurineEventReq request = createRequest(44L, "Moved event", LocalDate.of(2025, 1, 1), true);
+        request.setType(RELEASE);
 
         when(figurineEventRepository.findByIdAndFigurineId(6L, 10L)).thenReturn(Optional.of(existing));
         when(figurineRepository.findById(44L)).thenReturn(Optional.of(newFigurine));
@@ -228,6 +290,19 @@ public class FigurineEventServiceTest {
         ArgumentCaptor<FigurineEvent> eventCaptor = ArgumentCaptor.forClass(FigurineEvent.class);
         verify(figurineEventRepository).save(eventCaptor.capture());
         assertThat(eventCaptor.getValue().getFigurine()).isSameAs(newFigurine);
+        assertThat(eventCaptor.getValue().isEventDateConfirmed()).isTrue();
+        assertThat(eventCaptor.getValue().getType()).isEqualTo(RELEASE);
+    }
+
+    @Test
+    void removeFigurineEvent_shouldThrowException_whenIdParametersAreNull() {
+        assertThatThrownBy(() -> figurineEventService.removeFigurineEvent(null, 10L))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("removeFigurineEvent.figurineId")
+                .hasMessageContaining("must not be null");
+
+        assertThatThrownBy(() -> figurineEventService.removeFigurineEvent(10L, null))
+                .isInstanceOf(ConstraintViolationException.class).hasMessageContaining("removeFigurineEvent.eventId")
+                .hasMessageContaining("must not be null");
     }
 
     @Test

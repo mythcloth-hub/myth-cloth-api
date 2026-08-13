@@ -71,6 +71,30 @@ class CatalogNotFoundExceptionTest {
     }
 
     @Test
+    void getTitle_shouldReturnCatalogNotFound_whenCalled() {
+        // Arrange
+        CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
+
+        // Act
+        String title = exception.getTitle();
+
+        // Assert
+        assertThat(title).isEqualTo("Catalog not found");
+    }
+
+    @Test
+    void getErrorCode_shouldReturnCatalogNotFound_whenCalled() {
+        // Arrange
+        CatalogNotFoundException exception = new CatalogNotFoundException("saint-seiya-catalog");
+
+        // Act
+        var errorCode = exception.getErrorCode();
+
+        // Assert
+        assertThat(errorCode.name()).isEqualTo("CATALOG_NOT_FOUND");
+    }
+
+    @Test
     void constructor_shouldHandleNullName_whenCreatedWithNullName() {
         // Arrange & Act
         CatalogNotFoundException exception = new CatalogNotFoundException(null);

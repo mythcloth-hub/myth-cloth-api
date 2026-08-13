@@ -142,6 +142,38 @@ class CollectorServiceTest {
     }
 
     @Test
+    void loginWithLocal_shouldAssignDemoRole_whenUserIsNotConfiguredAdmin() {
+        when(demoProperties.providerUserId()).thenReturn("demo-user-2");
+        when(demoProperties.name()).thenReturn("Demo Visitor");
+        when(demoProperties.email()).thenReturn("visitor@example.com");
+        when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin", ProviderType.FACEBOOK,
+                "fb-admin", ProviderType.GOOGLE, "google-admin"));
+        when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.LOCAL, "demo-user-2"))
+                .thenReturn(Optional.empty());
+
+        Role demoRole = new Role();
+        demoRole.setId(42L);
+        demoRole.setName("Demo");
+        when(roleRepository.findByName("Demo")).thenReturn(Optional.of(demoRole));
+
+        Collector savedCollector = collector(88L, "Demo Visitor", "visitor@example.com", null);
+        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
+        when(apiTokenService.generateToken(savedCollector, "LOCAL", "demo-user-2", "visitor@example.com"))
+                .thenReturn("jwt-demo");
+        when(apiTokenService.ttlSeconds()).thenReturn(900L);
+
+        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
+
+        assertThat(response.collectorId()).isEqualTo(88L);
+        assertThat(response.accessToken()).isEqualTo("jwt-demo");
+        assertThat(response.expiresInSeconds()).isEqualTo(900L);
+
+        ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
+        verify(collectorRepository).save(collectorCaptor.capture());
+        assertThat(collectorCaptor.getValue().getRole()).isEqualTo(demoRole);
+    }
+
+    @Test
     void loginWithFacebook_shouldThrowIllegalArgumentException_whenAccessTokenIsMissing() {
         CollectorLoginReq request = new CollectorLoginReq(null, "   ");
 

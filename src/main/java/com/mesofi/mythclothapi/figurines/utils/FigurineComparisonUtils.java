@@ -15,9 +15,6 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
  */
 public final class FigurineComparisonUtils {
 
-    private FigurineComparisonUtils() {
-    }
-
     /**
      * Determines whether a figurine represents a restock of another figurine.
      *

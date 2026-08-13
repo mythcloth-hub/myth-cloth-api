@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.security.config.SecurityConfig;
 
@@ -328,6 +329,21 @@ class FigurineControllerTest {
                 .andExpect(jsonPath("$[0]").value(1L)).andExpect(jsonPath("$[1]").value(2L));
 
         verify(service).retrieveSelectableFigurines(any(FigurineFilter.class));
+    }
+
+    @Test
+    void retrieveFigurineSummaries_shouldReturnSummaries() throws Exception {
+        FigurineSummaryResp summary = new FigurineSummaryResp(1L, "Pegasus Seiya",
+                new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(2L, "Myth Cloth EX"),
+                "https://images.example/pegasus.jpg");
+        when(service.retrieveFigurineSummaries(any(FigurineFilter.class))).thenReturn(List.of(summary));
+
+        mockMvc.perform(get("/figurines/summary")).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].displayableName").value("Pegasus Seiya"))
+                .andExpect(jsonPath("$[0].lineUp.description").value("Myth Cloth EX"))
+                .andExpect(jsonPath("$[0].officialImageUrl").value("https://images.example/pegasus.jpg"));
+
+        verify(service).retrieveFigurineSummaries(any(FigurineFilter.class));
     }
 
     private FigurineReq createFigurineRequest() {

@@ -12,6 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -165,6 +166,27 @@ public class FigurineServiceTest {
     }
 
     @Test
+    void initializeFigurineForCreate_shouldLinkBidirectionalRelationshipsAndPopulateDefaultEvents() {
+        Figurine incoming = figurine(13L, "seiya", "Seiya", RELEASED);
+        incoming.setDistributors(new ArrayList<>(List.of(distributor(CurrencyCode.JPY, 1000.0, LocalDate.of(2024, 1, 1),
+                LocalDate.of(2024, 2, 1), LocalDate.of(2024, 3, 1), true))));
+        incoming.setEvents(new ArrayList<>());
+
+        when(currencyRegionResolver.resolveCountry(CurrencyCode.JPY)).thenReturn(JP);
+
+        Figurine initialized = figurineService.initializeFigurineForCreate(incoming);
+
+        assertThat(initialized).isSameAs(incoming);
+        assertThat(initialized.getDistributors())
+                .allSatisfy(distributor -> assertThat(distributor.getFigurine()).isSameAs(incoming));
+        assertThat(initialized.getEvents()).hasSize(3);
+        assertThat(initialized.getEvents()).extracting(FigurineEvent::getType).containsExactly(ANNOUNCEMENT,
+                PREORDER_OPEN, RELEASE);
+        assertThat(initialized.getEvents()).allSatisfy(event -> assertThat(event.getFigurine()).isSameAs(incoming));
+        assertThat(initialized.getEvents()).extracting(FigurineEvent::getRegion).containsOnly(JP);
+    }
+
+    @Test
     void readFigurine_shouldThrowException_whenFigurineDoesNotExist() {
         when(figurineRepository.findById(44L)).thenReturn(Optional.empty());
 
@@ -228,8 +250,29 @@ public class FigurineServiceTest {
         CollectablePageImpl<FigurineResp> response = figurineService.filterFigurines(emptyFilter(), 0, 2);
 
         assertThat(response.getContent()).hasSize(2);
+        assertThat(response.getContent()).extracting(FigurineResp::id).containsExactly(1L, 2L);
         assertThat(response.getTotalCollectables()).isEqualTo(2);
         verify(figurineRepository).findPaginated(any(), any());
+    }
+
+    @Test
+    void retrieveCollectedFigurineIds_shouldPreferTheMatchingCollectionEvenWhenOthersAreListedFirst() {
+        Collector collector = new Collector();
+        collector.setId(10L);
+
+        CollectorCollection wrongCollection = new CollectorCollection();
+        wrongCollection.setId(19L);
+        wrongCollection.setFigurines(new ArrayList<>(List.of(collectionFigurine(99L))));
+
+        CollectorCollection matchingCollection = new CollectorCollection();
+        matchingCollection.setId(20L);
+        matchingCollection.setFigurines(new ArrayList<>(List.of(collectionFigurine(1L), collectionFigurine(2L))));
+
+        when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionRepository.findByCollector(collector))
+                .thenReturn(List.of(wrongCollection, matchingCollection));
+
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L)).containsExactly(1L, 2L);
     }
 
     @Test
@@ -476,6 +519,37 @@ public class FigurineServiceTest {
     }
 
     @Test
+    void initializeFigurineForUpdate_shouldRefreshReleaseEventConfirmationFlag_whenDistributorProvidesNewStatus() {
+        Figurine existing = figurine(9L, "seiya", "Seiya", RELEASED);
+        FigurineDistributor distributor = distributor(CurrencyCode.JPY, 1000.0, LocalDate.of(2024, 1, 1),
+                LocalDate.of(2024, 2, 1), LocalDate.of(2024, 3, 1), false);
+        existing.setDistributors(new ArrayList<>(List.of(distributor)));
+        existing.setEvents(new ArrayList<>(List.of(event(existing, ANNOUNCEMENT, LocalDate.of(2024, 1, 1)),
+                event(existing, PREORDER_OPEN, LocalDate.of(2024, 2, 1)),
+                event(existing, RELEASE, LocalDate.of(2024, 3, 1)))));
+
+        Figurine incoming = figurine(9L, "seiya", "Seiya", RELEASED);
+        incoming.setDistributors(new ArrayList<>(
+                List.of(distributor(CurrencyCode.JPY, 1200.0, null, null, LocalDate.of(2024, 4, 1), true))));
+
+        doAnswer(invocation -> {
+            FigurineDistributor target = invocation.getArgument(0);
+            FigurineDistributor source = invocation.getArgument(1);
+            target.setReleaseDate(source.getReleaseDate());
+            target.setReleaseDateConfirmed(source.isReleaseDateConfirmed());
+            return null;
+        }).when(figurineMapper).updateFigurineDistributor(any(FigurineDistributor.class),
+                any(FigurineDistributor.class));
+
+        figurineService.initializeFigurineForUpdate(existing, incoming);
+
+        FigurineEvent releaseEvent = existing.getEvents().stream().filter(event -> event.getType() == RELEASE)
+                .findFirst().orElseThrow();
+        assertThat(releaseEvent.getEventDate()).isEqualTo(LocalDate.of(2024, 4, 1));
+        assertThat(releaseEvent.isEventDateConfirmed()).isTrue();
+    }
+
+    @Test
     void initializeFigurineForUpdate_shouldAddAnnouncementEvent_whenAnnouncementEventIsMissing() {
         Figurine existing = figurine(11L, "seiya", "Seiya", RELEASED);
         existing.setDistributors(
@@ -570,6 +644,27 @@ public class FigurineServiceTest {
         when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
         assertThat(figurineService.findBestMatchingFigurine(
                 com.mesofi.mythclothapi.catalogs.model.LineUpType.TAMASHII_NATIONS_BOX, "seiya")).isEmpty();
+    }
+
+    @Test
+    void findBestMatchingFigurine_shouldCacheOnlyReleasedOrAnnouncedOptions() {
+        LineUp lineUp = lineUp("Myth Cloth EX");
+        Figurine announced = figurine(30L, "saya", "Saya", ANNOUNCED);
+        Figurine released = figurine(31L, "seiya", "Seiya", RELEASED);
+        Figurine hidden = figurine(32L, "vega", "Vega", ReleaseStatus.RUMORED);
+
+        when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
+        when(figurineCache.get("by-mythcloth-ex", List.class)).thenReturn(null);
+        when(lineUpRepository.findByDescription("Myth Cloth EX")).thenReturn(Optional.of(lineUp));
+        when(figurineRepository.findAllByLineup(lineUp)).thenReturn(List.of(released, hidden, announced));
+        when(figurineRepository.findById(31L)).thenReturn(Optional.of(released));
+
+        assertThat(figurineService.findBestMatchingFigurine(MYTH_CLOTH_EX, "Seiya")).contains(released);
+        verify(figurineCache).put(eq("by-mythcloth-ex"), argThat(value -> {
+            List<CachedFigurine> cached = (List<CachedFigurine>) value;
+            List<Long> cachedIds = cached.stream().map(CachedFigurine::id).toList();
+            return cachedIds.containsAll(List.of(31L, 30L)) && cachedIds.size() == 2 && !cachedIds.contains(32L);
+        }));
     }
 
     @Test
