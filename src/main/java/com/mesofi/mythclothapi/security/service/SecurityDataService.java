@@ -66,8 +66,9 @@ public class SecurityDataService {
      * it does not already exist.
      * </p>
      */
-    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.COLLECTIONS_DELETE,
-            Permissions.COLLECTIONS_DUPLICATE, Permissions.COLLECTIONS_FIGURINES_ADD,
+    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.ANNIVERSARIES_CREATE,
+            Permissions.ANNIVERSARIES_DELETE, Permissions.ANNIVERSARIES_READ, Permissions.ANNIVERSARIES_UPDATE,
+            Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE, Permissions.COLLECTIONS_FIGURINES_ADD,
             Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_FIGURINES_READ,
             Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE,
             Permissions.FIGURINES_DELETE, Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
@@ -98,7 +99,8 @@ public class SecurityDataService {
                     Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ),
             // Initial, demo permissions.
             DEMO,
-            List.of(Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
+            List.of(Permissions.ANNIVERSARIES_CREATE, Permissions.ANNIVERSARIES_DELETE, Permissions.ANNIVERSARIES_READ,
+                    Permissions.ANNIVERSARIES_UPDATE, Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
                     Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
                     Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
                     Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE,

@@ -48,17 +48,17 @@ public interface Permissions {
     /** Allows creating roles. */
     // String ROLES_WRITE = "roles:write";
 
+    /** Allows creating anniversaries. */
+    String ANNIVERSARIES_CREATE = "anniversaries:create";
+
     /** Allows deletion of anniversaries. */
-    // String ANNIVERSARIES_DELETE = "anniversaries:delete";
+    String ANNIVERSARIES_DELETE = "anniversaries:delete";
 
     /** Allows reading anniversaries. */
-    // String ANNIVERSARIES_READ = "anniversaries:read";
+    String ANNIVERSARIES_READ = "anniversaries:read";
 
     /** Allows updating anniversaries. */
-    // String ANNIVERSARIES_UPDATE = "anniversaries:update";
-
-    /** Allows creating anniversaries. */
-    // String ANNIVERSARIES_WRITE = "anniversaries:write";
+    String ANNIVERSARIES_UPDATE = "anniversaries:update";
 
     /** Allows deletion of catalogs. */
     // String CATALOGS_DELETE = "catalogs:delete";
