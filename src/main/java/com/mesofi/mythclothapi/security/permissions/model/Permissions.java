@@ -144,6 +144,12 @@ public interface Permissions {
     /** Allows reading stores associated with figurines. */
     String FIGURINES_STORES_READ = "figurines:stores:read";
 
+    /** Allows reading current prices of figurines from stores. */
+    String FIGURINES_STORES_READ_CURRENT_PRICES = "figurines:stores:read-current-prices";
+
+    /** Allows reading historical prices of figurines from stores. */
+    String FIGURINES_STORES_READ_HISTORICAL_PRICES = "figurines:stores:read-historical-prices";
+
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";
 

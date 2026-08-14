@@ -72,9 +72,11 @@ public class SecurityDataService {
             Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE,
             Permissions.FIGURINES_DELETE, Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
             Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE, Permissions.FIGURINES_STORES_ASSIGN,
-            Permissions.FIGURINES_STORES_IGNORE, Permissions.FIGURINES_STORES_READ, Permissions.FIGURINES_UPDATE,
-            Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
-            Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE, Permissions.STATS_READ);
+            Permissions.FIGURINES_STORES_IGNORE, Permissions.FIGURINES_STORES_READ,
+            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
+            Permissions.FIGURINES_UPDATE, Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE,
+            Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE,
+            Permissions.STATS_READ);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -103,9 +105,10 @@ public class SecurityDataService {
                     Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
                     Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE,
                     Permissions.FIGURINES_STORES_ASSIGN, Permissions.FIGURINES_STORES_IGNORE,
-                    Permissions.FIGURINES_STORES_READ, Permissions.FIGURINES_UPDATE, Permissions.PURCHASES_CREATE,
-                    Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC,
-                    Permissions.PURCHASES_UPDATE, Permissions.STATS_READ));
+                    Permissions.FIGURINES_STORES_READ, Permissions.FIGURINES_STORES_READ_CURRENT_PRICES,
+                    Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES, Permissions.FIGURINES_UPDATE,
+                    Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
+                    Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE, Permissions.STATS_READ));
 
     /**
      * In-memory lookup of roles initialized during the current operation.

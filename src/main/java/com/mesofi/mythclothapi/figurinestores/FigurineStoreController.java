@@ -149,7 +149,7 @@ public class FigurineStoreController {
      * @return pricing information calculated from the current store listings
      */
     @GetMapping("/figurines/{figurineId}/prices/current")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ_CURRENT_PRICES + "')")
     public FigurineStorePriceResp retrieveAverageRealtimePrice(@Positive @PathVariable Long figurineId,
             @RequestParam(required = false) String currency) {
         log.info("Retrieving average realtime price for figurine {} with currency {}", figurineId, currency);
@@ -179,6 +179,7 @@ public class FigurineStoreController {
      * @return the historical pricing information for the requested figurine
      */
     @GetMapping("/figurines/{figurineId}/prices/history")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES + "')")
     public FigurineStoreHistoricalResp retrieveHistoricalPrices(@Positive @PathVariable Long figurineId,
             @Positive @RequestParam(required = false) Long storeId, @RequestParam(required = false) String currency) {
         log.info("Retrieving historical prices for figurine {} with currency {}", figurineId, currency);
