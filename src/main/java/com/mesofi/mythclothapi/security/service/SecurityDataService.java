@@ -66,7 +66,7 @@ public class SecurityDataService {
      * it does not already exist.
      * </p>
      */
-    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.ANNIVERSARIES_CREATE,
+    public static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.ANNIVERSARIES_CREATE,
             Permissions.ANNIVERSARIES_DELETE, Permissions.ANNIVERSARIES_READ, Permissions.ANNIVERSARIES_UPDATE,
             Permissions.CATALOGS_CREATE, Permissions.CATALOGS_DELETE, Permissions.CATALOGS_READ,
             Permissions.CATALOGS_UPDATE, Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,

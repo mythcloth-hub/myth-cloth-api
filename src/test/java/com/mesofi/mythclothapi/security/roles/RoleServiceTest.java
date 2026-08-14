@@ -212,11 +212,11 @@ public class RoleServiceTest {
         // Arrange
         Role existing = role(77L, "Admin");
         RolePermission rp = new RolePermission();
-        rp.setPermission(permission(88L, "figurines:write"));
+        rp.setPermission(permission(88L, "figurines:create"));
         existing.setPermissions(List.of(rp));
 
         when(roleRepository.findById(77L)).thenReturn(Optional.of(existing));
-        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:write")));
+        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:create")));
 
         // Act + Assert
         assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
@@ -242,7 +242,7 @@ public class RoleServiceTest {
         existing.setPermissions(permissions);
 
         when(roleRepository.findById(77L)).thenReturn(Optional.of(existing));
-        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:write")));
+        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:create")));
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act + Assert
@@ -296,9 +296,9 @@ public class RoleServiceTest {
         Role existingAdmin = role(77L, "Admin");
 
         RolePermission rp1 = new RolePermission();
-        rp1.setPermission(permission(100L, "figurines:write"));
+        rp1.setPermission(permission(100L, "figurines:create"));
         RolePermission rp2 = new RolePermission();
-        rp2.setPermission(permission(88L, "figurines:write"));
+        rp2.setPermission(permission(88L, "figurines:create"));
         existingAdmin.setPermissions(List.of(rp1, rp2));
 
         when(roleRepository.findById(77L)).thenReturn(Optional.of(existingAdmin));
@@ -307,8 +307,8 @@ public class RoleServiceTest {
         List<PermissionResp> responses = roleService.retrievePermissionsByRoleId(77L);
 
         // Assert
-        assertThat(responses).containsExactly(new PermissionResp(100L, "figurines:write"),
-                new PermissionResp(88L, "figurines:write"));
+        assertThat(responses).containsExactly(new PermissionResp(100L, "figurines:create"),
+                new PermissionResp(88L, "figurines:create"));
 
         verify(roleRepository).findById(77L);
     }

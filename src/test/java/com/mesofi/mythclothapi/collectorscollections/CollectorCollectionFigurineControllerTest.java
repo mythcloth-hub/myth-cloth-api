@@ -380,7 +380,7 @@ class CollectorCollectionFigurineControllerTest {
         when(service.duplicateCollection(123L, 2L)).thenReturn(77L);
 
         mockMvc.perform(post("/collections/2/duplicate").with(
-                jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("collections:update"))))
+                jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("collections:duplicate"))))
                 .andExpect(status().isCreated()).andExpect(header().string("Location", "/collections/77"));
 
         verify(service).duplicateCollection(123L, 2L);

@@ -33,7 +33,7 @@ import lombok.Setter;
  * </p>
  *
  * <p>
- * Examples include {@code permissions:read}, {@code permissions:write},
+ * Examples include {@code permissions:read}, {@code permissions:create},
  * {@code permissions:update}, and {@code permissions:delete}.
  * </p>
  *

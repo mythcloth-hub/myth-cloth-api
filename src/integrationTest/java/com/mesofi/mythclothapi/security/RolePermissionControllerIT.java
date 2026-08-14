@@ -53,7 +53,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
         }
 
         idPermission1 = createPermission("catalogs:read");
-        idPermission2 = createPermission("catalogs:write");
+        idPermission2 = createPermission("catalogs:create");
         idPermission3 = createPermission("catalogs:delete");
         idPermission4 = createPermission("catalogs:update");
         idPermission5 = createPermission("figurines:create");
@@ -69,7 +69,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
         List<PermissionResp> permissionsBCollectorRole = getPermissionByRole(idRoleBasicCollector, 1);
 
         assertThat(permissionsAdminRole.getFirst().description()).isEqualTo("catalogs:read");
-        assertThat(permissionsAdminRole.get(1).description()).isEqualTo("catalogs:write");
+        assertThat(permissionsAdminRole.get(1).description()).isEqualTo("catalogs:create");
         assertThat(permissionsAdminRole.get(2).description()).isEqualTo("catalogs:delete");
         assertThat(permissionsAdminRole.get(3).description()).isEqualTo("catalogs:update");
         assertThat(permissionsBCollectorRole.getFirst().description()).isEqualTo("catalogs:read");
@@ -79,7 +79,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
                                                                     // the rest of permissions
 
         List<PermissionResp> permissionsSynedAdminRole = getPermissionByRole(idRoleAdmin, 2);
-        assertThat(permissionsSynedAdminRole.getFirst().description()).isEqualTo("catalogs:write");
+        assertThat(permissionsSynedAdminRole.getFirst().description()).isEqualTo("catalogs:create");
         assertThat(permissionsSynedAdminRole.get(1).description()).isEqualTo("figurines:create");
 
         // Delete all roles and permissions
@@ -87,7 +87,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
         // List the available permissions
         List<PermissionResp> availablePermissions = getAllPermissions(5);
         assertThat(availablePermissions.getFirst().description()).isEqualTo("catalogs:read");
-        assertThat(availablePermissions.get(1).description()).isEqualTo("catalogs:write");
+        assertThat(availablePermissions.get(1).description()).isEqualTo("catalogs:create");
         assertThat(availablePermissions.get(2).description()).isEqualTo("catalogs:delete");
         assertThat(availablePermissions.get(3).description()).isEqualTo("catalogs:update");
         assertThat(availablePermissions.get(4).description()).isEqualTo("figurines:create");

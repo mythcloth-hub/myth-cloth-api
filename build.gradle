@@ -139,8 +139,9 @@ pitest {
     mutators = ['DEFAULTS']
 
     excludedClasses = [
-            '*Config',
-            '*Properties',
+            'com.mesofi.mythclothapi.*Config',
+            'com.mesofi.mythclothapi.*Properties',
+            'com.mesofi.mythclothapi.config.ControllerLoggingConfig*',
             '*.dto.*',
             '*.entity.*',
             '*.model.*',

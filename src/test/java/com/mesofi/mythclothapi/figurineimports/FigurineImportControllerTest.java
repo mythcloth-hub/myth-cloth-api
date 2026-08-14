@@ -39,7 +39,7 @@ public class FigurineImportControllerTest {
     @Test
     void importAllFigurinesFromPublicDrive_shouldReturn202AndTriggerImport() throws Exception {
         // Act
-        mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("figurines:load"))))
+        mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("figurines:import"))))
                 .andExpect(status().isAccepted());
 
         // Assert
@@ -52,7 +52,7 @@ public class FigurineImportControllerTest {
         doThrow(new FigurineImportException()).when(figurineImportService).importAllFigurinesFromPublicDrive();
 
         // Act & Assert
-        mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("figurines:load"))))
+        mockMvc.perform(post("/figurines/load").with(jwt().authorities(new SimpleGrantedAuthority("figurines:import"))))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.detail").value("There was an error importing figurines."))
                 .andExpect(jsonPath("$.instance").value("/figurines/load")).andExpect(jsonPath("$.status").value("500"))
@@ -68,7 +68,8 @@ public class FigurineImportControllerTest {
                 .thenReturn(List.of(new FigurineImportResp(1L, 12, null, Instant.parse("2024-06-01T12:00:00Z"))));
 
         // Act & Assert
-        mockMvc.perform(get("/figurines/imports").with(jwt().authorities(new SimpleGrantedAuthority("figurines:load"))))
+        mockMvc.perform(
+                get("/figurines/imports").with(jwt().authorities(new SimpleGrantedAuthority("figurines:import"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].imported").value(12))
                 .andExpect(jsonPath("$[0].completedAt").value("2024-06-01T12:00:00Z"))

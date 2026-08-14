@@ -46,7 +46,7 @@ public class RoleController {
      * Creates a new application role.
      *
      * <p>
-     * The authenticated user must have the {@code roles:write} authority.
+     * The authenticated user must have the {@code roles:create} authority.
      * </p>
      *
      * @param roleRequest

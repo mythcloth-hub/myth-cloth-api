@@ -127,7 +127,7 @@ class FigurineStoreControllerTest {
 
         mockMvc.perform(patch("/figurine-stores/unmatched-listings/{unmatchedListingId}/ignored/{ignored}", 22L, true)
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:stores:assign"))))
+                        new SimpleGrantedAuthority("figurines:stores:ignore"))))
                 .andExpect(status().isOk());
 
         verify(figurineStoreService).ignoreUnmatchedFigurineListing(22L, true);
@@ -141,7 +141,7 @@ class FigurineStoreControllerTest {
 
         mockMvc.perform(get("/figurine-stores/figurines/{figurineId}/prices/current", 42L).param("currency", "USD")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:stores:read"))))
+                        new SimpleGrantedAuthority("figurines:stores:read-current-prices"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.realTimePrice").value(51.00))
                 .andExpect(jsonPath("$.currency").value("USD"));
 
@@ -159,7 +159,7 @@ class FigurineStoreControllerTest {
 
         mockMvc.perform(get("/figurine-stores/figurines/{figurineId}/prices/history", 42L).param("currency", "USD")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:stores:read"))))
+                        new SimpleGrantedAuthority("figurines:stores:read-historical-prices"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Aries"))
                 .andExpect(jsonPath("$.currency").value("USD"))
                 .andExpect(jsonPath("$.prices[0].storeName").value("Nin-Nin-Game"));
@@ -178,7 +178,7 @@ class FigurineStoreControllerTest {
         mockMvc.perform(get("/figurine-stores/figurines/{figurineId}/prices/history", 42L).param("storeId", "3")
                 .param("currency", "JPY")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:stores:read"))))
+                        new SimpleGrantedAuthority("figurines:stores:read-historical-prices"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.currency").value("JPY"))
                 .andExpect(jsonPath("$.prices[0].price").value(15000.00));
 
