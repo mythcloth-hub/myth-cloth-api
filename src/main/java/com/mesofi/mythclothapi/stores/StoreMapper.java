@@ -52,6 +52,7 @@ public interface StoreMapper {
      * @param source
      *            the source containing the updated values
      */
+    @Mapping(target = "id", ignore = true)
     void updateStore(@MappingTarget Store target, Store source);
 
     /**
