@@ -60,17 +60,17 @@ public interface Permissions {
     /** Allows updating anniversaries. */
     String ANNIVERSARIES_UPDATE = "anniversaries:update";
 
+    /** Allows creating catalogs. */
+    String CATALOGS_CREATE = "catalogs:create";
+
     /** Allows deletion of catalogs. */
-    // String CATALOGS_DELETE = "catalogs:delete";
+    String CATALOGS_DELETE = "catalogs:delete";
 
     /** Allows reading catalogs. */
-    // String CATALOGS_READ = "catalogs:read";
+    String CATALOGS_READ = "catalogs:read";
 
     /** Allows updating catalogs. */
-    // String CATALOGS_UPDATE = "catalogs:update";
-
-    /** Allows creating catalogs. */
-    // String CATALOGS_WRITE = "catalogs:write";
+    String CATALOGS_UPDATE = "catalogs:update";
 
     /** Allows deleting collections. */
     String COLLECTIONS_DELETE = "collections:delete";

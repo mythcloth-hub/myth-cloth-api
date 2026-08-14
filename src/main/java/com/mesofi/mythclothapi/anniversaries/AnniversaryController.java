@@ -52,7 +52,6 @@ public class AnniversaryController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('" + Permissions.ANNIVERSARIES_READ + "')")
     public List<AnniversaryResp> retrieveAnniversaries() {
         return service.retrieveAnniversaries();
     }
