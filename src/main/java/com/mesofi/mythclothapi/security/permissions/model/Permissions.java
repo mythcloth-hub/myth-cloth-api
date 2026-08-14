@@ -138,6 +138,9 @@ public interface Permissions {
     /** Allows creating figurines. */
     String FIGURINES_CREATE = "figurines:create";
 
+    /** Allows deleting figurines. */
+    String FIGURINES_DELETE = "figurines:delete";
+
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";
 

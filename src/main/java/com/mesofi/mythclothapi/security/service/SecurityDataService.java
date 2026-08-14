@@ -67,7 +67,8 @@ public class SecurityDataService {
      * </p>
      */
     private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.COLLECTIONS_FIGURINES_ADD,
-            Permissions.COLLECTIONS_READ, Permissions.FIGURINES_CREATE, Permissions.FIGURINES_UPDATE);
+            Permissions.COLLECTIONS_READ, Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE,
+            Permissions.FIGURINES_UPDATE);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -85,7 +86,7 @@ public class SecurityDataService {
             COLLECTOR, List.of(Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_READ),
             // Initial, demo permissions.
             DEMO, List.of(Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_READ,
-                    Permissions.FIGURINES_CREATE, Permissions.FIGURINES_UPDATE));
+                    Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE, Permissions.FIGURINES_UPDATE));
 
     /**
      * In-memory lookup of roles initialized during the current operation.

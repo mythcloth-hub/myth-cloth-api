@@ -350,7 +350,7 @@ public class FigurineController {
      *         {@code 200 OK}
      */
     @PutMapping("/{id}")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_UPDATE + "')")
     public ResponseEntity<FigurineResp> updateFigurine(@PathVariable Long id,
             @RequestBody @Valid FigurineReq figurineRequest) {
         FigurineResp updated = service.updateFigurine(id, figurineRequest);
@@ -379,7 +379,7 @@ public class FigurineController {
      * @return {@link ResponseEntity} with no content
      */
     @DeleteMapping("/{id}")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_DELETE + "')")
     public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
         service.deleteFigurine(id);
         return ResponseEntity.noContent().build();
