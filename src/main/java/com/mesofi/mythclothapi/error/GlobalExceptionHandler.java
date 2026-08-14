@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.error;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 import java.util.Arrays;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -176,6 +178,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RolePermissionAlreadyExistsException.class)
     public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
         return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ProblemDetail handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        return ApiProblemDetail.of(UNAUTHORIZED, "You are not allowed to perform this action", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
