@@ -105,8 +105,6 @@ public interface Permissions {
     /** Allows creating distributors. */
     // String DISTRIBUTORS_WRITE = "distributors:write";
 
-    /** Allows deletion of figurines. */
-    // String FIGURINES_DELETE = "figurines:delete";
 
     /** Allows loading figurine data. */
     // String FIGURINES_LOAD = "figurines:load";
@@ -120,11 +118,6 @@ public interface Permissions {
     /** Allows reading figurine images. */
     // String FIGURINES_IMAGES_READ = "figurines:images:read";
 
-    /** Allows deleting figurine events. */
-    // String FIGURINES_EVENTS_DELETE = "figurines:events:delete";
-
-    /** Allows updating figurine events. */
-    // String FIGURINES_EVENTS_UPDATE = "figurines:events:update";
 
     /** Allows reading stores associated with figurines. */
     // String FIGURINES_STORES_READ = "figurines:stores:read";
@@ -169,7 +162,7 @@ public interface Permissions {
     String PURCHASES_UPDATE = "purchases:update";
 
     /** Allows reading statistics. */
-    // String STATS_READ = "stats:read";
+    String STATS_READ = "stats:read";
 
     /** Allows creating or managing stores. */
     // String STORES_WRITE = "stores:write";

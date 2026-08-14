@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.stats;
 
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 import com.mesofi.mythclothapi.stats.dto.MonthStatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;
@@ -30,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/stats")
 @RequiredArgsConstructor
-// @PreAuthorize("hasRole('ADMIN') and hasAuthority('stats:read')")
+@PreAuthorize("hasAuthority('" + Permissions.STATS_READ + "')")
 public class StatisticsController {
 
     private final StatisticsService service;
