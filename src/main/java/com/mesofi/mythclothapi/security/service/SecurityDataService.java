@@ -68,11 +68,12 @@ public class SecurityDataService {
      */
     private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.COLLECTIONS_DELETE,
             Permissions.COLLECTIONS_DUPLICATE, Permissions.COLLECTIONS_FIGURINES_ADD,
-            Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE,
-            Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE, Permissions.FIGURINES_EVENTS_ADD,
-            Permissions.FIGURINES_EVENTS_DELETE, Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE,
-            Permissions.FIGURINES_UPDATE, Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE,
-            Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE);
+            Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_FIGURINES_READ,
+            Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE,
+            Permissions.FIGURINES_DELETE, Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
+            Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE, Permissions.FIGURINES_UPDATE,
+            Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
+            Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -89,14 +90,16 @@ public class SecurityDataService {
             // Initial, collector permissions
             COLLECTOR,
             List.of(Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
-                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_READ,
-                    Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE),
+                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
+                    Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
+                    Permissions.COLLECTIONS_UPDATE),
             // Initial, demo permissions.
             DEMO,
             List.of(Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
-                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_READ,
-                    Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE,
-                    Permissions.FIGURINES_DELETE, Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
+                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
+                    Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
+                    Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE,
+                    Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE,
                     Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE,
                     Permissions.FIGURINES_UPDATE, Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE,
                     Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE));

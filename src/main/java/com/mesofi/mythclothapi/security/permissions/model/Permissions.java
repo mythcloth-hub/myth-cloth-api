@@ -72,9 +72,6 @@ public interface Permissions {
     /** Allows creating catalogs. */
     // String CATALOGS_WRITE = "catalogs:write";
 
-    /** Allows removing figurines from collections. */
-    // String COLLECTIONS_FIGURINES_DELETE = "collections:figurines:delete";
-
     /** Allows deleting collections. */
     String COLLECTIONS_DELETE = "collections:delete";
 
@@ -83,6 +80,9 @@ public interface Permissions {
 
     /** Allows adding figurines to collections. */
     String COLLECTIONS_FIGURINES_ADD = "collections:figurines:add";
+
+    /** Allows deleting figurines from collections. */
+    String COLLECTIONS_FIGURINES_DELETE = "collections:figurines:delete";
 
     /** Allows reading figurines in collections. */
     String COLLECTIONS_FIGURINES_READ = "collections:figurines:read";

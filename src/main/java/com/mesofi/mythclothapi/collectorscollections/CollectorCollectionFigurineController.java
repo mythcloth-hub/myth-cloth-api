@@ -94,7 +94,7 @@ public class CollectorCollectionFigurineController {
      *         assignment succeeds
      */
     @PostMapping("/{collectionId}/figurines/{figurineId}")
-    // @PreAuthorize("hasAuthority('collections:figurines:add')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> addFigurineToCollection(@AuthenticationPrincipal Jwt jwt,
             @PathVariable Long collectionId, @PathVariable Long figurineId) {
         AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId), CollectionAssignmentMode.EXISTING,
@@ -208,7 +208,7 @@ public class CollectorCollectionFigurineController {
      *         succeeds
      */
     @DeleteMapping("/{collectionId}/figurines/{figurineId}")
-    // @PreAuthorize("hasAuthority('collections:figurines:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_DELETE + "')")
     public ResponseEntity<Void> deleteCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
         service.deleteCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
