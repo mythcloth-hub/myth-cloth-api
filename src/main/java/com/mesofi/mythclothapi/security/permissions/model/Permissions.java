@@ -105,7 +105,6 @@ public interface Permissions {
     /** Allows creating distributors. */
     // String DISTRIBUTORS_WRITE = "distributors:write";
 
-
     /** Allows loading figurine data. */
     // String FIGURINES_LOAD = "figurines:load";
 
@@ -117,13 +116,6 @@ public interface Permissions {
 
     /** Allows reading figurine images. */
     // String FIGURINES_IMAGES_READ = "figurines:images:read";
-
-
-    /** Allows reading stores associated with figurines. */
-    // String FIGURINES_STORES_READ = "figurines:stores:read";
-
-    /** Allows assigning stores to figurines. */
-    // String FIGURINES_STORES_ASSIGN = "figurines:stores:assign";
 
     /** Allows creating figurines. */
     String FIGURINES_CREATE = "figurines:create";
@@ -142,6 +134,15 @@ public interface Permissions {
 
     /** Allows updating figurine events. */
     String FIGURINES_EVENTS_UPDATE = "figurines:events:update";
+
+    /** Allows assigning stores to figurines. */
+    String FIGURINES_STORES_ASSIGN = "figurines:stores:assign";
+
+    /** Allows ignoring stores associated with figurines. */
+    String FIGURINES_STORES_IGNORE = "figurines:stores:ignore";
+
+    /** Allows reading stores associated with figurines. */
+    String FIGURINES_STORES_READ = "figurines:stores:read";
 
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";

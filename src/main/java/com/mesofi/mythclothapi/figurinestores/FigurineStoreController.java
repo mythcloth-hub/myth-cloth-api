@@ -7,6 +7,7 @@ import java.util.List;
 
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,6 +22,7 @@ import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedSummaryResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +50,7 @@ public class FigurineStoreController {
      *         figurine listings
      */
     @GetMapping("/matched-listings/summary")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ + "')")
     public List<FigurineStoreMatchedSummaryResp> retrieveMatchedFigurineListingSummary() {
         log.info("Retrieving matched figurine listing summary ...");
 
@@ -63,7 +65,7 @@ public class FigurineStoreController {
      * @return matched figurine listings associated with the specified store
      */
     @GetMapping("/matched-listings/stores/{storeId}")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ + "')")
     public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId) {
         log.info("Retrieving matched figurine listing for store {}", storeId);
 
@@ -77,7 +79,7 @@ public class FigurineStoreController {
      *            identifier of the matched figurine-store relationship
      */
     @PostMapping("/matched-listings/figurine-store/{figurineStoreId}")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_ASSIGN + "')")
     public void manuallyUnmatchFigurineListing(@Positive @PathVariable Long figurineStoreId) {
         log.info("Manually unmatching figurine store {}", figurineStoreId);
 
@@ -91,7 +93,7 @@ public class FigurineStoreController {
      * @return unmatched store listings awaiting manual matching
      */
     @GetMapping("/unmatched-listings")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ + "')")
     public List<FigurineStoreUnmatchedResp> retrieveUnmatchedFigurineListings() {
         log.info("Retrieving unmatched figurines ...");
 
@@ -110,7 +112,7 @@ public class FigurineStoreController {
      *            identifier of the canonical figurine
      */
     @PostMapping("/unmatched-listings/{unmatchedListingId}/figurines/{figurineId}/match")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_ASSIGN + "')")
     public void matchUnmatchedListingToFigurine(@Positive @PathVariable Long unmatchedListingId,
             @Positive @PathVariable Long figurineId) {
         log.info("Matching unmatched listing {} with figurine {}", unmatchedListingId, figurineId);
@@ -127,7 +129,7 @@ public class FigurineStoreController {
      *            whether the listing should be ignored
      */
     @PatchMapping("/unmatched-listings/{unmatchedListingId}/ignored/{ignored}")
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:stores:assign')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_IGNORE + "')")
     public void ignoreUnmatchedFigurineListing(@Positive @PathVariable Long unmatchedListingId,
             @PathVariable boolean ignored) {
         log.info("Setting ignored status of unmatched listing {} to {}", unmatchedListingId, ignored);
