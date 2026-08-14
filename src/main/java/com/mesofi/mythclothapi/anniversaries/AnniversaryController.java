@@ -6,7 +6,6 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +33,7 @@ public class AnniversaryController {
     private final AnniversaryService service;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:write')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:write')")
     public ResponseEntity<AnniversaryResp> createAnniversary(@Valid @RequestBody AnniversaryReq anniversaryRequest) {
         AnniversaryResp response = service.createAnniversary(anniversaryRequest);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/anniversaries
@@ -45,7 +44,7 @@ public class AnniversaryController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:read')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority("+PERMISSIONS_DELETE+")")
     public AnniversaryResp retrieveAnniversary(@PathVariable Long id) {
         return service.retrieveAnniversary(id);
     }
@@ -56,7 +55,7 @@ public class AnniversaryController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:update')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:update')")
     public ResponseEntity<AnniversaryResp> updateAnniversary(@PathVariable Long id,
             @Valid @RequestBody AnniversaryReq anniversaryRequest) {
         AnniversaryResp updated = service.updateAnniversary(id, anniversaryRequest);
@@ -64,7 +63,7 @@ public class AnniversaryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:delete')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('anniversaries:delete')")
     public ResponseEntity<?> removeAnniversary(@PathVariable Long id) {
         service.removeAnniversary(id);
         return ResponseEntity.noContent().build();

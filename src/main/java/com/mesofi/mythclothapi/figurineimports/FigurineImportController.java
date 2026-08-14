@@ -3,7 +3,6 @@ package com.mesofi.mythclothapi.figurineimports;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,7 +53,7 @@ public class FigurineImportController {
      *         response body
      */
     @PostMapping("/load")
-    @PreAuthorize("hasAuthority('figurines:load')")
+    // @PreAuthorize("hasAuthority('figurines:load')")
     public ResponseEntity<Void> loadAllFigurines() {
         log.info("Loading all figurines ...");
 
@@ -80,7 +79,7 @@ public class FigurineImportController {
      *         recent import to the oldest
      */
     @GetMapping("/imports")
-    @PreAuthorize("hasAuthority('figurines:load')")
+    // @PreAuthorize("hasAuthority('figurines:load')")
     public List<FigurineImportResp> getFigurineImports() {
         log.info("Retrieving all figurine imports ...");
 

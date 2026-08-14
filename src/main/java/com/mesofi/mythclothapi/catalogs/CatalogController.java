@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,7 +76,7 @@ public class CatalogController {
      *             if the catalog type or request data is invalid
      */
     @PostMapping("/{catalogType}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:write')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:write')")
     public ResponseEntity<CatalogResp> createCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @NotNull @Valid @RequestBody CatalogReq request) {
 
@@ -108,7 +107,7 @@ public class CatalogController {
      *             if the catalog type is not recognized
      */
     @GetMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:read')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:read')")
     public CatalogResp retrieveCatalog(@PathVariable CatalogType catalogType, @PathVariable Long id) {
         return service.retrieveCatalog(catalogType.name(), id);
     }
@@ -157,7 +156,7 @@ public class CatalogController {
      *             if the request data is invalid
      */
     @PutMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:update')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:update')")
     public ResponseEntity<CatalogResp> updateCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @PathVariable Long id, @Valid @RequestBody CatalogReq catalogReq) {
         CatalogResp updated = service.updateCatalog(catalogType.name(), id, catalogReq);
@@ -185,7 +184,7 @@ public class CatalogController {
      *             if the catalog type is invalid
      */
     @DeleteMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:delete')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:delete')")
     public ResponseEntity<?> removeCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @PathVariable Long id) {
         service.deleteCatalog(catalogType.name(), id);

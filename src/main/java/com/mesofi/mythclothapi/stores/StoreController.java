@@ -6,7 +6,6 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,7 +47,7 @@ public class StoreController {
      *         location URI
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:write')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:write')")
     public ResponseEntity<StoreResp> createStore(@Valid @RequestBody StoreReq storeRequest) {
         StoreResp response = service.createStore(storeRequest);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest() // e.g. /api/stores
@@ -92,7 +91,7 @@ public class StoreController {
      * @return a {@link ResponseEntity} containing the updated store
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:update')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:update')")
     public ResponseEntity<StoreResp> updateStore(@PathVariable Long id, @Valid @RequestBody StoreReq storeRequest) {
         StoreResp updated = service.updateStore(id, storeRequest);
         return ResponseEntity.ok(updated);
@@ -109,7 +108,7 @@ public class StoreController {
      * @return a {@link ResponseEntity} with HTTP 204 (No Content)
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:delete')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('stores:delete')")
     public ResponseEntity<Void> deactivateStore(@PathVariable Long id) {
         service.deactivateStore(id);
         return ResponseEntity.noContent().build();

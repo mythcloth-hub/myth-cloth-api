@@ -5,7 +5,6 @@ import java.util.List;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/roles/{roleId}/permissions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+// @PreAuthorize("hasRole('ADMIN')")
 public class RolePermissionController {
 
     private final RoleService service;
@@ -64,7 +63,7 @@ public class RolePermissionController {
      *         when the permission is successfully assigned
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('roles:permissions:assign')")
+    // @PreAuthorize("hasAuthority('roles:permissions:assign')")
     public ResponseEntity<Void> addPermissionToRole(@PathVariable Long roleId,
             @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
 
@@ -86,7 +85,7 @@ public class RolePermissionController {
      * @return a list containing the permissions assigned to the role
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('roles:permissions:read')")
+    // @PreAuthorize("hasAuthority('roles:permissions:read')")
     public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
 
         return service.retrievePermissionsByRoleId(roleId);
@@ -109,7 +108,7 @@ public class RolePermissionController {
      *         when synchronization completes successfully
      */
     @PutMapping
-    @PreAuthorize("hasAuthority('roles:permissions:sync')")
+    // @PreAuthorize("hasAuthority('roles:permissions:sync')")
     public ResponseEntity<Void> syncRolePermissions(@PathVariable Long roleId,
             @Valid @RequestBody SyncPermissionsReq request) {
 

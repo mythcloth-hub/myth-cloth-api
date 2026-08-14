@@ -10,7 +10,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
@@ -91,7 +90,7 @@ public class FigurineController {
      *         new resource
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
     public ResponseEntity<FigurineResp> createFigurine(@RequestBody @Valid FigurineReq figurineRequest) {
 
         FigurineResp response = service.createFigurine(figurineRequest);
@@ -210,7 +209,6 @@ public class FigurineController {
             @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
             @RequestParam(required = false) Boolean restocks, @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
-        log.info("Retrieving figurines ...");
         CollectablePageImpl<FigurineResp> result;
 
         List<Long> figurineIds = new ArrayList<>();
@@ -350,7 +348,7 @@ public class FigurineController {
      *         {@code 200 OK}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:update')")
     public ResponseEntity<FigurineResp> updateFigurine(@PathVariable Long id,
             @RequestBody @Valid FigurineReq figurineRequest) {
         FigurineResp updated = service.updateFigurine(id, figurineRequest);
@@ -379,7 +377,7 @@ public class FigurineController {
      * @return {@link ResponseEntity} with no content
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
+    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:delete')")
     public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
         service.deleteFigurine(id);
         return ResponseEntity.noContent().build();

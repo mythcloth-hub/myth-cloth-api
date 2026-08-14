@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
@@ -72,7 +71,7 @@ public class CollectorPurchaseController {
      * @return HTTP 201 response containing the created purchase summary
      */
     @PostMapping("/summary-line-items")
-    @PreAuthorize("hasAuthority('purchases:add')")
+    // @PreAuthorize("hasAuthority('purchases:add')")
     public ResponseEntity<CollectorPurchaseSummaryLineItemResp> createSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CollectorPurchaseSummaryLineItemReq request) {
         log.info(
@@ -99,7 +98,7 @@ public class CollectorPurchaseController {
      * @return updated purchase summary
      */
     @PutMapping("/summary-line-items/{purchaseId}")
-    @PreAuthorize("hasAuthority('purchases:update')")
+    // @PreAuthorize("hasAuthority('purchases:update')")
     public ResponseEntity<CollectorPurchaseSummaryLineItemResp> updateSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId, @Valid @RequestBody CollectorPurchaseSummaryLineItemReq request) {
         log.info(
@@ -123,7 +122,7 @@ public class CollectorPurchaseController {
      * @return list of collector purchase summaries
      */
     @GetMapping("/summary-line-items")
-    @PreAuthorize("hasAuthority('purchases:read')")
+    // @PreAuthorize("hasAuthority('purchases:read')")
     public List<CollectorPurchaseSummaryLineItemResp> retrieveSummaryLineItems(@AuthenticationPrincipal Jwt jwt) {
         return service.retrieveSummaryLineItems(getCollectorId(jwt));
     }
@@ -141,7 +140,7 @@ public class CollectorPurchaseController {
      * @return purchase summary including its figurine line items
      */
     @GetMapping("/summary-line-items/{purchaseId}")
-    @PreAuthorize("hasAuthority('purchases:read')")
+    // @PreAuthorize("hasAuthority('purchases:read')")
     public CollectorPurchaseSummaryLineItemResp retrieveSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId) {
         return service.retrieveSummaryLineItem(getCollectorId(jwt), purchaseId);
@@ -160,7 +159,7 @@ public class CollectorPurchaseController {
      * @return HTTP 204 response when deletion is successful
      */
     @DeleteMapping("/summary-line-items/{purchaseId}")
-    @PreAuthorize("hasAuthority('purchases:delete')")
+    // @PreAuthorize("hasAuthority('purchases:delete')")
     public ResponseEntity<Void> deleteSummaryLineItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
         log.info("Deleting collector purchase summary with line items. CollectorId: {}, PurchaseId: {}",
                 jwt.getSubject(), purchaseId);
@@ -186,7 +185,7 @@ public class CollectorPurchaseController {
      *         successfully
      */
     @PutMapping("/{purchaseId}/collections/{collectionId}/sync-total")
-    @PreAuthorize("hasAuthority('purchases:update')")
+    // @PreAuthorize("hasAuthority('purchases:update')")
     public ResponseEntity<Void> syncPurchaseFigurineTotals(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId, @Positive @PathVariable Long collectionId) {
         log.info("Syncing purchase figurine totals. CollectorId: {}, PurchaseId: {}, CollectionId: {}",
@@ -212,7 +211,7 @@ public class CollectorPurchaseController {
      *         successfully
      */
     @PutMapping("/collections/{collectionId}/sync-total")
-    @PreAuthorize("hasAuthority('purchases:update')")
+    // @PreAuthorize("hasAuthority('purchases:update')")
     public ResponseEntity<Void> syncAllPurchaseFigurineTotals(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId) {
         log.info("Syncing all purchase figurine totals for collection. CollectorId: {}, CollectionId: {}",

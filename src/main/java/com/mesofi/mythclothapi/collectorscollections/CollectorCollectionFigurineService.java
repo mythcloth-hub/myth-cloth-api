@@ -164,6 +164,9 @@ public class CollectorCollectionFigurineService {
      */
     @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void assignFigurinesToCollections(Long collectorId, @Valid AssignFigurinesReq request) {
+        log.info("Assigning figurines {} to collections {} with mode {}", request.figurineIds(),
+                request.collectionIds(), request.collectionMode());
+
         List<Figurine> existingFigurines = retrieveExistingFigurines(request.figurineIds());
         List<CollectorCollection> existingCollections = retrieveExistingCollections(request.collectionMode(),
                 collectorId, request.collectionIds(), request.collection());
