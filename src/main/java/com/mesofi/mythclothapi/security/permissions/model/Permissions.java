@@ -117,14 +117,8 @@ public interface Permissions {
     /** Allows reading figurine images. */
     // String FIGURINES_IMAGES_READ = "figurines:images:read";
 
-    /** Allows adding events to figurines. */
-    // String FIGURINES_EVENTS_ADD = "figurines:events:add";
-
     /** Allows deleting figurine events. */
     // String FIGURINES_EVENTS_DELETE = "figurines:events:delete";
-
-    /** Allows reading figurine events. */
-    // String FIGURINES_EVENTS_READ = "figurines:events:read";
 
     /** Allows updating figurine events. */
     // String FIGURINES_EVENTS_UPDATE = "figurines:events:update";
@@ -140,6 +134,18 @@ public interface Permissions {
 
     /** Allows deleting figurines. */
     String FIGURINES_DELETE = "figurines:delete";
+
+    /** Allows adding events to figurines. */
+    String FIGURINES_EVENTS_ADD = "figurines:events:add";
+
+    /** Allows deleting figurine events. */
+    String FIGURINES_EVENTS_DELETE = "figurines:events:delete";
+
+    /** Allows reading figurine events. */
+    String FIGURINES_EVENTS_READ = "figurines:events:read";
+
+    /** Allows updating figurine events. */
+    String FIGURINES_EVENTS_UPDATE = "figurines:events:update";
 
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";

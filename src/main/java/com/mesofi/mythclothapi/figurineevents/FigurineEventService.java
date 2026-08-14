@@ -56,7 +56,7 @@ public class FigurineEventService {
      *            the event data to create; must not be {@code null} and must pass
      *            validation
      * @return the created event as a {@link FigurineEventResp}
-     * @throws com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException
+     * @throws com.mesofi.mythclothapi.figurines.FigurineNotFoundException
      *             if the figurine referenced by {@code request.figurineId} does not
      *             exist
      */
@@ -103,7 +103,7 @@ public class FigurineEventService {
      * @param figurineId
      *            the ID of the figurine whose events are to be retrieved
      * @return a non-empty list of events as {@link FigurineEventResp}
-     * @throws com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException
+     * @throws com.mesofi.mythclothapi.figurines.FigurineNotFoundException
      *             if no events are found for the specified figurine, treating this
      *             as an indication that the figurine does not exist or has no
      *             recorded events
@@ -133,7 +133,7 @@ public class FigurineEventService {
      * @throws FigurineEventNotFoundException
      *             if no event with the given {@code eventId} exists for the
      *             specified figurine
-     * @throws com.mesofi.mythclothapi.figurines.exceptions.FigurineNotFoundException
+     * @throws com.mesofi.mythclothapi.figurines.FigurineNotFoundException
      *             if the figurine referenced by {@code newRequest.figurineId} does
      *             not exist
      */
