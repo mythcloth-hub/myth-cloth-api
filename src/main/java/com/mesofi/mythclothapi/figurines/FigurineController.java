@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
@@ -30,6 +31,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.dto.PaginatedResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -90,7 +92,7 @@ public class FigurineController {
      *         new resource
      */
     @PostMapping
-    // @PreAuthorize("hasRole('ADMIN') and hasAuthority('figurines:write')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_CREATE + "')")
     public ResponseEntity<FigurineResp> createFigurine(@RequestBody @Valid FigurineReq figurineRequest) {
 
         FigurineResp response = service.createFigurine(figurineRequest);

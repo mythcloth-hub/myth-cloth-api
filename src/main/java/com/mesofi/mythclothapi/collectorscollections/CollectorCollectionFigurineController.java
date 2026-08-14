@@ -229,7 +229,7 @@ public class CollectorCollectionFigurineController {
      * @return list of collector collections
      */
     @GetMapping
-    // @PreAuthorize("hasAuthority('collections:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_READ + "')")
     public List<CollectorCollectionResp> retrieveCollections(@AuthenticationPrincipal Jwt jwt) {
         return service.retrieveCollections(getCollectorId(jwt));
     }

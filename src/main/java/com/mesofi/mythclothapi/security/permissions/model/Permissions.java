@@ -82,7 +82,7 @@ public interface Permissions {
     // String COLLECTIONS_FIGURINES_DELETE = "collections:figurines:delete";
 
     /** Allows reading collections. */
-    // String COLLECTIONS_READ = "collections:read";
+    String COLLECTIONS_READ = "collections:read";
 
     /** Allows deleting collections. */
     // String COLLECTIONS_DELETE = "collections:delete";
@@ -139,7 +139,7 @@ public interface Permissions {
     // String FIGURINES_UPDATE = "figurines:update";
 
     /** Allows creating figurines. */
-    // String FIGURINES_WRITE = "figurines:write";
+    String FIGURINES_CREATE = "figurines:create";
 
     /** Allows adding purchases. */
     // String PURCHASES_ADD = "purchases:add";

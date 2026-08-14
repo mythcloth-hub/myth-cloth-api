@@ -66,7 +66,8 @@ public class SecurityDataService {
      * it does not already exist.
      * </p>
      */
-    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.COLLECTIONS_FIGURINES_ADD);
+    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.COLLECTIONS_FIGURINES_ADD,
+            Permissions.COLLECTIONS_READ, Permissions.FIGURINES_CREATE);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -85,7 +86,8 @@ public class SecurityDataService {
             // Initial, demo permissions.
             // DEMO, AVAILABLE_PERMISSIONS,
             // DEMO, List.of(Permissions.COLLECTIONS_READ));
-            DEMO, List.of());
+            DEMO,
+            List.of(Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_READ, Permissions.FIGURINES_CREATE));
 
     /**
      * In-memory lookup of roles initialized during the current operation.
