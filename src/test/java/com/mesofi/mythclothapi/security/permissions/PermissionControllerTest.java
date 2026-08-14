@@ -135,13 +135,13 @@ public class PermissionControllerTest {
     @Test
     void retrievePermission_shouldReturn200_whenPermissionEntriesExist() throws Exception {
         when(service.retrievePermissions()).thenReturn(
-                List.of(new PermissionResp(1L, "figurines:read"), new PermissionResp(2L, "figurines:write")));
+                List.of(new PermissionResp(1L, "figurines:read"), new PermissionResp(2L, "figurines:create")));
 
         mockMvc.perform(get("/permissions")).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].description").value("figurines:read"))
                 .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].description").value("figurines:write"));
+                .andExpect(jsonPath("$[1].description").value("figurines:create"));
 
         verify(service).retrievePermissions();
     }
@@ -149,13 +149,13 @@ public class PermissionControllerTest {
     @Test
     void updatePermission_shouldReturn200_whenPermissionEntriesExist() throws Exception {
         PermissionReq request = new PermissionReq("figurines:read");
-        PermissionResp response = new PermissionResp(1L, "figurines:write");
+        PermissionResp response = new PermissionResp(1L, "figurines:create");
 
         when(service.updatePermission(1L, request)).thenReturn(response);
 
         mockMvc.perform(put("/permissions/{id}", 1L).contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$.description").value("figurines:write"));
+                .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$.description").value("figurines:create"));
 
         verify(service).updatePermission(1L, request);
     }

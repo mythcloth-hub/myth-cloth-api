@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/figurines/{figurineId}/events")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class FigurineEventController {
 
     private final FigurineEventService service;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('figurines:events:add')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_EVENTS_ADD + "')")
     public ResponseEntity<FigurineEventResp> createEvent(@Positive @PathVariable Long figurineId,
             @Valid @RequestBody FigurineEventReq figurineEventRequest) {
         figurineEventRequest.setFigurineId(figurineId);
@@ -49,19 +49,19 @@ public class FigurineEventController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('figurines:events:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_EVENTS_READ + "')")
     public FigurineEventResp retrieveEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
         return service.retrieveFigurineEvent(figurineId, id);
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('figurines:events:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_EVENTS_READ + "')")
     public List<FigurineEventResp> retrieveEvents(@Positive @PathVariable Long figurineId) {
         return service.retrieveFigurineEvents(figurineId);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('figurines:events:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_EVENTS_UPDATE + "')")
     public ResponseEntity<FigurineEventResp> updateEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id,
             @Valid @RequestBody FigurineEventReq figurineEventRequest) {
         FigurineEventResp updated = service.updateFigurineEvent(figurineId, id, figurineEventRequest);
@@ -69,7 +69,7 @@ public class FigurineEventController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('figurines:events:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_EVENTS_DELETE + "')")
     public ResponseEntity<Void> removeEvent(@Positive @PathVariable Long figurineId, @PathVariable Long id) {
         service.removeFigurineEvent(figurineId, id);
         return ResponseEntity.noContent().build();

@@ -55,6 +55,8 @@ public class MessageConsumer {
         return switch (number) {
             case Integer i -> new BigDecimal(i);
             case String s -> new BigDecimal(s);
+            case Double d -> new BigDecimal(d);
+            case null -> null;
             default -> throw new IllegalArgumentException("Unsupported price type: " + number.getClass());
         };
     }

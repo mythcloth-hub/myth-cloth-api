@@ -20,6 +20,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/permissions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class PermissionController {
 
     private final PermissionService service;
@@ -47,7 +47,7 @@ public class PermissionController {
      * Creates a new application permission.
      *
      * <p>
-     * The authenticated user must have the {@code permissions:write} authority.
+     * The authenticated user must have the {@code permissions:create} authority.
      * </p>
      *
      * @param permissionRequest
@@ -56,7 +56,7 @@ public class PermissionController {
      *         {@code Location} header pointing to the newly created resource
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('permissions:write')")
+    @PreAuthorize("hasAuthority('" + Permissions.PERMISSIONS_CREATE + "')")
     public ResponseEntity<PermissionResp> createPermission(@Valid @RequestBody PermissionReq permissionRequest) {
 
         PermissionResp response = service.createPermission(permissionRequest);
@@ -78,7 +78,7 @@ public class PermissionController {
      * @return the requested permission
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('permissions:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.PERMISSIONS_READ + "')")
     public PermissionResp retrievePermission(@PathVariable Long id) {
         return service.retrievePermission(id);
     }
@@ -93,7 +93,7 @@ public class PermissionController {
      * @return a list containing all application permissions
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('permissions:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.PERMISSIONS_READ + "')")
     public List<PermissionResp> retrievePermissions() {
         return service.retrievePermissions();
     }
@@ -112,7 +112,7 @@ public class PermissionController {
      * @return a {@link ResponseEntity} containing the updated permission
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('permissions:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.PERMISSIONS_UPDATE + "')")
     public ResponseEntity<PermissionResp> updatePermission(@PathVariable Long id,
             @Valid @RequestBody PermissionReq permissionRequest) {
 
@@ -133,7 +133,7 @@ public class PermissionController {
      *         when the permission is successfully removed
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('permissions:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.PERMISSIONS_DELETE + "')")
     public ResponseEntity<?> removePermission(@PathVariable Long id) {
         service.removePermission(id);
         return ResponseEntity.noContent().build();

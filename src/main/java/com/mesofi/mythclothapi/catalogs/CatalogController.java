@@ -23,6 +23,7 @@ import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogType;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,7 +78,7 @@ public class CatalogController {
      *             if the catalog type or request data is invalid
      */
     @PostMapping("/{catalogType}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:write')")
+    @PreAuthorize("hasAuthority('" + Permissions.CATALOGS_CREATE + "')")
     public ResponseEntity<CatalogResp> createCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @NotNull @Valid @RequestBody CatalogReq request) {
 
@@ -108,7 +109,7 @@ public class CatalogController {
      *             if the catalog type is not recognized
      */
     @GetMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.CATALOGS_READ + "')")
     public CatalogResp retrieveCatalog(@PathVariable CatalogType catalogType, @PathVariable Long id) {
         return service.retrieveCatalog(catalogType.name(), id);
     }
@@ -157,7 +158,7 @@ public class CatalogController {
      *             if the request data is invalid
      */
     @PutMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.CATALOGS_UPDATE + "')")
     public ResponseEntity<CatalogResp> updateCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @PathVariable Long id, @Valid @RequestBody CatalogReq catalogReq) {
         CatalogResp updated = service.updateCatalog(catalogType.name(), id, catalogReq);
@@ -185,7 +186,7 @@ public class CatalogController {
      *             if the catalog type is invalid
      */
     @DeleteMapping("/{catalogType}/{id}")
-    @PreAuthorize("hasRole('ADMIN') and hasAuthority('catalogs:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.CATALOGS_DELETE + "')")
     public ResponseEntity<?> removeCatalog(@NotNull @Valid @PathVariable CatalogType catalogType,
             @PathVariable Long id) {
         service.deleteCatalog(catalogType.name(), id);

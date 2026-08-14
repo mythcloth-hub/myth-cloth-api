@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 
@@ -37,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/roles")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class RoleController {
 
     private final RoleService service;
@@ -46,7 +46,7 @@ public class RoleController {
      * Creates a new application role.
      *
      * <p>
-     * The authenticated user must have the {@code roles:write} authority.
+     * The authenticated user must have the {@code roles:create} authority.
      * </p>
      *
      * @param roleRequest
@@ -55,7 +55,7 @@ public class RoleController {
      *         {@code Location} header pointing to the newly created resource
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('roles:write')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_CREATE + "')")
     public ResponseEntity<RoleResp> createRole(@Valid @RequestBody RoleReq roleRequest) {
         RoleResp response = service.createRole(roleRequest);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(response.id())
@@ -76,7 +76,7 @@ public class RoleController {
      * @return the requested role
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('roles:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_READ + "')")
     public RoleResp retrieveRole(@PathVariable Long id) {
         return service.retrieveRole(id);
     }
@@ -91,7 +91,7 @@ public class RoleController {
      * @return a list containing all application roles
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('roles:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_READ + "')")
     public List<RoleResp> retrieveRoles() {
         return service.retrieveRoles();
     }
@@ -110,7 +110,7 @@ public class RoleController {
      * @return a {@link ResponseEntity} containing the updated role
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('roles:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_UPDATE + "')")
     public ResponseEntity<RoleResp> updateRole(@PathVariable Long id, @Valid @RequestBody RoleReq roleRequest) {
 
         RoleResp updated = service.updateRole(id, roleRequest);

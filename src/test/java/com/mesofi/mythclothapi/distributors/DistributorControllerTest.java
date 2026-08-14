@@ -60,7 +60,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(
                 post("/distributors").with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write"))))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:create"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
                         "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.distributors.dto.DistributorResp> com.mesofi.mythclothapi.distributors.DistributorController.createDistributor(org.springframework.security.oauth2.jwt.Jwt,com.mesofi.mythclothapi.distributors.dto.DistributorReq)"))
@@ -73,7 +73,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:create")))
                 .content("{}")).andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
                 .andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("415"))
@@ -86,7 +86,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
                 .andExpect(jsonPath("$.instance").value("/distributors")).andExpect(jsonPath("$.status").value("400"))
@@ -100,7 +100,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"countryCode\":\"-\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
@@ -114,7 +114,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"country\":\"JP\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
@@ -128,7 +128,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("catalogs:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"country\":\"JP\", \"name\": \"Test\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
@@ -146,7 +146,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(header().string("Location", endsWith("/distributors/1")))
                 .andExpect(jsonPath("$.id").value(1L)).andExpect(jsonPath("$.name").value("BANDAI"))
@@ -166,7 +166,7 @@ class DistributorControllerTest {
 
         mockMvc.perform(post("/distributors")
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando")).authorities(
-                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:write")))
+                        new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("distributors:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("Distributor 'BANDAI' already exists in country 'JP'"))

@@ -22,6 +22,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/distributors")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class DistributorController {
 
     private final DistributorService service;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('distributors:write')")
+    @PreAuthorize("hasAuthority('" + Permissions.DISTRIBUTORS_CREATE + "')")
     public ResponseEntity<DistributorResp> createDistributor(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody DistributorReq distributorRequest) {
         log.info("Creating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
@@ -52,19 +52,19 @@ public class DistributorController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('distributors:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.DISTRIBUTORS_READ + "')")
     public DistributorResp retrieveDistributor(@PathVariable Long id) {
         return service.retrieveDistributor(id);
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('distributors:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.DISTRIBUTORS_READ + "')")
     public List<DistributorResp> retrieveDistributors() {
         return service.retrieveDistributors();
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('distributors:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.DISTRIBUTORS_UPDATE + "')")
     public ResponseEntity<DistributorResp> updateDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id,
             @Valid @RequestBody DistributorReq distributorRequest) {
         log.info("Updating distributor. UserId: {}, User: {}, Request: {}", jwt.getSubject(),
@@ -75,7 +75,7 @@ public class DistributorController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('distributors:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.DISTRIBUTORS_DELETE + "')")
     public ResponseEntity<?> removeDistributor(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         log.info("Deleting distributor. UserId: {}, User: {}, id: {}", jwt.getSubject(), jwt.getClaimAsString("name"),
                 id);

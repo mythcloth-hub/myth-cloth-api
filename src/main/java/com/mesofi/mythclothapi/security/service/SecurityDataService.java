@@ -66,38 +66,25 @@ public class SecurityDataService {
      * it does not already exist.
      * </p>
      */
-    private static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.PERMISSIONS_DELETE,
-            Permissions.PERMISSIONS_READ, Permissions.PERMISSIONS_UPDATE, Permissions.PERMISSIONS_WRITE,
-
-            Permissions.ROLES_PERMISSIONS_ASSIGN, Permissions.ROLES_PERMISSIONS_READ,
-            Permissions.ROLES_PERMISSIONS_SYNC, Permissions.ROLES_READ, Permissions.ROLES_UPDATE,
-            Permissions.ROLES_WRITE,
-
+    public static final List<String> AVAILABLE_PERMISSIONS = List.of(Permissions.ANNIVERSARIES_CREATE,
             Permissions.ANNIVERSARIES_DELETE, Permissions.ANNIVERSARIES_READ, Permissions.ANNIVERSARIES_UPDATE,
-            Permissions.ANNIVERSARIES_WRITE,
-
-            Permissions.CATALOGS_DELETE, Permissions.CATALOGS_READ, Permissions.CATALOGS_UPDATE,
-            Permissions.CATALOGS_WRITE,
-
-            Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_READ,
-            Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_DELETE,
-            Permissions.COLLECTIONS_UPDATE,
-
-            Permissions.DISTRIBUTORS_DELETE, Permissions.DISTRIBUTORS_READ, Permissions.DISTRIBUTORS_UPDATE,
-            Permissions.DISTRIBUTORS_WRITE,
-
-            Permissions.FIGURINES_DELETE, Permissions.FIGURINES_LOAD, Permissions.FIGURINES_IMAGES_ADD,
-            Permissions.FIGURINES_IMAGES_DELETE, Permissions.FIGURINES_IMAGES_READ, Permissions.FIGURINES_EVENTS_ADD,
-            Permissions.FIGURINES_EVENTS_DELETE, Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_EVENTS_UPDATE,
-            Permissions.FIGURINES_STORES_READ, Permissions.FIGURINES_STORES_ASSIGN, Permissions.FIGURINES_UPDATE,
-            Permissions.FIGURINES_WRITE,
-
-            Permissions.PURCHASES_ADD, Permissions.PURCHASES_READ, Permissions.PURCHASES_UPDATE,
-            Permissions.PURCHASES_DELETE,
-
-            Permissions.STATS_READ,
-
-            Permissions.STORES_WRITE);
+            Permissions.CATALOGS_CREATE, Permissions.CATALOGS_DELETE, Permissions.CATALOGS_READ,
+            Permissions.CATALOGS_UPDATE, Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
+            Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
+            Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE,
+            Permissions.DISTRIBUTORS_CREATE, Permissions.DISTRIBUTORS_DELETE, Permissions.DISTRIBUTORS_READ,
+            Permissions.DISTRIBUTORS_UPDATE, Permissions.FIGURINES_CREATE, Permissions.FIGURINES_DELETE,
+            Permissions.FIGURINES_EVENTS_ADD, Permissions.FIGURINES_EVENTS_DELETE, Permissions.FIGURINES_EVENTS_READ,
+            Permissions.FIGURINES_EVENTS_UPDATE, Permissions.FIGURINES_IMPORT, Permissions.FIGURINES_STORES_ASSIGN,
+            Permissions.FIGURINES_STORES_IGNORE, Permissions.FIGURINES_STORES_READ,
+            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
+            Permissions.FIGURINES_UPDATE, Permissions.PERMISSIONS_CREATE, Permissions.PERMISSIONS_DELETE,
+            Permissions.PERMISSIONS_READ, Permissions.PERMISSIONS_UPDATE, Permissions.PURCHASES_CREATE,
+            Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC,
+            Permissions.PURCHASES_UPDATE, Permissions.ROLES_CREATE, Permissions.ROLES_PERMISSIONS_READ,
+            Permissions.ROLES_PERMISSIONS_SYNC, Permissions.ROLES_READ, Permissions.ROLES_UPDATE,
+            Permissions.STATS_READ, Permissions.STORES_CREATE, Permissions.STORES_DELETE, Permissions.STORES_READ,
+            Permissions.STORES_UPDATE);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -108,13 +95,16 @@ public class SecurityDataService {
      * functionality.
      * </p>
      */
-    private static final Map<RoleType, List<String>> ROLE_PERMISSIONS_MAP = Map.of(ADMIN, AVAILABLE_PERMISSIONS,
+    private static final Map<RoleType, List<String>> ROLE_PERMISSIONS_MAP = Map.of(
+            // Initial, admin permissions
+            ADMIN, AVAILABLE_PERMISSIONS,
+            // Initial, collector permissions
             COLLECTOR,
-            List.of(Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_READ,
-                    Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_READ,
-                    Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_UPDATE, Permissions.FIGURINES_IMAGES_READ,
-                    Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_STORES_READ, Permissions.PURCHASES_ADD,
-                    Permissions.PURCHASES_READ, Permissions.PURCHASES_UPDATE, Permissions.STATS_READ),
+            List.of(Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
+                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
+                    Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
+                    Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ),
+            // Initial, demo permissions.
             DEMO, AVAILABLE_PERMISSIONS);
 
     /**

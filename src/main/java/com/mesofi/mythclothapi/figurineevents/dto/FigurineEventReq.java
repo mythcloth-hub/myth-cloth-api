@@ -48,7 +48,7 @@ public class FigurineEventReq {
      * Must not be {@code null} or blank, and cannot exceed 100 characters.
      */
     @NotNull(message = "description must not be blank")
-    @Size(max = 100, message = "description must not exceed 100 characters")
+    @Size(max = 200, message = "description must not exceed 200 characters")
     private String description;
 
     /**

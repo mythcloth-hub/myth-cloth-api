@@ -57,7 +57,7 @@ class FigurineControllerTest {
     void createFigurine_shouldReturn404_whenPostingToRootPath() throws Exception {
 
         mockMvc.perform(post("/").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("figurines:write")))).andExpect(status().isNotFound())
+                new SimpleGrantedAuthority("figurines:create")))).andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("The URL you are calling does not exist."))
                 .andExpect(jsonPath("$.instance").value("/")).andExpect(jsonPath("$.status").value("404"))
                 .andExpect(jsonPath("$.title").value("Endpoint not found")).andExpect(jsonPath("$.timestamp").exists());
@@ -67,7 +67,7 @@ class FigurineControllerTest {
     void createFigurine_shouldReturn400_whenRequestBodyIsMissing() throws Exception {
 
         mockMvc.perform(post("/figurines").with(jwt()
-                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("figurines:write"))))
+                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("figurines:create"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
                         "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.figurines.dto.FigurineResp> com.mesofi.mythclothapi.figurines.FigurineController.createFigurine(com.mesofi.mythclothapi.figurines.dto.FigurineReq)"))
@@ -79,7 +79,7 @@ class FigurineControllerTest {
     void createFigurine_shouldReturn415_whenContentTypeIsMissing() throws Exception {
 
         mockMvc.perform(post("/figurines").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("figurines:write"))).content("{}"))
+                new SimpleGrantedAuthority("figurines:create"))).content("{}"))
                 .andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
                 .andExpect(jsonPath("$.instance").value("/figurines")).andExpect(jsonPath("$.status").value("415"))
@@ -92,7 +92,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
                 .andExpect(jsonPath("$.instance").value("/figurines")).andExpect(jsonPath("$.status").value("400"))
@@ -107,7 +107,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Seiya\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
@@ -122,7 +122,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Seiya\", \"distributors\":[{}]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
@@ -137,7 +137,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\"}"))
                 .andExpect(status().isBadRequest())
@@ -152,7 +152,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"Seiya\", \"distributors\":[{}],\"lineUpId\":\"3\",\"seriesId\":\"2\"}"))
                 .andExpect(status().isBadRequest())
@@ -164,8 +164,10 @@ class FigurineControllerTest {
     @Test
     void createFigurine_shouldReturn400_whenDistributorCurrencyHasUnknownValue() throws Exception {
 
-        mockMvc.perform(post("/figurines").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                new SimpleGrantedAuthority("figurines:write"))).contentType(MediaType.APPLICATION_JSON).content(
+        mockMvc.perform(post("/figurines")
+                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
+                        new SimpleGrantedAuthority("figurines:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(
                         "{\"name\":\"Seiya\", \"distributors\":[{\"currency\":\"=\"}],\"lineUpId\":\"3\",\"seriesId\":\"2\", \"groupId\":\"5\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
@@ -183,7 +185,7 @@ class FigurineControllerTest {
 
         mockMvc.perform(post("/figurines")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("figurines:write")))
+                        new SimpleGrantedAuthority("figurines:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.id").value(1L)).andExpect(jsonPath("$.name").value("Pegasus Seiya"));

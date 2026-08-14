@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
@@ -42,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/roles/{roleId}/permissions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class RolePermissionController {
 
     private final RoleService service;
@@ -64,7 +64,7 @@ public class RolePermissionController {
      *         when the permission is successfully assigned
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('roles:permissions:assign')")
+    @Deprecated(forRemoval = true)
     public ResponseEntity<Void> addPermissionToRole(@PathVariable Long roleId,
             @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
 
@@ -86,7 +86,7 @@ public class RolePermissionController {
      * @return a list containing the permissions assigned to the role
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('roles:permissions:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_PERMISSIONS_READ + "')")
     public List<PermissionResp> retrievePermissionsByRoleId(@PathVariable Long roleId) {
 
         return service.retrievePermissionsByRoleId(roleId);
@@ -109,7 +109,7 @@ public class RolePermissionController {
      *         when synchronization completes successfully
      */
     @PutMapping
-    @PreAuthorize("hasAuthority('roles:permissions:sync')")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_PERMISSIONS_SYNC + "')")
     public ResponseEntity<Void> syncRolePermissions(@PathVariable Long roleId,
             @Valid @RequestBody SyncPermissionsReq request) {
 

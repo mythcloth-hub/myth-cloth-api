@@ -26,6 +26,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,11 +94,9 @@ public class CollectorCollectionFigurineController {
      *         assignment succeeds
      */
     @PostMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('collections:figurines:add')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> addFigurineToCollection(@AuthenticationPrincipal Jwt jwt,
             @PathVariable Long collectionId, @PathVariable Long figurineId) {
-        log.info("Assign figurine {} to collection {}", figurineId, collectionId);
-
         AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId), CollectionAssignmentMode.EXISTING,
                 List.of(collectionId), null);
         service.assignFigurinesToCollections(getCollectorId(jwt), request);
@@ -133,7 +132,7 @@ public class CollectorCollectionFigurineController {
      *         assignment succeeds
      */
     @PostMapping("/assign-figurines")
-    @PreAuthorize("hasAuthority('collections:figurines:add')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> assignFigurinesToCollections(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody AssignFigurinesReq request) {
         service.assignFigurinesToCollections(getCollectorId(jwt), request);
@@ -159,11 +158,9 @@ public class CollectorCollectionFigurineController {
      * @return list of figurines assigned to the collection
      */
     @GetMapping("/{collectionId}/figurines")
-    @PreAuthorize("hasAuthority('collections:figurines:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
     public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId) {
-        log.info("Retrieve collection figurines for collection {}", collectionId);
-
         return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId);
     }
 
@@ -186,11 +183,9 @@ public class CollectorCollectionFigurineController {
      * @return detailed figurine collection information
      */
     @GetMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('collections:figurines:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
     public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
-        log.info("Retrieve collection figurine for collection {}", collectionId);
-
         return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
     }
 
@@ -213,11 +208,9 @@ public class CollectorCollectionFigurineController {
      *         succeeds
      */
     @DeleteMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('collections:figurines:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_DELETE + "')")
     public ResponseEntity<Void> deleteCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
-        log.info("Delete collection figurine {}", figurineId);
-
         service.deleteCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
         return ResponseEntity.noContent().build();
     }
@@ -236,10 +229,8 @@ public class CollectorCollectionFigurineController {
      * @return list of collector collections
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('collections:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_READ + "')")
     public List<CollectorCollectionResp> retrieveCollections(@AuthenticationPrincipal Jwt jwt) {
-        log.info("Retrieve collections for collector {}", getCollectorId(jwt));
-
         return service.retrieveCollections(getCollectorId(jwt));
     }
 
@@ -263,10 +254,8 @@ public class CollectorCollectionFigurineController {
      *         succeeds
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('collections:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DELETE + "')")
     public ResponseEntity<Void> deleteCollection(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
-        log.info("Delete collection with id: {}", id);
-
         service.deleteCollection(getCollectorId(jwt), id);
         return ResponseEntity.noContent().build();
     }
@@ -291,11 +280,9 @@ public class CollectorCollectionFigurineController {
      * @return the updated collector collection
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('collections:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
     public ResponseEntity<CollectorCollectionResp> updateCollection(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long id, @RequestBody @Valid CollectorCollectionReq request) {
-        log.info("Update collection with id: {}", id);
-
         CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
         return ResponseEntity.ok(updated);
     }
@@ -320,10 +307,8 @@ public class CollectorCollectionFigurineController {
      *         {@code Location} header pointing to the duplicated collection
      */
     @PostMapping("/{id}/duplicate")
-    @PreAuthorize("hasAuthority('collections:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DUPLICATE + "')")
     public ResponseEntity<Void> duplicateCollection(@AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long id) {
-        log.info("Duplicate collection with id: {}", id);
-
         long collectionId = service.duplicateCollection(getCollectorId(jwt), id);
         return ResponseEntity.created(URI.create(String.format("/collections/%d", collectionId))).build();
     }

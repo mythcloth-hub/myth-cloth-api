@@ -131,7 +131,7 @@ class SecurityDataServiceTest {
         assertThat(permissionCaptor.getAllValues())
                 .allSatisfy(permission -> assertThat(permission.getName()).isNotNull());
         assertThat(permissionCaptor.getAllValues()).extracting(Permission::getName)
-                .contains(Permissions.ROLES_PERMISSIONS_ASSIGN, Permissions.STORES_WRITE);
+                .contains(Permissions.ROLES_PERMISSIONS_SYNC, Permissions.STORES_UPDATE);
         assertThat(rolePermissionCaptor.getAllValues()).allSatisfy(rolePermission -> {
             assertThat(rolePermission.getRole()).isNotNull();
             assertThat(rolePermission.getPermission()).isNotNull();

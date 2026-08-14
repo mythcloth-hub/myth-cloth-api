@@ -69,13 +69,13 @@ public class RolePermissionControllerTest {
     @Test
     void retrievePermissionsByRoleId_shouldReturn200_whenPermissionEntriesExist() throws Exception {
         when(roleService.retrievePermissionsByRoleId(1L)).thenReturn(
-                List.of(new PermissionResp(1L, "figurines:read"), new PermissionResp(2L, "figurines:write")));
+                List.of(new PermissionResp(1L, "figurines:read"), new PermissionResp(2L, "figurines:create")));
 
         mockMvc.perform(get("/roles/{roleId}/permissions", 1L)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].description").value("figurines:read"))
                 .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].description").value("figurines:write"));
+                .andExpect(jsonPath("$[1].description").value("figurines:create"));
 
         verify(roleService).retrievePermissionsByRoleId(1L);
     }

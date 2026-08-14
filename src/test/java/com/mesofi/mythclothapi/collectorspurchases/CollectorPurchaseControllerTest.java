@@ -235,7 +235,7 @@ public class CollectorPurchaseControllerTest {
         when(service.createSummaryLineItem(123L, request)).thenReturn(response);
 
         mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add")))
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.purchaseId").value(5001L))
                 .andExpect(jsonPath("$.orderDate").value("2026-06-20")).andExpect(jsonPath("$.store").value("AmiAmi"))
@@ -377,7 +377,7 @@ public class CollectorPurchaseControllerTest {
 
         mockMvc.perform(put("/purchases/{purchaseId}/collections/{collectionId}/sync-total", 5002L, 9001L)
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:update"))))
+                        .authorities(new SimpleGrantedAuthority("purchases:sync"))))
                 .andExpect(status().isAccepted());
 
         verify(service).syncPurchaseFigurineTotals(eq(1L), eq(5002L), eq(9001L));
@@ -387,7 +387,7 @@ public class CollectorPurchaseControllerTest {
     void syncAllPurchaseFigurineTotals_shouldReturn202_whenRequestIsValid() throws Exception {
         mockMvc.perform(put("/purchases/collections/{collectionId}/sync-total", 9001L)
                 .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:update"))))
+                        .authorities(new SimpleGrantedAuthority("purchases:sync"))))
                 .andExpect(status().isAccepted());
 
         verifyNoInteractions(service);

@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/figurines/{figurineId}/images")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+// @PreAuthorize("hasRole('ADMIN')")
 public class FigurineImageController {
 
     private final FigurineImageService service;
@@ -76,7 +75,7 @@ public class FigurineImageController {
      * @return response entity containing the updated image collection
      */
     @PostMapping
-    @PreAuthorize("hasAuthority('figurines:images:add')")
+    // @PreAuthorize("hasAuthority('figurines:images:add')")
     public ResponseEntity<FigurineImageResp> createImage(@Positive @PathVariable Long figurineId,
             @Valid @RequestBody FigurineImageReq figurineImageRequest) {
 
@@ -101,7 +100,7 @@ public class FigurineImageController {
      * @return response containing the requested image URLs
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('figurines:images:read')")
+    // @PreAuthorize("hasAuthority('figurines:images:read')")
     public FigurineImageResp retrieveImages(@Positive @PathVariable Long figurineId,
             @RequestParam(name = "isOfficialImage", required = false, defaultValue = "true") boolean isOfficialImage) {
 
@@ -128,7 +127,7 @@ public class FigurineImageController {
      * @return empty response with HTTP {@code 204 No Content}
      */
     @DeleteMapping
-    @PreAuthorize("hasAuthority('figurines:images:delete')")
+    // @PreAuthorize("hasAuthority('figurines:images:delete')")
     public ResponseEntity<Void> removeImage(@Positive @PathVariable Long figurineId, @RequestParam URI imageUrl,
             @RequestParam(name = "isOfficialImage", defaultValue = "true") boolean isOfficialImage) {
 

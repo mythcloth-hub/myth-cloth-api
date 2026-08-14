@@ -83,7 +83,7 @@ public class CollectorControllerIT extends ControllerBaseIT {
         // Prepare the setup for this scenario.
 
         PermissionResp distributorWritePermission = rest.post().uri("/permissions")
-                .body(new PermissionReq("distributors:write")).retrieve().body(PermissionResp.class);
+                .body(new PermissionReq("distributors:create")).retrieve().body(PermissionResp.class);
 
         PermissionResp distributorReadPermission = rest.post().uri("/permissions")
                 .body(new PermissionReq("distributors:read")).retrieve().body(PermissionResp.class);

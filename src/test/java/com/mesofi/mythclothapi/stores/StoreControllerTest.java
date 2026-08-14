@@ -59,7 +59,7 @@ class StoreControllerTest {
 
         mockMvc.perform(post("/stores")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
-                        new SimpleGrantedAuthority("stores:write")))
+                        new SimpleGrantedAuthority("stores:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(header().string("Location", "http://localhost/stores/1"))
                 .andExpect(jsonPath("$.id").value(1L)).andExpect(jsonPath("$.name").value("Nin-Nin-Game"))
@@ -75,7 +75,9 @@ class StoreControllerTest {
 
         when(service.retrieveStore(7L)).thenReturn(response);
 
-        mockMvc.perform(get("/stores/{id}", 7L)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(7L))
+        mockMvc.perform(get("/stores/{id}", 7L).with(
+                jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("stores:read"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(7L))
                 .andExpect(jsonPath("$.name").value("Myth Factory"))
                 .andExpect(jsonPath("$.storeName").value("MYTH_FACTORY")).andExpect(jsonPath("$.country").value("JP"))
                 .andExpect(jsonPath("$.active").value(true));

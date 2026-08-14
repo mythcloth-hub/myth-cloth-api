@@ -53,7 +53,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * following claims:
  *
  * <pre>{@code { "roles": [ "ADMIN" ], "permissions": [ "figurines:read",
- * "figurines:write" ] } }</pre>
+ * "figurines:create" ] } }</pre>
  *
  * <p>
  * Roles are converted into Spring Security roles using the {@code ROLE_}
@@ -64,7 +64,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * <p>
  * Permissions are mapped directly as authorities and can be used with:
  *
- * <pre>{@code @PreAuthorize("hasAuthority('figurines:write')") }</pre>
+ * <pre>{@code @PreAuthorize("hasAuthority('figurines:create')") }</pre>
  *
  * <p>
  * This configuration supports both URL-based authorization through the security
@@ -177,14 +177,14 @@ public class SecurityConfig {
      * Given a token containing:
      *
      * <pre>{@code { "roles": [ "ADMIN" ], "permissions": [ "catalogs:read",
-     * "catalogs:write" ] } }</pre>
+     * "catalogs:create" ] } }</pre>
      *
      * <p>
      * The converter produces the following authorities:
      *
      * <pre>{@code new SimpleGrantedAuthority("ROLE_ADMIN") new
      * SimpleGrantedAuthority("catalogs:read") new
-     * SimpleGrantedAuthority("catalogs:write") }</pre>
+     * SimpleGrantedAuthority("catalogs:create") }</pre>
      *
      * <p>
      * Role values are prefixed with {@code ROLE_} to support Spring Security's
@@ -194,8 +194,8 @@ public class SecurityConfig {
      * <p>
      * The resulting authorities can be used by authorization rules such as:
      *
-     * <pre>{@code @PreAuthorize("hasRole('ADMIN')") @PreAuthorize("hasAuthority('catalogs:write')") @PreAuthorize(
-     * "hasRole('ADMIN') and hasAuthority('catalogs:write')") }</pre>
+     * <pre>{@code @PreAuthorize("hasRole('ADMIN')") @PreAuthorize("hasAuthority('catalogs:create')") @PreAuthorize(
+     * "hasRole('ADMIN') and hasAuthority('catalogs:create')") }</pre>
      *
      * @return a JWT authentication converter that maps role and permission claims
      *         to Spring Security authorities

@@ -73,6 +73,8 @@ public class CollectorService {
      */
     @Transactional
     public CollectorLoginResp login(String provider, CollectorLoginReq loginRequest) {
+        log.info("User is trying to authenticate with provider '{}'", provider);
+
         ProviderType providerType = resolveProvider(provider);
 
         return switch (providerType) {
