@@ -158,7 +158,7 @@ public class CollectorCollectionFigurineController {
      * @return list of figurines assigned to the collection
      */
     @GetMapping("/{collectionId}/figurines")
-    // @PreAuthorize("hasAuthority('collections:figurines:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
     public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId) {
         return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId);
@@ -183,7 +183,7 @@ public class CollectorCollectionFigurineController {
      * @return detailed figurine collection information
      */
     @GetMapping("/{collectionId}/figurines/{figurineId}")
-    // @PreAuthorize("hasAuthority('collections:figurines:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
     public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
         return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
