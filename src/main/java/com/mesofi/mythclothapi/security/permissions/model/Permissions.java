@@ -93,17 +93,17 @@ public interface Permissions {
     /** Allows updating collections. */
     String COLLECTIONS_UPDATE = "collections:update";
 
+    /** Allows creating distributors. */
+    String DISTRIBUTORS_CREATE = "distributors:create";
+
     /** Allows deletion of distributors. */
-    // String DISTRIBUTORS_DELETE = "distributors:delete";
+    String DISTRIBUTORS_DELETE = "distributors:delete";
 
     /** Allows reading distributors. */
-    // String DISTRIBUTORS_READ = "distributors:read";
+    String DISTRIBUTORS_READ = "distributors:read";
 
     /** Allows updating distributors. */
-    // String DISTRIBUTORS_UPDATE = "distributors:update";
-
-    /** Allows creating distributors. */
-    // String DISTRIBUTORS_WRITE = "distributors:write";
+    String DISTRIBUTORS_UPDATE = "distributors:update";
 
     /** Allows loading figurine data. */
     // String FIGURINES_LOAD = "figurines:load";
