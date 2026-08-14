@@ -80,7 +80,8 @@ public class SecurityDataService {
             Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
             Permissions.FIGURINES_UPDATE, Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE,
             Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE,
-            Permissions.STATS_READ);
+            Permissions.ROLES_READ, Permissions.ROLES_UPDATE, Permissions.STATS_READ, Permissions.STORES_CREATE,
+            Permissions.STORES_DELETE, Permissions.STORES_READ, Permissions.STORES_UPDATE);
 
     /**
      * Defines the initial set of permissions assigned to each application role.
@@ -116,7 +117,9 @@ public class SecurityDataService {
                     Permissions.FIGURINES_STORES_READ_CURRENT_PRICES,
                     Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES, Permissions.FIGURINES_UPDATE,
                     Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
-                    Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE, Permissions.STATS_READ));
+                    Permissions.PURCHASES_SYNC, Permissions.PURCHASES_UPDATE, Permissions.ROLES_READ,
+                    Permissions.ROLES_UPDATE, Permissions.STATS_READ, Permissions.STORES_CREATE,
+                    Permissions.STORES_DELETE, Permissions.STORES_READ, Permissions.STORES_UPDATE));
 
     /**
      * In-memory lookup of roles initialized during the current operation.

@@ -39,15 +39,6 @@ public interface Permissions {
     /** Allows synchronizing permissions assigned to roles. */
     // String ROLES_PERMISSIONS_SYNC = "roles:permissions:sync";
 
-    /** Allows reading roles. */
-    // String ROLES_READ = "roles:read";
-
-    /** Allows updating roles. */
-    // String ROLES_UPDATE = "roles:update";
-
-    /** Allows creating roles. */
-    // String ROLES_WRITE = "roles:write";
-
     /** Allows creating anniversaries. */
     String ANNIVERSARIES_CREATE = "anniversaries:create";
 
@@ -108,15 +99,6 @@ public interface Permissions {
     /** Allows loading figurine data. */
     // String FIGURINES_LOAD = "figurines:load";
 
-    /** Allows adding images to figurines. */
-    // String FIGURINES_IMAGES_ADD = "figurines:images:add";
-
-    /** Allows deleting figurine images. */
-    // String FIGURINES_IMAGES_DELETE = "figurines:images:delete";
-
-    /** Allows reading figurine images. */
-    // String FIGURINES_IMAGES_READ = "figurines:images:read";
-
     /** Allows creating figurines. */
     String FIGURINES_CREATE = "figurines:create";
 
@@ -168,9 +150,27 @@ public interface Permissions {
     /** Allows updating purchases. */
     String PURCHASES_UPDATE = "purchases:update";
 
+    /** Allows creating roles. */
+    String ROLES_CREATE = "roles:create";
+
+    /** Allows reading roles. */
+    String ROLES_READ = "roles:read";
+
+    /** Allows updating roles. */
+    String ROLES_UPDATE = "roles:update";
+
     /** Allows reading statistics. */
     String STATS_READ = "stats:read";
 
-    /** Allows creating or managing stores. */
-    // String STORES_WRITE = "stores:write";
+    /** Allows creating stores. */
+    String STORES_CREATE = "stores:create";
+
+    /** Allows deleting stores. */
+    String STORES_DELETE = "stores:delete";
+
+    /** Allows reading stores. */
+    String STORES_READ = "stores:read";
+
+    /** Allows updating stores. */
+    String STORES_UPDATE = "stores:update";
 }
