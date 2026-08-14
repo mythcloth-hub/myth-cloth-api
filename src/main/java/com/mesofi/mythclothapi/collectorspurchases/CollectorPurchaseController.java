@@ -73,7 +73,7 @@ public class CollectorPurchaseController {
      * @return HTTP 201 response containing the created purchase summary
      */
     @PostMapping("/summary-line-items")
-    // @PreAuthorize("hasAuthority('purchases:add')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_CREATE + "')")
     public ResponseEntity<CollectorPurchaseSummaryLineItemResp> createSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CollectorPurchaseSummaryLineItemReq request) {
         log.info(
@@ -124,7 +124,7 @@ public class CollectorPurchaseController {
      * @return list of collector purchase summaries
      */
     @GetMapping("/summary-line-items")
-    // @PreAuthorize("hasAuthority('purchases:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
     public List<CollectorPurchaseSummaryLineItemResp> retrieveSummaryLineItems(@AuthenticationPrincipal Jwt jwt) {
         return service.retrieveSummaryLineItems(getCollectorId(jwt));
     }
@@ -142,7 +142,7 @@ public class CollectorPurchaseController {
      * @return purchase summary including its figurine line items
      */
     @GetMapping("/summary-line-items/{purchaseId}")
-    // @PreAuthorize("hasAuthority('purchases:read')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
     public CollectorPurchaseSummaryLineItemResp retrieveSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId) {
         return service.retrieveSummaryLineItem(getCollectorId(jwt), purchaseId);

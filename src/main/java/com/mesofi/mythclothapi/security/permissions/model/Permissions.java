@@ -156,17 +156,17 @@ public interface Permissions {
     /** Allows deleting purchases. */
     String PURCHASES_DELETE = "purchases:delete";
 
+    /** Allows creating purchases. */
+    String PURCHASES_CREATE = "purchases:create";
+
+    /** Allows reading purchases. */
+    String PURCHASES_READ = "purchases:read";
+
     /** Allows synchronizing purchases. */
     String PURCHASES_SYNC = "purchases:sync";
 
     /** Allows updating purchases. */
     String PURCHASES_UPDATE = "purchases:update";
-
-    /** Allows adding purchases. */
-    // String PURCHASES_ADD = "purchases:add";
-
-    /** Allows reading purchases. */
-    // String PURCHASES_READ = "purchases:read";
 
     /** Allows reading statistics. */
     // String STATS_READ = "stats:read";
