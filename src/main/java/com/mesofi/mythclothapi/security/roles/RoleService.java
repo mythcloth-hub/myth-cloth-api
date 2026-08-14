@@ -18,6 +18,7 @@ import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsExcept
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
+import com.mesofi.mythclothapi.security.service.SecurityDataService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -131,6 +132,8 @@ public class RoleService {
      * The role and permission must both exist, and the permission must not already
      * be assigned to the role.
      * </p>
+     * Check if this method can be replaced with the
+     * {@link SecurityDataService#initializeSecurityData()}
      *
      * @param roleId
      *            the unique identifier of the role
@@ -144,6 +147,7 @@ public class RoleService {
      *             if the permission is already assigned to the role
      */
     @Transactional
+    @Deprecated(forRemoval = true)
     public void addPermissionToRole(Long roleId, Long permissionId) {
         Role role = roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
 

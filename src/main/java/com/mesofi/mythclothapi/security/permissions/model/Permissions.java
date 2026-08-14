@@ -18,15 +18,6 @@ package com.mesofi.mythclothapi.security.permissions.model;
  */
 public interface Permissions {
 
-    /** Allows assigning permissions to roles. */
-    // String ROLES_PERMISSIONS_ASSIGN = "roles:permissions:assign";
-
-    /** Allows reading permissions assigned to roles. */
-    // String ROLES_PERMISSIONS_READ = "roles:permissions:read";
-
-    /** Allows synchronizing permissions assigned to roles. */
-    // String ROLES_PERMISSIONS_SYNC = "roles:permissions:sync";
-
     /** Allows creating anniversaries. */
     String ANNIVERSARIES_CREATE = "anniversaries:create";
 
@@ -84,9 +75,6 @@ public interface Permissions {
     /** Allows updating distributors. */
     String DISTRIBUTORS_UPDATE = "distributors:update";
 
-    /** Allows loading figurine data. */
-    // String FIGURINES_LOAD = "figurines:load";
-
     /** Allows creating figurines. */
     String FIGURINES_CREATE = "figurines:create";
 
@@ -104,6 +92,9 @@ public interface Permissions {
 
     /** Allows updating figurine events. */
     String FIGURINES_EVENTS_UPDATE = "figurines:events:update";
+
+    /** Allows importing figurine data. */
+    String FIGURINES_IMPORT = "figurines:import";
 
     /** Allows assigning stores to figurines. */
     String FIGURINES_STORES_ASSIGN = "figurines:stores:assign";
@@ -152,6 +143,12 @@ public interface Permissions {
 
     /** Allows creating roles. */
     String ROLES_CREATE = "roles:create";
+
+    /** Allows reading roles' permissions. */
+    String ROLES_PERMISSIONS_READ = "roles:permissions:read";
+
+    /** Allows synchronizing roles' permissions. */
+    String ROLES_PERMISSIONS_SYNC = "roles:permissions:sync";
 
     /** Allows reading roles. */
     String ROLES_READ = "roles:read";

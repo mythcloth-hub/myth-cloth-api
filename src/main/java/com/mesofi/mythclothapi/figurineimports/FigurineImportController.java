@@ -3,12 +3,14 @@ package com.mesofi.mythclothapi.figurineimports;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.figurineimports.service.FigurineImportService;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/figurines")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('" + Permissions.FIGURINES_IMPORT + "')")
 public class FigurineImportController {
 
     private final FigurineImportService figurineImportService;
@@ -53,7 +56,6 @@ public class FigurineImportController {
      *         response body
      */
     @PostMapping("/load")
-    // @PreAuthorize("hasAuthority('figurines:load')")
     public ResponseEntity<Void> loadAllFigurines() {
         log.info("Loading all figurines ...");
 
@@ -79,7 +81,6 @@ public class FigurineImportController {
      *         recent import to the oldest
      */
     @GetMapping("/imports")
-    // @PreAuthorize("hasAuthority('figurines:load')")
     public List<FigurineImportResp> getFigurineImports() {
         log.info("Retrieving all figurine imports ...");
 
