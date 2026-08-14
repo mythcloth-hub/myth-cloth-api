@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,7 +100,7 @@ public class CollectorPurchaseController {
      * @return updated purchase summary
      */
     @PutMapping("/summary-line-items/{purchaseId}")
-    // @PreAuthorize("hasAuthority('purchases:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_UPDATE + "')")
     public ResponseEntity<CollectorPurchaseSummaryLineItemResp> updateSummaryLineItem(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId, @Valid @RequestBody CollectorPurchaseSummaryLineItemReq request) {
         log.info(
@@ -159,7 +161,7 @@ public class CollectorPurchaseController {
      * @return HTTP 204 response when deletion is successful
      */
     @DeleteMapping("/summary-line-items/{purchaseId}")
-    // @PreAuthorize("hasAuthority('purchases:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_DELETE + "')")
     public ResponseEntity<Void> deleteSummaryLineItem(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
         log.info("Deleting collector purchase summary with line items. CollectorId: {}, PurchaseId: {}",
                 jwt.getSubject(), purchaseId);
@@ -185,7 +187,7 @@ public class CollectorPurchaseController {
      *         successfully
      */
     @PutMapping("/{purchaseId}/collections/{collectionId}/sync-total")
-    // @PreAuthorize("hasAuthority('purchases:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_SYNC + "')")
     public ResponseEntity<Void> syncPurchaseFigurineTotals(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long purchaseId, @Positive @PathVariable Long collectionId) {
         log.info("Syncing purchase figurine totals. CollectorId: {}, PurchaseId: {}, CollectionId: {}",
@@ -211,7 +213,7 @@ public class CollectorPurchaseController {
      *         successfully
      */
     @PutMapping("/collections/{collectionId}/sync-total")
-    // @PreAuthorize("hasAuthority('purchases:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_SYNC + "')")
     public ResponseEntity<Void> syncAllPurchaseFigurineTotals(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId) {
         log.info("Syncing all purchase figurine totals for collection. CollectorId: {}, CollectionId: {}",
@@ -230,6 +232,6 @@ public class CollectorPurchaseController {
      * @return collector identifier
      */
     private Long getCollectorId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return Long.valueOf(jwt.getSubject() == null ? "0" : jwt.getSubject());
     }
 }

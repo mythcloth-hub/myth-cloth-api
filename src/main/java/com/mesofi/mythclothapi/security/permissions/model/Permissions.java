@@ -153,17 +153,20 @@ public interface Permissions {
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";
 
+    /** Allows deleting purchases. */
+    String PURCHASES_DELETE = "purchases:delete";
+
+    /** Allows synchronizing purchases. */
+    String PURCHASES_SYNC = "purchases:sync";
+
+    /** Allows updating purchases. */
+    String PURCHASES_UPDATE = "purchases:update";
+
     /** Allows adding purchases. */
     // String PURCHASES_ADD = "purchases:add";
 
     /** Allows reading purchases. */
     // String PURCHASES_READ = "purchases:read";
-
-    /** Allows updating purchases. */
-    // String PURCHASES_UPDATE = "purchases:update";
-
-    /** Allows deleting purchases. */
-    // String PURCHASES_DELETE = "purchases:delete";
 
     /** Allows reading statistics. */
     // String STATS_READ = "stats:read";
