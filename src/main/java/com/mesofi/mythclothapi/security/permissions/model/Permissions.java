@@ -135,11 +135,11 @@ public interface Permissions {
     /** Allows assigning stores to figurines. */
     // String FIGURINES_STORES_ASSIGN = "figurines:stores:assign";
 
-    /** Allows updating figurines. */
-    // String FIGURINES_UPDATE = "figurines:update";
-
     /** Allows creating figurines. */
     String FIGURINES_CREATE = "figurines:create";
+
+    /** Allows updating figurines. */
+    String FIGURINES_UPDATE = "figurines:update";
 
     /** Allows adding purchases. */
     // String PURCHASES_ADD = "purchases:add";
