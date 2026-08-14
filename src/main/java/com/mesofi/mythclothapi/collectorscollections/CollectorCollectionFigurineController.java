@@ -254,7 +254,7 @@ public class CollectorCollectionFigurineController {
      *         succeeds
      */
     @DeleteMapping("/{id}")
-    // @PreAuthorize("hasAuthority('collections:delete')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DELETE + "')")
     public ResponseEntity<Void> deleteCollection(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         service.deleteCollection(getCollectorId(jwt), id);
         return ResponseEntity.noContent().build();
@@ -280,7 +280,7 @@ public class CollectorCollectionFigurineController {
      * @return the updated collector collection
      */
     @PutMapping("/{id}")
-    // @PreAuthorize("hasAuthority('collections:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
     public ResponseEntity<CollectorCollectionResp> updateCollection(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long id, @RequestBody @Valid CollectorCollectionReq request) {
         CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
@@ -307,7 +307,7 @@ public class CollectorCollectionFigurineController {
      *         {@code Location} header pointing to the duplicated collection
      */
     @PostMapping("/{id}/duplicate")
-    // @PreAuthorize("hasAuthority('collections:update')")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DUPLICATE + "')")
     public ResponseEntity<Void> duplicateCollection(@AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long id) {
         long collectionId = service.duplicateCollection(getCollectorId(jwt), id);
         return ResponseEntity.created(URI.create(String.format("/collections/%d", collectionId))).build();

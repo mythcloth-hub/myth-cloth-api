@@ -72,23 +72,26 @@ public interface Permissions {
     /** Allows creating catalogs. */
     // String CATALOGS_WRITE = "catalogs:write";
 
-    /** Allows adding figurines to collections. */
-    String COLLECTIONS_FIGURINES_ADD = "collections:figurines:add";
-
     /** Allows reading figurines in collections. */
     // String COLLECTIONS_FIGURINES_READ = "collections:figurines:read";
 
     /** Allows removing figurines from collections. */
     // String COLLECTIONS_FIGURINES_DELETE = "collections:figurines:delete";
 
+    /** Allows deleting collections. */
+    String COLLECTIONS_DELETE = "collections:delete";
+
+    /** Allows duplicating collections. */
+    String COLLECTIONS_DUPLICATE = "collections:duplicate";
+
+    /** Allows adding figurines to collections. */
+    String COLLECTIONS_FIGURINES_ADD = "collections:figurines:add";
+
     /** Allows reading collections. */
     String COLLECTIONS_READ = "collections:read";
 
-    /** Allows deleting collections. */
-    // String COLLECTIONS_DELETE = "collections:delete";
-
     /** Allows updating collections. */
-    // String COLLECTIONS_UPDATE = "collections:update";
+    String COLLECTIONS_UPDATE = "collections:update";
 
     /** Allows deletion of distributors. */
     // String DISTRIBUTORS_DELETE = "distributors:delete";
