@@ -18,18 +18,6 @@ package com.mesofi.mythclothapi.security.permissions.model;
  */
 public interface Permissions {
 
-    /** Allows deletion of permissions. */
-    // String PERMISSIONS_DELETE = "permissions:delete";
-
-    /** Allows reading permissions. */
-    // String PERMISSIONS_READ = "permissions:read";
-
-    /** Allows updating permissions. */
-    // String PERMISSIONS_UPDATE = "permissions:update";
-
-    /** Allows creation of permissions. */
-    // String PERMISSIONS_WRITE = "permissions:write";
-
     /** Allows assigning permissions to roles. */
     // String ROLES_PERMISSIONS_ASSIGN = "roles:permissions:assign";
 
@@ -134,6 +122,18 @@ public interface Permissions {
 
     /** Allows updating figurines. */
     String FIGURINES_UPDATE = "figurines:update";
+
+    /** Allows creating permissions. */
+    String PERMISSIONS_CREATE = "permissions:create";
+
+    /** Allows deleting permissions. */
+    String PERMISSIONS_DELETE = "permissions:delete";
+
+    /** Allows reading permissions. */
+    String PERMISSIONS_READ = "permissions:read";
+
+    /** Allows updating permissions. */
+    String PERMISSIONS_UPDATE = "permissions:update";
 
     /** Allows deleting purchases. */
     String PURCHASES_DELETE = "purchases:delete";

@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/permissions")
 @RequiredArgsConstructor
-// @PreAuthorize("hasRole('ADMIN')")
 public class PermissionController {
 
     private final PermissionService service;
