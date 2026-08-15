@@ -62,8 +62,8 @@ class CollectorControllerTest {
     @Test
     void login_shouldReturn200_whenRequestIsValid() throws Exception {
         CollectorLoginReq request = new CollectorLoginReq("google-id-token", null);
-        CollectorLoginResp response = new CollectorLoginResp(1L, "Pegasus Seiya", "seiya@example.com", "api-jwt-token",
-                "Bearer", 3600L);
+        CollectorLoginResp response = new CollectorLoginResp(1L, "Pegasus Seiya", "seiya@example.com", "my-role",
+                "api-jwt-token", "Bearer", 3600L);
 
         when(service.login("google", request)).thenReturn(response);
 
@@ -72,6 +72,7 @@ class CollectorControllerTest {
                 .andExpect(jsonPath("$.collectorId").value(1L))
                 .andExpect(jsonPath("$.displayName").value("Pegasus Seiya"))
                 .andExpect(jsonPath("$.email").value("seiya@example.com"))
+                .andExpect(jsonPath("$.role").value("my-role"))
                 .andExpect(jsonPath("$.accessToken").value("api-jwt-token"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresInSeconds").value(3600));
@@ -83,8 +84,8 @@ class CollectorControllerTest {
     void login_shouldDelegateToService_whenInvokedDirectly() {
         CollectorController controller = new CollectorController(service);
         CollectorLoginReq request = new CollectorLoginReq(null, "facebook-access-token");
-        CollectorLoginResp response = new CollectorLoginResp(2L, "Andromeda Shun", "shun@example.com", "jwt", "Bearer",
-                1200L);
+        CollectorLoginResp response = new CollectorLoginResp(2L, "Andromeda Shun", "shun@example.com", "my-role", "jwt",
+                "Bearer", 1200L);
 
         when(service.login("facebook", request)).thenReturn(response);
 

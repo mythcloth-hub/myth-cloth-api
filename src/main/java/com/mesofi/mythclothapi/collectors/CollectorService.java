@@ -201,8 +201,8 @@ public class CollectorService {
     private CollectorLoginResp buildLoginResponse(Collector collector, ProviderType provider, String providerUserId) {
         String apiJwt = apiTokenService.generateToken(collector, provider.name(), providerUserId, collector.getEmail());
 
-        return new CollectorLoginResp(collector.getId(), collector.getDisplayName(), collector.getEmail(), apiJwt,
-                "Bearer", apiTokenService.ttlSeconds());
+        return new CollectorLoginResp(collector.getId(), collector.getDisplayName(), collector.getEmail(),
+                collector.getRole().getName(), apiJwt, "Bearer", apiTokenService.ttlSeconds());
     }
 
     /**

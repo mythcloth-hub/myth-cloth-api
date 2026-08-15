@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *            collector display name
  * @param email
  *            collector email address
+ * @param role
+ *            collector role
  * @param accessToken
  *            API access token issued by this service
  * @param tokenType
@@ -19,6 +21,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *            token validity duration in seconds
  */
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
-public record CollectorLoginResp(Long collectorId, String displayName, String email, String accessToken,
+public record CollectorLoginResp(Long collectorId, String displayName, String email, String role, String accessToken,
         String tokenType, long expiresInSeconds) {
 }

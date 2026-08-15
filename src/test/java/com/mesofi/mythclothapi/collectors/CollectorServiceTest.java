@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -68,6 +70,12 @@ class CollectorServiceTest {
     @Mock
     private DemoProperties demoProperties;
 
+    @BeforeEach
+    void setUp() {
+        lenient().when(bootstrapProperties.admin()).thenReturn(Map.of(ProviderType.LOCAL, "demo-admin",
+                ProviderType.FACEBOOK, "fb-admin", ProviderType.GOOGLE, "google-admin"));
+    }
+
     @Test
     void login_shouldThrowIllegalArgumentException_whenProviderIsBlank() {
         CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token");
@@ -115,10 +123,13 @@ class CollectorServiceTest {
         adminRole.setName("Admin");
         when(roleRepository.findByName("Admin")).thenReturn(Optional.of(adminRole));
 
-        Collector savedCollector = collector(55L, "Demo Collector", "demo@example.com", null);
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "LOCAL", "demo-user-1", "demo@example.com"))
-                .thenReturn("jwt-local");
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(55L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("LOCAL"), eq("demo-user-1"),
+                eq("demo@example.com"))).thenReturn("jwt-local");
         when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
         CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
@@ -156,10 +167,13 @@ class CollectorServiceTest {
         demoRole.setName("Demo");
         when(roleRepository.findByName("Demo")).thenReturn(Optional.of(demoRole));
 
-        Collector savedCollector = collector(88L, "Demo Visitor", "visitor@example.com", null);
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "LOCAL", "demo-user-2", "visitor@example.com"))
-                .thenReturn("jwt-demo");
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(88L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("LOCAL"), eq("demo-user-2"),
+                eq("visitor@example.com"))).thenReturn("jwt-demo");
         when(apiTokenService.ttlSeconds()).thenReturn(900L);
 
         CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
@@ -220,6 +234,10 @@ class CollectorServiceTest {
     @Test
     void loginWithFacebook_shouldReuseExistingCollector_whenProviderLinkExists() {
         Collector existingCollector = collector(7L, "Ikki", "ikki@example.com", null);
+        Role collectorRole = new Role();
+        collectorRole.setId(2L);
+        collectorRole.setName("Collector");
+        existingCollector.setRole(collectorRole);
         CollectorAuthProvider providerLink = providerLink(existingCollector, ProviderType.FACEBOOK, "fb-777");
 
         when(fcCredentials.appId()).thenReturn("myth-app-id");
@@ -229,7 +247,7 @@ class CollectorServiceTest {
                 .thenReturn(new FbUserInfoResponse("fb-777", "Phoenix Ikki", "ikki@example.com"));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-777"))
                 .thenReturn(Optional.of(providerLink));
-        when(apiTokenService.generateToken(existingCollector, "FACEBOOK", "fb-777", "ikki@example.com"))
+        when(apiTokenService.generateToken(eq(existingCollector), eq("FACEBOOK"), eq("fb-777"), eq("ikki@example.com")))
                 .thenReturn("api-jwt");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
@@ -257,13 +275,16 @@ class CollectorServiceTest {
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-123"))
                 .thenReturn(Optional.empty());
 
-        Collector savedCollector = collector(11L, "Seiya", "seiya@example.com", null);
         Role basicRole = new Role();
         basicRole.setId(2L);
         basicRole.setName("Collector");
         when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-123", "seiya@example.com"))
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(11L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("FACEBOOK"), eq("fb-123"), eq("seiya@example.com")))
                 .thenReturn("jwt-created");
         when(apiTokenService.ttlSeconds()).thenReturn(7200L);
 
@@ -277,7 +298,7 @@ class CollectorServiceTest {
 
         ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
         verify(collectorRepository).save(collectorCaptor.capture());
-        assertThat(collectorCaptor.getValue().getId()).isNull();
+        assertThat(collectorCaptor.getValue().getId()).isEqualTo(11L);
         assertThat(collectorCaptor.getValue().getDisplayName()).isEqualTo("Seiya");
         assertThat(collectorCaptor.getValue().getEmail()).isEqualTo("seiya@example.com");
         assertThat(collectorCaptor.getValue().getProfilePictureUrl()).isNull();
@@ -287,7 +308,7 @@ class CollectorServiceTest {
         verify(collectorAuthProviderRepository).save(providerCaptor.capture());
 
         CollectorAuthProvider persistedLink = providerCaptor.getValue();
-        assertThat(persistedLink.getCollector()).isEqualTo(savedCollector);
+        assertThat(persistedLink.getCollector()).isEqualTo(collectorCaptor.getValue());
         assertThat(persistedLink.getProvider()).isEqualTo(ProviderType.FACEBOOK);
         assertThat(persistedLink.getProviderUserId()).isEqualTo("fb-123");
         assertThat(persistedLink.getEmail()).isEqualTo("seiya@example.com");
@@ -378,9 +399,12 @@ class CollectorServiceTest {
         basicRole.setName("Collector");
         when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
 
-        Collector savedCollector = collector(20L, "Hyoga", "hyoga@example.com", "https://img/hyoga.jpg");
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "GOOGLE", "sub-456", "hyoga@example.com"))
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(20L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("GOOGLE"), eq("sub-456"), eq("hyoga@example.com")))
                 .thenReturn("jwt-google");
         when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
@@ -407,13 +431,18 @@ class CollectorServiceTest {
         assertThat(providerCaptor.getValue().getEmail()).isEqualTo("hyoga@example.com");
         assertThat(providerCaptor.getValue().getEmailVerified()).isFalse();
 
-        verify(apiTokenService).generateToken(savedCollector, "GOOGLE", "sub-456", "hyoga@example.com");
+        verify(apiTokenService).generateToken(any(Collector.class), eq("GOOGLE"), eq("sub-456"),
+                eq("hyoga@example.com"));
         verify(apiTokenService).ttlSeconds();
     }
 
     @Test
     void loginWithGoogle_shouldReuseExistingCollector_whenProviderLinkExists() {
         Collector existingCollector = collector(33L, "Shiryu", "shiryu@example.com", "https://img/shiryu.jpg");
+        Role collectorRole = new Role();
+        collectorRole.setId(2L);
+        collectorRole.setName("Collector");
+        existingCollector.setRole(collectorRole);
         CollectorAuthProvider providerLink = providerLink(existingCollector, ProviderType.GOOGLE, "sub-999");
 
         when(googleCredentials.clientId()).thenReturn("expected-client");
@@ -421,8 +450,8 @@ class CollectorServiceTest {
                 "expected-client", "sub-999", Instant.now().plusSeconds(900).getEpochSecond()));
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.GOOGLE, "sub-999"))
                 .thenReturn(Optional.of(providerLink));
-        when(apiTokenService.generateToken(existingCollector, "GOOGLE", "sub-999", "shiryu@example.com"))
-                .thenReturn("jwt-existing");
+        when(apiTokenService.generateToken(eq(existingCollector), eq("GOOGLE"), eq("sub-999"),
+                eq("shiryu@example.com"))).thenReturn("jwt-existing");
         when(apiTokenService.ttlSeconds()).thenReturn(600L);
 
         CollectorLoginResp response = service.login("google", new CollectorLoginReq("google-id-token", null));
@@ -451,13 +480,16 @@ class CollectorServiceTest {
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-100"))
                 .thenReturn(Optional.empty());
 
-        Collector savedCollector = collector(1L, "Mu", "mu@example.com", null);
         Role adminRole = new Role();
         adminRole.setId(1L);
         adminRole.setName("Admin");
         when(roleRepository.findByName("Admin")).thenReturn(Optional.of(adminRole));
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-100", "mu@example.com"))
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(1L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("FACEBOOK"), eq("fb-100"), eq("mu@example.com")))
                 .thenReturn("jwt-admin");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
@@ -483,13 +515,16 @@ class CollectorServiceTest {
         when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-200"))
                 .thenReturn(Optional.empty());
 
-        Collector savedCollector = collector(6L, "Camus", "camus@example.com", null);
         Role basicRole = new Role();
         basicRole.setId(2L);
         basicRole.setName("Collector");
         when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
-        when(collectorRepository.save(any(Collector.class))).thenReturn(savedCollector);
-        when(apiTokenService.generateToken(savedCollector, "FACEBOOK", "fb-200", "camus@example.com"))
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(6L);
+            return entity;
+        });
+        when(apiTokenService.generateToken(any(Collector.class), eq("FACEBOOK"), eq("fb-200"), eq("camus@example.com")))
                 .thenReturn("jwt-basic");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
