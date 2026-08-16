@@ -242,9 +242,36 @@ public class CollectorService {
         }
     }
 
+    /**
+     * Creates or retrieves a collector associated with an external authentication
+     * provider.
+     *
+     * <p>
+     * If a collector is already registered for the given provider and user ID, the
+     * existing collector is returned. Otherwise, a new collector is created and
+     * assigned a role based on the provider and configured administrator accounts,
+     * and the authentication provider association is persisted.
+     * </p>
+     *
+     * @param providerType
+     *            the authentication provider used by the collector
+     * @param userId
+     *            the unique user ID assigned by the authentication provider
+     * @param name
+     *            the collector's display name
+     * @param email
+     *            the collector's email address
+     * @param emailVerified
+     *            whether the email address has been verified by the provider
+     * @param picture
+     *            the collector's profile picture URL
+     * @return the existing or newly created collector
+     * @throws RoleNotFoundException
+     *             if the role assigned to the collector does not exist
+     */
     private Collector createOrUpdateRegisteredCollector(ProviderType providerType, String userId, String name,
             String email, boolean emailVerified, String picture) {
-        log.info("Creating collector for userId: {}, name: {}", userId, name);
+        log.info("Processing collector authentication for provider: {}, userId: {}", providerType, userId);
 
         return collectorAuthProviderRepository.findByProviderAndProviderUserId(providerType, userId).orElseGet(() -> {
             Map<ProviderType, String> adminMap = bootstrapProperties.admin();
