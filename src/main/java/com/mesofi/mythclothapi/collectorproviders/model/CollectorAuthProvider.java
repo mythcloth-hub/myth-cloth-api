@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.collectorproviders.model;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -46,6 +48,9 @@ public class CollectorAuthProvider extends Auditable {
 
     @Column
     private Boolean emailVerified;
+
+    @Column
+    private Instant lastLogin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collector_id", nullable = false)

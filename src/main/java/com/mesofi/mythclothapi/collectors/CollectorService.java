@@ -273,33 +273,40 @@ public class CollectorService {
             String email, boolean emailVerified, String picture) {
         log.info("Processing collector authentication for provider: {}, userId: {}", providerType, userId);
 
-        return collectorAuthProviderRepository.findByProviderAndProviderUserId(providerType, userId).orElseGet(() -> {
-            Map<ProviderType, String> adminMap = bootstrapProperties.admin();
-            boolean isAdmin = adminMap.get(providerType).equals(userId);
+        CollectorAuthProvider collectorAuthProvider = collectorAuthProviderRepository
+                .findByProviderAndProviderUserId(providerType, userId).orElseGet(() -> {
+                    Map<ProviderType, String> adminMap = bootstrapProperties.admin();
+                    boolean isAdmin = adminMap.get(providerType).equals(userId);
 
-            RoleType roleName = isAdmin ? RoleType.ADMIN : providerType == LOCAL ? RoleType.DEMO : RoleType.COLLECTOR;
-            Role currRole = roleRepository.findByName(roleName.getDisplayName())
-                    .orElseThrow(() -> new RoleNotFoundException(roleName.getDisplayName()));
+                    RoleType roleName = isAdmin
+                            ? RoleType.ADMIN
+                            : providerType == LOCAL ? RoleType.DEMO : RoleType.COLLECTOR;
+                    Role currRole = roleRepository.findByName(roleName.getDisplayName())
+                            .orElseThrow(() -> new RoleNotFoundException(roleName.getDisplayName()));
 
-            log.info("Creating new collector for {} user {}", providerType, userId);
+                    log.info("Creating new collector for {} user {}", providerType, userId);
 
-            Collector collector = new Collector();
-            collector.setEmail(email);
-            collector.setDisplayName(name);
-            collector.setProfilePictureUrl(picture);
-            collector.setRole(currRole);
-            Collector newCollector = collectorRepository.save(collector);
+                    Collector collector = new Collector();
+                    collector.setEmail(email);
+                    collector.setDisplayName(name);
+                    collector.setProfilePictureUrl(picture);
+                    collector.setRole(currRole);
+                    Collector newCollector = collectorRepository.save(collector);
 
-            CollectorAuthProvider newProvider = new CollectorAuthProvider();
-            newProvider.setCollector(newCollector);
-            newProvider.setProvider(providerType);
-            newProvider.setEmail(email);
-            newProvider.setProviderUserId(userId);
-            newProvider.setEmailVerified(emailVerified);
-            collectorAuthProviderRepository.save(newProvider);
+                    CollectorAuthProvider newProvider = new CollectorAuthProvider();
+                    newProvider.setCollector(newCollector);
+                    newProvider.setProvider(providerType);
+                    newProvider.setEmail(email);
+                    newProvider.setProviderUserId(userId);
+                    newProvider.setEmailVerified(emailVerified);
+                    collectorAuthProviderRepository.save(newProvider);
 
-            return newProvider;
-        }).getCollector();
+                    return newProvider;
+                });
+        // Update the collector's last login timestamp to the current time, regardless
+        // of whether it was newly created or retrieved
+        collectorAuthProvider.setLastLogin(Instant.now());
+        return collectorAuthProvider.getCollector();
     }
 
 }
