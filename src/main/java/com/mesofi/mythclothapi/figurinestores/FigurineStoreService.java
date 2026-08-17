@@ -187,36 +187,48 @@ public class FigurineStoreService {
     }
 
     /**
-     * Converts a matched figurine-store listing back into the unmatched queue.
+     * Converts multiple matched figurine-store listings back into the unmatched
+     * queue.
      *
-     * @param figurineStoreId
-     *            identifier of the matched figurine-store association
+     * <p>
+     * For each figurine-store association, the latest listing information is
+     * reconstructed from its pricing history and added to the unmatched queue. The
+     * existing pricing records and figurine-store association are then removed.
+     * </p>
+     *
+     * @param figurineStoreIds
+     *            identifiers of the matched figurine-store associations to unmatch
      */
     @Transactional
-    public void manuallyUnmatchFigurineListing(@Positive Long figurineStoreId) {
-        log.info("Manually unmatching figurine listing for figurine store {}", figurineStoreId);
+    public void manuallyUnmatchFigurineListings(@Nonnull List<Long> figurineStoreIds) {
+        log.info("Manually unmatching {} figurine listings", figurineStoreIds.size());
 
-        FigurineStore figurineStore = figurineStoreRepository.findById(figurineStoreId)
-                .orElseThrow(() -> new IllegalArgumentException("FigurineStore not found for ID: " + figurineStoreId));
+        for (Long figurineStoreId : figurineStoreIds) {
+            log.info("Processing figurine store ID: {}", figurineStoreId);
 
-        List<FigurineStorePricing> pricingList = figurineStorePricingRepository
-                .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
-        if (pricingList.isEmpty()) {
-            throw new IllegalArgumentException("No pricing data found for FigurineStore ID: " + figurineStoreId);
+            FigurineStore figurineStore = figurineStoreRepository.findById(figurineStoreId).orElseThrow(
+                    () -> new IllegalArgumentException("FigurineStore not found for ID: " + figurineStoreId));
+
+            List<FigurineStorePricing> pricingList = figurineStorePricingRepository
+                    .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+
+            if (pricingList.isEmpty()) {
+                throw new IllegalArgumentException("No pricing data found for FigurineStore ID: " + figurineStoreId);
+            }
+
+            Store store = figurineStore.getStore();
+
+            StoreListing listing = new StoreListing(null, figurineStore.getLineUp(), figurineStore.getOriginalName(),
+                    figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
+                    pricingList.getFirst().getCurrentPrice(), pricingList.getFirst().getDiscount(), null,
+                    Currency.getInstance(store.getCurrency()), figurineStore.getStatus(), figurineStore.isPreorder(),
+                    pricingList.getFirst().getCheckedAt());
+
+            createUnmatchedListing(store, listing);
+
+            figurineStorePricingRepository.deleteAll(pricingList);
+            figurineStoreRepository.delete(figurineStore);
         }
-
-        Store store = figurineStore.getStore();
-
-        StoreListing listing = new StoreListing(null, figurineStore.getLineUp(), figurineStore.getOriginalName(),
-                figurineStore.getNormalizedName(), figurineStore.getImageUrl(), figurineStore.getProductUrl(),
-                pricingList.getFirst().getCurrentPrice(), pricingList.getFirst().getDiscount(), null,
-                Currency.getInstance(store.getCurrency()), figurineStore.getStatus(), figurineStore.isPreorder(),
-                pricingList.getFirst().getCheckedAt());
-
-        createUnmatchedListing(store, listing);
-
-        figurineStorePricingRepository.deleteAll(pricingList);
-        figurineStoreRepository.delete(figurineStore);
     }
 
     /**

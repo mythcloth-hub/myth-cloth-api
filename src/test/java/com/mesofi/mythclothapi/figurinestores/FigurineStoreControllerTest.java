@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -81,15 +82,16 @@ class FigurineStoreControllerTest {
     }
 
     @Test
-    void manuallyUnmatchFigurineListing_shouldDelegateToService() throws Exception {
-        doNothing().when(figurineStoreService).manuallyUnmatchFigurineListing(7L);
+    void manuallyUnmatchFigurineListings_shouldDelegateToService() throws Exception {
+        doNothing().when(figurineStoreService).manuallyUnmatchFigurineListings(List.of(7L));
 
-        mockMvc.perform(post("/figurine-stores/matched-listings/figurine-store/{figurineStoreId}", 7L)
+        mockMvc.perform(post("/figurine-stores/matched-listings/figurine-stores/unmatch")
+                .contentType(MediaType.APPLICATION_JSON).content("[7]")
                 .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"),
                         new SimpleGrantedAuthority("figurines:stores:assign"))))
                 .andExpect(status().isOk());
 
-        verify(figurineStoreService).manuallyUnmatchFigurineListing(7L);
+        verify(figurineStoreService).manuallyUnmatchFigurineListings(List.of(7L));
     }
 
     @Test

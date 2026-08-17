@@ -293,7 +293,7 @@ class FigurineStoreServiceTest {
     }
 
     @Test
-    void manuallyUnmatchFigurineListing_shouldMoveListingBackToUnmatchedQueue() {
+    void manuallyUnmatchFigurineListings_shouldMoveListingBackToUnmatchedQueue() {
         Store store = store(3L, "Myth Supplies", "MYTH_SUPPLIES", "USD");
         Figurine figurine = figurine(7L, "Aries");
         FigurineStore figurineStore = figurineStore(figurine, store, "Original Aries", "Aries", ListingStatus.IN_STOCK,
@@ -309,7 +309,7 @@ class FigurineStoreServiceTest {
         when(unmatchedFigurineListingRepository.save(any(FigurineStoreUnmatched.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        service.manuallyUnmatchFigurineListing(8L);
+        service.manuallyUnmatchFigurineListings(List.of(8L));
 
         ArgumentCaptor<FigurineStoreUnmatched> captor = ArgumentCaptor.forClass(FigurineStoreUnmatched.class);
         verify(unmatchedFigurineListingRepository).save(captor.capture());
@@ -321,7 +321,7 @@ class FigurineStoreServiceTest {
     }
 
     @Test
-    void manuallyUnmatchFigurineListing_shouldThrowWhenPricingIsMissing() {
+    void manuallyUnmatchFigurineListings_shouldThrowWhenPricingIsMissing() {
         FigurineStore figurineStore = figurineStore(figurine(7L, "Aries"),
                 store(3L, "Myth Supplies", "MYTH_SUPPLIES", "USD"), "Original Aries", "Aries", ListingStatus.IN_STOCK,
                 true);
@@ -329,16 +329,16 @@ class FigurineStoreServiceTest {
         when(figurineStorePricingRepository.findByFigurineStoreOrderByCreationDateAsc(figurineStore))
                 .thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.manuallyUnmatchFigurineListing(8L))
+        assertThatThrownBy(() -> service.manuallyUnmatchFigurineListings(List.of(8L)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("No pricing data found for FigurineStore ID: 8");
     }
 
     @Test
-    void manuallyUnmatchFigurineListing_shouldThrowWhenFigurineStoreIsMissing() {
+    void manuallyUnmatchFigurineListings_shouldThrowWhenFigurineStoreIsMissing() {
         when(figurineStoreRepository.findById(8L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.manuallyUnmatchFigurineListing(8L))
+        assertThatThrownBy(() -> service.manuallyUnmatchFigurineListings(List.of(8L)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessage("FigurineStore not found for ID: 8");
     }
 

@@ -299,6 +299,7 @@ public class CollectorService {
                     newProvider.setEmail(email);
                     newProvider.setProviderUserId(userId);
                     newProvider.setEmailVerified(emailVerified);
+                    newProvider.setLastLogin(Instant.now());
                     collectorAuthProviderRepository.save(newProvider);
 
                     return newProvider;

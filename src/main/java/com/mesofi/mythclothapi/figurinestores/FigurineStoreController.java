@@ -5,6 +5,7 @@ import static com.mesofi.mythclothapi.utils.CurrencyConverter.toCurrency;
 
 import java.util.List;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -73,17 +75,18 @@ public class FigurineStoreController {
     }
 
     /**
-     * Manually unmatches a figurine listing from its associated canonical figurine.
+     * Manually unmatches multiple figurine listings from their associated canonical
+     * figurines.
      *
-     * @param figurineStoreId
-     *            identifier of the matched figurine-store relationship
+     * @param figurineStoreIds
+     *            identifiers of the matched figurine-store relationships
      */
-    @PostMapping("/matched-listings/figurine-store/{figurineStoreId}")
+    @PostMapping("/matched-listings/figurine-stores/unmatch")
     @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_ASSIGN + "')")
-    public void manuallyUnmatchFigurineListing(@Positive @PathVariable Long figurineStoreId) {
-        log.info("Manually unmatching figurine store {}", figurineStoreId);
+    public void manuallyUnmatchFigurineListings(@RequestBody @NotEmpty List<@Positive Long> figurineStoreIds) {
+        log.info("Manually unmatching figurine listings with IDs: {}", figurineStoreIds);
 
-        figurineStoreService.manuallyUnmatchFigurineListing(figurineStoreId);
+        figurineStoreService.manuallyUnmatchFigurineListings(figurineStoreIds);
     }
 
     /**
