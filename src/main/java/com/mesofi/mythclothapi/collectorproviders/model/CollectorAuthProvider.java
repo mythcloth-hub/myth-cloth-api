@@ -49,7 +49,7 @@ public class CollectorAuthProvider extends Auditable {
     @Column
     private Boolean emailVerified;
 
-    @Column
+    @Column(nullable = false)
     private Instant lastLogin;
 
     @ManyToOne(fetch = FetchType.LAZY)
