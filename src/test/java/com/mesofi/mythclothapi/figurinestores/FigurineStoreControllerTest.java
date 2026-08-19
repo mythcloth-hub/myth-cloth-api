@@ -19,6 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -70,15 +73,16 @@ class FigurineStoreControllerTest {
                 "Nin-Nin-Game", "https://example.com/store.jpg", "https://example.com/store/aries",
                 ListingStatus.IN_STOCK, false, List.of(new FigurineStorePriceResp(new BigDecimal("99.99"), "USD"))));
 
-        when(figurineStoreService.retrieveMatchedFigurineListing(3L)).thenReturn(response);
+        Page<FigurineStoreMatchedResp> pagedResponse = new PageImpl<>(response, PageRequest.of(0, 10), 1);
+        when(figurineStoreService.retrieveMatchedFigurineListing(3L, 0, 10)).thenReturn(pagedResponse);
 
         mockMvc.perform(get("/figurine-stores/matched-listings/stores/{storeId}", 3L).with(jwt().authorities(
                 new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("figurines:stores:read"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(8))
-                .andExpect(jsonPath("$[0].figurineDisplayableName").value("Aries"))
-                .andExpect(jsonPath("$[0].storePrices[0].realTimePrice").value(99.99));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].id").value(8))
+                .andExpect(jsonPath("$.content[0].figurineDisplayableName").value("Aries"))
+                .andExpect(jsonPath("$.content[0].storePrices[0].realTimePrice").value(99.99));
 
-        verify(figurineStoreService).retrieveMatchedFigurineListing(3L);
+        verify(figurineStoreService).retrieveMatchedFigurineListing(3L, 0, 10);
     }
 
     @Test

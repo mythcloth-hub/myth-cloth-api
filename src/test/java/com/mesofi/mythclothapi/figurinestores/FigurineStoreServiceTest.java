@@ -29,6 +29,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUpType;
@@ -263,11 +266,11 @@ class FigurineStoreServiceTest {
                 false);
         FigurineStorePricing pricing = pricing(figurineStore, new BigDecimal("120.00"), new BigDecimal("10.00"),
                 Instant.parse("2025-03-11T12:30:45Z"));
+        figurineStore.setPrices(List.of(pricing));
 
         when(storeRepository.findByIdAndActiveTrue(3L)).thenReturn(Optional.of(store));
-        when(figurineStoreRepository.findByStoreOrderByOriginalName(store)).thenReturn(List.of(figurineStore));
-        when(figurineStorePricingRepository.findByFigurineStoreOrderByCreationDateAsc(figurineStore))
-                .thenReturn(List.of(pricing));
+        when(figurineStoreRepository.findByStoreOrderByOriginalName(store, PageRequest.of(0, 10)))
+                .thenReturn(new PageImpl<>(List.of(figurineStore), PageRequest.of(0, 10), 1));
         when(figurineStoreMapper.toFigurineStoreMatchedResp(eq(figurineStore), eq("Aries"),
                 eq(Currency.getInstance("USD")), eq(List.of(pricing))))
                 .thenReturn(new FigurineStoreMatchedResp(8L, 7L, "Aries", "MYTH_CLOTH",
@@ -276,20 +279,21 @@ class FigurineStoreServiceTest {
                         "https://example.com/product", ListingStatus.IN_STOCK, false,
                         List.of(new FigurineStorePriceResp(new BigDecimal("120.00"), "USD"))));
 
-        List<FigurineStoreMatchedResp> result = service.retrieveMatchedFigurineListing(3L);
+        Page<FigurineStoreMatchedResp> result = service.retrieveMatchedFigurineListing(3L, 0, 10);
 
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().figurineDisplayableName()).isEqualTo("Aries");
+        assertThat(result.getContent().getFirst().figurineDisplayableName()).isEqualTo("Aries");
         verify(storeRepository).findByIdAndActiveTrue(3L);
-        verify(figurineStorePricingRepository).findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+        verify(figurineStoreRepository).findByStoreOrderByOriginalName(store, PageRequest.of(0, 10));
+        verify(figurineStorePricingRepository, never()).findByFigurineStoreOrderByCreationDateAsc(figurineStore);
     }
 
     @Test
     void retrieveMatchedFigurineListing_shouldThrowWhenStoreIsMissing() {
         when(storeRepository.findByIdAndActiveTrue(9L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.retrieveMatchedFigurineListing(9L)).isInstanceOf(StoreNotFoundException.class)
-                .hasMessageContaining("Store with id 9 was not found");
+        assertThatThrownBy(() -> service.retrieveMatchedFigurineListing(9L, 0, 10))
+                .isInstanceOf(StoreNotFoundException.class).hasMessageContaining("Store with id 9 was not found");
     }
 
     @Test

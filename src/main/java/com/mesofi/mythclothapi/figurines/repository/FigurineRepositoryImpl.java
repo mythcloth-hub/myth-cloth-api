@@ -69,29 +69,17 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      */
     private final String BASE_SQL = """
             SELECT
-                t.*
-            FROM (
-                SELECT
-                    CASE
-                        WHEN fd.release_date IS NULL AND fd.announcement_date IS NULL THEN 'RUMORED'
-                        WHEN fd.release_date IS NULL AND fd.announcement_date IS NOT NULL THEN 'PROTOTYPE'
-                        WHEN fd.release_date IS NOT NULL AND fd.release_date > CURRENT_DATE THEN 'ANNOUNCED'
-                        ELSE 'RELEASED'
-                    END AS release_status,
-                    fd.announcement_date,
-                    fd.release_date,
-                    f.*
-                FROM figurines f
-                LEFT JOIN (
-                    SELECT *
-                    FROM (
-                        SELECT fd.*,
-                            ROW_NUMBER() OVER (PARTITION BY figurine_id ORDER BY id) rn
-                        FROM figurine_distributor fd
-                    ) x
-                    WHERE rn = 1
-                ) fd ON fd.figurine_id = f.id
-            ) t
+                f.*
+            FROM figurines f
+            LEFT JOIN (
+                SELECT *
+                FROM (
+                    SELECT fd.*,
+                        ROW_NUMBER() OVER (PARTITION BY figurine_id ORDER BY id) rn
+                    FROM figurine_distributor fd
+                 ) x
+                 WHERE rn = 1
+            ) fd ON fd.figurine_id = f.id
             WHERE 1 = 1
             """;
 
@@ -311,29 +299,36 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
     private String buildOrderByStatement() {
         return """
                 ORDER BY
-                    CASE release_status
-                        WHEN 'ANNOUNCED' THEN 1
-                        WHEN 'RELEASED'  THEN 2
-                        WHEN 'PROTOTYPE' THEN 3
-                        WHEN 'RUMORED'   THEN 4
+                    CASE current_release_status
+                        WHEN 'ANNOUNCED'  THEN 1
+                        WHEN 'RELEASED'   THEN 2
+                        WHEN 'PROTOTYPE'  THEN 3
+                        WHEN 'UNRELEASED' THEN 4
+                        WHEN 'RUMORED'    THEN 5
                     END,
                     CASE
-                        WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN release_date
+                        WHEN current_release_status IN ('ANNOUNCED', 'RELEASED') THEN release_date
                     END DESC,
                     CASE
-                        WHEN release_status IN ('ANNOUNCED', 'RELEASED') THEN id
+                        WHEN current_release_status IN ('ANNOUNCED', 'RELEASED') THEN f.id
                     END,
                     CASE
-                        WHEN release_status = 'PROTOTYPE' THEN announcement_date
+                        WHEN current_release_status = 'PROTOTYPE' THEN announcement_date
                     END DESC,
                     CASE
-                        WHEN release_status = 'PROTOTYPE' THEN id
+                        WHEN current_release_status = 'PROTOTYPE' THEN f.id
                     END,
                     CASE
-                        WHEN release_status = 'RUMORED' THEN creation_date
+                        WHEN current_release_status = 'UNRELEASED' THEN announcement_date
+                    END DESC,
+                    CASE
+                        WHEN current_release_status = 'UNRELEASED' THEN f.id
                     END,
                     CASE
-                        WHEN release_status = 'RUMORED' THEN id
+                        WHEN current_release_status = 'RUMORED' THEN f.creation_date
+                    END,
+                    CASE
+                        WHEN current_release_status = 'RUMORED' THEN f.id
                     END
                 """;
     }
@@ -349,7 +344,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      * @return the SQL predicate for collectable figurines
      */
     private String buildCollectablePredicate() {
-        return "AND RELEASE_STATUS IN ('ANNOUNCED', 'RELEASED')";
+        return "AND current_release_status IN ('ANNOUNCED', 'RELEASED')";
     }
 
     /**

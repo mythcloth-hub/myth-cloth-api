@@ -15,9 +15,12 @@ import java.util.Objects;
 import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,31 +162,36 @@ public class FigurineStoreService {
      *
      * @param storeId
      *            identifier of the store
+     * @param page
+     *            the page number to retrieve (zero-based)
+     * @param size
+     *            the number of listings per page
      * @return matched figurine listings associated with the store
      * @throws StoreNotFoundException
      *             if the store does not exist or is inactive
      */
     @Transactional(readOnly = true)
-    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId) {
-        log.info("Retrieving matched figurine listing using storeId '{}'", storeId);
+    public Page<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive Long storeId,
+            @PositiveOrZero int page, @PositiveOrZero int size) {
+
+        log.info("Reading matched figurine listing, storeId '{}', page '{}', size '{}'", storeId, page, size);
 
         Store store = storeRepository.findByIdAndActiveTrue(storeId)
                 .orElseThrow(() -> new StoreNotFoundException(storeId));
 
-        List<FigurineStore> figurineStores = figurineStoreRepository.findByStoreOrderByOriginalName(store);
+        Page<FigurineStore> figurineStores = figurineStoreRepository.findByStoreOrderByOriginalName(store,
+                PageRequest.of(page, size));
 
-        List<FigurineStoreMatchedResp> figurineStoreMatchedRespList = new ArrayList<>();
-        for (FigurineStore figurineStore : figurineStores) {
-            List<FigurineStorePricing> pricingList = figurineStorePricingRepository
-                    .findByFigurineStoreOrderByCreationDateAsc(figurineStore);
+        Currency currency = Currency.getInstance(store.getCurrency());
+
+        return figurineStores.map(figurineStore -> {
+            List<FigurineStorePricing> pricingList = figurineStore.getPrices();
 
             String displayableName = figurineStore.getFigurine().getDisplayName();
 
-            figurineStoreMatchedRespList.add(figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore,
-                    displayableName, Currency.getInstance(store.getCurrency()), pricingList));
-        }
-
-        return figurineStoreMatchedRespList;
+            return figurineStoreMapper.toFigurineStoreMatchedResp(figurineStore, displayableName, currency,
+                    pricingList);
+        });
     }
 
     /**
