@@ -5,9 +5,12 @@ import static com.mesofi.mythclothapi.utils.CurrencyConverter.toCurrency;
 
 import java.util.List;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,14 +67,20 @@ public class FigurineStoreController {
      *
      * @param storeId
      *            store identifier
+     * @param page
+     *            page number for pagination (default: 0)
+     * @param size
+     *            number of listings per page for pagination (default: 10, max: 100)
      * @return matched figurine listings associated with the specified store
      */
     @GetMapping("/matched-listings/stores/{storeId}")
     @PreAuthorize("hasAuthority('" + Permissions.FIGURINES_STORES_READ + "')")
-    public List<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId) {
-        log.info("Retrieving matched figurine listing for store {}", storeId);
+    public Page<FigurineStoreMatchedResp> retrieveMatchedFigurineListing(@Positive @PathVariable Long storeId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        log.info("Retrieving matched figurine listing for store {}, page {}, size {}", storeId, page, size);
 
-        return figurineStoreService.retrieveMatchedFigurineListing(storeId);
+        return figurineStoreService.retrieveMatchedFigurineListing(storeId, page, size);
     }
 
     /**

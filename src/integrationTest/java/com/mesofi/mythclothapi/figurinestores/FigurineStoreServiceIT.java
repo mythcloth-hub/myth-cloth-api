@@ -363,14 +363,15 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
     }
 
     private List<FigurineStoreMatchedResp> readMatchedFigurines(Long storeId) {
-        ResponseEntity<List<FigurineStoreMatchedResp>> response = rest.get()
-                .uri(MATCHED_LISTINGS_ENDPOINT + "/stores/" + storeId).retrieve()
-                .toEntity(new ParameterizedTypeReference<>() {
-                });
+        ResponseEntity<MatchedFigurinesPage> response = rest.get().uri(MATCHED_LISTINGS_ENDPOINT + "/stores/" + storeId)
+                .retrieve().toEntity(MatchedFigurinesPage.class);
 
         assertThat(response.getStatusCode()).isEqualTo(OK);
         assertThat(response.getBody()).isNotNull();
 
-        return response.getBody();
+        return response.getBody().content();
+    }
+
+    private record MatchedFigurinesPage(List<FigurineStoreMatchedResp> content) {
     }
 }
