@@ -112,4 +112,23 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
             WHERE f.previousRelease IS NOT NULL
             """)
     int clearPreviousReleases();
+
+    /**
+     * Retrieves summary counts for the figurine catalog.
+     *
+     * <p>
+     * The summary includes the total number of figurines, the number of released
+     * figurines, and the number of announced figurines.
+     * </p>
+     *
+     * @return catalog summary projection with figurine totals
+     */
+    @Query(value = """
+            SELECT
+                SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END) AS totalFigurines,
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
+            FROM figurines f
+            """, nativeQuery = true)
+    FigurineCatalogSummaryProjection getFigurineCatalogSummary();
 }

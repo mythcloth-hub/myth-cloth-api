@@ -39,11 +39,11 @@ import java.util.List;
  *            whether the figurine belongs to a set
  * @param articulable
  *            whether the figurine is articulable
- * @param releaseStatus
- *            release status to filter by
+ * @param releaseStatuses
+ *            release statuses to filter by
  */
 public record FigurineFilter(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, Long groupId,
         Long distributionId, Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival, Boolean plainCloth,
         Boolean broken, Boolean golden, Boolean gold, Boolean manga, Boolean set, Boolean articulable,
-        String releaseStatus, Boolean restocks) {
+        List<String> releaseStatuses, Boolean restocks) {
 }

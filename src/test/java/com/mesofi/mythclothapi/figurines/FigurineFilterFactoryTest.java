@@ -34,18 +34,18 @@ class FigurineFilterFactoryTest {
         assertFalse(filter.manga());
         assertTrue(filter.set());
         assertFalse(filter.articulable());
-        assertEquals("RELEASED", filter.releaseStatus());
+        assertEquals(List.of("RELEASED"), filter.releaseStatuses());
         assertTrue(filter.restocks());
     }
 
     @Test
     void shouldUseEmptyNameWhenTrimmedNameIsTooShortOrNull() {
         FigurineFilter shortFilter = FigurineFilterFactory.build(null, " ab ", null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, (String) null, null);
         FigurineFilter exactThreeFilter = FigurineFilterFactory.build(null, " abc ", null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, (String) null, null);
         FigurineFilter nullFilter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, (String) null, null);
 
         assertEquals("", shortFilter.name());
         assertEquals("abc", exactThreeFilter.name());

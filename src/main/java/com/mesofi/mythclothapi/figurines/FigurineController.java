@@ -255,7 +255,7 @@ public class FigurineController {
     public List<FigurineSummaryResp> retrieveFigurineSummaries() {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, (String) null, null);
 
         return service.retrieveFigurineSummaries(figurineFilter);
     }
@@ -326,6 +326,7 @@ public class FigurineController {
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
                 distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
                 articulable, releaseStatus, restocks);
+
         return service.retrieveSelectableFigurines(figurineFilter);
     }
 

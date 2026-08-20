@@ -1,18 +1,20 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -23,20 +25,24 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.figurines.repository.FigurineCatalogSummaryProjection;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -47,9 +53,9 @@ import lombok.extern.slf4j.Slf4j;
  * collections, and figurines.
  *
  * <p>
- * This service handles operations related to assigning figurines to collector
- * collections, retrieving collector collections, and creating collections when
- * required.
+ * This service handles figurine assignment, collection summaries, paginated
+ * collection figurine listings, figurine detail retrieval, collection updates,
+ * collection duplication, and collection deletion.
  *
  * <p>
  * The assignment workflow supports multiple modes through
@@ -82,6 +88,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CollectorCollectionFigurineService {
 
+    public static final String COLLECTOR_SUMMARY_CACHE = "collector-summary";
     public static final String COLLECTOR_FIGURINE_CACHE = "collector-figurines";
 
     private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
@@ -162,7 +169,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorCollectionAlreadyExistsException
      *             if creating a collection with an existing name
      */
-    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void assignFigurinesToCollections(Long collectorId, @Valid AssignFigurinesReq request) {
         log.info("Assigning figurines {} to collections {} with mode {}", request.figurineIds(),
                 request.collectionIds(), request.collectionMode());
@@ -198,6 +205,50 @@ public class CollectorCollectionFigurineService {
     }
 
     /**
+     * Retrieves catalog and collection summary statistics for one collector
+     * collection.
+     *
+     * <p>
+     * The collector must own the collection. The catalog summary is used to build
+     * the overall figurine counts, while the collection summary is mapped to the
+     * collection-specific ownership statistics.
+     * </p>
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @return summary response with catalog and collection totals
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or is not owned by the collector
+     */
+    @Transactional(readOnly = true)
+    @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId)")
+    public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
+            @Positive Long collectionId) {
+
+        Collector collectorFound = collectorRepository.findById(collectorId)
+                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+        ensureCollectionOwnership(collectorFound, collectionId);
+
+        FigurineCatalogSummaryProjection catalogSummary = figurineRepository.getFigurineCatalogSummary();
+        CollectorCollectionCatalogSummaryResp summary = new CollectorCollectionCatalogSummaryResp(
+                catalogSummary.getTotalFigurines(), catalogSummary.getTotalAnnounced(),
+                catalogSummary.getTotalReleased());
+
+        CollectorCollectionSummaryProjection collectionSummary = collectorCollectionRepository
+                .getCollectorCollectionSummary(collectionId);
+
+        CollectorCollectionSummaryStatsResp collection = collectorMapper
+                .toCollectorCollectionSummaryResp(collectionSummary, catalogSummary.getTotalReleased());
+
+        return new CollectorCollectionSummaryResp(summary, collection);
+    }
+
+    /**
      * Retrieves all figurines available for a collector collection.
      *
      * <p>
@@ -212,6 +263,11 @@ public class CollectorCollectionFigurineService {
      *            identifier of the collector
      * @param collectionId
      *            identifier of the collection
+     * @param page
+     *            page number for pagination (default: 0)
+     * @param size
+     *            number of figurines per page for pagination (default: 50, max:
+     *            1000)
      * @return list of figurines with collection ownership details
      * @throws CollectorNotFoundException
      *             if the collector does not exist
@@ -220,44 +276,31 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "#collectorId + ':' + #collectionId")
-    public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
-            @Positive Long collectionId) {
+    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #page, #size)")
+    public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
+            @Positive Long collectionId, @PositiveOrZero int page, @PositiveOrZero int size) {
 
-        var collectorFound = collectorRepository.findById(collectorId)
+        Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-        var collectionFound = collectorCollectionRepository.findById(collectionId)
+        CollectorCollection collectionFound = collectorCollectionRepository.findById(collectionId)
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
-        // make sure this collector owns the collection to be retrieved.
-        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
-                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+        ensureCollectionOwnership(collectorFound, collectionId);
 
-        FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, null);
+        // build a map to quickly check if a figurine is already in the collection
+        Map<Long, CollectorCollectionFigurine> collectionFigurineMap = collectionFound.getFigurines().stream()
+                .collect(Collectors.toMap(ccf -> ccf.getFigurine().getId(), Function.identity()));
 
-        return figurineRepository.findAll(figurineFilter).stream()
-                .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED
-                        || figurine.getCurrentReleaseStatus() == ANNOUNCED)
-                .map(figurine -> {
-                    boolean isCollected = false;
-                    int ownedQuantity = 0;
+        FigurineFilter figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced();
+        return figurineRepository.findPaginated(figurineFilter, PageRequest.of(page, size)).map(figurine -> {
 
-                    for (CollectorCollectionFigurine collectorCollectionFigurine : collectionFound.getFigurines()) {
-                        if (figurine.getId().equals(collectorCollectionFigurine.getFigurine().getId())) {
-                            isCollected = true;
-                            ownedQuantity = collectorCollectionFigurine.getQuantity();
-                            break;
-                        }
-                    }
+            boolean isCollected = collectionFigurineMap.containsKey(figurine.getId());
+            int ownedQuantity = isCollected ? collectionFigurineMap.get(figurine.getId()).getQuantity() : 0;
 
-                    ReleaseStatus releaseStatus = figurine.getCurrentReleaseStatus();
-                    int year = figurine.getDistributors().getFirst().getReleaseDate().getYear();
-
-                    return collectorMapper.toCollectorCollectionFigurineResp(figurine, releaseStatus, isCollected,
-                            ownedQuantity, year);
-                }).toList();
+            return collectorMapper.toCollectorCollectionFigurineResp(figurine, figurine.getCurrentReleaseStatus(),
+                    isCollected, ownedQuantity);
+        });
     }
 
     /**
@@ -325,7 +368,7 @@ public class CollectorCollectionFigurineService {
      *             if the figurine does not exist
      */
     @Transactional
-    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void deleteCollectionFigurine(@Positive Long collectorId, @Positive Long collectionId,
             @Positive Long figurineId) {
         log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
@@ -390,7 +433,7 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
-    @CacheEvict(value = {COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void deleteCollection(Long collectorId, Long collectionId) {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 
@@ -644,5 +687,21 @@ public class CollectorCollectionFigurineService {
         collectorCollectionFigurine.setCollection(collection);
         collectorCollectionFigurine.setFigurine(figurine);
         return collectorCollectionFigurine;
+    }
+
+    /**
+     * Ensures that the specified collection belongs to the given collector.
+     *
+     * @param collector
+     *            the collector who must own the collection
+     * @param collectionId
+     *            the identifier of the collection to validate
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or is not owned by the collector
+     */
+    private void ensureCollectionOwnership(Collector collector, Long collectionId) {
+        collector.getCollections().stream()
+                .filter(collectorCollection -> collectorCollection.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
     }
 }
