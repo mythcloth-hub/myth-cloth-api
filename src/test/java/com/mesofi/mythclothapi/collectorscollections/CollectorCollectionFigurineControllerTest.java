@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -307,17 +308,18 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void retrieveCollectionFigurines_shouldReturnFigurines_whenRequestIsAuthenticated() throws Exception {
         CollectorCollectionFigurineResp resp = new CollectorCollectionFigurineResp(9L, "Seiya", null, null, null, true,
-                2, 1991);
-        when(service.retrieveCollectionFigurines(123L, 2L)).thenReturn(List.of(resp));
+                2);
+        when(service.retrieveCollectionFigurines(123L, 2L, 0, 50)).thenReturn(new PageImpl<>(List.of(resp)));
 
         mockMvc.perform(get("/collections/2/figurines").contentType(MediaType.APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("123"))
                         .authorities(new SimpleGrantedAuthority("collections:figurines:read"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(9))
-                .andExpect(jsonPath("$[0].name").value("Seiya")).andExpect(jsonPath("$[0].isCollected").value(true))
-                .andExpect(jsonPath("$[0].ownedQuantity").value(2)).andExpect(jsonPath("$[0].year").value(1991));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].id").value(9))
+                .andExpect(jsonPath("$.content[0].name").value("Seiya"))
+                .andExpect(jsonPath("$.content[0].isCollected").value(true))
+                .andExpect(jsonPath("$.content[0].ownedQuantity").value(2));
 
-        verify(service).retrieveCollectionFigurines(123L, 2L);
+        verify(service).retrieveCollectionFigurines(123L, 2L, 0, 50);
     }
 
     @Test

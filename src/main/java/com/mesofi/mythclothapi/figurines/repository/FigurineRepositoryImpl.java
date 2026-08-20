@@ -202,7 +202,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
 
         // Dynamic filters
         if (Objects.nonNull(filter.figurineIds()) && !filter.figurineIds().isEmpty()) {
-            dynamicSql.append(" AND id IN (:figurineIds)");
+            dynamicSql.append(" AND f.id IN (:figurineIds)");
             params.put("figurineIds", filter.figurineIds());
         }
         if (StringUtils.hasLength(filter.name())) {
@@ -269,9 +269,9 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             dynamicSql.append(" AND is_articulable = :articulable");
             params.put("articulable", filter.articulable());
         }
-        if (Objects.nonNull(filter.releaseStatus())) {
-            dynamicSql.append(" AND current_release_status = :status");
-            params.put("status", filter.releaseStatus());
+        if (Objects.nonNull(filter.releaseStatuses()) && !filter.releaseStatuses().isEmpty()) {
+            dynamicSql.append(" AND current_release_status IN (:status)");
+            params.put("status", filter.releaseStatuses());
         }
         if (Objects.nonNull(filter.restocks())) {
             if (filter.restocks()) {

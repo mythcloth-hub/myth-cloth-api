@@ -4,8 +4,11 @@ import java.net.URI;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
@@ -26,6 +30,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
@@ -143,6 +148,31 @@ public class CollectorCollectionFigurineController {
     }
 
     /**
+     * Retrieves the summary statistics for a specific collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. Access requires
+     * the {@code collections:figurines:read} authority.
+     * </p>
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the collector collection
+     * @return collection summary response containing catalog and collection
+     *         statistics
+     */
+    @GetMapping("/{collectionId}/summary")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public CollectorCollectionSummaryResp retrieveCollectionSummary(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId) {
+        log.info("Retrieving collection summary for collection {} of collector {}", collectionId, getCollectorId(jwt));
+
+        return service.retrieveCollectionSummary(getCollectorId(jwt), collectionId);
+    }
+
+    /**
      * Retrieves all figurines assigned to a specific collector collection.
      *
      * <p>
@@ -155,13 +185,21 @@ public class CollectorCollectionFigurineController {
      *            information
      * @param collectionId
      *            unique identifier of the collector collection
+     * @param page
+     *            page number for pagination (default is 0)
+     * @param size
+     *            number of items per page for pagination (default is 50, max is
+     *            1000)
      * @return list of figurines assigned to the collection
      */
     @GetMapping("/{collectionId}/figurines")
     @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
-    public List<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long collectionId) {
-        return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId);
+    public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId, @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(1000) int size) {
+        log.info("Retrieving figurines for collection {} with pagination: page {}, size {}", collectionId, page, size);
+
+        return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId, page, size);
     }
 
     /**
@@ -321,6 +359,6 @@ public class CollectorCollectionFigurineController {
      * @return collector identifier
      */
     private Long getCollectorId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
+        return Long.valueOf(jwt.getSubject() == null ? "0" : jwt.getSubject());
     }
 }

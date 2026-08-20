@@ -54,7 +54,7 @@ class StatisticsControllerTest {
         verify(service).retrieveStatistics(captor.capture());
         assertThat(captor.getValue().name()).isEqualTo("Gemini Saga");
         assertThat(captor.getValue().lineUpId()).isEqualTo(10L);
-        assertThat(captor.getValue().releaseStatus()).isEqualTo("RELEASED");
+        assertThat(captor.getValue().releaseStatuses()).containsExactly("RELEASED");
     }
 
     @Test
@@ -69,7 +69,7 @@ class StatisticsControllerTest {
         ArgumentCaptor<FigurineFilter> captor = ArgumentCaptor.forClass(FigurineFilter.class);
         verify(service).retrieveStatisticsByReleases(captor.capture());
         assertThat(captor.getValue().name()).isEmpty();
-        assertThat(captor.getValue().releaseStatus()).isNull();
+        assertThat(captor.getValue().releaseStatuses()).isNull();
     }
 
     @Test
@@ -106,6 +106,6 @@ class StatisticsControllerTest {
         ArgumentCaptor<FigurineFilter> captor = ArgumentCaptor.forClass(FigurineFilter.class);
         verify(service).retrieveYearlyReleasePrices(captor.capture());
         assertThat(captor.getValue().name()).isEqualTo("Saga");
-        assertThat(captor.getValue().releaseStatus()).isEqualTo("RELEASED");
+        assertThat(captor.getValue().releaseStatuses()).containsExactly("RELEASED");
     }
 }

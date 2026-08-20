@@ -144,7 +144,7 @@ public class StatisticsController {
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
                 distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
-                articulable, null, null);
+                articulable, (String) null, null);
 
         return service.retrieveStatisticsByReleases(figurineFilter);
     }
