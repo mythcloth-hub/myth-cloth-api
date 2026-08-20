@@ -90,6 +90,7 @@ public class CollectorCollectionFigurineService {
 
     public static final String COLLECTOR_SUMMARY_CACHE = "collector-summary";
     public static final String COLLECTOR_FIGURINE_CACHE = "collector-figurines";
+    public static final String COLLECTION_SUMMARY_CACHE = "collection-summary";
 
     private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
@@ -169,7 +170,8 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorCollectionAlreadyExistsException
      *             if creating a collection with an existing name
      */
-    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public void assignFigurinesToCollections(Long collectorId, @Valid AssignFigurinesReq request) {
         log.info("Assigning figurines {} to collections {} with mode {}", request.figurineIds(),
                 request.collectionIds(), request.collectionMode());
@@ -368,7 +370,8 @@ public class CollectorCollectionFigurineService {
      *             if the figurine does not exist
      */
     @Transactional
-    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public void deleteCollectionFigurine(@Positive Long collectorId, @Positive Long collectionId,
             @Positive Long figurineId) {
         log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
@@ -404,14 +407,17 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorNotFoundException
      *             if the collector does not exist
      */
-    public List<CollectorCollectionResp> retrieveCollections(Long collectorId) {
+    @Transactional(readOnly = true)
+    @Cacheable(value = COLLECTION_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId)")
+    public List<CollectorCollectionResp> retrieveCollections(final Long collectorId) {
+        log.info("Retrieving all collections for collector [{}]", collectorId);
+
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-        // finds all the collections from the collector and maps them to the response
-        // DTOs
-        List<CollectorCollection> collectorCollection = collectorCollectionRepository.findByCollector(collectorFound);
+        List<CollectorCollection> collectorCollection = collectorFound.getCollections();
 
+        log.info("Found {} collections for collector [{}]", collectorCollection.size(), collectorId);
         return collectorCollection.stream().map(collectorMapper::toCollectorCollectionResp).toList();
     }
 
@@ -433,7 +439,8 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
-    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public void deleteCollection(Long collectorId, Long collectionId) {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 
@@ -477,6 +484,7 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public CollectorCollectionResp updateCollection(@Positive Long collectorId, @Positive Long collectionId,
             @NotNull @Valid CollectorCollectionReq request) {
         log.info("Updating collection with id '{}'. New name: '{}'", collectionId, request.name());
@@ -532,6 +540,7 @@ public class CollectorCollectionFigurineService {
      *             if the generated duplicate name already exists
      */
     @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public long duplicateCollection(@Positive Long collectorId, @Positive Long collectionId) {
         log.info("Duplicating collection with id '{}' for collector '{}'", collectionId, collectorId);
 
