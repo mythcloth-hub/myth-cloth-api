@@ -34,11 +34,13 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
     /**
      * Finds a collection by its unique name.
      *
+     * @param collector
+     *            collector who owns the collection.
      * @param name
      *            collection name
      * @return matching collection when present
      */
-    Optional<CollectorCollection> findByName(String name);
+    Optional<CollectorCollection> findByCollectorAndName(Collector collector, String name);
 
     /**
      * Deletes a collection by its identifier.

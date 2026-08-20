@@ -94,7 +94,8 @@ class CollectorCollectionFigurineServiceTest {
         when(figurineRepository.findById(9L)).thenReturn(Optional.of(figurine));
         when(collectorCollectionRepository.findById(22L)).thenReturn(Optional.empty());
         when(collectorRepository.findById(22L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByName("My Myth Collection")).thenReturn(Optional.empty());
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "My Myth Collection"))
+                .thenReturn(Optional.empty());
         when(collectorCollectionRepository.save(any())).thenReturn(collection);
         when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(collection, figurine))
                 .thenReturn(Optional.empty());
@@ -167,7 +168,8 @@ class CollectorCollectionFigurineServiceTest {
 
         when(figurineRepository.findById(9L)).thenReturn(Optional.of(figurine));
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByName("My Myth Collection")).thenReturn(Optional.empty());
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "My Myth Collection"))
+                .thenReturn(Optional.empty());
         when(collectorCollectionRepository.save(any())).thenReturn(collection);
         when(collectorCollectionFigurineRepository.findByCollectionAndFigurine(collection, figurine))
                 .thenReturn(Optional.empty());
@@ -179,7 +181,7 @@ class CollectorCollectionFigurineServiceTest {
         assertThat(collectionCaptor.getValue().getCollector()).isEqualTo(collector);
         assertThat(collectionCaptor.getValue().getName()).isEqualTo("My Myth Collection");
         verify(collectorRepository).findById(1L);
-        verify(collectorCollectionRepository).findByName("My Myth Collection");
+        verify(collectorCollectionRepository).findByCollectorAndName(collector, "My Myth Collection");
         verify(collectorCollectionFigurineRepository).save(any(CollectorCollectionFigurine.class));
     }
 
@@ -193,14 +195,15 @@ class CollectorCollectionFigurineServiceTest {
 
         when(figurineRepository.findById(9L)).thenReturn(Optional.of(figurine));
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByName("Taken")).thenReturn(Optional.of(existing));
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "Taken"))
+                .thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> service.assignFigurinesToCollections(1L, request))
                 .isInstanceOf(CollectorCollectionAlreadyExistsException.class)
                 .hasMessage("Collector collection with name 'Taken' already exists");
 
         verify(collectorRepository).findById(1L);
-        verify(collectorCollectionRepository).findByName("Taken");
+        verify(collectorCollectionRepository).findByCollectorAndName(collector, "Taken");
         verify(collectorCollectionFigurineRepository, never()).save(any());
     }
 
@@ -788,7 +791,8 @@ class CollectorCollectionFigurineServiceTest {
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findByCollector(collector)).thenReturn(collections);
-        when(collectorCollectionRepository.findByName("Seiya copy")).thenReturn(Optional.empty());
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "Seiya copy"))
+                .thenReturn(Optional.empty());
         when(collectorCollectionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(collectorCollectionRepository.saveAllAndFlush(any())).thenAnswer(invocation -> {
             List<CollectorCollection> savedCollections = invocation.getArgument(0);
@@ -825,7 +829,8 @@ class CollectorCollectionFigurineServiceTest {
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findByCollector(collector)).thenReturn(collections);
-        when(collectorCollectionRepository.findByName("Seiya copy")).thenReturn(Optional.empty());
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "Seiya copy"))
+                .thenReturn(Optional.empty());
         when(collectorCollectionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(collectorCollectionRepository.saveAllAndFlush(any())).thenAnswer(invocation -> {
             List<CollectorCollection> savedCollections = invocation.getArgument(0);
@@ -859,7 +864,8 @@ class CollectorCollectionFigurineServiceTest {
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findByCollector(collector)).thenReturn(collections);
-        when(collectorCollectionRepository.findByName("Seiya copy")).thenReturn(Optional.empty());
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "Seiya copy"))
+                .thenReturn(Optional.empty());
         when(collectorCollectionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(collectorCollectionRepository.saveAllAndFlush(any())).thenReturn(List.of(source));
 

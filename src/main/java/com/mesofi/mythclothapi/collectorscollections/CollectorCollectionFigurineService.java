@@ -664,7 +664,7 @@ public class CollectorCollectionFigurineService {
         Collector collector = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-        collectorCollectionRepository.findByName(name).ifPresent(existing -> {
+        collectorCollectionRepository.findByCollectorAndName(collector, name).ifPresent(existing -> {
             throw new CollectorCollectionAlreadyExistsException(existing.getName());
         });
 
