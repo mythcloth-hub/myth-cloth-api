@@ -168,7 +168,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
         StringBuilder sql = queryContext.sql();
         Map<String, Object> params = queryContext.params();
 
-        sql.append(" AND EXTRACT(YEAR FROM t.release_date) = :year");
+        sql.append(" AND EXTRACT(YEAR FROM fd.release_date) = :year");
         sql.append(" ").append(buildOrderByStatement());
         params.put("year", year);
 

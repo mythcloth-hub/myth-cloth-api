@@ -1,6 +1,5 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
-import java.time.Instant;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineCatalogSummaryProjection;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection;
 
 /**
  * Repository for {@link Figurine} persistence and query operations.
@@ -47,19 +48,6 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
      * @return figurines matching the specified legacy names, ordered by ID
      */
     List<Figurine> findByLegacyNameInOrderById(List<String> legacyNames);
-
-    /**
-     * Finds figurines whose legacy name matches one of the specified names and
-     * whose last update occurred before the specified timestamp.
-     *
-     * @param legacyNames
-     *            legacy names used to identify figurines
-     * @param updateDate
-     *            timestamp used as the upper bound for the last update date
-     * @return figurines matching the specified names and update-date criteria,
-     *         ordered by ID
-     */
-    List<Figurine> findByLegacyNameInAndUpdateDateLessThanOrderById(List<String> legacyNames, Instant updateDate);
 
     /**
      * Finds all figurines belonging to the specified lineup.
@@ -131,4 +119,44 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
             FROM figurines f
             """, nativeQuery = true)
     FigurineCatalogSummaryProjection getFigurineCatalogSummary();
+
+    /**
+     * Retrieves a summary of released figurines grouped by release year and lineup.
+     * For each figurine, only the first distributor record is considered when
+     * determining the release date.
+     *
+     * @return projections containing the release year, lineup description, and
+     *         number of released figurines for each year and lineup
+     */
+    @Query(value = """
+            SELECT
+                CAST(EXTRACT(YEAR FROM fd.release_date) AS INTEGER) AS releaseYear,
+                l.description AS lineupDescription,
+                COUNT(*) AS figurineCount
+            FROM figurines f
+            LEFT JOIN (
+                SELECT *
+                FROM (
+                    SELECT
+                        fd.*,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY figurine_id
+                            ORDER BY id
+                        ) AS rn
+                    FROM figurine_distributor fd
+                ) x
+                WHERE rn = 1
+            ) fd
+                ON fd.figurine_id = f.id
+            JOIN lineups l
+                ON l.id = f.lineup_id
+            WHERE f.current_release_status = 'RELEASED'
+            GROUP BY
+                CAST(EXTRACT(YEAR FROM fd.release_date) AS INTEGER),
+                l.description
+            ORDER BY
+                releaseYear,
+                lineupDescription
+            """, nativeQuery = true)
+    List<FigurineReleaseYearSummaryProjection> getReleaseYearSummary();
 }

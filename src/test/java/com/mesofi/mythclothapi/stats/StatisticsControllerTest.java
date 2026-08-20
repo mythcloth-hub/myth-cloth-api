@@ -20,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.FigurinePriceResp;
 import com.mesofi.mythclothapi.stats.dto.LineUpByMonthResp;
@@ -59,24 +60,21 @@ class StatisticsControllerTest {
 
     @Test
     void retrieveStatisticsByReleases_shouldReturnYearlyList() throws Exception {
-        when(service.retrieveStatisticsByReleases(any()))
+        when(service.retrieveStatisticsByReleases())
                 .thenReturn(List.of(new YearStatisticsResp(2026, List.of(new LineUpCountResp("EX", 3)))));
 
-        mockMvc.perform(get("/stats/releases/years").param("name", "Mu")).andExpect(status().isOk())
+        mockMvc.perform(get("/stats/releases/years")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].year").value(2026)).andExpect(jsonPath("$[0].lineUp[0].line").value("EX"))
                 .andExpect(jsonPath("$[0].lineUp[0].count").value(3));
 
-        ArgumentCaptor<FigurineFilter> captor = ArgumentCaptor.forClass(FigurineFilter.class);
-        verify(service).retrieveStatisticsByReleases(captor.capture());
-        assertThat(captor.getValue().name()).isEmpty();
-        assertThat(captor.getValue().releaseStatuses()).isNull();
+        verify(service).retrieveStatisticsByReleases();
     }
 
     @Test
     void retrieveStatisticsByYear_shouldReturnMonthsList() throws Exception {
-        when(service.retrieveStatisticsByYear(2026))
-                .thenReturn(List.of(new MonthStatisticsResp(1, "January", List.of(new LineUpByMonthResp("Myth Cloth EX",
-                        List.of(new FigurineByMonthResp(10L, "Gemini Saga", "https://img/saga.jpg")))))));
+        when(service.retrieveStatisticsByYear(2026)).thenReturn(List.of(new MonthStatisticsResp(1, "January",
+                List.of(new LineUpByMonthResp("Myth Cloth EX", List.of(new FigurineByMonthResp(10L, "Gemini Saga",
+                        "https://img/saga.jpg", ReleaseStatus.RELEASED)))))));
 
         mockMvc.perform(get("/stats/releases/years/{year}", 2026)).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].month").value(1)).andExpect(jsonPath("$[0].name").value("January"))

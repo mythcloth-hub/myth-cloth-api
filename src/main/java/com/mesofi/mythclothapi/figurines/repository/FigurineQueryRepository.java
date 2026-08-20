@@ -25,7 +25,7 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
  * <li>Retrieval of figurines released during a specific year.</li>
  * </ul>
  *
- * @see FigurineQueryRepositoryImpl
+ * @see FigurineRepositoryImpl
  * @see FigurineFilter
  */
 public interface FigurineQueryRepository {
