@@ -196,9 +196,10 @@ class StatisticsServiceTest {
         missing.setCurrentReleaseStatus(RELEASED);
         missing.setDistributors(List.of());
 
-        when(repository.findAll(EMPTY_FILTER)).thenReturn(List.of(shun, ikki, shaka, anotherGold, announced, missing));
+        when(repository.getReleaseYearSummary()).thenReturn(
+                List.of(projection(2025, "Bronze", 1L), projection(2026, "Bronze", 1L), projection(2026, "Gold", 2L)));
 
-        List<YearStatisticsResp> result = service.retrieveStatisticsByReleases(EMPTY_FILTER);
+        List<YearStatisticsResp> result = service.retrieveStatisticsByReleases();
 
         assertThat(result).extracting(YearStatisticsResp::year).containsExactly(2025, 2026);
         assertThat(result.getFirst().lineUp()).extracting(LineUpCountResp::line, LineUpCountResp::count)
@@ -250,6 +251,26 @@ class StatisticsServiceTest {
         assertThat(year2024.highestPriceFigurines().name()).isEqualTo("Tied High");
         assertThat(year2024.lowestPriceFigurines().name()).isEqualTo("Cheap");
         assertThat(year2024.releaseCount()).isEqualTo(4);
+    }
+
+    private com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection projection(
+            int releaseYear, String lineupDescription, Long figurineCount) {
+        return new com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection() {
+            @Override
+            public Integer getReleaseYear() {
+                return releaseYear;
+            }
+
+            @Override
+            public String getLineupDescription() {
+                return lineupDescription;
+            }
+
+            @Override
+            public Long getFigurineCount() {
+                return figurineCount;
+            }
+        };
     }
 
     private Figurine figurine(Long id, String name, LineUp lineUp, String imageUrl) {

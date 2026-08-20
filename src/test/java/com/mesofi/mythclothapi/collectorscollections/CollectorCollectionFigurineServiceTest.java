@@ -54,8 +54,8 @@ import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
-import com.mesofi.mythclothapi.figurines.repository.FigurineCatalogSummaryProjection;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineCatalogSummaryProjection;
 
 @ExtendWith(MockitoExtension.class)
 class CollectorCollectionFigurineServiceTest {
@@ -617,12 +617,11 @@ class CollectorCollectionFigurineServiceTest {
 
     @Test
     void retrieveCollections_shouldReturnMappedCollections_whenCollectorExists() {
-        Collector collector = collector(1L);
-        CollectorCollection collection = collection(2L, collector, "Team", null, null);
+        CollectorCollection collection = collection(2L, null, "Team", null, null);
+        Collector collector = collector(1L, collection);
         CollectorCollectionResp response = new CollectorCollectionResp(2L, "Team", null, null, 0, List.of());
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByCollector(collector)).thenReturn(List.of(collection));
         when(collectorMapper.toCollectorCollectionResp(collection)).thenReturn(response);
 
         List<CollectorCollectionResp> result = service.retrieveCollections(1L);

@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurines.repository;
+package com.mesofi.mythclothapi.figurines.repository.projection;
 
 /**
  * Projection containing summary statistics for the figurine catalog.

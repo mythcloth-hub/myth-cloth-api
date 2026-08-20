@@ -35,10 +35,10 @@ import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
-import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection;
 import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 import com.mesofi.mythclothapi.stats.dto.FigurineByMonthResp;
 import com.mesofi.mythclothapi.stats.dto.FigurinePriceResp;
@@ -71,8 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class StatisticsService {
 
-    private final FigurineService figurineService;
-    private final FigurineRepository repository;
+    private final FigurineRepository figurineRepository;
     private final LineUpRepository lineUpRepository;
     private final SeriesRepository seriesRepository;
     private final GroupRepository groupRepository;
@@ -89,7 +88,7 @@ public class StatisticsService {
      * @return aggregate totals by catalog and release status
      */
     public StatisticsResp retrieveStatistics(@NotNull FigurineFilter filter) {
-        List<Figurine> allFigurines = repository.findAll(filter);
+        List<Figurine> allFigurines = figurineRepository.findAll(filter);
 
         return new StatisticsResp(allFigurines.size(),
                 countByCatalog(allFigurines, lineUpRepository.findAll(), Figurine::getLineup, LineUp::getId,
@@ -111,31 +110,21 @@ public class StatisticsService {
      * figurine is counted against the release year of its first distributor record
      * when present.
      *
-     * @param filter
-     *            search filter used to constrain figurines included in the
-     *            aggregation
      * @return list of yearly aggregates sorted by year (ascending)
      */
-    public List<YearStatisticsResp> retrieveStatisticsByReleases(@NotNull FigurineFilter filter) {
-        List<Figurine> allFigurines = findAllReleasedFigurinesWithFilter(filter);
+    public List<YearStatisticsResp> retrieveStatisticsByReleases() {
+        log.info("Retrieving yearly release statistics");
+
+        List<FigurineReleaseYearSummaryProjection> summary = figurineRepository.getReleaseYearSummary();
 
         Map<Integer, Map<String, Integer>> map = new TreeMap<>();
 
-        for (Figurine figurine : allFigurines) {
-            Optional<FigurineDistributor> fdOptional = figurine.getDistributors().stream().findFirst();
-            if (fdOptional.isPresent()) {
-                int theYear = fdOptional.get().getReleaseDate().getYear();
-                String description = figurine.getLineup().getDescription();
+        for (FigurineReleaseYearSummaryProjection summaryProjection : summary) {
+            int year = summaryProjection.getReleaseYear();
+            String lineUpDescription = summaryProjection.getLineupDescription();
+            int count = summaryProjection.getFigurineCount().intValue();
 
-                if (map.containsKey(theYear)) {
-                    Map<String, Integer> mm = map.get(theYear);
-                    mm.merge(description, 1, Integer::sum);
-                } else {
-                    Map<String, Integer> map1 = new HashMap<>();
-                    map1.put(description, 1);
-                    map.put(theYear, map1);
-                }
-            }
+            map.computeIfAbsent(year, k -> new HashMap<>()).put(lineUpDescription, count);
         }
 
         List<YearStatisticsResp> resp = new ArrayList<>();
@@ -161,7 +150,7 @@ public class StatisticsService {
      * @return month-based release breakdown for the requested year
      */
     public List<MonthStatisticsResp> retrieveStatisticsByYear(int year) {
-        List<Figurine> respList = repository.findAllByYear(year);
+        List<Figurine> respList = figurineRepository.findAllByYear(year);
 
         Map<Integer, Map<String, List<FigurineByMonthResp>>> groupedByMonthAndLineUp = new HashMap<>();
 
@@ -174,8 +163,9 @@ public class StatisticsService {
             String lineUp = Optional.ofNullable(figurine.getLineup()).map(LineUp::getDescription).orElse("Unknown");
 
             groupedByMonthAndLineUp.computeIfAbsent(month.get(), key -> new HashMap<>())
-                    .computeIfAbsent(lineUp, key -> new ArrayList<>()).add(new FigurineByMonthResp(figurine.getId(),
-                            figurine.getNormalizedName(), resolveFigurineUrl(figurine)));
+                    .computeIfAbsent(lineUp, key -> new ArrayList<>())
+                    .add(new FigurineByMonthResp(figurine.getId(), figurine.getNormalizedName(),
+                            resolveFigurineUrl(figurine), figurine.getCurrentReleaseStatus()));
         });
 
         return groupedByMonthAndLineUp.entrySet().stream().sorted(Map.Entry.comparingByKey()).map(monthEntry -> {
@@ -287,8 +277,8 @@ public class StatisticsService {
      * status.
      */
     private List<Figurine> findAllReleasedFigurinesWithFilter(FigurineFilter filter) {
-        return repository.findAll(filter).stream().filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED)
-                .toList();
+        return figurineRepository.findAll(filter).stream()
+                .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED).toList();
     }
 
     /** Counts figurines by calculated release status name. */
