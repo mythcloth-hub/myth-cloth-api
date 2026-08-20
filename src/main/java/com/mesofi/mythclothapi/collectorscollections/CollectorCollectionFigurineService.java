@@ -612,9 +612,13 @@ public class CollectorCollectionFigurineService {
         if (mode == CollectionAssignmentMode.AUTO) {
             existingCollections.add(createDefaultCollection(collectorId));
         } else if (mode == CollectionAssignmentMode.CREATE) {
+            log.info("Creating a new collection for collector [{}] with name '{}'", collectorId, collectionReq.name());
+
             existingCollections.add(createCollection(collectorId, collectionReq.name(), collectionReq.imageUrl(),
                     collectionReq.description()));
         } else if (mode == CollectionAssignmentMode.EXISTING) {
+            log.info("Assigning figurines to existing collections {} for collector [{}]", collectionIds, collectorId);
+
             existingCollections
                     .addAll(collectionIds.stream()
                             .map(collectionId -> collectorCollectionRepository.findById(collectionId)
