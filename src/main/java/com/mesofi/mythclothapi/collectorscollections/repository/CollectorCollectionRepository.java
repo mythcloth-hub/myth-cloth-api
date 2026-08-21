@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectors.Collector;
@@ -62,6 +63,11 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
      *
      * @param collectionId
      *            identifier of the collection to summarize
+     * @param restocks
+     *            whether to include restocked figurines in the summary; when
+     *            {@code true}, all figurines in the collection are considered, and
+     *            when {@code false}, only figurines without a previous release are
+     *            included
      * @return collection summary projection
      */
     @Query(value = """
@@ -73,6 +79,8 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
             FROM collector_collection_figurines ccf, figurines f
             WHERE ccf.figurine_id = f.id
               AND ccf.collection_id = :collectionId
+              AND (:restocks = true OR f.previous_release_id IS NULL)
             """, nativeQuery = true)
-    CollectorCollectionSummaryProjection getCollectorCollectionSummary(Long collectionId);
+    CollectorCollectionSummaryProjection getCollectorCollectionSummary(Long collectionId,
+            @Param("restocks") boolean restocks);
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
@@ -109,6 +110,11 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
      * figurines, and the number of announced figurines.
      * </p>
      *
+     * @param restocks
+     *            whether to include restocked figurines in the summary; when
+     *            {@code true}, all figurines are considered, and when
+     *            {@code false}, only figurines without a previous release are
+     *            included
      * @return catalog summary projection with figurine totals
      */
     @Query(value = """
@@ -117,8 +123,9 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
             FROM figurines f
+            WHERE (:restocks = true OR f.previous_release_id IS NULL)
             """, nativeQuery = true)
-    FigurineCatalogSummaryProjection getFigurineCatalogSummary();
+    FigurineCatalogSummaryProjection getFigurineCatalogSummary(@Param("restocks") boolean restocks);
 
     /**
      * Retrieves a summary of released figurines grouped by release year and lineup.

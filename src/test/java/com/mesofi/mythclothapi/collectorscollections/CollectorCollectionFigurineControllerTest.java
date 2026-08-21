@@ -309,7 +309,7 @@ class CollectorCollectionFigurineControllerTest {
     void retrieveCollectionFigurines_shouldReturnFigurines_whenRequestIsAuthenticated() throws Exception {
         CollectorCollectionFigurineResp resp = new CollectorCollectionFigurineResp(9L, "Seiya", null, null, null, true,
                 2);
-        when(service.retrieveCollectionFigurines(123L, 2L, 0, 50)).thenReturn(new PageImpl<>(List.of(resp)));
+        when(service.retrieveCollectionFigurines(123L, 2L, false, 0, 50)).thenReturn(new PageImpl<>(List.of(resp)));
 
         mockMvc.perform(get("/collections/2/figurines").contentType(MediaType.APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("123"))
@@ -319,7 +319,7 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(jsonPath("$.content[0].isCollected").value(true))
                 .andExpect(jsonPath("$.content[0].ownedQuantity").value(2));
 
-        verify(service).retrieveCollectionFigurines(123L, 2L, 0, 50);
+        verify(service).retrieveCollectionFigurines(123L, 2L, false, 0, 50);
     }
 
     @Test

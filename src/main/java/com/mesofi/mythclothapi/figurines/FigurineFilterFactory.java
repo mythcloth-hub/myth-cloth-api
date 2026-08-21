@@ -147,6 +147,11 @@ public final class FigurineFilterFactory {
                 null, null, List.of(RELEASED.name(), ANNOUNCED.name()), null);
     }
 
+    public static FigurineFilter buildReleasedAndAnnounced(boolean restocks) {
+        return build(List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                null, null, List.of(RELEASED.name(), ANNOUNCED.name()), restocks);
+    }
+
     /**
      * Normalizes a figurine name for filtering.
      *

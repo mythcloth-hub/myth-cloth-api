@@ -306,7 +306,7 @@ class CollectorCollectionFigurineServiceTest {
                             releaseStatus, null, null, isCollected, ownedQuantity);
                 });
 
-        Page<CollectorCollectionFigurineResp> response = service.retrieveCollectionFigurines(1L, 2L, 0, 50);
+        Page<CollectorCollectionFigurineResp> response = service.retrieveCollectionFigurines(1L, 2L, false, 0, 50);
 
         assertThat(response.getContent()).containsExactly(
                 new CollectorCollectionFigurineResp(9L, "seiya", ReleaseStatus.RELEASED, null, null, true, 2),
@@ -319,7 +319,7 @@ class CollectorCollectionFigurineServiceTest {
     void retrieveCollectionFigurines_shouldThrowCollectorNotFoundException_whenCollectorIsMissing() {
         when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, 0, 50))
+        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, false, 0, 50))
                 .isInstanceOf(CollectorNotFoundException.class).hasMessage("Collector with id 1 was not found");
 
         verify(collectorRepository).findById(1L);
@@ -332,7 +332,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, 0, 50))
+        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, false, 0, 50))
                 .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collector collection with id 2 was not found");
 
@@ -349,7 +349,7 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(targetCollection));
 
-        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, 0, 50))
+        assertThatThrownBy(() -> service.retrieveCollectionFigurines(1L, 2L, false, 0, 50))
                 .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collector collection with id 2 was not found");
 
@@ -402,19 +402,19 @@ class CollectorCollectionFigurineServiceTest {
         };
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
-        when(figurineRepository.getFigurineCatalogSummary()).thenReturn(catalogSummary);
-        when(collectorCollectionRepository.getCollectorCollectionSummary(2L)).thenReturn(collectionSummary);
+        when(figurineRepository.getFigurineCatalogSummary(false)).thenReturn(catalogSummary);
+        when(collectorCollectionRepository.getCollectorCollectionSummary(2L, false)).thenReturn(collectionSummary);
         when(collectorMapper.toCollectorCollectionSummaryResp(collectionSummary, 426))
                 .thenReturn(new CollectorCollectionSummaryStatsResp(3, 3, 1, 1, 425));
 
-        CollectorCollectionSummaryResp response = service.retrieveCollectionSummary(1L, 2L);
+        CollectorCollectionSummaryResp response = service.retrieveCollectionSummary(1L, 2L, false);
 
         assertThat(response)
                 .isEqualTo(new CollectorCollectionSummaryResp(new CollectorCollectionCatalogSummaryResp(435, 9, 426),
                         new CollectorCollectionSummaryStatsResp(3, 3, 1, 1, 425)));
         verify(collectorRepository).findById(1L);
-        verify(figurineRepository).getFigurineCatalogSummary();
-        verify(collectorCollectionRepository).getCollectorCollectionSummary(2L);
+        verify(figurineRepository).getFigurineCatalogSummary(false);
+        verify(collectorCollectionRepository).getCollectorCollectionSummary(2L, false);
         verify(collectorMapper).toCollectorCollectionSummaryResp(collectionSummary, 426);
     }
 
@@ -422,7 +422,7 @@ class CollectorCollectionFigurineServiceTest {
     void retrieveCollectionSummary_shouldThrowCollectorNotFoundException_whenCollectorIsMissing() {
         when(collectorRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.retrieveCollectionSummary(1L, 2L))
+        assertThatThrownBy(() -> service.retrieveCollectionSummary(1L, 2L, false))
                 .isInstanceOf(CollectorNotFoundException.class).hasMessage("Collector with id 1 was not found");
 
         verify(collectorRepository).findById(1L);
@@ -435,7 +435,7 @@ class CollectorCollectionFigurineServiceTest {
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
 
-        assertThatThrownBy(() -> service.retrieveCollectionSummary(1L, 2L))
+        assertThatThrownBy(() -> service.retrieveCollectionSummary(1L, 2L, false))
                 .isInstanceOf(CollectorCollectionNotFoundException.class)
                 .hasMessage("Collector collection with id 2 was not found");
 

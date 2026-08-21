@@ -1,7 +1,10 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
+import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Constructor;
@@ -50,6 +53,33 @@ class FigurineFilterFactoryTest {
         assertEquals("", shortFilter.name());
         assertEquals("abc", exactThreeFilter.name());
         assertEquals("", nullFilter.name());
+    }
+
+    @Test
+    void shouldBuildFilterFromSingleReleaseStatusAndUseNullStatusAsEmptyList() {
+        FigurineFilter statusFilter = FigurineFilterFactory.build(List.of(5L), "  Iron  ", 1L, 2L, 3L, 4L, 6L, null,
+                null, null, null, null, null, null, null, null, null, "RELEASED", null);
+        FigurineFilter nullStatusFilter = FigurineFilterFactory.build(List.of(8L), "  Titan  ", null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, null, (String) null, false);
+
+        assertEquals(List.of("RELEASED"), statusFilter.releaseStatuses());
+        assertEquals("Iron", statusFilter.name());
+        assertEquals(List.of(5L), statusFilter.figurineIds());
+        assertEquals(List.of(8L), nullStatusFilter.figurineIds());
+        assertEquals("Titan", nullStatusFilter.name());
+        assertFalse(nullStatusFilter.restocks());
+        assertNull(nullStatusFilter.releaseStatuses());
+    }
+
+    @Test
+    void shouldBuildReleasedAndAnnouncedFiltersWithAndWithoutRestocks() {
+        FigurineFilter bothStatuses = FigurineFilterFactory.buildReleasedAndAnnounced();
+        FigurineFilter filteredRestocks = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+
+        assertEquals(List.of(RELEASED.name(), ANNOUNCED.name()), bothStatuses.releaseStatuses());
+        assertEquals(List.of(RELEASED.name(), ANNOUNCED.name()), filteredRestocks.releaseStatuses());
+        assertNull(bothStatuses.restocks());
+        assertFalse(filteredRestocks.restocks());
     }
 
     @Test

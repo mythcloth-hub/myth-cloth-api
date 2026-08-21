@@ -220,6 +220,8 @@ public class CollectorCollectionFigurineService {
      *            identifier of the collector
      * @param collectionId
      *            identifier of the collection to summarize
+     * @param includeRestocks
+     *            whether to include restocked figurines in the summary counts
      * @return summary response with catalog and collection totals
      * @throws CollectorNotFoundException
      *             if the collector does not exist
@@ -227,22 +229,22 @@ public class CollectorCollectionFigurineService {
      *             if the collection does not exist or is not owned by the collector
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId)")
+    @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks)")
     public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
-            @Positive Long collectionId) {
+            @Positive Long collectionId, boolean includeRestocks) {
 
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
         ensureCollectionOwnership(collectorFound, collectionId);
 
-        FigurineCatalogSummaryProjection catalogSummary = figurineRepository.getFigurineCatalogSummary();
+        FigurineCatalogSummaryProjection catalogSummary = figurineRepository.getFigurineCatalogSummary(includeRestocks);
         CollectorCollectionCatalogSummaryResp summary = new CollectorCollectionCatalogSummaryResp(
                 catalogSummary.getTotalFigurines(), catalogSummary.getTotalAnnounced(),
                 catalogSummary.getTotalReleased());
 
         CollectorCollectionSummaryProjection collectionSummary = collectorCollectionRepository
-                .getCollectorCollectionSummary(collectionId);
+                .getCollectorCollectionSummary(collectionId, includeRestocks);
 
         CollectorCollectionSummaryStatsResp collection = collectorMapper
                 .toCollectorCollectionSummaryResp(collectionSummary, catalogSummary.getTotalReleased());
@@ -265,6 +267,8 @@ public class CollectorCollectionFigurineService {
      *            identifier of the collector
      * @param collectionId
      *            identifier of the collection
+     * @param includeRestocks
+     *            whether to include restocked figurines in the listing
      * @param page
      *            page number for pagination (default: 0)
      * @param size
@@ -278,9 +282,9 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #page, #size)")
+    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks, #page, #size)")
     public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
-            @Positive Long collectionId, @PositiveOrZero int page, @PositiveOrZero int size) {
+            @Positive Long collectionId, boolean includeRestocks, @PositiveOrZero int page, @PositiveOrZero int size) {
 
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
@@ -294,7 +298,13 @@ public class CollectorCollectionFigurineService {
         Map<Long, CollectorCollectionFigurine> collectionFigurineMap = collectionFound.getFigurines().stream()
                 .collect(Collectors.toMap(ccf -> ccf.getFigurine().getId(), Function.identity()));
 
-        FigurineFilter figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced();
+        FigurineFilter figurineFilter;
+        if (includeRestocks) {
+            figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced();
+        } else {
+            figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        }
+
         return figurineRepository.findPaginated(figurineFilter, PageRequest.of(page, size)).map(figurine -> {
 
             boolean isCollected = collectionFigurineMap.containsKey(figurine.getId());

@@ -261,6 +261,7 @@ class CollectorServiceTest {
 
         verify(collectorRepository, never()).save(any(Collector.class));
         verify(collectorAuthProviderRepository, never()).save(any(CollectorAuthProvider.class));
+        assertThat(providerLink.getLastLogin()).isNotNull();
     }
 
     @Test
@@ -313,6 +314,7 @@ class CollectorServiceTest {
         assertThat(persistedLink.getProviderUserId()).isEqualTo("fb-123");
         assertThat(persistedLink.getEmail()).isEqualTo("seiya@example.com");
         assertThat(persistedLink.getEmailVerified()).isTrue();
+        assertThat(persistedLink.getLastLogin()).isNotNull();
     }
 
     @Test
