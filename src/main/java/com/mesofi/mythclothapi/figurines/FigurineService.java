@@ -9,6 +9,7 @@ import static com.mesofi.mythclothapi.figurines.FigurineSimilarityUtils.calculat
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static com.mesofi.mythclothapi.figurines.utils.FigurineComparisonUtils.isRestock;
+import static com.mesofi.mythclothapi.stats.StatisticsService.PRICING_SUMMARY_CACHE;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -180,8 +181,8 @@ public class FigurineService {
      * @return API response DTO for the created figurine
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE,
-            COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
@@ -381,8 +382,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE,
-            COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
 
@@ -454,8 +455,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE,
-            COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public void deleteFigurine(@Positive Long id) {
         log.info("Deleting figurine with id '{}'", id);
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));

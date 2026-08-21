@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryRepository;
@@ -70,6 +71,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class StatisticsService {
+
+    public static final String PRICING_SUMMARY_CACHE = "pricing-summary";
 
     private final FigurineRepository figurineRepository;
     private final LineUpRepository lineUpRepository;
@@ -195,6 +198,7 @@ public class StatisticsService {
      *            aggregation
      * @return list of yearly price summaries sorted by year (ascending)
      */
+    @Cacheable(value = PRICING_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#filter)")
     public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@NotNull FigurineFilter filter) {
         List<Figurine> allFigurines = findAllReleasedFigurinesWithFilter(filter);
 
