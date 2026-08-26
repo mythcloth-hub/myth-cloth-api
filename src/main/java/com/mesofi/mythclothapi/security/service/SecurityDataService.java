@@ -7,6 +7,7 @@ import static com.mesofi.mythclothapi.security.roles.model.RoleType.DEMO;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,8 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * The configured roles and permissions are defined by {@link #AVAILABLE_ROLES},
- * {@link #AVAILABLE_PERMISSIONS}, and {@link #ROLE_PERMISSIONS_MAP}.
+ * {@link #AVAILABLE_PERMISSIONS}, {@link #COLLECTOR_PERMISSIONS},
+ * {@link #DEMO_PERMISSIONS}, and {@link #ROLE_PERMISSIONS_MAP}.
  * </p>
  */
 @Slf4j
@@ -58,7 +60,7 @@ public class SecurityDataService {
     private static final List<RoleType> AVAILABLE_ROLES = List.of(ADMIN, COLLECTOR, DEMO);
 
     /**
-     * Permissions that are available to the application.
+     * Complete permission catalog available to the application.
      *
      * <p>
      * This list represents the complete set of permissions recognized by the
@@ -87,27 +89,50 @@ public class SecurityDataService {
             Permissions.STORES_UPDATE);
 
     /**
+     * Permissions required for collector functionality.
+     *
+     * <p>
+     * This list includes collection management operations and the figurine-store
+     * price reads used by collector flows.
+     * </p>
+     */
+    public static final List<String> COLLECTOR_PERMISSIONS = List.of(Permissions.COLLECTIONS_DELETE,
+            Permissions.COLLECTIONS_DUPLICATE, Permissions.COLLECTIONS_FIGURINES_ADD,
+            Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_FIGURINES_READ,
+            Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ,
+            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES);
+
+    /**
+     * Permissions assigned to the demo role.
+     *
+     * <p>
+     * This list combines read-oriented platform permissions with all
+     * {@link #COLLECTOR_PERMISSIONS}, removing duplicates.
+     * </p>
+     */
+    public static final List<String> DEMO_PERMISSIONS = Stream.concat(Stream.of(Permissions.ANNIVERSARIES_READ,
+            Permissions.CATALOGS_READ, Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
+            Permissions.DISTRIBUTORS_READ, Permissions.FIGURINES_EVENTS_READ, Permissions.FIGURINES_STORES_READ,
+            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
+            Permissions.PERMISSIONS_READ, Permissions.PURCHASES_READ, Permissions.ROLES_PERMISSIONS_READ,
+            Permissions.ROLES_READ, Permissions.STATS_READ, Permissions.STORES_READ), COLLECTOR_PERMISSIONS.stream())
+            .distinct().toList();
+
+    /**
      * Defines the initial set of permissions assigned to each application role.
      *
      * <p>
-     * The ADMIN and DEMO roles receive all available permissions, while the
-     * COLLECTOR role receives only the permissions required for standard collector
-     * functionality.
+     * ADMIN receives {@link #AVAILABLE_PERMISSIONS}, COLLECTOR receives
+     * {@link #COLLECTOR_PERMISSIONS}, and DEMO receives {@link #DEMO_PERMISSIONS}.
      * </p>
      */
     private static final Map<RoleType, List<String>> ROLE_PERMISSIONS_MAP = Map.of(
             // Initial, admin permissions
             ADMIN, AVAILABLE_PERMISSIONS,
             // Initial, collector permissions
-            COLLECTOR,
-            List.of(Permissions.COLLECTIONS_DELETE, Permissions.COLLECTIONS_DUPLICATE,
-                    Permissions.COLLECTIONS_FIGURINES_ADD, Permissions.COLLECTIONS_FIGURINES_DELETE,
-                    Permissions.COLLECTIONS_FIGURINES_READ, Permissions.COLLECTIONS_READ,
-                    Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ,
-                    Permissions.FIGURINES_STORES_READ_CURRENT_PRICES,
-                    Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES),
+            COLLECTOR, COLLECTOR_PERMISSIONS,
             // Initial, demo permissions.
-            DEMO, AVAILABLE_PERMISSIONS);
+            DEMO, DEMO_PERMISSIONS);
 
     /**
      * In-memory lookup of roles initialized during the current operation.
