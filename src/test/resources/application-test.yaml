@@ -9,7 +9,7 @@ myth-cloth:
     enabled: false
     provider-user-id: 99999
     name: "Demo Test"
-    email: "demo.test@mythcollection.com"
+    email: "demo.test@saintcollections.com"
 
   facebook:
     app-id: "0000"

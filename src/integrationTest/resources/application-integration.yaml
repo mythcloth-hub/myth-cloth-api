@@ -15,7 +15,7 @@ myth-cloth:
     enabled: false
     provider-user-id: 11111
     name: "Demo Integration"
-    email: "demo.integration@mythcollection.com"
+    email: "demo.integration@saintcollections.com"
 
   facebook:
     app-id: "0000"

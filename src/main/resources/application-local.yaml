@@ -15,7 +15,7 @@ myth-cloth:
     enabled: true
     provider-user-id: 00000
     name: "Demo Local"
-    email: "demo.local@mythcollection.com"
+    email: "demo.local@saintcollections.com"
 
   facebook:
     app-id: ${FACEBOOK_APP_ID:4393993617525351}
