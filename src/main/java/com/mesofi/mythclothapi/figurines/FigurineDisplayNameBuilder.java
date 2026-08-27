@@ -396,7 +396,7 @@ public final class FigurineDisplayNameBuilder {
     }
 
     private static String buildSaintClothSeriesLineUp(BuildContext context) {
-        return "Saint Cloth Series %s".formatted(context.name);
+        return "%s [First Bronze Cloth] -Cloth Box Limited Edition-".formatted(context.name);
     }
 
     private static String buildMetalBuildExProjectLineUp(BuildContext context) {
