@@ -10,6 +10,8 @@ public enum ProviderType {
     GITHUB,
     /** Apple Sign In provider. */
     APPLE,
+    /** Self-user, the user provides their own email and password. */
+    SELF_USER,
     /** Local, non-social authentication provider. */
     LOCAL
 }
