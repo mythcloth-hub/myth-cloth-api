@@ -33,6 +33,15 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
     List<CollectorCollection> findByCollector(Collector collector);
 
     /**
+     * Counts the collections owned by the specified collector.
+     *
+     * @param collector
+     *            collector whose collection count should be computed
+     * @return number of collections owned by the collector
+     */
+    long countByCollector(Collector collector);
+
+    /**
      * Finds a collection by its unique name.
      *
      * @param collector

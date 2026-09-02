@@ -63,6 +63,12 @@ public enum ErrorCode {
      */
     COLLECTOR_EMAIL_NOT_FOUND,
 
+    /**
+     * Indicates that the requested collector has reached the maximum number of
+     * collections allowed.
+     */
+    COLLECTOR_COLLECTION_LIMIT_REACHED,
+
     // -------------------------------------------------------------------------
     // Figurines
     // -------------------------------------------------------------------------

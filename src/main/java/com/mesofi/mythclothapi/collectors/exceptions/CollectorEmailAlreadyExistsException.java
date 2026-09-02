@@ -25,11 +25,6 @@ public class CollectorEmailAlreadyExistsException extends ApiException {
     private static final long serialVersionUID = 7649970713288460120L;
 
     /**
-     * Email of the collector that already exists.
-     */
-    private final String email;
-
-    /**
      * Creates a new exception for an existing collector email.
      *
      * @param email
@@ -37,7 +32,6 @@ public class CollectorEmailAlreadyExistsException extends ApiException {
      */
     public CollectorEmailAlreadyExistsException(String email) {
         super("Collector with email %s already exists".formatted(email));
-        this.email = email;
     }
 
     /**
