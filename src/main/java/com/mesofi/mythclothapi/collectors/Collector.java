@@ -26,8 +26,11 @@ import lombok.Setter;
 @Table(name = "collectors")
 public class Collector extends Auditable {
 
-    @Column(length = 254, nullable = false)
+    @Column(length = 254, nullable = false, unique = true)
     private String email;
+
+    @Column
+    private String passwordHash;
 
     @Column(length = 200)
     private String displayName;

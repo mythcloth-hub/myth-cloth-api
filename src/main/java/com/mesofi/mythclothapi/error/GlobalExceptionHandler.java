@@ -24,6 +24,9 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
@@ -177,6 +180,21 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RolePermissionAlreadyExistsException.class)
     public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
+        return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(CollectorEmailAlreadyExistsException.class)
+    public ProblemDetail handleCollectorEmailAlreadyExists(CollectorEmailAlreadyExistsException ex) {
+        return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(CollectorEmailNotFoundException.class)
+    public ProblemDetail handleCollectorEmailNotFoundException(CollectorEmailNotFoundException ex) {
+        return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(CollectorInvalidCredentialsException.class)
+    public ProblemDetail handleCollectorInvalidCredentialsException(CollectorInvalidCredentialsException ex) {
         return ApiProblemDetail.of(ex);
     }
 

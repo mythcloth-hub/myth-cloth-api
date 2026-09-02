@@ -3,11 +3,13 @@ package com.mesofi.mythclothapi.collectors;
 import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.FACEBOOK;
 import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.GOOGLE;
 import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.LOCAL;
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.SELF_USER;
 
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +20,11 @@ import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.demo.DemoProperties;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
@@ -51,6 +58,7 @@ public class CollectorService {
 
     private final CollectorRepository collectorRepository;
     private final CollectorAuthProviderRepository collectorAuthProviderRepository;
+    private final PasswordEncoder passwordEncoder;
     private final FbApiClient fbApiClient;
     private final BootstrapProperties bootstrapProperties;
     private final FcCredentialsProperties fcCredentials;
@@ -59,6 +67,8 @@ public class CollectorService {
     private final ApiTokenService apiTokenService;
     private final RoleRepository roleRepository;
     private final DemoProperties demoProperties;
+
+    private static final String PREFIX = "myth_";
 
     /**
      * Logs in a collector using the requested social provider.
@@ -80,9 +90,38 @@ public class CollectorService {
         return switch (providerType) {
             case FACEBOOK -> loginWithFacebook(loginRequest.accessToken());
             case GOOGLE -> loginWithGoogle(loginRequest.idToken());
+            case SELF_USER -> loginWithEmailAndPassword(loginRequest.email(), loginRequest.password());
             case LOCAL -> loginWithLocal();
             default -> throw new IllegalArgumentException("Provider %s is not supported yet".formatted(providerType));
         };
+    }
+
+    /**
+     * Registers a new collector account using the provided signup request.
+     *
+     * @param signupRequest
+     *            the collector signup request containing necessary information
+     * @return the collector signup response with registered collector details
+     * @throws IllegalArgumentException
+     *             if the email is already registered
+     */
+    @Transactional
+    public CollectorSignupResp signup(CollectorSignupReq signupRequest) {
+        log.info("User is trying to sign up with email '{}'", signupRequest.email());
+
+        collectorRepository.findByEmail(signupRequest.email()).ifPresent(account -> {
+            throw new CollectorEmailAlreadyExistsException(account.getEmail());
+        });
+
+        // Encodes the password into an Argon2id string format
+        String rawPassword = signupRequest.password();
+        String hashedPassword = passwordEncoder.encode(rawPassword);
+
+        Role currRole = retrieveRole(RoleType.COLLECTOR, null, null);
+        Collector saved = createCollectorAccount(signupRequest.email(), hashedPassword, signupRequest.fullName(), null,
+                currRole);
+
+        return new CollectorSignupResp(saved.getId(), saved.getDisplayName(), saved.getEmail());
     }
 
     /**
@@ -113,11 +152,14 @@ public class CollectorService {
         }
 
         FbUserInfoResponse userInfo = fbApiClient.getUserInfo(accessToken);
+        String providerUserId = userInfo.id();
+        String name = userInfo.name();
+        String providerEmail = userInfo.email();
 
-        Collector collector = createOrUpdateRegisteredCollector(FACEBOOK, userInfo.id(), userInfo.name(),
-                userInfo.email(), true, null);
+        Collector collector = createOrUpdateRegisteredCollector(FACEBOOK, providerUserId, name, providerEmail, true,
+                null);
 
-        return buildLoginResponse(collector, FACEBOOK, userInfo.id());
+        return buildLoginResponse(collector, FACEBOOK, providerUserId);
     }
 
     /**
@@ -178,14 +220,57 @@ public class CollectorService {
             throw new CollectorInvalidTokenException("Google token subject is missing");
         }
     }
+
+    /**
+     * Logs in a collector using email and password authentication.
+     *
+     * @param email
+     *            collector's email address
+     * @param password
+     *            collector's password
+     * @return login response payload for API clients
+     */
+    private CollectorLoginResp loginWithEmailAndPassword(String email, String password) {
+        Collector collector = collectorRepository.findByEmail(email).orElseThrow(CollectorEmailNotFoundException::new);
+
+        if (!passwordEncoder.matches(password, collector.getPasswordHash())) {
+            throw new CollectorInvalidCredentialsException();
+        }
+
+        return toLoginResponse(collector);
+    }
+
+    /**
+     * Converts an existing collector entity into a login response payload.
+     *
+     * @param existingCollector
+     *            the existing collector entity
+     * @return the login response payload for API clients
+     */
+    private CollectorLoginResp toLoginResponse(Collector existingCollector) {
+        String userId = PREFIX + existingCollector.getId();
+
+        Collector collector = createOrUpdateRegisteredCollector(SELF_USER, userId, existingCollector.getDisplayName(),
+                existingCollector.getEmail(), false, null);
+
+        return buildLoginResponse(collector, SELF_USER, userId);
+    }
+
+    /**
+     * Logs in a collector using local demo credentials.
+     *
+     * @return login response payload for API clients
+     */
     private CollectorLoginResp loginWithLocal() {
         String userId = demoProperties.providerUserId();
+        String name = demoProperties.name();
+        String email = demoProperties.email();
 
-        Collector collector = createOrUpdateRegisteredCollector(LOCAL, userId, demoProperties.name(),
-                demoProperties.email(), true, null);
+        Collector collector = createOrUpdateRegisteredCollector(LOCAL, userId, name, email, true, null);
 
         return buildLoginResponse(collector, LOCAL, userId);
     }
+
     /**
      * Builds the API login response and signs an internal API token for the
      * collector.
@@ -275,39 +360,80 @@ public class CollectorService {
 
         CollectorAuthProvider collectorAuthProvider = collectorAuthProviderRepository
                 .findByProviderAndProviderUserId(providerType, userId).orElseGet(() -> {
-                    Map<ProviderType, String> adminMap = bootstrapProperties.admin();
-                    boolean isAdmin = adminMap.get(providerType).equals(userId);
+                    Collector collector = collectorRepository.findByEmail(email).orElseGet(() -> {
 
-                    RoleType roleName = isAdmin
-                            ? RoleType.ADMIN
-                            : providerType == LOCAL ? RoleType.DEMO : RoleType.COLLECTOR;
-                    Role currRole = roleRepository.findByName(roleName.getDisplayName())
-                            .orElseThrow(() -> new RoleNotFoundException(roleName.getDisplayName()));
-
-                    log.info("Creating new collector for {} user {}", providerType, userId);
-
-                    Collector collector = new Collector();
-                    collector.setEmail(email);
-                    collector.setDisplayName(name);
-                    collector.setProfilePictureUrl(picture);
-                    collector.setRole(currRole);
-                    Collector newCollector = collectorRepository.save(collector);
+                        Role currRole = retrieveRole(null, providerType, userId);
+                        return createCollectorAccount(email, null, name, picture, currRole);
+                    });
 
                     CollectorAuthProvider newProvider = new CollectorAuthProvider();
-                    newProvider.setCollector(newCollector);
                     newProvider.setProvider(providerType);
-                    newProvider.setEmail(email);
                     newProvider.setProviderUserId(userId);
+                    newProvider.setEmail(collector.getEmail());
                     newProvider.setEmailVerified(emailVerified);
                     newProvider.setLastLogin(Instant.now());
-                    collectorAuthProviderRepository.save(newProvider);
+                    newProvider.setCollector(collector);
 
-                    return newProvider;
+                    return collectorAuthProviderRepository.save(newProvider);
                 });
+
         // Update the collector's last login timestamp to the current time, regardless
         // of whether it was newly created or retrieved
         collectorAuthProvider.setLastLogin(Instant.now());
         return collectorAuthProvider.getCollector();
     }
 
+    /**
+     * Creates a new collector account with the specified details.
+     *
+     * @param email
+     *            the collector's email address
+     * @param hashedPassword
+     *            the hashed password for the collector
+     * @param displayName
+     *            the collector's display name
+     * @param profilePictureUrl
+     *            the URL of the collector's profile picture
+     * @param role
+     *            the role assigned to the collector
+     * @return the newly created collector
+     */
+    private Collector createCollectorAccount(String email, String hashedPassword, String displayName,
+            String profilePictureUrl, Role role) {
+        log.info("Creating new collector with email '{}', display name '{}', and role '{}'", email, displayName,
+                role.getName());
+
+        Collector collector = new Collector();
+        collector.setEmail(email);
+        collector.setPasswordHash(hashedPassword);
+        collector.setDisplayName(displayName);
+        collector.setProfilePictureUrl(profilePictureUrl);
+        collector.setRole(role);
+
+        return collectorRepository.save(collector);
+    }
+
+    /**
+     * Retrieves a role by name, or determines the appropriate role based on the
+     * provider and user ID if the role name is null.
+     *
+     * @param roleName
+     *            the name of the role
+     * @param providerType
+     *            the type of the provider
+     * @param providerUserId
+     *            the user ID of the provider
+     * @return the retrieved or determined role
+     */
+    private Role retrieveRole(RoleType roleName, ProviderType providerType, String providerUserId) {
+
+        if (roleName == null) {
+            Map<ProviderType, String> adminMap = bootstrapProperties.admin();
+            boolean isAdmin = adminMap.getOrDefault(providerType, "").equals(providerUserId);
+
+            roleName = isAdmin ? RoleType.ADMIN : providerType == LOCAL ? RoleType.DEMO : RoleType.COLLECTOR;
+        }
+        String roleDisplayName = roleName.getDisplayName();
+        return roleRepository.findByName(roleDisplayName).orElseThrow(() -> new RoleNotFoundException(roleDisplayName));
+    }
 }

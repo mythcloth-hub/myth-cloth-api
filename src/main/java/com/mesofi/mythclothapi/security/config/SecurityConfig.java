@@ -21,6 +21,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -106,8 +108,8 @@ public class SecurityConfig {
                                 "/demos/**", "/stores/**", "/figurine-stores/figurines/{figurineId}/**", "/actuator/**",
                                 "/swagger-ui.html", "/swagger-ui/**", "/swagger.yaml", "/v3/api-docs/**",
                                 "/v3/api-docs.yaml")
-                        .permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**").permitAll().anyRequest()
-                        .authenticated())
+                        .permitAll().requestMatchers(POST, "/collectors/auth/{provider}/**", "/collectors/signup")
+                        .permitAll().anyRequest().authenticated())
                 .oauth2ResourceServer(
                         oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
@@ -224,5 +226,38 @@ public class SecurityConfig {
         });
 
         return converter;
+    }
+
+    /**
+     * Creates a password encoder that uses the Argon2 hashing algorithm for secure
+     * password storage.
+     *
+     * <p>
+     * The encoder is configured with the following parameters:
+     *
+     * <ul>
+     * <li>Salt length: 16 bytes (128 bits)
+     * <li>Hash length: 32 bytes (256 bits)
+     * <li>Parallelism: 1 thread
+     * <li>Memory cost: 16 MB
+     * <li>Iterations: 2 passes over memory
+     * </ul>
+     *
+     * <p>
+     * These parameters provide a balance between security and performance for
+     * password hashing.
+     *
+     * @return a configured Argon2 password encoder
+     */
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // Tuning Parameters
+        int saltLength = 16; // 16 bytes (128 bits)
+        int hashLength = 32; // 32 bytes (256 bits)
+        int parallelism = 1; // Number of threads
+        int memory = 16384; // Memory cost in KB (16 MB)
+        int iterations = 2; // Number of passes over memory
+
+        return new Argon2PasswordEncoder(saltLength, hashLength, parallelism, memory, iterations);
     }
 }

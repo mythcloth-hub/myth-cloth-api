@@ -46,6 +46,23 @@ public enum ErrorCode {
      */
     COLLECTOR_PURCHASE_NOT_FOUND,
 
+    /**
+     * Indicates that an attempt was made to create a collector email that already
+     * exists.
+     */
+    COLLECTOR_EMAIL_ALREADY_EXISTS,
+
+    /**
+     * Indicates that the provided email or password is invalid during
+     * authentication.
+     */
+    COLLECTOR_INVALID_EMAIL_OR_PASSWORD,
+
+    /**
+     * Indicates that the requested collector email could not be found.
+     */
+    COLLECTOR_EMAIL_NOT_FOUND,
+
     // -------------------------------------------------------------------------
     // Figurines
     // -------------------------------------------------------------------------
