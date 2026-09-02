@@ -30,6 +30,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentials
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
@@ -195,6 +196,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CollectorInvalidCredentialsException.class)
     public ProblemDetail handleCollectorInvalidCredentialsException(CollectorInvalidCredentialsException ex) {
+        return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(CollectorCollectionLimitReachedException.class)
+    public ProblemDetail handleCollectorCollectionLimitReachedException(CollectorCollectionLimitReachedException ex) {
         return ApiProblemDetail.of(ex);
     }
 

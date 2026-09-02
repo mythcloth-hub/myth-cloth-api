@@ -33,6 +33,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
@@ -91,6 +92,7 @@ public class CollectorCollectionFigurineService {
     public static final String COLLECTOR_SUMMARY_CACHE = "collector-summary";
     public static final String COLLECTOR_FIGURINE_CACHE = "collector-figurines";
     public static final String COLLECTION_SUMMARY_CACHE = "collection-summary";
+    private static final int MAX_COLLECTIONS_PER_COLLECTOR = 3;
 
     private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
@@ -233,8 +235,7 @@ public class CollectorCollectionFigurineService {
     public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
             @Positive Long collectionId, boolean includeRestocks) {
 
-        Collector collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        Collector collectorFound = retrieveCollector(collectorId);
 
         ensureCollectionOwnership(collectorFound, collectionId);
 
@@ -286,11 +287,8 @@ public class CollectorCollectionFigurineService {
     public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
             @Positive Long collectionId, boolean includeRestocks, @PositiveOrZero int page, @PositiveOrZero int size) {
 
-        Collector collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-        CollectorCollection collectionFound = collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+        Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
 
         ensureCollectionOwnership(collectorFound, collectionId);
 
@@ -342,11 +340,8 @@ public class CollectorCollectionFigurineService {
     public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@Positive Long collectorId,
             @Positive Long collectionId, @Positive Long figurineId) {
 
-        var collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-        collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+        var collectorFound = retrieveCollector(collectorId);
+        retrieveCollectorCollection(collectionId);
 
         // make sure this collector owns the collection to be retrieved.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
@@ -387,11 +382,8 @@ public class CollectorCollectionFigurineService {
         log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
                 collectorId);
 
-        var collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
-
-        var collectionFound = collectorCollectionRepository.findById(collectionId)
-                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+        var collectorFound = retrieveCollector(collectorId);
+        var collectionFound = retrieveCollectorCollection(collectionId);
 
         // make sure this collector owns the collection to be deleted.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
@@ -422,8 +414,7 @@ public class CollectorCollectionFigurineService {
     public List<CollectorCollectionResp> retrieveCollections(final Long collectorId) {
         log.info("Retrieving all collections for collector [{}]", collectorId);
 
-        Collector collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        Collector collectorFound = retrieveCollector(collectorId);
 
         List<CollectorCollection> collectorCollection = collectorFound.getCollections();
 
@@ -454,8 +445,7 @@ public class CollectorCollectionFigurineService {
     public void deleteCollection(Long collectorId, Long collectionId) {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 
-        Collector collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        Collector collectorFound = retrieveCollector(collectorId);
 
         // make sure this collection owns the collection to be removed.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
@@ -499,8 +489,7 @@ public class CollectorCollectionFigurineService {
             @NotNull @Valid CollectorCollectionReq request) {
         log.info("Updating collection with id '{}'. New name: '{}'", collectionId, request.name());
 
-        Collector collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        Collector collectorFound = retrieveCollector(collectorId);
 
         List<CollectorCollection> collectorCollections = collectorFound.getCollections();
 
@@ -554,8 +543,7 @@ public class CollectorCollectionFigurineService {
     public long duplicateCollection(@Positive Long collectorId, @Positive Long collectionId) {
         log.info("Duplicating collection with id '{}' for collector '{}'", collectionId, collectorId);
 
-        var collectorFound = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        var collectorFound = retrieveCollector(collectorId);
 
         // Finds all collections belonging to the collector.
         List<CollectorCollection> collectorCollection = collectorCollectionRepository.findByCollector(collectorFound);
@@ -638,11 +626,7 @@ public class CollectorCollectionFigurineService {
         } else if (mode == CollectionAssignmentMode.EXISTING) {
             log.info("Assigning figurines to existing collections {} for collector [{}]", collectionIds, collectorId);
 
-            existingCollections
-                    .addAll(collectionIds.stream()
-                            .map(collectionId -> collectorCollectionRepository.findById(collectionId)
-                                    .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId)))
-                            .toList());
+            existingCollections.addAll(collectionIds.stream().map(this::retrieveCollectorCollection).toList());
         } else {
             throw new IllegalArgumentException("Unsupported collection assignment mode: " + mode);
         }
@@ -680,12 +664,18 @@ public class CollectorCollectionFigurineService {
      *             if a collection with the same name already exists
      */
     private CollectorCollection createCollection(Long collectorId, String name, String imageUrl, String description) {
-        Collector collector = collectorRepository.findById(collectorId)
-                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        Collector collector = retrieveCollector(collectorId);
 
         collectorCollectionRepository.findByCollectorAndName(collector, name).ifPresent(existing -> {
             throw new CollectorCollectionAlreadyExistsException(existing.getName());
         });
+
+        // We make sure that the collector has not reached the maximum number of
+        // collections allowed.
+        long existingCollections = collectorCollectionRepository.countByCollector(collector);
+        if (existingCollections >= MAX_COLLECTIONS_PER_COLLECTOR) {
+            throw new CollectorCollectionLimitReachedException(collectorId, MAX_COLLECTIONS_PER_COLLECTOR);
+        }
 
         CollectorCollection collectorCollection = new CollectorCollection();
         collectorCollection.setCollector(collector);
@@ -725,6 +715,33 @@ public class CollectorCollectionFigurineService {
     private void ensureCollectionOwnership(Collector collector, Long collectionId) {
         collector.getCollections().stream()
                 .filter(collectorCollection -> collectorCollection.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+    }
+
+    /**
+     * Retrieves a collector by its identifier.
+     *
+     * @param collectorId
+     *            the identifier of the collector to retrieve
+     * @return the collector with the specified identifier
+     * @throws CollectorNotFoundException
+     *             if no collector with the specified identifier exists
+     */
+    private Collector retrieveCollector(Long collectorId) {
+        return collectorRepository.findById(collectorId).orElseThrow(() -> new CollectorNotFoundException(collectorId));
+    }
+
+    /**
+     * Retrieves a collector collection by its identifier.
+     *
+     * @param collectionId
+     *            the identifier of the collection to retrieve
+     * @return the collector collection with the specified identifier
+     * @throws CollectorCollectionNotFoundException
+     *             if no collection with the specified identifier exists
+     */
+    private CollectorCollection retrieveCollectorCollection(Long collectionId) {
+        return collectorCollectionRepository.findById(collectionId)
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
     }
 }

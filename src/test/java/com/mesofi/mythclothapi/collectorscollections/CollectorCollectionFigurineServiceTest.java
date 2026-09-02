@@ -38,6 +38,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.model.Condition;
@@ -313,6 +314,44 @@ class CollectorCollectionFigurineServiceTest {
                 new CollectorCollectionFigurineResp(10L, "shiryu", ReleaseStatus.ANNOUNCED, null, null, false, 0));
         verify(collectorMapper).toCollectorCollectionFigurineResp(released, ReleaseStatus.RELEASED, true, 2);
         verify(collectorMapper).toCollectorCollectionFigurineResp(announced, ReleaseStatus.ANNOUNCED, false, 0);
+    }
+
+    @Test
+    void retrieveCollectionFigurines_shouldUseReleasedAndAnnouncedFilter_whenIncludeRestocksIsTrue() {
+        CollectorCollection collection = collection(2L, null, "Team", null, null);
+        Collector collector = collectorWithCollections(1L, collection);
+        Figurine figurine = figurine(9L, "seiya", ReleaseStatus.RELEASED, LocalDate.of(2024, 3, 1));
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(collection));
+        when(figurineRepository.findPaginated(any(FigurineFilter.class), any(PageRequest.class)))
+                .thenReturn(new CollectablePageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1, 1));
+
+        service.retrieveCollectionFigurines(1L, 2L, true, 0, 10);
+
+        ArgumentCaptor<FigurineFilter> filterCaptor = ArgumentCaptor.forClass(FigurineFilter.class);
+        verify(figurineRepository).findPaginated(filterCaptor.capture(), any(PageRequest.class));
+        assertThat(filterCaptor.getValue().restocks()).isNull();
+        assertThat(filterCaptor.getValue().releaseStatuses()).containsExactly("RELEASED", "ANNOUNCED");
+    }
+
+    @Test
+    void createCollection_shouldThrowCollectorCollectionLimitReachedException_whenCollectorHasReachedMaxCollections() {
+        Collector collector = collector(1L);
+        Figurine figurine = figurine(9L, "seiya", ReleaseStatus.RELEASED, LocalDate.of(2024, 3, 1));
+        AssignFigurinesReq request = new AssignFigurinesReq(List.of(9L), CollectionAssignmentMode.AUTO, null, null);
+
+        when(figurineRepository.findById(9L)).thenReturn(Optional.of(figurine));
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionRepository.findByCollectorAndName(collector, "My Myth Collection"))
+                .thenReturn(Optional.empty());
+        when(collectorCollectionRepository.countByCollector(collector)).thenReturn(3L);
+
+        assertThatThrownBy(() -> service.assignFigurinesToCollections(1L, request))
+                .isInstanceOf(CollectorCollectionLimitReachedException.class)
+                .hasMessage("Collector account with ID '1' has reached the limit of collector collections: 3");
+
+        verify(collectorCollectionRepository, never()).save(any());
     }
 
     @Test
