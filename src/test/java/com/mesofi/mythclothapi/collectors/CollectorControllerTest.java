@@ -18,6 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -61,7 +63,7 @@ class CollectorControllerTest {
 
     @Test
     void login_shouldReturn200_whenRequestIsValid() throws Exception {
-        CollectorLoginReq request = new CollectorLoginReq("google-id-token", null);
+        CollectorLoginReq request = new CollectorLoginReq("google-id-token", null, null, null);
         CollectorLoginResp response = new CollectorLoginResp(1L, "Pegasus Seiya", "seiya@example.com", "my-role",
                 "api-jwt-token", "Bearer", 3600L);
 
@@ -83,7 +85,7 @@ class CollectorControllerTest {
     @Test
     void login_shouldDelegateToService_whenInvokedDirectly() {
         CollectorController controller = new CollectorController(service);
-        CollectorLoginReq request = new CollectorLoginReq(null, "facebook-access-token");
+        CollectorLoginReq request = new CollectorLoginReq(null, "facebook-access-token", null, null);
         CollectorLoginResp response = new CollectorLoginResp(2L, "Andromeda Shun", "shun@example.com", "my-role", "jwt",
                 "Bearer", 1200L);
 
@@ -93,5 +95,20 @@ class CollectorControllerTest {
 
         assertThat(result).isEqualTo(response);
         verify(service).login("facebook", request);
+    }
+
+    @Test
+    void signup_shouldReturn201_whenRequestIsValid() throws Exception {
+        CollectorSignupReq request = new CollectorSignupReq("New Collector", "new@example.com", "Abcdef1!");
+        CollectorSignupResp response = new CollectorSignupResp(3L, "New Collector", "new@example.com");
+
+        when(service.signup(request)).thenReturn(response);
+
+        mockMvc.perform(post("/collectors/signup").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.collectorId").value(3L)).andExpect(jsonPath("$.fullName").value("New Collector"))
+                .andExpect(jsonPath("$.email").value("new@example.com"));
+
+        verify(service).signup(request);
     }
 }

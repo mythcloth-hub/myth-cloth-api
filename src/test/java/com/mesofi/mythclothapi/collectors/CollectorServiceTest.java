@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.mesofi.mythclothapi.BootstrapProperties;
 import com.mesofi.mythclothapi.collectorproviders.CollectorAuthProviderRepository;
@@ -27,6 +28,9 @@ import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.demo.DemoProperties;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
@@ -69,6 +73,8 @@ class CollectorServiceTest {
     private RoleRepository roleRepository;
     @Mock
     private DemoProperties demoProperties;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
@@ -78,7 +84,7 @@ class CollectorServiceTest {
 
     @Test
     void login_shouldThrowIllegalArgumentException_whenProviderIsBlank() {
-        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token");
+        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token", null, null);
 
         assertThatThrownBy(() -> service.login("   ", request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Provider is required");
@@ -86,7 +92,7 @@ class CollectorServiceTest {
 
     @Test
     void login_shouldThrowIllegalArgumentException_whenProviderIsNull() {
-        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token");
+        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token", null, null);
 
         assertThatThrownBy(() -> service.login(null, request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Provider is required");
@@ -94,7 +100,7 @@ class CollectorServiceTest {
 
     @Test
     void login_shouldThrowIllegalArgumentException_whenProviderIsUnknown() {
-        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token");
+        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token", null, null);
 
         assertThatThrownBy(() -> service.login("twitter", request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Unsupported provider: twitter");
@@ -102,10 +108,53 @@ class CollectorServiceTest {
 
     @Test
     void login_shouldThrowIllegalArgumentException_whenProviderIsNotSupportedYet() {
-        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token");
+        CollectorLoginReq request = new CollectorLoginReq("id-token", "access-token", null, null);
 
         assertThatThrownBy(() -> service.login("github", request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Provider GITHUB is not supported yet");
+    }
+
+    @Test
+    void loginWithSelfUser_shouldAuthenticateWithEmailAndPassword() {
+        Collector collector = collector(12L, "Mask", "mask@example.com", null);
+        collector.setPasswordHash("hashed-password");
+        Role role = new Role();
+        role.setId(2L);
+        role.setName("Collector");
+        collector.setRole(role);
+
+        when(collectorRepository.findByEmail("mask@example.com")).thenReturn(Optional.of(collector));
+        when(passwordEncoder.matches("Abcdef1!", "hashed-password")).thenReturn(true);
+        when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.SELF_USER, "myth_12"))
+                .thenReturn(Optional.of(providerLink(collector, ProviderType.SELF_USER, "myth_12")));
+        when(apiTokenService.generateToken(any(Collector.class), eq("SELF_USER"), eq("myth_12"),
+                eq("mask@example.com"))).thenReturn("jwt-self");
+        when(apiTokenService.ttlSeconds()).thenReturn(600L);
+
+        CollectorLoginResp response = service.login("self_user",
+                new CollectorLoginReq(null, null, "mask@example.com", "Abcdef1!"));
+
+        assertThat(response.collectorId()).isEqualTo(12L);
+        assertThat(response.displayName()).isEqualTo("Mask");
+        assertThat(response.email()).isEqualTo("mask@example.com");
+        assertThat(response.accessToken()).isEqualTo("jwt-self");
+        assertThat(response.tokenType()).isEqualTo("Bearer");
+        assertThat(response.expiresInSeconds()).isEqualTo(600L);
+        verify(passwordEncoder).matches("Abcdef1!", "hashed-password");
+    }
+
+    @Test
+    void loginWithSelfUser_shouldThrowInvalidCredentials_whenPasswordDoesNotMatch() {
+        Collector collector = collector(12L, "Mask", "mask@example.com", null);
+        collector.setPasswordHash("hashed-password");
+
+        when(collectorRepository.findByEmail("mask@example.com")).thenReturn(Optional.of(collector));
+        when(passwordEncoder.matches("wrong-pass", "hashed-password")).thenReturn(false);
+
+        assertThatThrownBy(
+                () -> service.login("self_user", new CollectorLoginReq(null, null, "mask@example.com", "wrong-pass")))
+                .isInstanceOf(com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException.class)
+                .hasMessage("Invalid email or password");
     }
 
     @Test
@@ -128,11 +177,13 @@ class CollectorServiceTest {
             entity.setId(55L);
             return entity;
         });
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(apiTokenService.generateToken(any(Collector.class), eq("LOCAL"), eq("demo-user-1"),
                 eq("demo@example.com"))).thenReturn("jwt-local");
         when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
-        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
+        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null, null, null));
 
         assertThat(response.collectorId()).isEqualTo(55L);
         assertThat(response.displayName()).isEqualTo("Demo Collector");
@@ -172,11 +223,13 @@ class CollectorServiceTest {
             entity.setId(88L);
             return entity;
         });
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(apiTokenService.generateToken(any(Collector.class), eq("LOCAL"), eq("demo-user-2"),
                 eq("visitor@example.com"))).thenReturn("jwt-demo");
         when(apiTokenService.ttlSeconds()).thenReturn(900L);
 
-        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null));
+        CollectorLoginResp response = service.login("local", new CollectorLoginReq(null, null, null, null));
 
         assertThat(response.collectorId()).isEqualTo(88L);
         assertThat(response.accessToken()).isEqualTo("jwt-demo");
@@ -189,7 +242,7 @@ class CollectorServiceTest {
 
     @Test
     void loginWithFacebook_shouldThrowIllegalArgumentException_whenAccessTokenIsMissing() {
-        CollectorLoginReq request = new CollectorLoginReq(null, "   ");
+        CollectorLoginReq request = new CollectorLoginReq(null, "   ", null, null);
 
         assertThatThrownBy(() -> service.login("facebook", request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Facebook access token is required");
@@ -197,7 +250,7 @@ class CollectorServiceTest {
 
     @Test
     void loginWithFacebook_shouldThrowCollectorInvalidTokenException_whenTokenIsInvalid() {
-        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token");
+        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token", null, null);
 
         when(fcCredentials.appId()).thenReturn("myth-app-id");
         when(fbApiClient.validateAccessToken("fb-access-token"))
@@ -209,7 +262,7 @@ class CollectorServiceTest {
 
     @Test
     void loginWithFacebook_shouldThrowCollectorInvalidTokenException_whenTokenIsUnparseable() {
-        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token");
+        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token", null, null);
 
         when(fcCredentials.appId()).thenReturn("myth-app-id");
         when(fbApiClient.validateAccessToken("fb-access-token"))
@@ -221,7 +274,7 @@ class CollectorServiceTest {
 
     @Test
     void loginWithFacebook_shouldThrowCollectorInvalidTokenException_whenAppIdDoesNotMatch() {
-        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token");
+        CollectorLoginReq request = new CollectorLoginReq(null, "fb-access-token", null, null);
 
         when(fcCredentials.appId()).thenReturn("myth-app-id");
         when(fbApiClient.validateAccessToken("fb-access-token"))
@@ -251,7 +304,8 @@ class CollectorServiceTest {
                 .thenReturn("api-jwt");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
-        CollectorLoginResp response = service.login("facebook", new CollectorLoginReq(null, "fb-access-token"));
+        CollectorLoginResp response = service.login("facebook",
+                new CollectorLoginReq(null, "fb-access-token", null, null));
 
         assertThat(response)
                 .extracting(CollectorLoginResp::collectorId, CollectorLoginResp::displayName, CollectorLoginResp::email,
@@ -261,6 +315,33 @@ class CollectorServiceTest {
 
         verify(collectorRepository, never()).save(any(Collector.class));
         verify(collectorAuthProviderRepository, never()).save(any(CollectorAuthProvider.class));
+        assertThat(providerLink.getLastLogin()).isNotNull();
+    }
+
+    @Test
+    void loginWithFacebook_shouldUpdateLastLoginOnExistingProviderLink() {
+        Collector existingCollector = collector(8L, "Hyoga", "hyoga@example.com", null);
+        Role collectorRole = new Role();
+        collectorRole.setId(2L);
+        collectorRole.setName("Collector");
+        existingCollector.setRole(collectorRole);
+        CollectorAuthProvider providerLink = providerLink(existingCollector, ProviderType.FACEBOOK, "fb-last-login");
+
+        when(fcCredentials.appId()).thenReturn("myth-app-id");
+        when(fbApiClient.validateAccessToken("fb-access-token"))
+                .thenReturn(new FbTokenResponse(fbTokenData("myth-app-id", true, "fb-last-login")));
+        when(fbApiClient.getUserInfo("fb-access-token"))
+                .thenReturn(new FbUserInfoResponse("fb-last-login", "Hyoga", "hyoga@example.com"));
+        when(collectorAuthProviderRepository.findByProviderAndProviderUserId(ProviderType.FACEBOOK, "fb-last-login"))
+                .thenReturn(Optional.of(providerLink));
+        when(apiTokenService.generateToken(eq(existingCollector), eq("FACEBOOK"), eq("fb-last-login"),
+                eq("hyoga@example.com"))).thenReturn("jwt-last-login");
+        when(apiTokenService.ttlSeconds()).thenReturn(3600L);
+
+        CollectorLoginResp response = service.login("facebook",
+                new CollectorLoginReq(null, "fb-access-token", null, null));
+
+        assertThat(response.accessToken()).isEqualTo("jwt-last-login");
         assertThat(providerLink.getLastLogin()).isNotNull();
     }
 
@@ -285,11 +366,14 @@ class CollectorServiceTest {
             entity.setId(11L);
             return entity;
         });
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(apiTokenService.generateToken(any(Collector.class), eq("FACEBOOK"), eq("fb-123"), eq("seiya@example.com")))
                 .thenReturn("jwt-created");
         when(apiTokenService.ttlSeconds()).thenReturn(7200L);
 
-        CollectorLoginResp response = service.login("facebook", new CollectorLoginReq(null, "fb-access-token"));
+        CollectorLoginResp response = service.login("facebook",
+                new CollectorLoginReq(null, "fb-access-token", null, null));
 
         assertThat(response.collectorId()).isEqualTo(11L);
         assertThat(response.displayName()).isEqualTo("Seiya");
@@ -319,7 +403,7 @@ class CollectorServiceTest {
 
     @Test
     void loginWithGoogle_shouldThrowIllegalArgumentException_whenIdTokenIsMissing() {
-        CollectorLoginReq request = new CollectorLoginReq("   ", null);
+        CollectorLoginReq request = new CollectorLoginReq("   ", null, null, null);
 
         assertThatThrownBy(() -> service.login("google", request)).isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Google idToken is required");
@@ -330,7 +414,7 @@ class CollectorServiceTest {
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(googleToken("https://evil.example.com",
                 "google-client-id", "sub-1", Instant.now().plusSeconds(600).getEpochSecond()));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token issuer is invalid");
     }
 
@@ -340,7 +424,7 @@ class CollectorServiceTest {
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(googleToken("https://accounts.google.com",
                 "another-client", "sub-1", Instant.now().plusSeconds(600).getEpochSecond()));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token audience is invalid");
     }
 
@@ -351,7 +435,7 @@ class CollectorServiceTest {
                 .thenReturn(new GoogleTokenInfoResponse("https://accounts.google.com", "expected-client", "sub-1",
                         "shun@example.com", "true", "Shun", "https://img/shun.jpg", "not-a-number"));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token expiry claim is invalid");
     }
 
@@ -361,7 +445,7 @@ class CollectorServiceTest {
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(googleToken("https://accounts.google.com",
                 "expected-client", "sub-1", Instant.now().minusSeconds(5).getEpochSecond()));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token is expired");
     }
 
@@ -371,7 +455,7 @@ class CollectorServiceTest {
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(
                 googleToken("https://accounts.google.com", "expected-client", "sub-1", Instant.now().getEpochSecond()));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token is expired");
     }
 
@@ -381,7 +465,7 @@ class CollectorServiceTest {
         when(googleApiClient.validateIdToken("google-id-token")).thenReturn(googleToken("accounts.google.com",
                 "expected-client", "   ", Instant.now().plusSeconds(500).getEpochSecond()));
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(CollectorInvalidTokenException.class).hasMessage("Google token subject is missing");
     }
 
@@ -406,11 +490,14 @@ class CollectorServiceTest {
             entity.setId(20L);
             return entity;
         });
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(apiTokenService.generateToken(any(Collector.class), eq("GOOGLE"), eq("sub-456"), eq("hyoga@example.com")))
                 .thenReturn("jwt-google");
         when(apiTokenService.ttlSeconds()).thenReturn(1800L);
 
-        CollectorLoginResp response = service.login("google", new CollectorLoginReq("google-id-token", null));
+        CollectorLoginResp response = service.login("google",
+                new CollectorLoginReq("google-id-token", null, null, null));
 
         assertThat(response.collectorId()).isEqualTo(20L);
         assertThat(response.displayName()).isEqualTo("Hyoga");
@@ -456,7 +543,8 @@ class CollectorServiceTest {
                 eq("shiryu@example.com"))).thenReturn("jwt-existing");
         when(apiTokenService.ttlSeconds()).thenReturn(600L);
 
-        CollectorLoginResp response = service.login("google", new CollectorLoginReq("google-id-token", null));
+        CollectorLoginResp response = service.login("google",
+                new CollectorLoginReq("google-id-token", null, null, null));
 
         assertThat(response.collectorId()).isEqualTo(33L);
         assertThat(response.displayName()).isEqualTo("Shiryu");
@@ -491,11 +579,14 @@ class CollectorServiceTest {
             entity.setId(1L);
             return entity;
         });
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(apiTokenService.generateToken(any(Collector.class), eq("FACEBOOK"), eq("fb-100"), eq("mu@example.com")))
                 .thenReturn("jwt-admin");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
-        CollectorLoginResp response = service.login("facebook", new CollectorLoginReq(null, "fb-access-token"));
+        CollectorLoginResp response = service.login("facebook",
+                new CollectorLoginReq(null, "fb-access-token", null, null));
 
         assertThat(response.collectorId()).isEqualTo(1L);
         assertThat(response.displayName()).isEqualTo("Mu");
@@ -521,6 +612,8 @@ class CollectorServiceTest {
         basicRole.setId(2L);
         basicRole.setName("Collector");
         when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
             Collector entity = invocation.getArgument(0);
             entity.setId(6L);
@@ -530,7 +623,8 @@ class CollectorServiceTest {
                 .thenReturn("jwt-basic");
         when(apiTokenService.ttlSeconds()).thenReturn(3600L);
 
-        CollectorLoginResp response = service.login("facebook", new CollectorLoginReq(null, "fb-access-token"));
+        CollectorLoginResp response = service.login("facebook",
+                new CollectorLoginReq(null, "fb-access-token", null, null));
 
         assertThat(response.collectorId()).isEqualTo(6L);
 
@@ -551,11 +645,54 @@ class CollectorServiceTest {
                 .thenReturn(Optional.empty());
         when(roleRepository.findByName("Admin")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null)))
+        assertThatThrownBy(() -> service.login("google", new CollectorLoginReq("google-id-token", null, null, null)))
                 .isInstanceOf(RoleNotFoundException.class).hasMessage("Role with name Admin was not found");
 
         verify(collectorRepository, never()).save(any(Collector.class));
         verify(collectorAuthProviderRepository, never()).save(any(CollectorAuthProvider.class));
+    }
+
+    @Test
+    void signup_shouldCreateCollectorAndReturnResponse() {
+        when(collectorRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("Abcdef1!")).thenReturn("hashed-password");
+
+        Role collectorRole = new Role();
+        collectorRole.setId(2L);
+        collectorRole.setName("Collector");
+        when(roleRepository.findByName("Collector")).thenReturn(Optional.of(collectorRole));
+
+        when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
+            Collector entity = invocation.getArgument(0);
+            entity.setId(99L);
+            return entity;
+        });
+
+        CollectorSignupResp response = service
+                .signup(new CollectorSignupReq("New User", "new@example.com", "Abcdef1!"));
+
+        assertThat(response.collectorId()).isEqualTo(99L);
+        assertThat(response.fullName()).isEqualTo("New User");
+        assertThat(response.email()).isEqualTo("new@example.com");
+
+        ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
+        verify(collectorRepository).save(collectorCaptor.capture());
+        assertThat(collectorCaptor.getValue().getEmail()).isEqualTo("new@example.com");
+        assertThat(collectorCaptor.getValue().getPasswordHash()).isEqualTo("hashed-password");
+        assertThat(collectorCaptor.getValue().getRole()).isEqualTo(collectorRole);
+    }
+
+    @Test
+    void signup_shouldThrowCollectorEmailAlreadyExistsException_whenEmailAlreadyExists() {
+        Collector existing = collector(5L, "Existing", "existing@example.com", null);
+        when(collectorRepository.findByEmail("existing@example.com")).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> service.signup(new CollectorSignupReq("Existing", "existing@example.com", "Abcdef1!")))
+                .isInstanceOf(CollectorEmailAlreadyExistsException.class)
+                .hasMessage("Collector with email existing@example.com already exists");
+
+        verify(passwordEncoder, never()).encode(any());
+        verify(collectorRepository, never()).save(any(Collector.class));
     }
 
     private FbTokenData fbTokenData(String appId, boolean valid, String userId) {

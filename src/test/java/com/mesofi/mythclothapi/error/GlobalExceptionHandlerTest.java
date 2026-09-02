@@ -61,6 +61,18 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void handleHttpMessageNotReadable_shouldReturnNullDetailWhenMessageIsNull() {
+        HttpMessageNotReadableException ex = mock(HttpMessageNotReadableException.class);
+        when(ex.getMessage()).thenReturn(null);
+
+        ProblemDetail result = handler.handleHttpMessageNotReadable(ex);
+
+        assertThat(result.getStatus()).isEqualTo(400);
+        assertThat(result.getTitle()).isEqualTo("Invalid body");
+        assertThat(result.getDetail()).isNull();
+    }
+
+    @Test
     void handleHttpMediaTypeNotSupported_shouldReturnUnsupportedMediaTypeProblem() {
         HttpMediaTypeNotSupportedException ex = mock(HttpMediaTypeNotSupportedException.class);
         when(ex.getMessage()).thenReturn("Content-Type not supported");
@@ -70,6 +82,18 @@ class GlobalExceptionHandlerTest {
         assertThat(result.getStatus()).isEqualTo(415);
         assertThat(result.getTitle()).isEqualTo("Unsupported Media Type");
         assertThat(result.getDetail()).isEqualTo("Content-Type not supported");
+    }
+
+    @Test
+    void handleHttpMediaTypeNotSupported_shouldReturnNullDetailWhenMessageIsNull() {
+        HttpMediaTypeNotSupportedException ex = mock(HttpMediaTypeNotSupportedException.class);
+        when(ex.getMessage()).thenReturn(null);
+
+        ProblemDetail result = handler.handleHttpMediaTypeNotSupported(ex);
+
+        assertThat(result.getStatus()).isEqualTo(415);
+        assertThat(result.getTitle()).isEqualTo("Unsupported Media Type");
+        assertThat(result.getDetail()).isNull();
     }
 
     @Test
@@ -142,6 +166,30 @@ class GlobalExceptionHandlerTest {
 
         assertThat(invalidToken.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(invalidToken.getTitle()).isEqualTo("token invalid");
+    }
+
+    @Test
+    void handleCollectorAndSecurityExceptions_shouldReturnProblemFromExceptionData() {
+        ProblemDetail emailExists = handler.handleCollectorEmailAlreadyExists(
+                new com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException("a@b.com"));
+        ProblemDetail emailNotFound = handler.handleCollectorEmailNotFoundException(
+                new com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException());
+        ProblemDetail invalidCredentials = handler.handleCollectorInvalidCredentialsException(
+                new com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException());
+        ProblemDetail authDenied = handler.handleAuthorizationDeniedException(
+                new org.springframework.security.authorization.AuthorizationDeniedException("nope"));
+
+        assertThat(emailExists.getStatus()).isEqualTo(HttpStatus.CONFLICT.value());
+        assertThat(emailExists.getTitle()).isEqualTo("Collector email already exists");
+
+        assertThat(emailNotFound.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        assertThat(emailNotFound.getTitle()).isEqualTo("Collector email not found");
+
+        assertThat(invalidCredentials.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+        assertThat(invalidCredentials.getTitle()).isEqualTo("Invalid email or password");
+
+        assertThat(authDenied.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+        assertThat(authDenied.getTitle()).isEqualTo("You are not allowed to perform this action");
     }
 
     @Test

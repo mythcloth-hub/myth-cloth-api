@@ -102,7 +102,8 @@ public class CollectorControllerIT extends ControllerBaseIT {
         // have the permissions assigned to the Admin role.
 
         CollectorLoginResp collectorLoginResp = rest.post().uri("/collectors/auth/{provider}", "facebook")
-                .body(new CollectorLoginReq(null, fbFakeAccessToken)).retrieve().body(CollectorLoginResp.class);
+                .body(new CollectorLoginReq(null, fbFakeAccessToken, null, null)).retrieve()
+                .body(CollectorLoginResp.class);
 
         assert collectorLoginResp != null;
 
