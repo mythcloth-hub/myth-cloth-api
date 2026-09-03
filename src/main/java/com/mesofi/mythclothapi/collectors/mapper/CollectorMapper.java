@@ -9,6 +9,7 @@ import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
@@ -163,4 +164,18 @@ public interface CollectorMapper {
         // Todo: Add more lineups and their corresponding URLs as needed
         return null;
     }
+
+    /**
+     * Maps a collector collection figurine entity to its latest favorite response.
+     *
+     * @param collectorCollectionFigurine
+     *            collector collection figurine entity to map
+     * @return latest favorite response populated from the entity
+     */
+    @Mapping(target = "id", source = "figurine.id")
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "imageUrl", expression = "java(getFirstImage(collectorCollectionFigurine.getFigurine().getOfficialImages()))")
+    @Mapping(target = "ownedQuantity", source = "quantity")
+    CollectorCollectionLatestFavoriteResp toCollectorCollectionLatestFavoriteResp(
+            CollectorCollectionFigurine collectorCollectionFigurine);
 }

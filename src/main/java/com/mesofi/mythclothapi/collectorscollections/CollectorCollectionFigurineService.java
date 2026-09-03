@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.collectorscollections;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMod
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
@@ -351,6 +353,40 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
         return collectorMapper.toCollectorCollectionFigurineDetailResp(figurineFound);
+    }
+
+    /**
+     * Retrieves the latest figurines added to the collector's favorite collection.
+     *
+     * <p>
+     * The collector must have a favorite collection. If no favorite collection is
+     * found, an empty list is returned.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param limit
+     *            maximum number of latest figurines to retrieve
+     * @return list of latest figurines in the favorite collection
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     */
+    public List<CollectorCollectionLatestFavoriteResp> retrieveLatestFavoriteCollectionFigurines(
+            @Positive Long collectorId, @Positive int limit) {
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        Optional<CollectorCollection> favCollection = collectorFound.getCollections().stream()
+                .filter(CollectorCollection::isFavorite).findFirst();
+
+        if (favCollection.isEmpty()) {
+            // for some reason, the collector does not have a favorite collection. This
+            // should not happen, but just in case, return an empty list.
+            return List.of();
+        }
+        CollectorCollection collection = favCollection.get();
+
+        return collectorCollectionFigurineRepository
+                .findByCollectionOrderByAddedAtDesc(collection, PageRequest.of(0, limit)).stream()
+                .map(collectorMapper::toCollectorCollectionLatestFavoriteResp).toList();
     }
 
     /**
