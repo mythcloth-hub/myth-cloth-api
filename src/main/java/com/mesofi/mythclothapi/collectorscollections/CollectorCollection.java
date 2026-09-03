@@ -35,6 +35,8 @@ public class CollectorCollection extends Auditable {
     @Column(length = 200)
     private String description;
 
+    private boolean favorite;
+
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Collector collector;
 
