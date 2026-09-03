@@ -1,10 +1,14 @@
 package com.mesofi.mythclothapi.collectorscollections.model;
 
+import java.time.Instant;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -12,6 +16,7 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,4 +37,13 @@ public class CollectorCollectionFigurine extends Auditable {
 
     @Enumerated(EnumType.STRING)
     private Condition condition;
+
+    @Setter(AccessLevel.NONE)
+    @Column(nullable = false, updatable = false)
+    private Instant addedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        addedAt = Instant.now();
+    }
 }

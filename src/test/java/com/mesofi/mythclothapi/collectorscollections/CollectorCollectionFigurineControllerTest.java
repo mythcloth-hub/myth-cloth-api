@@ -36,6 +36,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMod
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
@@ -357,6 +358,21 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.displayableName").value("Seiya"));
 
         verify(service).retrieveCollectionFigurine(123L, 2L, 9L);
+    }
+
+    @Test
+    void retrieveLatestFavoriteCollectionFigurines_shouldReturnLatestFigurines_whenRequestIsAuthenticated()
+            throws Exception {
+        CollectorCollectionLatestFavoriteResp resp = new CollectorCollectionLatestFavoriteResp(9L, "Seiya", null, 2);
+        when(service.retrieveLatestFavoriteCollectionFigurines(123L, 20)).thenReturn(List.of(resp));
+
+        mockMvc.perform(get("/collections/favorite/figurines/latest").contentType(MediaType.APPLICATION_JSON)
+                .with(jwt().jwt(jwt -> jwt.subject("123"))
+                        .authorities(new SimpleGrantedAuthority("collections:figurines:read"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(9))
+                .andExpect(jsonPath("$[0].name").value("Seiya")).andExpect(jsonPath("$[0].ownedQuantity").value(2));
+
+        verify(service).retrieveLatestFavoriteCollectionFigurines(123L, 20);
     }
 
     @Test

@@ -33,6 +33,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMod
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
@@ -603,6 +604,48 @@ class CollectorCollectionFigurineServiceTest {
 
         verify(figurineRepository).findById(9L);
         verifyNoInteractions(collectorMapper);
+    }
+
+    @Test
+    void retrieveLatestFavoriteCollectionFigurines_shouldReturnMappedLatestFigurines_whenFavoriteCollectionExists() {
+        CollectorCollection favorite = collection(2L, null, "Favorite", null, null);
+        favorite.setFavorite(true);
+        Collector collector = collectorWithCollections(1L, favorite);
+        CollectorCollectionFigurine first = collectionFigurine(favorite,
+                figurine(9L, "seiya", ReleaseStatus.RELEASED, LocalDate.of(2024, 3, 1)), 2, Condition.SEALED);
+        CollectorCollectionFigurine second = collectionFigurine(favorite,
+                figurine(10L, "shiryu", ReleaseStatus.ANNOUNCED, LocalDate.of(2024, 4, 1)), 1, Condition.OPENED);
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionFigurineRepository.findByCollectionOrderByAddedAtDesc(favorite, PageRequest.of(0, 20)))
+                .thenReturn(List.of(first, second));
+        when(collectorMapper.toCollectorCollectionLatestFavoriteResp(first))
+                .thenReturn(new CollectorCollectionLatestFavoriteResp(9L, "seiya", "image-1.png", 2));
+        when(collectorMapper.toCollectorCollectionLatestFavoriteResp(second))
+                .thenReturn(new CollectorCollectionLatestFavoriteResp(10L, "shiryu", "image-2.png", 1));
+
+        List<CollectorCollectionLatestFavoriteResp> response = service.retrieveLatestFavoriteCollectionFigurines(1L,
+                20);
+
+        assertThat(response).containsExactly(new CollectorCollectionLatestFavoriteResp(9L, "seiya", "image-1.png", 2),
+                new CollectorCollectionLatestFavoriteResp(10L, "shiryu", "image-2.png", 1));
+        verify(collectorCollectionFigurineRepository).findByCollectionOrderByAddedAtDesc(favorite,
+                PageRequest.of(0, 20));
+        verify(collectorMapper).toCollectorCollectionLatestFavoriteResp(first);
+        verify(collectorMapper).toCollectorCollectionLatestFavoriteResp(second);
+    }
+
+    @Test
+    void retrieveLatestFavoriteCollectionFigurines_shouldReturnEmptyList_whenFavoriteCollectionIsMissing() {
+        Collector collector = collector(1L, collection(2L, null, "Team", null, null));
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+
+        List<CollectorCollectionLatestFavoriteResp> response = service.retrieveLatestFavoriteCollectionFigurines(1L,
+                20);
+
+        assertThat(response).isEmpty();
+        verifyNoInteractions(collectorCollectionFigurineRepository, collectorMapper);
     }
 
     @Test

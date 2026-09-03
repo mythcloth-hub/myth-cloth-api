@@ -29,6 +29,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
@@ -233,6 +234,33 @@ public class CollectorCollectionFigurineController {
     public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
         return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
+    }
+
+    /**
+     * Retrieves the latest figurines from the authenticated collector's favorite
+     * collection.
+     *
+     * <p>
+     * The favorite collection is determined by the collector's preferences. Access
+     * requires the {@code collections:figurines:read} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param limit
+     *            maximum number of latest figurines to retrieve (default is 20, max
+     *            is 30)
+     * @return list of latest figurines from the favorite collection
+     */
+    @GetMapping("/favorite/figurines/latest")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public List<CollectorCollectionLatestFavoriteResp> retrieveLatestFavoriteCollectionFigurines(
+            @AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "20") @Min(1) @Max(30) int limit) {
+        Long collectorId = getCollectorId(jwt);
+
+        log.info("Retrieving latest figurines from favorite collection of collector {}, limit {}", collectorId, limit);
+
+        return service.retrieveLatestFavoriteCollectionFigurines(collectorId, limit);
     }
 
     /**
