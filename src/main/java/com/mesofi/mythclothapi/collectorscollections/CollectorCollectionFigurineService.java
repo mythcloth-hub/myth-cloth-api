@@ -446,8 +446,9 @@ public class CollectorCollectionFigurineService {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 
         Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
 
-        // make sure this collection owns the collection to be removed.
+        // make sure this collector owns the collection to be removed.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
@@ -455,10 +456,20 @@ public class CollectorCollectionFigurineService {
         int deletedCount = collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(collectionId,
                 collectorId);
 
-        // Now it deletes the collection itself
-        if (!collectorCollectionRepository.existsById(collectionId)) {
-            throw new CollectorCollectionNotFoundException(collectionId);
+        // Ensure the favorite collection is moved to another collection if the deleted
+        // collection was marked as favorite
+        if (collectionFound.isFavorite()) {
+            List<CollectorCollection> remainingCollections = collectorFound.getCollections().stream()
+                    .filter(c -> !c.getId().equals(collectionId)).toList();
+            if (!remainingCollections.isEmpty()) {
+                CollectorCollection newFavorite = remainingCollections.getFirst();
+                newFavorite.setFavorite(true);
+                collectorCollectionRepository.save(newFavorite);
+                log.info("Collection [{}] was favorite. New favorite collection set to [{}]", collectionId,
+                        newFavorite.getId());
+            }
         }
+
         collectorCollectionRepository.deleteCollectionById(collectionId);
 
         log.info("{} items deleted in collection with id {}", deletedCount, collectionId);
@@ -513,7 +524,46 @@ public class CollectorCollectionFigurineService {
         var updated = collectorCollectionRepository.save(existing);
 
         return new CollectorCollectionResp(updated.getId(), updated.getName(), updated.getImageUrl(),
-                updated.getDescription(), 0, List.of());
+                updated.getDescription(), updated.isFavorite(), 0, List.of());
+    }
+
+    /**
+     * Updates the favorite status of a collector collection.
+     *
+     * <p>
+     * The collection ownership is validated before applying updates. The specified
+     * collection is marked as favorite, and any other collections for the same
+     * collector are unmarked as favorite.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to mark as favorite
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     */
+    @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    public void updateCollectionAsFavorite(@Positive Long collectorId, @Positive Long collectionId) {
+        log.info("Updating collection with id '{}' as favorite for collector '{}'", collectionId, collectorId);
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
+
+        // make sure this collector owns the collection to be updated.
+        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        // Sets the current collection as favorite and unsets any other favorite
+        // collection for the collector.
+        collectionFound.setFavorite(true);
+        collectorFound.getCollections().stream().filter(c -> !c.getId().equals(collectionId))
+                .forEach(c -> c.setFavorite(false));
+
+        collectorCollectionRepository.save(collectionFound);
     }
 
     /**
@@ -677,11 +727,14 @@ public class CollectorCollectionFigurineService {
             throw new CollectorCollectionLimitReachedException(collectorId, MAX_COLLECTIONS_PER_COLLECTOR);
         }
 
+        boolean isFavorite = existingCollections == 0; // the first collection created is marked as favorite
+
         CollectorCollection collectorCollection = new CollectorCollection();
         collectorCollection.setCollector(collector);
         collectorCollection.setName(name);
         collectorCollection.setImageUrl(imageUrl);
         collectorCollection.setDescription(description);
+        collectorCollection.setFavorite(isFavorite);
 
         return collectorCollectionRepository.save(collectorCollection);
     }

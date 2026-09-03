@@ -39,6 +39,7 @@ public interface CollectorMapper {
      */
     @Mapping(target = "totalFigurines", expression = "java(collectorCollection.getFigurines().size())")
     @Mapping(target = "figurineIds", expression = "java(getFigurineIds(collectorCollection))")
+    @Mapping(target = "isFavorite", source = "favorite")
     CollectorCollectionResp toCollectorCollectionResp(CollectorCollection collectorCollection);
 
     /**

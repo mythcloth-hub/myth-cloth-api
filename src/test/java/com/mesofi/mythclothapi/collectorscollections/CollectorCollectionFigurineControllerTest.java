@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -32,10 +33,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.security.config.SecurityConfig;
@@ -275,6 +279,24 @@ class CollectorCollectionFigurineControllerTest {
     }
 
     @Test
+    void retrieveCollectionSummary_shouldReturnSummary_whenRequestIsAuthenticated() throws Exception {
+        CollectorCollectionSummaryResp resp = new CollectorCollectionSummaryResp(
+                new CollectorCollectionCatalogSummaryResp(10, 2, 8),
+                new CollectorCollectionSummaryStatsResp(3, 2, 2, 1, 4));
+        when(service.retrieveCollectionSummary(123L, 2L, true)).thenReturn(resp);
+
+        mockMvc.perform(
+                get("/collections/2/summary").contentType(MediaType.APPLICATION_JSON).param("includeRestocks", "true")
+                        .with(jwt().jwt(jwt -> jwt.subject("123"))
+                                .authorities(new SimpleGrantedAuthority("collections:figurines:read"))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.summary.totalFigurines").value(10))
+                .andExpect(jsonPath("$.summary.totalReleased").value(8))
+                .andExpect(jsonPath("$.collection.preorderedCopies").value(3));
+
+        verify(service).retrieveCollectionSummary(123L, 2L, true);
+    }
+
+    @Test
     void retrieveCollections_shouldReturnNotFound_whenCollectorDoesNotExist() throws Exception {
 
         when(service.retrieveCollections(123L)).thenThrow(new CollectorNotFoundException(123L));
@@ -293,7 +315,8 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void retrieveCollections_shouldReturnCollectorCollections_whenRequestIsAuthenticated() throws Exception {
 
-        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", "test desc", null, 1, List.of(1L));
+        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", "test desc", null, false, 1,
+                List.of(1L));
         when(service.retrieveCollections(123L)).thenReturn(List.of(resp));
 
         mockMvc.perform(get("/collections").contentType(MediaType.APPLICATION_JSON)
@@ -356,7 +379,8 @@ class CollectorCollectionFigurineControllerTest {
 
     @Test
     void updateCollection_shouldReturnUpdatedCollection_whenRequestIsAuthenticated() throws Exception {
-        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", null, "Updated desc", 0, List.of());
+        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", null, "Updated desc", false, 0,
+                List.of());
         when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc")))
                 .thenReturn(resp);
 
@@ -369,6 +393,23 @@ class CollectorCollectionFigurineControllerTest {
                 .andExpect(jsonPath("$.description").value("Updated desc"));
 
         verify(service).updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc"));
+    }
+
+    @Test
+    void updateCollectionAsFavorite_shouldReturnAccepted_whenRequestIsAuthenticated() throws Exception {
+        mockMvc.perform(patch("/collections/2/favorite").with(
+                jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("collections:update"))))
+                .andExpect(status().isAccepted());
+
+        verify(service).updateCollectionAsFavorite(123L, 2L);
+    }
+
+    @Test
+    void updateCollectionAsFavorite_shouldUseZeroWhenJwtSubjectIsMissing() throws Exception {
+        mockMvc.perform(patch("/collections/2/favorite").with(jwt().jwt(jwt -> jwt.subject((String) null))
+                .authorities(new SimpleGrantedAuthority("collections:update")))).andExpect(status().isAccepted());
+
+        verify(service).updateCollectionAsFavorite(0L, 2L);
     }
 
     @Test

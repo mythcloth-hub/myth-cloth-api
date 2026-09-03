@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -330,6 +331,32 @@ public class CollectorCollectionFigurineController {
             @Positive @PathVariable Long id, @RequestBody @Valid CollectorCollectionReq request) {
         CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
         return ResponseEntity.ok(updated);
+    }
+
+    /**
+     * Updates the favorite status of a collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. This operation
+     * allows marking a collection as favorite or removing it from favorites.
+     *
+     * <p>
+     * This operation requires the {@code collections:update} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param id
+     *            unique identifier of the collection to update as favorite
+     * @return an empty response with HTTP {@code 202 Accepted} when the update
+     *         succeeds
+     */
+    @PatchMapping("/{id}/favorite")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
+    public ResponseEntity<Void> updateCollectionAsFavorite(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long id) {
+        service.updateCollectionAsFavorite(getCollectorId(jwt), id);
+        return ResponseEntity.accepted().build();
     }
 
     /**
