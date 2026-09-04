@@ -370,10 +370,27 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorNotFoundException
      *             if the collector does not exist
      */
+    @Transactional(readOnly = true)
     public List<CollectorCollectionLatestFavoriteResp> retrieveLatestFavoriteCollectionFigurines(
             @Positive Long collectorId, @Positive int limit) {
 
+        return findLatestFavoriteCollectionFigurines(collectorId, limit).stream()
+                .map(collectorMapper::toCollectorCollectionLatestFavoriteResp).toList();
+    }
+
+    /**
+     * Finds the latest figurines added to the collector's favorite collection.
+     * 
+     * @param collectorId
+     *            identifier of the collector
+     * @param limit
+     *            maximum number of latest figurines to retrieve
+     * @return list of latest figurines in the favorite collection
+     */
+    public List<CollectorCollectionFigurine> findLatestFavoriteCollectionFigurines(Long collectorId, int limit) {
+
         Collector collectorFound = retrieveCollector(collectorId);
+
         Optional<CollectorCollection> favCollection = collectorFound.getCollections().stream()
                 .filter(CollectorCollection::isFavorite).findFirst();
 
@@ -384,9 +401,8 @@ public class CollectorCollectionFigurineService {
         }
         CollectorCollection collection = favCollection.get();
 
-        return collectorCollectionFigurineRepository
-                .findByCollectionOrderByAddedAtDesc(collection, PageRequest.of(0, limit)).stream()
-                .map(collectorMapper::toCollectorCollectionLatestFavoriteResp).toList();
+        return collectorCollectionFigurineRepository.findByCollectionOrderByAddedAtDesc(collection,
+                PageRequest.of(0, limit));
     }
 
     /**

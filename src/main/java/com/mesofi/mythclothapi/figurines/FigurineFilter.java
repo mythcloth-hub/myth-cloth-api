@@ -13,8 +13,8 @@ import java.util.List;
  *            lineup identifier to filter by
  * @param seriesId
  *            series identifier to filter by
- * @param groupId
- *            group identifier to filter by
+ * @param groupIds
+ *            group identifiers to filter by
  * @param distributionId
  *            distribution identifier to filter by
  * @param anniversaryId
@@ -42,7 +42,7 @@ import java.util.List;
  * @param releaseStatuses
  *            release statuses to filter by
  */
-public record FigurineFilter(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, Long groupId,
+public record FigurineFilter(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, List<Long> groupIds,
         Long distributionId, Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival, Boolean plainCloth,
         Boolean broken, Boolean golden, Boolean gold, Boolean manga, Boolean set, Boolean articulable,
         List<String> releaseStatuses, Boolean restocks) {

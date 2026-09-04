@@ -27,7 +27,7 @@ public final class FigurineFilterFactory {
      *
      * <p>
      * This is a convenience overload that delegates to
-     * {@link #build(List, String, Long, Long, Long, Long, Long, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, List, Boolean)}
+     * {@link #build(List, String, Long, Long, List, Long, Long, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, List, Boolean)}
      * by converting the provided release status into a single-element list.
      *
      * @param figurineIds
@@ -76,8 +76,8 @@ public final class FigurineFilterFactory {
             Boolean plainCloth, Boolean broken, Boolean golden, Boolean gold, Boolean manga, Boolean set,
             Boolean articulable, String releaseStatus, Boolean restocks) {
 
-        return build(figurineIds, name, lineUpId, seriesId, groupId, distributionId, anniversaryId, metalBody, oce,
-                revival, plainCloth, broken, golden, gold, manga, set, articulable,
+        return build(figurineIds, name, lineUpId, seriesId, groupId == null ? null : List.of(groupId), distributionId,
+                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
                 releaseStatus == null ? null : List.of(releaseStatus), restocks);
     }
 
@@ -98,8 +98,8 @@ public final class FigurineFilterFactory {
      *            optional lineup identifier
      * @param seriesId
      *            optional series identifier
-     * @param groupId
-     *            optional group identifier
+     * @param groupIds
+     *            optional group identifier list
      * @param distributionId
      *            optional distribution identifier
      * @param anniversaryId
@@ -130,16 +130,16 @@ public final class FigurineFilterFactory {
      *            optional flag indicating whether to filter restocks
      * @return a new {@link FigurineFilter} instance
      */
-    public static FigurineFilter build(List<Long> figurineIds, String name, Long lineUpId, Long seriesId, Long groupId,
-            Long distributionId, Long anniversaryId, Boolean metalBody, Boolean oce, Boolean revival,
-            Boolean plainCloth, Boolean broken, Boolean golden, Boolean gold, Boolean manga, Boolean set,
-            Boolean articulable, List<String> releaseStatuses, Boolean restocks) {
+    public static FigurineFilter build(List<Long> figurineIds, String name, Long lineUpId, Long seriesId,
+            List<Long> groupIds, Long distributionId, Long anniversaryId, Boolean metalBody, Boolean oce,
+            Boolean revival, Boolean plainCloth, Boolean broken, Boolean golden, Boolean gold, Boolean manga,
+            Boolean set, Boolean articulable, List<String> releaseStatuses, Boolean restocks) {
 
         String figurineName = normalizeName(name);
 
-        return new FigurineFilter(figurineIds, figurineName, lineUpId, seriesId, groupId, distributionId, anniversaryId,
-                metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable, releaseStatuses,
-                restocks);
+        return new FigurineFilter(figurineIds, figurineName, lineUpId, seriesId, groupIds, distributionId,
+                anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set, articulable,
+                releaseStatuses, restocks);
     }
 
     public static FigurineFilter buildReleasedAndAnnounced() {
@@ -150,6 +150,11 @@ public final class FigurineFilterFactory {
     public static FigurineFilter buildReleasedAndAnnounced(boolean restocks) {
         return build(List.of(), null, null, null, null, null, null, null, null, null, null, null, null, null, null,
                 null, null, List.of(RELEASED.name(), ANNOUNCED.name()), restocks);
+    }
+
+    public static FigurineFilter buildReleasedAnnouncedAndGroups(List<Long> groupIds) {
+        return build(List.of(), null, null, null, groupIds, null, null, null, null, null, null, null, null, null, null,
+                null, null, List.of(RELEASED.name(), ANNOUNCED.name()), null);
     }
 
     /**

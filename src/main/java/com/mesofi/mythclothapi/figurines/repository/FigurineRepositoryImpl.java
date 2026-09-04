@@ -217,9 +217,9 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             dynamicSql.append(" AND series_id = :seriesId");
             params.put("seriesId", filter.seriesId());
         }
-        if (Objects.nonNull(filter.groupId())) {
-            dynamicSql.append(" AND group_id = :groupId");
-            params.put("groupId", filter.groupId());
+        if (Objects.nonNull(filter.groupIds()) && !filter.groupIds().isEmpty()) {
+            dynamicSql.append(" AND group_id IN (:groupIds)");
+            params.put("groupIds", filter.groupIds());
         }
         if (Objects.nonNull(filter.distributionId())) {
             dynamicSql.append(" AND distribution_id = :distributionId");

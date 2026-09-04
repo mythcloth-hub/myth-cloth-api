@@ -16,10 +16,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -45,6 +47,7 @@ import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.common.BaseId;
@@ -52,6 +55,7 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
@@ -121,9 +125,11 @@ public class FigurineService {
     private final CurrencyRegionResolver currencyRegionResolver;
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
+    private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CacheManager cacheManager;
     private final CatalogService catalogService;
 
+    private static final int MAX_FIGURINES_PER_COLLECTOR = 5;
     private final String ANN_MSG = "First announced as a possible future release.";
     private final String PRE_ORDER_MSG = "Pre-orders are officially open.";
     private final String RELEASE_DATE_MSG = "The global release date has been officially announced.";
@@ -353,6 +359,78 @@ public class FigurineService {
     public List<Long> retrieveSelectableFigurines(@NotNull FigurineFilter filter) {
         return repository.findAll(filter).stream().filter(figurine -> figurine.getCurrentReleaseStatus() == ANNOUNCED
                 || figurine.getCurrentReleaseStatus() == RELEASED).map(BaseId::getId).toList();
+    }
+
+    /**
+     * Retrieves a list of recommended figurines for the specified collector.
+     *
+     * <p>
+     * If the collector is {@code null}, the method returns the latest released and
+     * announced figurines. Otherwise, personalized recommendations are generated
+     * based on the collector's preferences and collection history.
+     *
+     * @param collectorId
+     *            identifier of the collector; may be {@code null} for anonymous
+     *            users
+     * @param limit
+     *            maximum number of recommendations to return
+     * @return a list of recommended figurine response DTOs
+     */
+    public List<FigurineRecommendationResp> retrieveRecommendedFigurines(Long collectorId, int limit) {
+        log.info("Retrieving recommendations for collector '{}'", collectorId);
+
+        if (collectorId == null) {
+            // anonymous user, return the latest released and announced figurines
+            FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+            return findDefaultRecommendations(filter, limit);
+        } else {
+            // personalized recommendations for logged-in users
+            List<CollectorCollectionFigurine> partialCollection = collectorCollectionFigurineService
+                    .findLatestFavoriteCollectionFigurines(collectorId, MAX_FIGURINES_PER_COLLECTOR);
+            log.info("Retrieved {} latest figurines for collector '{}'", partialCollection.size(), collectorId);
+
+            if (partialCollection.isEmpty()) {
+                FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+                return findDefaultRecommendations(filter, limit);
+            }
+
+            // For each figurine in the partial collection, we identify the distinct groups
+            // and use those groups to retrieve relevant recommendations.
+            Set<Long> distinctGroupIds = new HashSet<>();
+            Set<Long> figurineIds = new HashSet<>();
+
+            for (CollectorCollectionFigurine collection : partialCollection) {
+                Figurine figurine = collection.getFigurine();
+
+                figurineIds.add(figurine.getId());
+                distinctGroupIds.add(figurine.getGroup().getId());
+            }
+
+            FigurineFilter filter = FigurineFilterFactory
+                    .buildReleasedAnnouncedAndGroups(new ArrayList<>(distinctGroupIds));
+            return repository.findPaginated(filter, PageRequest.of(0, limit + partialCollection.size())).stream()
+                    .filter(figurine -> !figurineIds.contains(figurine.getId()))
+                    .map(mapper::toFigurineRecommendationResp).limit(limit).toList();
+        }
+    }
+
+    /**
+     * Retrieves a default set of recommended figurines based on the provided filter
+     * criteria.
+     *
+     * <p>
+     * This method is used to provide recommendations for anonymous users or when no
+     * personalized recommendations can be generated.
+     *
+     * @param filter
+     *            filter criteria used to search for figurines
+     * @param limit
+     *            maximum number of recommendations to return
+     * @return a list of recommended figurine response DTOs
+     */
+    private List<FigurineRecommendationResp> findDefaultRecommendations(FigurineFilter filter, int limit) {
+        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(0, limit));
+        return figurines.stream().map(mapper::toFigurineRecommendationResp).toList();
     }
 
     /**
@@ -789,4 +867,5 @@ public class FigurineService {
         }
         figurine.getEvents().forEach(e -> e.setFigurine(figurine));
     }
+
 }
