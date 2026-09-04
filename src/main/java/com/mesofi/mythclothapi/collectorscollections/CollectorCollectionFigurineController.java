@@ -114,6 +114,32 @@ public class CollectorCollectionFigurineController {
     }
 
     /**
+     * Adds a single figurine to the authenticated collector's favorite collection.
+     *
+     * <p>
+     * The favorite collection is determined by the collector's preferences. If no
+     * favorite collection exists, a new favorite collection is created. The
+     * operation requires the {@code collections:figurines:add} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param figurineId
+     *            unique identifier of the figurine to assign to the favorite
+     *            collection
+     * @return an empty response with HTTP {@code 204 No Content} when the
+     *         assignment succeeds
+     */
+    @PostMapping("/favorite/figurines/{figurineId}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
+    public ResponseEntity<Void> addFigurineToFavoriteCollection(@AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long figurineId) {
+
+        service.addFigurineToFavoriteCollection(getCollectorId(jwt), figurineId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Assigns one or more figurines to one or more collector collections.
      *
      * <p>

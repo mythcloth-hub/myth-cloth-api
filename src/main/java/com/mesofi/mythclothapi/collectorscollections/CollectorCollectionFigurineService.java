@@ -180,6 +180,19 @@ public class CollectorCollectionFigurineService {
         log.info("Assigning figurines {} to collections {} with mode {}", request.figurineIds(),
                 request.collectionIds(), request.collectionMode());
 
+        addFigurinesToCollections(collectorId, request);
+    }
+
+    /**
+     * Adds figurines to the specified collections based on the assignment request.
+     *
+     * @param collectorId
+     *            identifier of the collector performing the assignment
+     * @param request
+     *            assignment request containing figurines, collections, and
+     *            assignment mode
+     */
+    private void addFigurinesToCollections(Long collectorId, @Valid AssignFigurinesReq request) {
         List<Figurine> existingFigurines = retrieveExistingFigurines(request.figurineIds());
         List<CollectorCollection> existingCollections = retrieveExistingCollections(request.collectionMode(),
                 collectorId, request.collectionIds(), request.collection());
@@ -207,6 +220,48 @@ public class CollectorCollectionFigurineService {
                                     existingCollection.getName());
                         });
             }
+        }
+    }
+
+    /**
+     * Adds a figurine to the collector's favorite collection.
+     *
+     * <p>
+     * If the collector does not have a favorite collection, then a new favorite
+     * collection is created.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param figurineId
+     *            identifier of the figurine to add
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collector does not have a favorite collection
+     * @throws FigurineNotFoundException
+     *             if the figurine does not exist
+     */
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    public void addFigurineToFavoriteCollection(@Positive Long collectorId, @Positive Long figurineId) {
+        log.info("Adding figurine [{}] to favorite collection for collector [{}]", figurineId, collectorId);
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        List<CollectorCollection> collections = collectorFound.getCollections();
+        if (collections.isEmpty()) {
+            // Create a new favorite collection if none exists
+            AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId), CollectionAssignmentMode.AUTO,
+                    null, null);
+
+            addFigurinesToCollections(collectorId, request);
+        } else {
+            // add the existing figurine to the favorite collection
+            collections.stream().filter(CollectorCollection::isFavorite).findFirst().ifPresent(favCollection -> {
+                AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId),
+                        CollectionAssignmentMode.EXISTING, List.of(favCollection.getId()), null);
+
+                addFigurinesToCollections(collectorId, request);
+            });
         }
     }
 
@@ -380,7 +435,7 @@ public class CollectorCollectionFigurineService {
 
     /**
      * Finds the latest figurines added to the collector's favorite collection.
-     * 
+     *
      * @param collectorId
      *            identifier of the collector
      * @param limit
@@ -743,7 +798,8 @@ public class CollectorCollectionFigurineService {
      * @return collector default collection
      */
     private CollectorCollection createDefaultCollection(Long collectorId) {
-        return createCollection(collectorId, "My Myth Collection", null, null);
+        return createCollection(collectorId, "My Myth Collection", null,
+                "This collection was automatically created for you.");
     }
 
     /**
