@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
@@ -228,15 +230,6 @@ public class FigurineController {
                 result.getTotalElements(), result.getTotalCollectables(), result.getTotalPages()));
     }
 
-    private Optional<Long> getCollectorId(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-                return Optional.of(Long.valueOf(jwtAuth.getToken().getSubject()));
-            }
-        }
-        return Optional.empty();
-    }
-
     /**
      * Retrieves a lightweight summary list of all figurines.
      *
@@ -331,6 +324,42 @@ public class FigurineController {
     }
 
     /**
+     * Retrieves a list of recommended figurines for the authenticated collector.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Extracts the authenticated collector's id from the security context
+     * <li>Delegates to the service layer to retrieve recommendations based on
+     * collection history, preferences, and other relevant factors
+     * <li>Returns a list of recommended figurines with essential details
+     * </ul>
+     *
+     * <p>
+     * This endpoint requires authentication; if the request is unauthenticated or
+     * the collector id cannot be determined, the default list of figurines will be
+     * displayed.
+     *
+     * @param authentication
+     *            Spring Security authentication context; must be non-null and
+     *            authenticated for recommendations to be generated
+     * @param limit
+     *            optional maximum number of recommended figurines to return; must
+     *            be between {@code 1} and {@code 30}, defaults to {@code 20}
+     * @return list of {@link FigurineRecommendationResp} records representing
+     *         recommended figurines for the authenticated collector
+     */
+    @GetMapping("/recommended")
+    public List<FigurineRecommendationResp> retrieveRecommendedFigurines(Authentication authentication,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(30) int limit) {
+        log.info("Retrieving recommended figurines for the authenticated collector.");
+
+        Long collectorId = getCollectorId(authentication).orElse(null);
+        return service.retrieveRecommendedFigurines(collectorId, limit);
+    }
+
+    /**
      * Updates an existing {@link Figurine} resource.
      *
      * <p>
@@ -384,5 +413,35 @@ public class FigurineController {
     public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
         service.deleteFigurine(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Extracts the authenticated collector identifier from the Spring Security
+     * authentication context.
+     *
+     * @param authentication
+     *            Spring Security authentication context; may be {@code null} for
+     *            unauthenticated requests
+     * @return optional collector identifier if present and authenticated, empty
+     *         otherwise
+     */
+    private Optional<Long> getCollectorId(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                return Optional.of(getCollectorId(jwtAuth.getToken()));
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Extracts the authenticated collector identifier from the JWT subject claim.
+     *
+     * @param jwt
+     *            authenticated collector JWT token
+     * @return collector identifier
+     */
+    private Long getCollectorId(Jwt jwt) {
+        return Long.valueOf(jwt.getSubject() == null ? "0" : jwt.getSubject());
     }
 }

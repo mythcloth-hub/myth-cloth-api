@@ -24,7 +24,7 @@ class FigurineFilterFactoryTest {
         assertEquals("Pegasus Seiya", filter.name());
         assertEquals(1L, filter.lineUpId());
         assertEquals(2L, filter.seriesId());
-        assertEquals(3L, filter.groupId());
+        assertEquals(List.of(3L), filter.groupIds());
         assertEquals(4L, filter.distributionId());
         assertEquals(5L, filter.anniversaryId());
         assertTrue(filter.metalBody());
@@ -80,6 +80,15 @@ class FigurineFilterFactoryTest {
         assertEquals(List.of(RELEASED.name(), ANNOUNCED.name()), filteredRestocks.releaseStatuses());
         assertNull(bothStatuses.restocks());
         assertFalse(filteredRestocks.restocks());
+    }
+
+    @Test
+    void shouldBuildReleasedAnnouncedAndGroupsFilter_withOptionalGroupIds() {
+        FigurineFilter groupNull = FigurineFilterFactory.buildReleasedAnnouncedAndGroups(null);
+        FigurineFilter groupNotNull = FigurineFilterFactory.buildReleasedAnnouncedAndGroups(List.of(1L, 2L, 3L));
+
+        assertNull(groupNull.groupIds());
+        assertEquals(List.of(1L, 2L, 3L), groupNotNull.groupIds());
     }
 
     @Test

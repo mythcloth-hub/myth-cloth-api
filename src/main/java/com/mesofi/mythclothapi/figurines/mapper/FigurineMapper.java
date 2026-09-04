@@ -41,6 +41,7 @@ import com.mesofi.mythclothapi.figurineimports.FigurineImport;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportResp;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
@@ -610,6 +611,32 @@ public interface FigurineMapper {
     @Mapping(target = "description", source = "details")
     FigurineEventResp toFigurineEventResp(FigurineEvent figurineEvent,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax);
+
+    /**
+     * Maps a {@link Figurine} domain entity to a recommendation API response.
+     *
+     * <p>
+     * The recommendation response contains only the fields required for
+     * recommendation listings. The first official image is selected when available.
+     *
+     * @param figurine
+     *            figurine domain entity
+     * @return API-facing {@link FigurineRecommendationResp}
+     */
+    @Mapping(target = "name", source = "normalizedName")
+    @Mapping(target = "imageUrl", expression = "java(getFirstImage(figurine.getOfficialImages()))")
+    FigurineRecommendationResp toFigurineRecommendationResp(Figurine figurine);
+
+    /**
+     * Returns the first available image URL for a figurine.
+     *
+     * @param images
+     *            figurine image URLs
+     * @return first image URL, or {@code null} when no images are present
+     */
+    default String getFirstImage(List<String> images) {
+        return images == null || images.isEmpty() ? null : images.getFirst();
+    }
 
     /**
      * Updates a {@link Figurine} entity using values from another instance.

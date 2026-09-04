@@ -12,6 +12,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -45,6 +47,7 @@ import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -52,6 +55,7 @@ import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
@@ -82,6 +86,8 @@ public class FigurineServiceTest {
     private CollectorRepository collectorRepository;
     @MockitoBean
     private CollectorCollectionRepository collectorCollectionRepository;
+    @MockitoBean
+    private CollectorCollectionFigurineService collectorCollectionFigurineService;
     @MockitoBean
     private CacheManager cacheManager;
     @MockitoBean
@@ -347,6 +353,132 @@ public class FigurineServiceTest {
     }
 
     @Test
+    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorIsAnonymous() {
+        Figurine first = figurine(101L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(102L, "hyoga", "Hyoga", ANNOUNCED);
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
+                2);
+
+        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 2)))).thenReturn(page);
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 2);
+
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(101L, 102L);
+        verify(collectorCollectionFigurineService, never()).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorHasNoFavorites() {
+        Figurine first = figurine(103L, "shun", "Shun", RELEASED);
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first), PageRequest.of(0, 1), 1, 1);
+
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(7L, 5)).thenReturn(List.of());
+        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 1)))).thenReturn(page);
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(7L, 1);
+
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(103L);
+        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(7L, 5);
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldExcludeCollectedFigurines_andLimitPersonalizedRecommendations() {
+        Figurine collectedFirst = figurine(201L, "seiya", "Seiya", RELEASED);
+        collectedFirst.setGroup(group("Bronze Saints"));
+        Figurine collectedSecond = figurine(202L, "hyoga", "Hyoga", ANNOUNCED);
+        collectedSecond.setGroup(group("Gold Saints"));
+        Figurine recommendedFirst = figurine(203L, "shiryu", "Shiryu", RELEASED);
+        recommendedFirst.setGroup(group("Bronze Saints"));
+        Figurine duplicateCollected = figurine(202L, "hyoga", "Hyoga", ANNOUNCED);
+        duplicateCollected.setGroup(group("Gold Saints"));
+        Figurine recommendedSecond = figurine(204L, "ikki", "Ikki", ANNOUNCED);
+        recommendedSecond.setGroup(group("Gold Saints"));
+
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(
+                List.of(collectedFirst, recommendedFirst, duplicateCollected, recommendedSecond), PageRequest.of(0, 4),
+                4, 4);
+
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(9L, 5))
+                .thenReturn(List.of(collectionFigurine(collectedFirst), collectionFigurine(collectedSecond)));
+        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 4)))).thenReturn(page);
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(9L, 2);
+
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(203L, 204L);
+        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(9L, 5);
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldUsePersonalizedBranch_whenCollectorIdIsZero() {
+        Figurine collected = figurine(205L, "seiya", "Seiya", RELEASED);
+        collected.setGroup(group("Bronze Saints"));
+        Figurine recommendation = figurine(206L, "shiryu", "Shiryu", ANNOUNCED);
+        recommendation.setGroup(group("Bronze Saints"));
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(collected, recommendation),
+                PageRequest.of(0, 2), 2, 2);
+
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(0L, 5))
+                .thenReturn(List.of(collectionFigurine(collected)));
+        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 2)))).thenReturn(page);
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(0L, 1);
+
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(206L);
+    }
+
+    @Test
+    void initializeFigurineForUpdate_shouldReturnTheExistingInstance() {
+        Figurine existing = figurine(12L, "seiya", "Seiya", RELEASED);
+        existing.setDistributors(
+                new ArrayList<>(List.of(distributor(CurrencyCode.JPY, 1000.0, null, null, null, true))));
+        existing.setEvents(new ArrayList<>());
+
+        Figurine incoming = figurine(12L, "seiya", "Seiya", RELEASED);
+        incoming.setDistributors(null);
+
+        Figurine response = figurineService.initializeFigurineForUpdate(existing, incoming);
+
+        assertThat(response).isSameAs(existing);
+    }
+
+    @Test
+    void initializeFigurineForCreate_shouldPopulateDefaultEventDetailsDatesAndConfirmation() {
+        Figurine incoming = figurine(14L, "shiryu", "Shiryu", RELEASED);
+        incoming.setDistributors(new ArrayList<>(List.of(distributor(CurrencyCode.JPY, 1300.0,
+                LocalDate.of(2024, 1, 10), LocalDate.of(2024, 2, 10), LocalDate.of(2024, 3, 10), false))));
+        incoming.setEvents(new ArrayList<>());
+
+        when(currencyRegionResolver.resolveCountry(CurrencyCode.JPY)).thenReturn(JP);
+
+        figurineService.initializeFigurineForCreate(incoming);
+
+        FigurineEvent announcement = incoming.getEvents().stream().filter(event -> event.getType() == ANNOUNCEMENT)
+                .findFirst().orElseThrow();
+        FigurineEvent preorder = incoming.getEvents().stream().filter(event -> event.getType() == PREORDER_OPEN)
+                .findFirst().orElseThrow();
+        FigurineEvent release = incoming.getEvents().stream().filter(event -> event.getType() == RELEASE).findFirst()
+                .orElseThrow();
+
+        assertThat(announcement.getDetails()).isNotBlank();
+        assertThat(announcement.getEventDate()).isEqualTo(LocalDate.of(2024, 1, 10));
+        assertThat(announcement.isEventDateConfirmed()).isTrue();
+        assertThat(preorder.getDetails()).isNotBlank();
+        assertThat(preorder.getEventDate()).isEqualTo(LocalDate.of(2024, 2, 10));
+        assertThat(preorder.isEventDateConfirmed()).isTrue();
+        assertThat(release.getDetails()).isNotBlank();
+        assertThat(release.getEventDate()).isEqualTo(LocalDate.of(2024, 3, 10));
+        assertThat(release.isEventDateConfirmed()).isFalse();
+    }
+
+    @Test
     void updateFigurine_shouldThrowException_whenFigurineDoesNotExist() {
         FigurineReq request = figurineRequest();
         when(figurineRepository.findById(44L)).thenReturn(Optional.empty());
@@ -463,6 +595,7 @@ public class FigurineServiceTest {
 
         assertThat(existing.getDisplayName()).isEqualTo("Seiya Updated");
         assertThat(existing.getDistributors()).hasSize(2);
+        assertThat(existing.getDistributors().get(1).getFigurine()).isSameAs(existing);
         assertThat(existing.getEvents()).extracting(FigurineEvent::getEventDate)
                 .containsExactly(LocalDate.of(2024, 1, 2), LocalDate.of(2024, 2, 2), LocalDate.of(2024, 3, 2));
         assertThat(existing.getEvents()).allSatisfy(event -> assertThat(event.getFigurine()).isSameAs(existing));
@@ -686,6 +819,29 @@ public class FigurineServiceTest {
     }
 
     @Test
+    void findBestMatchingFigurine_shouldPreferLatestCandidate_whenSimilarityTies() {
+        Figurine thresholdMatch = figurine(33L, "seiya", "Seiya", RELEASED);
+        Figurine other = figurine(34L, "shiryu", "Shiryu", RELEASED);
+
+        when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
+        when(figurineCache.get("by-mythcloth-ex", List.class))
+                .thenReturn(List.of(new CachedFigurine(33L, "Seiya"), new CachedFigurine(34L, "Seiya")));
+        when(figurineRepository.findById(33L)).thenReturn(Optional.of(thresholdMatch));
+        when(figurineRepository.findById(34L)).thenReturn(Optional.of(other));
+
+        assertThat(figurineService.findBestMatchingFigurine(MYTH_CLOTH_EX, "Seiya")).contains(other);
+    }
+
+    @Test
+    void findBestMatchingFigurine_shouldNotQueryRepository_whenNoSimilarityReachesThreshold() {
+        when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
+        when(figurineCache.get("by-mythcloth-ex", List.class)).thenReturn(List.of(new CachedFigurine(34L, "A")));
+
+        assertThat(figurineService.findBestMatchingFigurine(MYTH_CLOTH_EX, "zzzzzzzzzz")).isEmpty();
+        verify(figurineRepository, never()).findById(34L);
+    }
+
+    @Test
     void findBestMatchingFigurine_shouldReturnBestMatch_whenSimilarityIsHighEnough() {
         LineUp lineUp = lineUp("Myth Cloth EX");
         Figurine match = figurine(30L, "seiya", "Seiya", RELEASED);
@@ -825,6 +981,13 @@ public class FigurineServiceTest {
         return collectionFigurine;
     }
 
+    private com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine collectionFigurine(
+            Figurine figurine) {
+        com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine collectionFigurine = new com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine();
+        collectionFigurine.setFigurine(figurine);
+        return collectionFigurine;
+    }
+
     private FigurineResp figurineResponse(Figurine figurine, List<FigurineRestockResp> restocks) {
         return new FigurineResp(figurine.getId(), figurine.getNormalizedName(), figurine.getDisplayName(), List.of(),
                 figurine.getTamashiiUrl(), figurine.getCurrentReleaseStatus(), null, null, null, null, null, null, null,
@@ -835,6 +998,10 @@ public class FigurineServiceTest {
     private FigurineSummaryResp summaryResponse(Figurine figurine) {
         return new FigurineSummaryResp(figurine.getId(), figurine.getDisplayName(),
                 new CatalogResp(1L, "Myth Cloth EX"), "official.jpg");
+    }
+
+    private FigurineRecommendationResp recommendationResponse(Figurine figurine) {
+        return new FigurineRecommendationResp(figurine.getId(), figurine.getDisplayName(), "official.jpg");
     }
 
     private com.mesofi.mythclothapi.figurines.FigurineFilter emptyFilter() {
