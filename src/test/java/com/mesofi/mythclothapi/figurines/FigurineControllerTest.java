@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.figurines.dto.DistributorReq;
+import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
@@ -331,6 +332,32 @@ class FigurineControllerTest {
                 .andExpect(jsonPath("$[0]").value(1L)).andExpect(jsonPath("$[1]").value(2L));
 
         verify(service).retrieveSelectableFigurines(any(FigurineFilter.class));
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldReturnRecommendations_whenLimitIsProvided() throws Exception {
+        FigurineRecommendationResp recommendation = new FigurineRecommendationResp(3L, "Pegasus Seiya",
+                "https://images.example/pegasus.jpg");
+        when(service.retrieveRecommendedFigurines(null, 5)).thenReturn(List.of(recommendation));
+
+        mockMvc.perform(get("/figurines/recommended").param("limit", "5")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(3L)).andExpect(jsonPath("$[0].name").value("Pegasus Seiya"))
+                .andExpect(jsonPath("$[0].imageUrl").value("https://images.example/pegasus.jpg"));
+
+        verify(service).retrieveRecommendedFigurines(null, 5);
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldUseDefaultCollectorId_whenJwtSubjectIsNull() throws Exception {
+        FigurineRecommendationResp recommendation = new FigurineRecommendationResp(3L, "Pegasus Seiya",
+                "https://images.example/pegasus.jpg");
+        when(service.retrieveRecommendedFigurines(0L, 20)).thenReturn(List.of(recommendation));
+
+        mockMvc.perform(get("/figurines/recommended").with(jwt().jwt(jwt -> jwt.subject(null))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(3L))
+                .andExpect(jsonPath("$[0].name").value("Pegasus Seiya"));
+
+        verify(service).retrieveRecommendedFigurines(0L, 20);
     }
 
     @Test
