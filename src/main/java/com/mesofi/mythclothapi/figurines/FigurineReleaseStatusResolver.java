@@ -46,7 +46,7 @@ public final class FigurineReleaseStatusResolver {
      * {@link ReleaseStatus#ANNOUNCED}; if it is in the past or today, the status is
      * {@link ReleaseStatus#RELEASED}.</li>
      * </ul>
-     * 
+     *
      * @param figurine
      *            the figurine whose release status is to be resolved
      * @return the resolved {@link ReleaseStatus} of the figurine
@@ -60,7 +60,7 @@ public final class FigurineReleaseStatusResolver {
 
         // Prioritize the distributor with JPY currency; if none exists, use the first
         // distributor
-        FigurineDistributor distributor = distributors.stream().filter(fd -> fd.getCurrency().equals(JPY)).findFirst()
+        FigurineDistributor distributor = distributors.stream().filter(fd -> JPY == fd.getCurrency()).findFirst()
                 .orElseGet(distributors::getFirst);
 
         LocalDate releaseDate = distributor.getReleaseDate();

@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.stats;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.toCurrency;
+
 import java.util.List;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -119,58 +121,13 @@ public class StatisticsController {
     /**
      * Retrieves yearly release-price statistics based on optional filters.
      *
-     * @param name
-     *            figurine name fragment filter
-     * @param lineUpId
-     *            line-up id filter
-     * @param seriesId
-     *            series id filter
-     * @param groupId
-     *            group id filter
-     * @param distributionId
-     *            distribution id filter
-     * @param anniversaryId
-     *            anniversary id filter
-     * @param metalBody
-     *            metal body flag filter
-     * @param oce
-     *            OCE flag filter
-     * @param revival
-     *            revival flag filter
-     * @param plainCloth
-     *            plain cloth flag filter
-     * @param broken
-     *            broken status flag filter
-     * @param golden
-     *            golden status flag filter
-     * @param gold
-     *            gold status flag filter
-     * @param manga
-     *            manga version flag filter
-     * @param set
-     *            set flag filter
-     * @param articulable
-     *            articulation flag filter
-     * @param releaseStatus
-     *            release status filter
+     * @param currency
+     *            optional currency code for price conversion; if not provided, the
+     *            default currency (JPY) is used
      * @return list of yearly release-price statistics
      */
     @GetMapping("/prices/releases/years")
-    public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@RequestParam(required = false) String name,
-            @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
-            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
-            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
-            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
-            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
-            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
-            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
-            @RequestParam(required = false) Boolean restocks) {
-
-        FigurineFilter figurineFilter = FigurineFilterFactory.build(List.of(), name, lineUpId, seriesId, groupId,
-                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
-                articulable, releaseStatus, restocks);
-
-        return service.retrieveYearlyReleasePrices(figurineFilter);
+    public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@RequestParam(required = false) String currency) {
+        return service.retrieveYearlyReleasePrices(toCurrency(currency));
     }
 }

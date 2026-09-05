@@ -4,13 +4,12 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -64,6 +63,8 @@ class StatisticsServiceTest {
     private AnniversaryRepository anniversaryRepository;
     @Mock
     private CurrencyConversionService currencyConversionService;
+    @Mock
+    private StatisticsRepository statisticsRepository;
 
     @Test
     void retrieveStatisticsByYear_shouldGroupByMonthAndLineupAndApplyFallbacks() {
@@ -209,48 +210,119 @@ class StatisticsServiceTest {
     }
 
     @Test
-    void retrieveYearlyReleasePrices_shouldNormalizePricesAndKeepHighestLowestByEquality() {
-        LineUp bronze = lineUp(1L, "Bronze");
+    void retrieveYearlyReleasePrices_shouldNormalizePricesAndKeepHighestLowestByEqualityWithDefaultCurrency() {
+        when(statisticsRepository.findReleasedFigurineStatistics()).thenReturn(List.of(
+                statisticsReleasedProjection(1L, "Seiya", new BigDecimal("2350"), LocalDate.of(2024, 1, 1)),
+                statisticsReleasedProjection(2L, "Shiryu", new BigDecimal("1000"), LocalDate.of(2024, 5, 10)),
+                statisticsReleasedProjection(3L, "Ikki", null, LocalDate.of(2024, 6, 10)),
+                statisticsReleasedProjection(4L, "Shun", new BigDecimal("1500"), LocalDate.of(2025, 6, 10)),
+                statisticsReleasedProjection(5L, "Gemini", new BigDecimal("3500"), LocalDate.of(2026, 6, 11)),
+                statisticsReleasedProjection(6L, "Scorpio", new BigDecimal("3600"), LocalDate.of(2026, 6, 12))));
 
-        Figurine primaryHigh = figurine(101L, "Primary High", bronze, "https://img/high-1.jpg");
-        primaryHigh.setCurrentReleaseStatus(RELEASED);
-        primaryHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 2, 10), 2000.0, CurrencyCode.USD)));
+        when(statisticsRepository.findOfficialImagesStatistics(1L)).thenReturn(List.of("https://img/seiya.jpg"));
+        when(statisticsRepository.findOfficialImagesStatistics(2L)).thenReturn(List.of());
+        when(statisticsRepository.findOfficialImagesStatistics(4L)).thenReturn(null);
+        when(statisticsRepository.findOfficialImagesStatistics(5L))
+                .thenReturn(List.of("https://img/gemini.jpg", "https://img/gemini2.jpg"));
+        when(statisticsRepository.findOfficialImagesStatistics(6L))
+                .thenReturn(List.of("https://img/scorpio.jpg", "https://img/scorpio2.jpg"));
 
-        Figurine secondaryHigh = figurine(102L, "Secondary High", bronze, "https://img/high-2.jpg");
-        secondaryHigh.setCurrentReleaseStatus(RELEASED);
-        secondaryHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 3, 10), 3000.0, CurrencyCode.JPY)));
+        List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(Currency.getInstance("JPY"));
 
-        Figurine tiedHigh = figurine(103L, "Tied High", bronze, "https://img/tied-high.jpg");
-        tiedHigh.setCurrentReleaseStatus(RELEASED);
-        tiedHigh.setDistributors(List.of(distributor(LocalDate.of(2024, 4, 10), 3000.0, CurrencyCode.JPY)));
+        assertThat(result).isNotNull();
+        assertThat(result).size().isEqualTo(3);
+        assertThat(result).extracting(YearReleasePriceResp::year).containsExactly(2024, 2025, 2026);
 
-        Figurine cheap = figurine(104L, "Cheap", bronze, "https://img/cheap.jpg");
-        cheap.setCurrentReleaseStatus(RELEASED);
-        cheap.setDistributors(List.of(distributor(LocalDate.of(2024, 5, 10), 1000.0, CurrencyCode.JPY)));
-
-        Figurine missingPrice = figurine(105L, "No Price", bronze, "https://img/no-price.jpg");
-        missingPrice.setCurrentReleaseStatus(RELEASED);
-        missingPrice.setDistributors(List.of(distributor(LocalDate.of(2024, 6, 10), null, null)));
-
-        Figurine announced = figurine(106L, "Announced", bronze, "https://img/announced.jpg");
-        announced.setCurrentReleaseStatus(ANNOUNCED);
-        announced.setDistributors(List.of(distributor(LocalDate.of(2025, 1, 1), 5000.0, CurrencyCode.JPY)));
-
-        when(repository.findAll(EMPTY_FILTER))
-                .thenReturn(List.of(primaryHigh, secondaryHigh, tiedHigh, cheap, missingPrice, announced));
-        when(currencyConversionService.convert(any(BigDecimal.class), eq("USD"), eq("JPY")))
-                .thenReturn(new BigDecimal("2400.00"));
-
-        List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(EMPTY_FILTER);
-
-        assertThat(result).extracting(YearReleasePriceResp::year).containsExactly(2024);
         YearReleasePriceResp year2024 = result.getFirst();
-        assertThat(year2024.averageReleasePrice()).isEqualByComparingTo("2350.00");
-        assertThat(year2024.highestReleasePrice()).isEqualByComparingTo("3000.00");
+        assertThat(year2024.averageReleasePrice()).isEqualByComparingTo("1675.00");
+        assertThat(year2024.highestReleasePrice()).isEqualByComparingTo("2350.00");
         assertThat(year2024.lowestReleasePrice()).isEqualByComparingTo("1000.00");
-        assertThat(year2024.highestPriceFigurines().name()).isEqualTo("Tied High");
-        assertThat(year2024.lowestPriceFigurines().name()).isEqualTo("Cheap");
-        assertThat(year2024.releaseCount()).isEqualTo(4);
+        assertThat(year2024.highestPriceFigurines().id()).isEqualTo(1L);
+        assertThat(year2024.highestPriceFigurines().name()).isEqualTo("Seiya");
+        assertThat(year2024.highestPriceFigurines().url()).isEqualTo("https://img/seiya.jpg");
+        assertThat(year2024.lowestPriceFigurines().id()).isEqualTo(2L);
+        assertThat(year2024.lowestPriceFigurines().name()).isEqualTo("Shiryu");
+        assertThat(year2024.lowestPriceFigurines().url()).isEqualTo("");
+        assertThat(year2024.releaseCount()).isEqualTo(2);
+
+        YearReleasePriceResp year2025 = result.get(1);
+        assertThat(year2025.averageReleasePrice()).isEqualByComparingTo("1500.00");
+        assertThat(year2025.highestReleasePrice()).isEqualByComparingTo("1500.00");
+        assertThat(year2025.lowestReleasePrice()).isEqualByComparingTo("1500.00");
+        assertThat(year2025.highestPriceFigurines().id()).isEqualTo(4L);
+        assertThat(year2025.highestPriceFigurines().name()).isEqualTo("Shun");
+        assertThat(year2025.highestPriceFigurines().url()).isEqualTo("");
+        assertThat(year2025.lowestPriceFigurines().id()).isEqualTo(4L);
+        assertThat(year2025.lowestPriceFigurines().name()).isEqualTo("Shun");
+        assertThat(year2025.lowestPriceFigurines().url()).isEqualTo("");
+        assertThat(year2025.releaseCount()).isEqualTo(1);
+
+        YearReleasePriceResp year2026 = result.getLast();
+        assertThat(year2026.averageReleasePrice()).isEqualByComparingTo("3550.00");
+        assertThat(year2026.highestReleasePrice()).isEqualByComparingTo("3600.00");
+        assertThat(year2026.lowestReleasePrice()).isEqualByComparingTo("3500.00");
+        assertThat(year2026.highestPriceFigurines().id()).isEqualTo(6L);
+        assertThat(year2026.highestPriceFigurines().name()).isEqualTo("Scorpio");
+        assertThat(year2026.highestPriceFigurines().url()).isEqualTo("https://img/scorpio.jpg");
+        assertThat(year2026.lowestPriceFigurines().id()).isEqualTo(5L);
+        assertThat(year2026.lowestPriceFigurines().name()).isEqualTo("Gemini");
+        assertThat(year2026.lowestPriceFigurines().url()).isEqualTo("https://img/gemini.jpg");
+        assertThat(year2026.releaseCount()).isEqualTo(2);
+    }
+
+    @Test
+    void retrieveYearlyReleasePrices_shouldNormalizePricesAndKeepHighestLowestByEqualityWithMXNCurrency() {
+        when(statisticsRepository.findReleasedFigurineStatistics()).thenReturn(List
+                .of(statisticsReleasedProjection(6L, "Scorpio", new BigDecimal("3600"), LocalDate.of(2026, 6, 12))));
+
+        when(currencyConversionService.convert(new BigDecimal("3600"), "JPY", "MXN"))
+                .thenReturn(new BigDecimal("1400.00"));
+
+        when(statisticsRepository.findOfficialImagesStatistics(6L))
+                .thenReturn(List.of("https://img/scorpio.jpg", "https://img/scorpio2.jpg"));
+
+        List<YearReleasePriceResp> result = service.retrieveYearlyReleasePrices(Currency.getInstance("MXN"));
+
+        assertThat(result).isNotNull();
+        assertThat(result).size().isEqualTo(1);
+        assertThat(result).extracting(YearReleasePriceResp::year).containsExactly(2026);
+
+        YearReleasePriceResp year2026 = result.getFirst();
+        assertThat(year2026.averageReleasePrice()).isEqualByComparingTo("1400.00");
+        assertThat(year2026.highestReleasePrice()).isEqualByComparingTo("1400.00");
+        assertThat(year2026.lowestReleasePrice()).isEqualByComparingTo("1400.00");
+        assertThat(year2026.highestPriceFigurines().id()).isEqualTo(6L);
+        assertThat(year2026.highestPriceFigurines().name()).isEqualTo("Scorpio");
+        assertThat(year2026.highestPriceFigurines().url()).isEqualTo("https://img/scorpio.jpg");
+        assertThat(year2026.lowestPriceFigurines().id()).isEqualTo(6L);
+        assertThat(year2026.lowestPriceFigurines().name()).isEqualTo("Scorpio");
+        assertThat(year2026.lowestPriceFigurines().url()).isEqualTo("https://img/scorpio.jpg");
+        assertThat(year2026.releaseCount()).isEqualTo(1);
+    }
+
+    private StatisticsReleasedFigurineProjection statisticsReleasedProjection(Long id, String name, BigDecimal price,
+            LocalDate releaseDate) {
+        return new StatisticsReleasedFigurineProjection() {
+            @Override
+            public Long getId() {
+                return id;
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+
+            @Override
+            public BigDecimal getPrice() {
+                return price;
+            }
+
+            @Override
+            public LocalDate getReleaseDate() {
+                return releaseDate;
+            }
+        };
     }
 
     private com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection projection(

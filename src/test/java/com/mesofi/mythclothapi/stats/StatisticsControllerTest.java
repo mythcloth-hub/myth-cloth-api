@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 
@@ -87,7 +88,7 @@ class StatisticsControllerTest {
 
     @Test
     void retrieveYearlyReleasePrices_shouldReturnYearlyPriceList() throws Exception {
-        when(service.retrieveYearlyReleasePrices(any())).thenReturn(
+        when(service.retrieveYearlyReleasePrices(Currency.getInstance("JPY"))).thenReturn(
                 List.of(new YearReleasePriceResp(2025, new BigDecimal("13000.00"), new BigDecimal("15000.00"),
                         new BigDecimal("11000.00"), new FigurinePriceResp(101L, "Dohko", "https://img/dohko.jpg"),
                         new FigurinePriceResp(100L, "Aldebaran", "https://img/aldebaran.jpg"), 2)));
@@ -101,9 +102,6 @@ class StatisticsControllerTest {
                 .andExpect(jsonPath("$[0].lowestPriceFigurines.id").value(100))
                 .andExpect(jsonPath("$[0].releaseCount").value(2));
 
-        ArgumentCaptor<FigurineFilter> captor = ArgumentCaptor.forClass(FigurineFilter.class);
-        verify(service).retrieveYearlyReleasePrices(captor.capture());
-        assertThat(captor.getValue().name()).isEqualTo("Saga");
-        assertThat(captor.getValue().releaseStatuses()).containsExactly("RELEASED");
+        verify(service).retrieveYearlyReleasePrices(Currency.getInstance("JPY"));
     }
 }
