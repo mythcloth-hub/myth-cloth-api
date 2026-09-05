@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.stats;
 
 import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
-import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -10,6 +9,7 @@ import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -20,6 +20,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.constraints.NotNull;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -33,7 +34,6 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -50,6 +50,7 @@ import com.mesofi.mythclothapi.stats.dto.StatisticsResp;
 import com.mesofi.mythclothapi.stats.dto.YearReleasePriceResp;
 import com.mesofi.mythclothapi.stats.dto.YearStatisticsResp;
 import com.mesofi.mythclothapi.stats.model.ReleasePrices;
+import com.mesofi.mythclothapi.utils.CurrencyConverter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +81,7 @@ public class StatisticsService {
     private final GroupRepository groupRepository;
     private final AnniversaryRepository anniversaryRepository;
     private final CurrencyConversionService currencyConversionService;
+    private final StatisticsRepository statisticsRepository;
 
     /**
      * Retrieves a global statistics snapshot for figurines that match the given
@@ -193,96 +195,108 @@ public class StatisticsService {
      * are normalized to JPY before calculating yearly average, highest, and lowest
      * values.
      *
-     * @param filter
-     *            search filter used to constrain figurines included in the
-     *            aggregation
+     * @param currency
+     *            currency to which prices should be converted
      * @return list of yearly price summaries sorted by year (ascending)
      */
-    @Cacheable(value = PRICING_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#filter)")
-    public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@NotNull FigurineFilter filter) {
-        List<Figurine> allFigurines = findAllReleasedFigurinesWithFilter(filter);
+    @Cacheable(value = PRICING_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#currency)")
+    public List<YearReleasePriceResp> retrieveYearlyReleasePrices(@Nonnull Currency currency) {
+        log.info("Retrieving yearly release-price statistics with currency: {}", currency);
 
         Map<Integer, ReleasePrices> releasePricesByYearMap = new TreeMap<>();
 
-        allFigurines.forEach(currFigurine -> currFigurine.getDistributors().stream().findFirst().ifPresent(fd -> {
-            int year = fd.getReleaseDate().getYear();
-            getPrice(currFigurine, fd.getPrice(), fd.getCurrency()).ifPresent(price -> {
-                if (releasePricesByYearMap.containsKey(year)) {
-                    ReleasePrices relPrices = releasePricesByYearMap.get(year);
+        List<StatisticsReleasedFigurineProjection> releasedFigurines = statisticsRepository
+                .findReleasedFigurineStatistics();
 
-                    relPrices.setHighest(Math.max(relPrices.getHighest(), price));
-                    relPrices.setLowest(Math.min(relPrices.getLowest(), price));
+        for (StatisticsReleasedFigurineProjection projection : releasedFigurines) {
+            int year = projection.getReleaseDate().getYear();
+            BigDecimal price = projection.getPrice();
+            if (price == null) {
+                log.warn("Price is null for figurine id: {}", projection.getId());
+                continue;
+            }
 
-                    if (price >= relPrices.getHighest()) {
-                        relPrices.setHighestPriceFigurine(currFigurine);
-                    }
-                    if (price <= relPrices.getLowest()) {
-                        relPrices.setLowestPriceFigurine(currFigurine);
-                    }
+            if (releasePricesByYearMap.containsKey(year)) {
+                ReleasePrices relPrices = releasePricesByYearMap.get(year);
 
-                    relPrices.setCount(relPrices.getCount() + 1);
-                    relPrices.setTotal(relPrices.getTotal() + price);
-                    relPrices.setAverage(relPrices.getTotal() / relPrices.getCount());
-                } else {
-                    ReleasePrices releasePrices = ReleasePrices.builder().average(price).highest(price).lowest(price)
-                            .highestPriceFigurine(currFigurine).lowestPriceFigurine(currFigurine).total(price).count(1)
-                            .build();
+                relPrices.setHighest(
+                        BigDecimal.valueOf(Double.max(price.doubleValue(), relPrices.getHighest().doubleValue())));
+                relPrices.setLowest(
+                        BigDecimal.valueOf(Double.min(price.doubleValue(), relPrices.getLowest().doubleValue())));
 
-                    releasePricesByYearMap.put(year, releasePrices);
+                if (price.doubleValue() >= relPrices.getHighest().doubleValue()) {
+                    relPrices.setHighestPriceFigurineId(projection.getId());
+                    relPrices.setHighestPriceFigurineName(projection.getName());
                 }
-            });
-        }));
+                if (price.doubleValue() <= relPrices.getLowest().doubleValue()) {
+                    relPrices.setLowestPriceFigurineId(projection.getId());
+                    relPrices.setLowestPriceFigurineName(projection.getName());
+                }
+
+                relPrices.setCount(relPrices.getCount() + 1);
+                relPrices.setTotal(relPrices.getTotal().add(price));
+                relPrices.setAverage(
+                        relPrices.getTotal().divide(BigDecimal.valueOf(relPrices.getCount()), RoundingMode.HALF_UP));
+
+            } else {
+                ReleasePrices releasePrices = ReleasePrices.builder().average(price).highest(price).lowest(price)
+                        .highestPriceFigurineId(projection.getId()).highestPriceFigurineName(projection.getName())
+                        .lowestPriceFigurineId(projection.getId()).lowestPriceFigurineName(projection.getName())
+                        .total(price).count(1).build();
+
+                releasePricesByYearMap.put(year, releasePrices);
+            }
+        }
 
         List<YearReleasePriceResp> respList = new ArrayList<>();
-        releasePricesByYearMap.forEach((year,
-                prices) -> respList.add(new YearReleasePriceResp(year,
-                        new BigDecimal(prices.getAverage()).setScale(2, RoundingMode.HALF_UP),
-                        new BigDecimal(prices.getHighest()).setScale(2, RoundingMode.HALF_UP),
-                        new BigDecimal(prices.getLowest()).setScale(2, RoundingMode.HALF_UP),
-                        new FigurinePriceResp(prices.getHighestPriceFigurine().getId(),
-                                prices.getHighestPriceFigurine().getNormalizedName(),
-                                prices.getHighestPriceFigurine().getOfficialImages().getFirst()),
-                        new FigurinePriceResp(prices.getLowestPriceFigurine().getId(),
-                                prices.getLowestPriceFigurine().getNormalizedName(),
-                                prices.getLowestPriceFigurine().getOfficialImages().getFirst()),
-                        prices.getCount())));
 
+        releasePricesByYearMap.forEach((year, prices) -> {
+
+            YearReleasePriceResp resp = new YearReleasePriceResp(year, getPrice(prices.getAverage(), currency),
+                    getPrice(prices.getHighest(), currency), getPrice(prices.getLowest(), currency),
+                    new FigurinePriceResp(prices.getHighestPriceFigurineId(), prices.getHighestPriceFigurineName(),
+                            getImageUrlForFigurine(prices.getHighestPriceFigurineId())),
+                    new FigurinePriceResp(prices.getLowestPriceFigurineId(), prices.getLowestPriceFigurineName(),
+                            getImageUrlForFigurine(prices.getLowestPriceFigurineId())),
+                    prices.getCount());
+
+            respList.add(resp);
+        });
         return respList;
     }
 
     /**
-     * Resolves a figurine distributor price in JPY.
+     * Retrieves the first official image URL for a figurine, if available.
      *
-     * <p>
-     * If no price is present, an empty optional is returned and a warning is
-     * logged.
-     *
-     * @param figurine
-     *            figurine owning the distributor price
-     * @param price
-     *            raw distributor price
-     * @param currency
-     *            distributor currency code
-     * @return optional price expressed in JPY
+     * @param figurineId
+     *            the ID of the figurine
+     * @return the first official image URL, or an empty string if no images are
+     *         found
      */
-    private Optional<Double> getPrice(Figurine figurine, Double price, CurrencyCode currency) {
-        if (Objects.isNull(price)) {
-            log.warn("No price found for figurine: [{}] - {}", figurine.getId(), figurine.getNormalizedName());
-            return Optional.empty();
+    private String getImageUrlForFigurine(Long figurineId) {
+        List<String> officialImages = statisticsRepository.findOfficialImagesStatistics(figurineId);
+        if (officialImages != null && !officialImages.isEmpty()) {
+            return officialImages.getFirst();
         }
-        return Optional.of(currency == JPY
-                ? price
-                : currencyConversionService.convert(new BigDecimal(price), currency.toString(), JPY.toString())
-                        .doubleValue());
+        return "";
     }
 
     /**
-     * Retrieves all figurines matching the filter and keeps only those in released
-     * status.
+     * Converts the given price to the specified currency using the
+     * {@link CurrencyConversionService}.
+     *
+     * @param price
+     *            the price in JPY to convert
+     * @param currency
+     *            the target currency for conversion
+     * @return the converted price in the specified currency, or the original price
+     *         if the target currency is JPY
      */
-    private List<Figurine> findAllReleasedFigurinesWithFilter(FigurineFilter filter) {
-        return figurineRepository.findAll(filter).stream()
-                .filter(figurine -> figurine.getCurrentReleaseStatus() == RELEASED).toList();
+    private BigDecimal getPrice(BigDecimal price, Currency currency) {
+        if (CurrencyConverter.isDefaultCurrency(currency)) {
+            return price;
+        }
+        return currencyConversionService.convert(price, JPY.toString(), currency.toString());
     }
 
     /** Counts figurines by calculated release status name. */

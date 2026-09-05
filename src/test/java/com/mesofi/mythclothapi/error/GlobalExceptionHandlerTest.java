@@ -176,6 +176,9 @@ class GlobalExceptionHandlerTest {
                 new com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException());
         ProblemDetail invalidCredentials = handler.handleCollectorInvalidCredentialsException(
                 new com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException());
+        ProblemDetail limitReached = handler.handleCollectorCollectionLimitReachedException(
+                new com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException(
+                        1L, 5));
         ProblemDetail authDenied = handler.handleAuthorizationDeniedException(
                 new org.springframework.security.authorization.AuthorizationDeniedException("nope"));
 
@@ -187,6 +190,9 @@ class GlobalExceptionHandlerTest {
 
         assertThat(invalidCredentials.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(invalidCredentials.getTitle()).isEqualTo("Invalid email or password");
+
+        assertThat(limitReached.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(limitReached.getTitle()).isEqualTo("Collector collection limit reached");
 
         assertThat(authDenied.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
         assertThat(authDenied.getTitle()).isEqualTo("You are not allowed to perform this action");

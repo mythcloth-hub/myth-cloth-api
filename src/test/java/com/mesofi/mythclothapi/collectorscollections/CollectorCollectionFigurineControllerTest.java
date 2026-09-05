@@ -105,6 +105,15 @@ class CollectorCollectionFigurineControllerTest {
     }
 
     @Test
+    void addFigurineToFavoriteCollection_shouldReturnNoContent_whenValidJwtIsProvided() throws Exception {
+        mockMvc.perform(post("/collections/favorite/figurines/9").with(jwt().jwt(jwt -> jwt.subject("123"))
+                .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
+                .andExpect(status().isNoContent());
+
+        verify(service).addFigurineToFavoriteCollection(123L, 9L);
+    }
+
+    @Test
     void assignFigurinesToCollections_shouldReturnUnauthorized_whenJwtTokenIsMissing() throws Exception {
         mockMvc.perform(post("/collections/assign-figurines")).andExpect(status().isUnauthorized());
         verifyNoInteractions(service);

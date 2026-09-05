@@ -201,6 +201,7 @@ class CollectorServiceTest {
         assertThat(providerCaptor.getValue().getProviderUserId()).isEqualTo("demo-user-1");
         assertThat(providerCaptor.getValue().getEmail()).isEqualTo("demo@example.com");
         assertThat(providerCaptor.getValue().getEmailVerified()).isTrue();
+        assertThat(providerCaptor.getValue().getLastLogin()).isNotNull();
     }
 
     @Test
@@ -238,6 +239,10 @@ class CollectorServiceTest {
         ArgumentCaptor<Collector> collectorCaptor = ArgumentCaptor.forClass(Collector.class);
         verify(collectorRepository).save(collectorCaptor.capture());
         assertThat(collectorCaptor.getValue().getRole()).isEqualTo(demoRole);
+
+        ArgumentCaptor<CollectorAuthProvider> providerCaptor = ArgumentCaptor.forClass(CollectorAuthProvider.class);
+        verify(collectorAuthProviderRepository).save(providerCaptor.capture());
+        assertThat(providerCaptor.getValue().getLastLogin()).isNotNull();
     }
 
     @Test
@@ -519,6 +524,7 @@ class CollectorServiceTest {
         assertThat(providerCaptor.getValue().getProviderUserId()).isEqualTo("sub-456");
         assertThat(providerCaptor.getValue().getEmail()).isEqualTo("hyoga@example.com");
         assertThat(providerCaptor.getValue().getEmailVerified()).isFalse();
+        assertThat(providerCaptor.getValue().getLastLogin()).isNotNull();
 
         verify(apiTokenService).generateToken(any(Collector.class), eq("GOOGLE"), eq("sub-456"),
                 eq("hyoga@example.com"));

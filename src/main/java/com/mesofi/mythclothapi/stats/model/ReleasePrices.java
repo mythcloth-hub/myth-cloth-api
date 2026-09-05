@@ -1,6 +1,6 @@
 package com.mesofi.mythclothapi.stats.model;
 
-import com.mesofi.mythclothapi.figurines.model.Figurine;
+import java.math.BigDecimal;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -19,22 +19,40 @@ import lombok.Setter;
 @Builder
 public class ReleasePrices {
     /** Running average release price for the current aggregation window. */
-    private Double average;
+    private BigDecimal average;
 
     /** Highest observed release price for the current aggregation window. */
-    private Double highest;
+    private BigDecimal highest;
 
     /** Lowest observed release price for the current aggregation window. */
-    private Double lowest;
+    private BigDecimal lowest;
 
-    /** Figurine associated with {@link #highest}. */
-    Figurine highestPriceFigurine;
+    /**
+     * Figurine id with the highest observed release price for the current
+     * aggregation window.
+     */
+    private Long highestPriceFigurineId;
 
-    /** Figurine associated with {@link #lowest}. */
-    Figurine lowestPriceFigurine;
+    /**
+     * Figurine name with the highest observed release price for the current
+     * aggregation window.
+     */
+    private String highestPriceFigurineName;
+
+    /**
+     * Figurine id with the lowest observed release price for the current
+     * aggregation window.
+     */
+    private Long lowestPriceFigurineId;
+
+    /**
+     * Figurine name with the lowest observed release price for the current
+     * aggregation window.
+     */
+    private String lowestPriceFigurineName;
 
     /** Running sum of all observed release prices. */
-    private Double total;
+    private BigDecimal total;
 
     /** Number of releases included in the aggregation. */
     private int count;
