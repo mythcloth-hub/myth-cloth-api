@@ -1,38 +1,22 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
-import java.net.URI;
 import java.util.List;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Positive;
 
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
@@ -77,93 +61,6 @@ public class CollectorCollectionFigurineController {
 
     private final CollectorCollectionFigurineService service;
 
-    /**
-     * Adds a single figurine to a specific collector collection.
-     *
-     * <p>
-     * This endpoint is deprecated. Use
-     * {@link #assignFigurinesToCollections(Jwt, AssignFigurinesReq)} instead, which
-     * supports assigning one or multiple figurines to one or multiple collections
-     * using a unified assignment workflow.
-     *
-     * <p>
-     * The authenticated collector is obtained from the JWT subject claim. The
-     * operation requires the {@code collections:figurines:add} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param collectionId
-     *            unique identifier of the target collector collection
-     * @param figurineId
-     *            unique identifier of the figurine to assign
-     * @return an empty response with HTTP {@code 204 No Content} when the
-     *         assignment succeeds
-     */
-    @PostMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
-    public ResponseEntity<Void> addFigurineToCollection(@AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long collectionId, @PathVariable Long figurineId) {
-        AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId), CollectionAssignmentMode.EXISTING,
-                List.of(collectionId), null);
-        service.assignFigurinesToCollections(getCollectorId(jwt), request);
-        log.info("Current assignment request: figurines {} to collections {} with mode {}", request.figurineIds(),
-                request.collectionIds(), request.collectionMode());
-
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Adds a single figurine to the authenticated collector's favorite collection.
-     *
-     * <p>
-     * The favorite collection is determined by the collector's preferences. If no
-     * favorite collection exists, a new favorite collection is created. The
-     * operation requires the {@code collections:figurines:add} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param figurineId
-     *            unique identifier of the figurine to assign to the favorite
-     *            collection
-     * @return an empty response with HTTP {@code 204 No Content} when the
-     *         assignment succeeds
-     */
-    @PostMapping("/favorite/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
-    public ResponseEntity<Void> addFigurineToFavoriteCollection(@AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long figurineId) {
-
-        service.addFigurineToFavoriteCollection(getCollectorId(jwt), figurineId);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Assigns one or more figurines to one or more collector collections.
-     *
-     * <p>
-     * This endpoint provides the main workflow for managing figurine collection
-     * assignments. Depending on the request configuration, it can:
-     *
-     * <ul>
-     * <li>Assign figurines to existing collections.
-     * <li>Create collections automatically when required.
-     * <li>Apply predefined or user-provided collection information.
-     * </ul>
-     *
-     * <p>
-     * The authenticated collector is obtained from the JWT subject claim.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param request
-     *            assignment request containing figurines, collections, and
-     *            assignment options
-     * @return an empty response with HTTP {@code 204 No Content} when the
-     *         assignment succeeds
-     */
     @PostMapping("/assign-figurines")
     @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> assignFigurinesToCollections(@AuthenticationPrincipal Jwt jwt,
@@ -174,147 +71,6 @@ public class CollectorCollectionFigurineController {
 
         return ResponseEntity.noContent().build();
     }
-
-    /**
-     * Retrieves the summary statistics for a specific collector collection.
-     *
-     * <p>
-     * The collection must belong to the authenticated collector. Access requires
-     * the {@code collections:figurines:read} authority.
-     * </p>
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param collectionId
-     *            unique identifier of the collector collection
-     * @param includeRestocks
-     *            optional flag to include restocked figurines in the summary
-     * @return collection summary response containing catalog and collection
-     *         statistics
-     */
-    @GetMapping("/{collectionId}/summary")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
-    public CollectorCollectionSummaryResp retrieveCollectionSummary(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long collectionId, @RequestParam(required = false) boolean includeRestocks) {
-        log.info("Retrieving collection summary for collection {} of collector {}, includeRestocks {}", collectionId,
-                getCollectorId(jwt), includeRestocks);
-
-        return service.retrieveCollectionSummary(getCollectorId(jwt), collectionId, includeRestocks);
-    }
-
-    /**
-     * Retrieves all figurines assigned to a specific collector collection.
-     *
-     * <p>
-     * The collection must belong to the authenticated collector. Access requires
-     * the {@code
-     * collections:figurines:read} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param collectionId
-     *            unique identifier of the collector collection
-     * @param includeRestocks
-     *            optional flag to include restocked figurines in the results
-     * @param page
-     *            page number for pagination (default is 0)
-     * @param size
-     *            number of items per page for pagination (default is 50, max is
-     *            1000)
-     * @return list of figurines assigned to the collection
-     */
-    @GetMapping("/{collectionId}/figurines")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
-    public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long collectionId, @RequestParam(required = false) boolean includeRestocks,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(1000) int size) {
-        log.info("Retrieving figurines for collection {} with pagination: page {}, size {}, includeRestocks {}",
-                collectionId, page, size, includeRestocks);
-
-        return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId, includeRestocks, page, size);
-    }
-
-    /**
-     * Retrieves detailed information about a specific figurine within a collector
-     * collection.
-     *
-     * <p>
-     * The figurine must be assigned to the specified collection owned by the
-     * authenticated collector. Access requires the
-     * {@code collections:figurines:read} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param collectionId
-     *            unique identifier of the collector collection
-     * @param figurineId
-     *            unique identifier of the figurine
-     * @return detailed figurine collection information
-     */
-    @GetMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
-    public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
-        return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
-    }
-
-    /**
-     * Retrieves the latest figurines from the authenticated collector's favorite
-     * collection.
-     *
-     * <p>
-     * The favorite collection is determined by the collector's preferences. Access
-     * requires the {@code collections:figurines:read} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param limit
-     *            maximum number of latest figurines to retrieve (default is 20, max
-     *            is 30)
-     * @return list of latest figurines from the favorite collection
-     */
-    @GetMapping("/favorite/figurines/latest")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
-    public List<CollectorCollectionLatestFavoriteResp> retrieveLatestFavoriteCollectionFigurines(
-            @AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "20") @Min(1) @Max(30) int limit) {
-        Long collectorId = getCollectorId(jwt);
-
-        log.info("Retrieving latest figurines from favorite collection of collector {}, limit {}", collectorId, limit);
-
-        return service.retrieveLatestFavoriteCollectionFigurines(collectorId, limit);
-    }
-
-    /**
-     * Deletes a specific figurine from a collector collection.
-     *
-     * <p>
-     * The figurine must be assigned to the specified collection owned by the
-     * authenticated collector. Access requires the
-     * {@code collections:figurines:delete} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param collectionId
-     *            unique identifier of the collector collection
-     * @param figurineId
-     *            unique identifier of the figurine to delete
-     * @return an empty response with HTTP {@code 204 No Content} when deletion
-     *         succeeds
-     */
-    @DeleteMapping("/{collectionId}/figurines/{figurineId}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_DELETE + "')")
-    public ResponseEntity<Void> deleteCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
-        service.deleteCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
-        return ResponseEntity.noContent().build();
-    }
-
     /**
      * Retrieves all collections belonging to the authenticated collector.
      *
@@ -332,111 +88,6 @@ public class CollectorCollectionFigurineController {
     @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_READ + "')")
     public List<CollectorCollectionResp> retrieveCollections(@AuthenticationPrincipal Jwt jwt) {
         return service.retrieveCollections(getCollectorId(jwt));
-    }
-
-    /**
-     * Deletes an existing collector collection.
-     *
-     * <p>
-     * The collection must belong to the authenticated collector. Deleting a
-     * collection may also remove its associated figurine assignments depending on
-     * the configured persistence behavior.
-     *
-     * <p>
-     * This operation requires the {@code collections:delete} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param id
-     *            unique identifier of the collection to delete
-     * @return an empty response with HTTP {@code 204 No Content} when deletion
-     *         succeeds
-     */
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DELETE + "')")
-    public ResponseEntity<Void> deleteCollection(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
-        service.deleteCollection(getCollectorId(jwt), id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Updates an existing collector collection.
-     *
-     * <p>
-     * The collection must belong to the authenticated collector. Only the provided
-     * collection fields are updated according to the request payload.
-     *
-     * <p>
-     * This operation requires the {@code collections:update} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param id
-     *            unique identifier of the collection to update
-     * @param request
-     *            collection update information
-     * @return the updated collector collection
-     */
-    @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
-    public ResponseEntity<CollectorCollectionResp> updateCollection(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long id, @RequestBody @Valid CollectorCollectionReq request) {
-        CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
-        return ResponseEntity.ok(updated);
-    }
-
-    /**
-     * Updates the favorite status of a collector collection.
-     *
-     * <p>
-     * The collection must belong to the authenticated collector. This operation
-     * allows marking a collection as favorite or removing it from favorites.
-     *
-     * <p>
-     * This operation requires the {@code collections:update} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param id
-     *            unique identifier of the collection to update as favorite
-     * @return an empty response with HTTP {@code 202 Accepted} when the update
-     *         succeeds
-     */
-    @PatchMapping("/{id}/favorite")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
-    public ResponseEntity<Void> updateCollectionAsFavorite(@AuthenticationPrincipal Jwt jwt,
-            @Positive @PathVariable Long id) {
-        service.updateCollectionAsFavorite(getCollectorId(jwt), id);
-        return ResponseEntity.accepted().build();
-    }
-
-    /**
-     * Duplicates an existing collector collection.
-     *
-     * <p>
-     * The source collection must belong to the authenticated collector. This
-     * operation creates a new collection derived from the source collection and
-     * responds with the URI of the created resource.
-     *
-     * <p>
-     * This operation requires the {@code collections:update} authority.
-     *
-     * @param jwt
-     *            authenticated collector's JWT token containing identity
-     *            information
-     * @param id
-     *            unique identifier of the source collection to duplicate
-     * @return an empty response with HTTP {@code 201 Created} and a
-     *         {@code Location} header pointing to the duplicated collection
-     */
-    @PostMapping("/{id}/duplicate")
-    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DUPLICATE + "')")
-    public ResponseEntity<Void> duplicateCollection(@AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long id) {
-        long collectionId = service.duplicateCollection(getCollectorId(jwt), id);
-        return ResponseEntity.created(URI.create(String.format("/collections/%d", collectionId))).build();
     }
 
     /**

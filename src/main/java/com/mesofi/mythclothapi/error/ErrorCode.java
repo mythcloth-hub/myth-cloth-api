@@ -181,6 +181,11 @@ public enum ErrorCode {
     // -------------------------------------------------------------------------
 
     /**
+     * Indicates that the requested resource could not be found.
+     */
+    RESOURCE_NOT_FOUND,
+
+    /**
      * Indicates that an unexpected error has occurred.
      */
     UNEXPECTED_ERROR,

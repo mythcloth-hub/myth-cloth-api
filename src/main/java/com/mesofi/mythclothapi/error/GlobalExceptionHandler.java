@@ -2,7 +2,6 @@ package com.mesofi.mythclothapi.error;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -24,17 +23,11 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
-import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
+import com.mesofi.mythclothapi.error.exceptions.ResourceNotFoundException;
+import com.mesofi.mythclothapi.error.exceptions.UnexpectedException;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
@@ -47,7 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ProblemDetail handleNoResourceFound(NoResourceFoundException ex) {
-        return ApiProblemDetail.of(NOT_FOUND, "Endpoint not found", "The URL you are calling does not exist.");
+        return ApiProblemDetail.of(new ResourceNotFoundException());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -68,11 +61,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(FigurineImportException.class)
     public ProblemDetail handleFigurineImportException(FigurineImportException ex) {
         return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorPurchaseNotFoundException.class)
-    public ProblemDetail handleCollectorPurchaseNotFoundException(CollectorPurchaseNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -134,26 +122,6 @@ public class GlobalExceptionHandler {
         return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
     }
 
-    @ExceptionHandler(CollectorInvalidTokenException.class)
-    public ProblemDetail handleCollectorInvalidToken(CollectorInvalidTokenException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
-    }
-
-    @ExceptionHandler(CollectorNotFoundException.class)
-    public ProblemDetail handleCollectorNotFound(CollectorNotFoundException ex) {
-        return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorCollectionNotFoundException.class)
-    public ProblemDetail handleCollectionNotFoundException(CollectorCollectionNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
-    }
-
-    @ExceptionHandler(CollectorCollectionAlreadyExistsException.class)
-    public ProblemDetail handleCollectionAlreadyExistsException(CollectorCollectionAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
-    }
-
     @ExceptionHandler(IntegrationException.class)
     public ProblemDetail handleIntegrationException(IntegrationException ex) {
         return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getMessage());
@@ -181,26 +149,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RolePermissionAlreadyExistsException.class)
     public ProblemDetail handleRoleAlreadyAssociatedToPermission(RolePermissionAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorEmailAlreadyExistsException.class)
-    public ProblemDetail handleCollectorEmailAlreadyExists(CollectorEmailAlreadyExistsException ex) {
-        return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorEmailNotFoundException.class)
-    public ProblemDetail handleCollectorEmailNotFoundException(CollectorEmailNotFoundException ex) {
-        return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorInvalidCredentialsException.class)
-    public ProblemDetail handleCollectorInvalidCredentialsException(CollectorInvalidCredentialsException ex) {
-        return ApiProblemDetail.of(ex);
-    }
-
-    @ExceptionHandler(CollectorCollectionLimitReachedException.class)
-    public ProblemDetail handleCollectorCollectionLimitReachedException(CollectorCollectionLimitReachedException ex) {
         return ApiProblemDetail.of(ex);
     }
 

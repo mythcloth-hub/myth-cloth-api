@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.error;
+package com.mesofi.mythclothapi.error.exceptions;
 
 import org.springframework.http.HttpStatus;
 

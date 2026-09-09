@@ -1,7 +1,5 @@
 package com.mesofi.mythclothapi.figurineimports.service;
 
-import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_FIGURINE_CACHE;
-import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_SUMMARY_CACHE;
 import static com.mesofi.mythclothapi.figurines.FigurineService.FIGURINE_CACHE;
 import static com.mesofi.mythclothapi.figurines.FigurineService.FIGURINE_SUMMARY_CACHE;
 
@@ -100,8 +98,7 @@ public class FigurineImportService {
      *             the import
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE,
-            COLLECTOR_FIGURINE_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE}, allEntries = true)
     public void importAllFigurinesFromPublicDrive() {
         log.info("Importing all figurines from public drive...");
 

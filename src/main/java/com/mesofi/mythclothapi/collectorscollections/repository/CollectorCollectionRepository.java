@@ -1,12 +1,8 @@
 package com.mesofi.mythclothapi.collectorscollections.repository;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectors.Collector;
@@ -23,15 +19,6 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
  */
 @Repository
 public interface CollectorCollectionRepository extends JpaRepository<CollectorCollection, Long> {
-    /**
-     * Finds all collections owned by the specified collector.
-     *
-     * @param collector
-     *            collector whose collections should be returned
-     * @return collections owned by the collector
-     */
-    List<CollectorCollection> findByCollector(Collector collector);
-
     /**
      * Counts the collections owned by the specified collector.
      *
@@ -52,44 +39,4 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
      */
     Optional<CollectorCollection> findByCollectorAndName(Collector collector, String name);
 
-    /**
-     * Deletes a collection by its identifier.
-     *
-     * @param id
-     *            collection identifier
-     */
-    @Modifying
-    @Query("DELETE FROM CollectorCollection cc WHERE cc.id = :id")
-    void deleteCollectionById(Long id);
-
-    /**
-     * Retrieves summary statistics for a collector collection.
-     *
-     * <p>
-     * The summary includes total preordered and released copies, as well as the
-     * number of distinct preordered and released figurines.
-     * </p>
-     *
-     * @param collectionId
-     *            identifier of the collection to summarize
-     * @param restocks
-     *            whether to include restocked figurines in the summary; when
-     *            {@code true}, all figurines in the collection are considered, and
-     *            when {@code false}, only figurines without a previous release are
-     *            included
-     * @return collection summary projection
-     */
-    @Query(value = """
-            SELECT
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN ccf.quantity ELSE 0 END), 0) AS preordered_quantity, -- Total number of preordered copies
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN ccf.quantity ELSE 0 END), 0) AS released_quantity,    -- Total number of released copies
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS preordered_figurines,           -- Number of unique preordered figurines
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS released_figurines               -- Number of unique released figurines
-            FROM collector_collection_figurines ccf, figurines f
-            WHERE ccf.figurine_id = f.id
-              AND ccf.collection_id = :collectionId
-              AND (:restocks = true OR f.previous_release_id IS NULL)
-            """, nativeQuery = true)
-    CollectorCollectionSummaryProjection getCollectorCollectionSummary(Long collectionId,
-            @Param("restocks") boolean restocks);
 }

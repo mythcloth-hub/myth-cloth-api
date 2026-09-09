@@ -6,7 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-import com.mesofi.mythclothapi.error.IntegrationException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
 import com.mesofi.mythclothapi.integration.ServiceName;
 
 import lombok.extern.slf4j.Slf4j;

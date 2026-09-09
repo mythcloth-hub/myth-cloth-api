@@ -166,4 +166,39 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
                 lineupDescription
             """, nativeQuery = true)
     List<FigurineReleaseYearSummaryProjection> getReleaseYearSummary();
+
+    /**
+     * Retrieves the IDs of all figurines that are either released or announced.
+     *
+     * <p>
+     * For each figurine, only the first distributor record is considered when
+     * determining the release date.
+     * </p>
+     *
+     * @return a list of IDs for figurines with released or announced status
+     */
+    @Query(value = """
+             SELECT
+                 f.id
+             FROM figurines f
+             LEFT JOIN (
+                 SELECT *
+                 FROM (
+                     SELECT
+                         fd.*,
+                         ROW_NUMBER() OVER (
+                             PARTITION BY figurine_id
+                             ORDER BY id
+                         ) AS rn
+                     FROM figurine_distributor fd
+                 ) x
+                 WHERE rn = 1
+            ) fd
+                ON fd.figurine_id = f.id
+            JOIN lineups l
+                ON l.id = f.lineup_id
+            WHERE f.current_release_status IN ('RELEASED', 'ANNOUNCED')\s
+            ORDER by f.id ;
+            """, nativeQuery = true)
+    List<Long> findAllFigurineIdsWithReleasedOrAnnouncedStatus();
 }

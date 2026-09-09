@@ -5,22 +5,11 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
-import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
-import com.mesofi.mythclothapi.common.BaseId;
-import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
-import com.mesofi.mythclothapi.distributors.model.Distributor;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
-import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
 
 @Mapper(componentModel = "spring")
 public interface CollectorMapper {
@@ -38,10 +27,23 @@ public interface CollectorMapper {
      *            collection entity to map
      * @return collection response populated from the entity
      */
-    @Mapping(target = "totalFigurines", expression = "java(collectorCollection.getFigurines().size())")
-    @Mapping(target = "figurineIds", expression = "java(getFigurineIds(collectorCollection))")
     @Mapping(target = "isFavorite", source = "favorite")
+    @Mapping(target = "collectedFigurines", expression = "java(getCollectedFigurinesCount(collectorCollection))")
+    @Mapping(target = "totalFigurines", expression = "java(collectorCollection.getItems().size())")
+    @Mapping(target = "figurineIds", expression = "java(getFigurineIds(collectorCollection))")
     CollectorCollectionResp toCollectorCollectionResp(CollectorCollection collectorCollection);
+
+    /**
+     * Returns the number of figurines in the supplied collection that are owned by
+     * the collector.
+     *
+     * @param collection
+     *            collection whose owned figurines should be counted
+     * @return number of owned figurines in the collection
+     */
+    default int getCollectedFigurinesCount(CollectorCollection collection) {
+        return (int) collection.getItems().stream().filter(CollectorCollectionItem::isOwned).count();
+    }
 
     /**
      * Returns the ids of the figurines in the supplied collection.
@@ -51,131 +53,33 @@ public interface CollectorMapper {
      * @return figurine ids in collection order
      */
     default List<Long> getFigurineIds(CollectorCollection collection) {
-        return collection.getFigurines().stream().map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId)
-                .toList();
+        return collection.getItems().stream().map(item -> item.getFigurine().getId()).toList();
     }
 
     /**
-     * Maps a collection summary projection to its response DTO.
+     * Maps a collector collection request to a new collector collection entity.
      *
      * <p>
-     * The projection exposes copy counts and unique figurine counts, while the
-     * {@code totalReleased} argument is used to calculate the missing released
-     * figurines.
+     * The entity will have its id, creation date, and update date ignored. The
+     * favorite status and collector will be set from the supplied parameters. The
+     * items list will be initialized as empty.
      * </p>
      *
-     * @param projection
-     *            summary projection returned by the repository
-     * @param totalReleased
-     *            total number of released figurines in the catalog
-     * @return summary response populated from the projection
+     * @param collectionReq
+     *            request containing collection metadata
+     * @param isFavorite
+     *            whether the collection should be marked as favorite
+     * @param collector
+     *            collector who owns the collection
+     * @return new collector collection entity populated from the request and
+     *         parameters
      */
-    @Mapping(target = "preorderedCopies", source = "projection.preorderedQuantity")
-    @Mapping(target = "ownedCopies", source = "projection.releasedQuantity")
-    @Mapping(target = "preorderedFigurines", source = "projection.preorderedFigurines")
-    @Mapping(target = "ownedFigurines", source = "projection.releasedFigurines")
-    @Mapping(target = "missingReleasedFigurines", expression = "java(totalReleased - projection.getReleasedFigurines())")
-    CollectorCollectionSummaryStatsResp toCollectorCollectionSummaryResp(
-            CollectorCollectionSummaryProjection projection, int totalReleased);
-
-    /**
-     * Maps a figurine entity to the collection figurine summary response.
-     *
-     * @param figurine
-     *            figurine entity to map
-     * @param releaseStatus
-     *            release status to expose in the response
-     * @param isCollected
-     *            whether the figurine belongs to the collection
-     * @param ownedQuantity
-     *            number of copies owned in the collection
-     * @return figurine summary response populated from the figurine
-     */
-    @Mapping(target = "name", source = "figurine.normalizedName")
-    @Mapping(target = "notes", source = "figurine.remarks")
-    @Mapping(target = "imageUrl", expression = "java(getFirstImage(figurine.getOfficialImages()))")
-    CollectorCollectionFigurineResp toCollectorCollectionFigurineResp(Figurine figurine, ReleaseStatus releaseStatus,
-            boolean isCollected, int ownedQuantity);
-
-    /**
-     * Returns the first available image URL for a figurine.
-     *
-     * @param images
-     *            figurine image URLs
-     * @return first image URL, or {@code null} when no images are present
-     */
-    default String getFirstImage(List<String> images) {
-        return images == null || images.isEmpty() ? null : images.getFirst();
-    }
-
-    /**
-     * Maps a figurine entity to its detailed collection response.
-     *
-     * @param figurine
-     *            figurine entity to map
-     * @return figurine detail response populated from the entity
-     */
-    @Mapping(target = "displayableName", source = "displayName")
-    @Mapping(target = "lineUp", source = "lineup")
-    @Mapping(target = "lineUpUrl", expression = "java(calculateLineUpUrl(figurine.getLineup()))")
-    CollectorCollectionFigurineDetailResp toCollectorCollectionFigurineDetailResp(Figurine figurine);
-
-    /**
-     * Maps a distributor entity to its response DTO.
-     *
-     * @param distributor
-     *            distributor entity to map
-     * @return distributor response populated from the entity
-     */
-    @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
-    @Mapping(target = "countryCode", source = "country")
-    DistributorResp toDistributorResp(Distributor distributor);
-
-    /**
-     * Maps a figurine distribution entity to its response DTO.
-     *
-     * @param figurineDistributor
-     *            figurine distribution entity to map
-     * @return figurine distributor response populated from the entity
-     */
-    @Mapping(target = "priceWithTax", ignore = true)
-    @Mapping(target = "announcedAt", source = "announcementDate")
-    @Mapping(target = "preorderOpensAt", source = "preorderDate")
-    FigurineDistributorResp toFigurineDistributorResp(FigurineDistributor figurineDistributor);
-
-    /**
-     * Resolves the lineup image URL used in figurine detail responses.
-     *
-     * @param lineup
-     *            lineup whose image should be resolved
-     * @return lineup image URL, or {@code null} when no match exists
-     */
-    default String calculateLineUpUrl(LineUp lineup) {
-        if (lineup == null) {
-            return null;
-        }
-        if (lineup.getDescription().equals("Myth Cloth EX")) {
-            return "https://imagizer.imageshack.com/img922/1037/VGb1UY.png";
-        } else if (lineup.getDescription().equals("Myth Cloth")) {
-            return "https://imagizer.imageshack.com/img924/6752/iUnW9X.png";
-        } else if (lineup.getDescription().contains("Zero")) {
-            return "https://imagizer.imageshack.com/img924/3571/4Lb8pL.png";
-        }
-        // Todo: Add more lineups and their corresponding URLs as needed
-        return null;
-    }
-
-    /**
-     * Maps a collector collection figurine entity to its latest favorite response.
-     *
-     * @param collectorCollectionFigurine
-     *            collector collection figurine entity to map
-     * @return latest favorite response populated from the entity
-     */
-    @Mapping(target = "id", source = "figurine.id")
-    @Mapping(target = "name", source = "figurine.normalizedName")
-    @Mapping(target = "imageUrl", expression = "java(getFirstImage(collectorCollectionFigurine.getFigurine().getOfficialImages()))")
-    @Mapping(target = "ownedQuantity", source = "quantity")
-    CollectorCollectionLatestFavoriteResp toCollectorCollectionLatestFavoriteResp(
-            CollectorCollectionFigurine collectorCollectionFigurine);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "favorite", source = "isFavorite")
+    @Mapping(target = "collector", source = "collector")
+    @Mapping(target = "items", ignore = true)
+    CollectorCollection toCollectorCollection(CollectorCollectionReq collectionReq, boolean isFavorite,
+            Collector collector);
 }

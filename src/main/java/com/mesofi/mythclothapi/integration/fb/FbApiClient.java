@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriBuilder;
 
-import com.mesofi.mythclothapi.error.IntegrationException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
 
 import lombok.extern.slf4j.Slf4j;
 

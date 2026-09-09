@@ -16,7 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
-import com.mesofi.mythclothapi.error.IntegrationException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
 import com.mesofi.mythclothapi.integration.ServiceName;
 
 class GoogleApiClientTest {

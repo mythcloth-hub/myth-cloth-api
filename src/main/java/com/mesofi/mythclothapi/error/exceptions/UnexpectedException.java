@@ -1,6 +1,9 @@
-package com.mesofi.mythclothapi.error;
+package com.mesofi.mythclothapi.error.exceptions;
 
 import java.io.Serial;
+
+import com.mesofi.mythclothapi.error.ApiException;
+import com.mesofi.mythclothapi.error.ErrorCode;
 
 import lombok.Getter;
 
