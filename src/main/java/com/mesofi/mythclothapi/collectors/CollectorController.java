@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,4 +47,15 @@ public class CollectorController {
         return collectorService.login(provider, loginRequest);
     }
 
+    /**
+     * Registers a new collector account using the provided signup request.
+     *
+     * @param signupRequest
+     *            the collector signup request containing necessary information
+     * @return the collector signup response with registered collector details
+     */
+    @PostMapping("/signup")
+    public CollectorSignupResp signup(@RequestBody @Validated CollectorSignupReq signupRequest) {
+        return collectorService.signup(signupRequest);
+    }
 }

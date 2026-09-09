@@ -15,19 +15,15 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(
-    name = "collector_collection_figurines",
-    uniqueConstraints =
-        @UniqueConstraint(
-            name = "uk_collection_figurine_pair",
-            columnNames = {"collection_id", "figurine_id"}))
+@Table(name = "collector_collection_figurines", uniqueConstraints = @UniqueConstraint(name = "uk_collection_figurine_pair", columnNames = {
+        "collection_id", "figurine_id"}))
 public class CollectorCollectionFigurine extends BaseId {
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  private CollectorCollection collection;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private CollectorCollection collection;
 
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  private Figurine figurine;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Figurine figurine;
 
-  private int totalFigurines = 1;
+    private int totalFigurines = 1;
 }

@@ -17,6 +17,9 @@ import com.mesofi.mythclothapi.collectorproviders.model.CollectorAuthProvider;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
+import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
 import com.mesofi.mythclothapi.demo.DemoProperties;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
@@ -81,6 +84,39 @@ public class CollectorService {
         };
     }
 
+    /**
+     * Registers a new collector account using the provided signup request.
+     *
+     * @param signupRequest
+     *            the collector signup request containing necessary information
+     * @return the collector signup response with registered collector details
+     * @throws IllegalArgumentException
+     *             if the email is already registered
+     */
+    @Transactional
+    public CollectorSignupResp signup(CollectorSignupReq signupRequest) {
+        log.info("User is trying to sign up with email '{}'", signupRequest.email());
+
+        collectorRepository.findByEmail(signupRequest.email()).ifPresent(account -> {
+            throw new CollectorEmailAlreadyExistsException(account.getEmail());
+        });
+
+        // Encodes the password into an Argon2id string format
+        String rawPassword = signupRequest.password();
+        String hashedPassword = passwordEncoder.encode(rawPassword);
+
+        Role currRole = retrieveRole(RoleType.COLLECTOR, null, null);
+        Collector saved = createCollectorAccount(signupRequest.email(), hashedPassword, signupRequest.fullName(), null,
+                currRole);
+
+        return new CollectorSignupResp(saved.getId(), saved.getDisplayName(), saved.getEmail());
+    }
+
+    /**
+     * Logs in a collector using local demo credentials.
+     *
+     * @return login response payload for API clients
+     */
     private CollectorLoginResp loginWithLocal() {
         String userId = demoProperties.providerUserId();
         String name = demoProperties.name();
