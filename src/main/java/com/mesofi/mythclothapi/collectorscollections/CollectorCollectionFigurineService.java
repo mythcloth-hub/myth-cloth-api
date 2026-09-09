@@ -190,7 +190,8 @@ public class CollectorCollectionFigurineService {
         // The collection items are saved in bulk to optimize database operations and
         // ensure consistency.
         List<CollectorCollectionItem> savedItems = collectorCollectionItemRepository.saveAll(newItems);
-        newCollection.setItems(savedItems);
+
+        newCollection.getItems().addAll(savedItems);
 
         return newCollection;
     }
