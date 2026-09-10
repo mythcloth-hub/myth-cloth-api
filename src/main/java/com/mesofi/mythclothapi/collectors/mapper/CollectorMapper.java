@@ -7,12 +7,15 @@ import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
 @Mapper(componentModel = "spring")
 public interface CollectorMapper {
@@ -81,6 +84,25 @@ public interface CollectorMapper {
     @Mapping(target = "missingReleasedFigurines", expression = "java(totalReleased - projection.getReleasedFigurines())")
     CollectorCollectionSummaryStatsResp toCollectorCollectionSummaryResp(
             CollectorCollectionSummaryProjection projection, int totalReleased);
+
+    /**
+     * Maps a figurine entity to the collection figurine summary response.
+     *
+     * @param figurine
+     *            figurine entity to map
+     * @param releaseStatus
+     *            release status to expose in the response
+     * @param isCollected
+     *            whether the figurine belongs to the collection
+     * @param ownedQuantity
+     *            number of copies owned in the collection
+     * @return figurine summary response populated from the figurine
+     */
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "notes", source = "figurine.remarks")
+    @Mapping(target = "imageUrl", expression = "java(getFirstImage(figurine.getOfficialImages()))")
+    CollectorCollectionFigurineResp toCollectorCollectionFigurineResp(Figurine figurine, ReleaseStatus releaseStatus,
+            boolean isCollected, int ownedQuantity);
 
     /**
      * Returns the first available image URL for a figurine.

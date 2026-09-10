@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
@@ -158,6 +160,39 @@ public class CollectorCollectionFigurineController {
         return service.retrieveCollectionSummary(getCollectorId(jwt), collectionId, includeRestocks);
     }
 
+    /**
+     * Retrieves all figurines assigned to a specific collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. Access requires
+     * the {@code
+     * collections:figurines:read} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the collector collection
+     * @param includeRestocks
+     *            optional flag to include restocked figurines in the results
+     * @param page
+     *            page number for pagination (default is 0)
+     * @param size
+     *            number of items per page for pagination (default is 50, max is
+     *            1000)
+     * @return list of figurines assigned to the collection
+     */
+    @GetMapping("/{collectionId}/figurines")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId, @RequestParam(required = false) boolean includeRestocks,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(1000) int size) {
+        log.info("Retrieving figurines for collection {} with pagination: page {}, size {}, includeRestocks {}",
+                collectionId, page, size, includeRestocks);
+
+        return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId, includeRestocks, page, size);
+    }
     /**
      * Retrieves the latest figurines from the authenticated collector's favorite
      * collection.

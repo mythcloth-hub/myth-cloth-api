@@ -3,12 +3,17 @@ package com.mesofi.mythclothapi.collectorscollections;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +26,7 @@ import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
@@ -35,6 +41,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.figurines.FigurineFilter;
+import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -206,6 +214,67 @@ public class CollectorCollectionFigurineService {
                 .toCollectorCollectionSummaryResp(collectionSummary, catalogSummary.getTotalReleased());
 
         return new CollectorCollectionSummaryResp(summary, collection);
+    }
+
+    /**
+     * Retrieves all figurines available for a collector collection.
+     *
+     * <p>
+     * The response includes figurine information together with collection-specific
+     * ownership data, such as whether the figurine exists in the collection and the
+     * owned quantity.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection
+     * @param includeRestocks
+     *            whether to include restocked figurines in the listing
+     * @param page
+     *            page number for pagination (default: 0)
+     * @param size
+     *            number of figurines per page for pagination (default: 50, max:
+     *            1000)
+     * @return list of figurines with collection ownership details
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     */
+    @Transactional(readOnly = true)
+    public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
+            @Positive Long collectionId, boolean includeRestocks, @PositiveOrZero int page, @PositiveOrZero int size) {
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
+
+        ensureCollectionOwnership(collectorFound, collectionId);
+
+        // build a map to quickly check if a figurine is already in the collection
+        Map<Long, CollectorCollectionItem> collectionFigurineMap = collectionFound.getItems().stream()
+                .filter(CollectorCollectionItem::isOwned)
+                .collect(Collectors.toMap(ccf -> ccf.getFigurine().getId(), Function.identity()));
+
+        FigurineFilter figurineFilter;
+        if (includeRestocks) {
+            figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced();
+        } else {
+            figurineFilter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        }
+
+        return figurineRepository.findPaginated(figurineFilter, PageRequest.of(page, size), collectionId)
+                .map(figurine -> {
+
+                    boolean isCollected = collectionFigurineMap.containsKey(figurine.getId());
+                    int ownedQuantity = isCollected ? collectionFigurineMap.get(figurine.getId()).getQuantity() : 0;
+
+                    return collectorMapper.toCollectorCollectionFigurineResp(figurine,
+                            figurine.getCurrentReleaseStatus(), isCollected, ownedQuantity);
+                });
     }
     /**
      * Retrieves the latest figurines added to the collector's favorite collection.
