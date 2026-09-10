@@ -8,7 +8,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -16,7 +15,6 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -70,19 +68,7 @@ public class CollectorCollectionItem extends Auditable {
 
     /**
      * The date and time when this item was added to the collector's collection.
-     * This field is automatically set when the entity is persisted and is not
-     * updatable thereafter.
      */
-    @Setter(AccessLevel.NONE)
-    @Column(nullable = false, updatable = false, comment = "The date and time when this item was added to the collector collection")
+    @Column(comment = "The date and time when this item was added to the collector collection")
     private Instant addedAt;
-
-    /**
-     * Automatically sets the addedAt timestamp to the current instant when the
-     * entity is persisted for the first time.
-     */
-    @PrePersist
-    protected void onCreate() {
-        addedAt = Instant.now();
-    }
 }

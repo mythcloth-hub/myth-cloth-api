@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
@@ -55,7 +56,30 @@ public interface CollectorMapper {
     default List<Long> getFigurineIds(CollectorCollection collection) {
         return collection.getItems().stream().map(item -> item.getFigurine().getId()).toList();
     }
+    /**
+     * Returns the first available image URL for a figurine.
+     *
+     * @param images
+     *            figurine image URLs
+     * @return first image URL, or {@code null} when no images are present
+     */
+    default String getFirstImage(List<String> images) {
+        return images == null || images.isEmpty() ? null : images.getFirst();
+    }
 
+    /**
+     * Maps a collector collection item entity to its latest favorite response.
+     *
+     * @param collectorCollectionItem
+     *            collector collection figurine entity to map
+     * @return latest favorite response populated from the entity
+     */
+    @Mapping(target = "id", source = "figurine.id")
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "imageUrl", expression = "java(getFirstImage(collectorCollectionItem.getFigurine().getOfficialImages()))")
+    @Mapping(target = "ownedQuantity", source = "quantity")
+    CollectorCollectionLatestFavoriteResp toCollectorCollectionLatestFavoriteResp(
+            CollectorCollectionItem collectorCollectionItem);
     /**
      * Maps a collector collection request to a new collector collection entity.
      *

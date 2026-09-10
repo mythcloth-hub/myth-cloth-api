@@ -14,10 +14,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -39,6 +41,11 @@ import com.mesofi.mythclothapi.catalogs.CatalogService;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
@@ -112,6 +119,8 @@ public class FigurineService {
     private final LineUpRepository lineUpRepository;
     private final FigurineRepository repository;
     private final CurrencyRegionResolver currencyRegionResolver;
+    private final CollectorRepository collectorRepository;
+    private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CacheManager cacheManager;
     private final CatalogService catalogService;
 
@@ -284,12 +293,37 @@ public class FigurineService {
                 previousRelease.getDistributors().getFirst().getReleaseDate());
     }
 
+    /**
+     * Retrieves the identifiers of all figurines contained in a collector's
+     * collection.
+     *
+     * <p>
+     * If the supplied collection identifier is {@code null}, an empty list is
+     * returned. The collector must exist; otherwise a
+     * {@link CollectorNotFoundException} is thrown.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to inspect; may be {@code null}
+     * @return a list containing the ids of all figurines in the specified
+     *         collection, or an empty list if the collection does not exist or no
+     *         collection id was provided
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     */
     public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
         if (collectionId == null) {
             return List.of();
         }
 
-        return List.of();
+        Collector collectorFound = collectorRepository.findById(collectorId)
+                .orElseThrow(() -> new CollectorNotFoundException(collectorId));
+
+        return collectorFound.getCollections().stream().filter(collection -> collection.getId().equals(collectionId))
+                .findFirst().map(collection -> collection.getItems().stream().filter(CollectorCollectionItem::isOwned)
+                        .map(CollectorCollectionItem::getFigurine).map(BaseId::getId).toList())
+                .orElseGet(List::of);
     }
 
     @Transactional(readOnly = true)
@@ -343,7 +377,32 @@ public class FigurineService {
             return findDefaultRecommendations(filter, limit);
         } else {
             // personalized recommendations for logged-in users
-            return List.of();
+            List<CollectorCollectionItem> partialCollection = collectorCollectionFigurineService
+                    .findLatestFavoriteCollectionFigurines(collectorId, MAX_FIGURINES_PER_COLLECTOR);
+            log.info("Retrieved {} latest figurines for collector '{}'", partialCollection.size(), collectorId);
+
+            if (partialCollection.isEmpty()) {
+                FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+                return findDefaultRecommendations(filter, limit);
+            }
+
+            // For each figurine in the partial collection, we identify the distinct groups
+            // and use those groups to retrieve relevant recommendations.
+            Set<Long> distinctGroupIds = new HashSet<>();
+            Set<Long> figurineIds = new HashSet<>();
+
+            for (CollectorCollectionItem collection : partialCollection) {
+                Figurine figurine = collection.getFigurine();
+
+                figurineIds.add(figurine.getId());
+                distinctGroupIds.add(figurine.getGroup().getId());
+            }
+
+            FigurineFilter filter = FigurineFilterFactory
+                    .buildReleasedAnnouncedAndGroups(new ArrayList<>(distinctGroupIds));
+            return repository.findPaginated(filter, PageRequest.of(0, limit + partialCollection.size())).stream()
+                    .filter(figurine -> !figurineIds.contains(figurine.getId()))
+                    .map(mapper::toFigurineRecommendationResp).limit(limit).toList();
         }
     }
 

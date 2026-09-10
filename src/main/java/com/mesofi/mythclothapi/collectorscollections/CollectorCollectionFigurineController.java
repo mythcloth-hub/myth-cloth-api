@@ -3,6 +3,8 @@ package com.mesofi.mythclothapi.collectorscollections;
 import java.util.List;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -10,12 +12,15 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
@@ -61,6 +66,57 @@ public class CollectorCollectionFigurineController {
 
     private final CollectorCollectionFigurineService service;
 
+    /**
+     * Adds a single figurine to the authenticated collector's favorite collection.
+     *
+     * <p>
+     * The favorite collection is determined by the collector's preferences. If no
+     * favorite collection exists, a new favorite collection is created. The
+     * operation requires the {@code collections:figurines:add} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param figurineId
+     *            unique identifier of the figurine to assign to the favorite
+     *            collection
+     * @return an empty response with HTTP {@code 204 No Content} when the
+     *         assignment succeeds
+     */
+    @PostMapping("/favorite/figurines/{figurineId}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
+    public ResponseEntity<Void> addFigurineToFavoriteCollection(@AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long figurineId) {
+
+        service.addFigurineToFavoriteCollection(getCollectorId(jwt), figurineId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Assigns one or more figurines to one or more collector collections.
+     *
+     * <p>
+     * This endpoint provides the main workflow for managing figurine collection
+     * assignments. Depending on the request configuration, it can:
+     *
+     * <ul>
+     * <li>Assign figurines to existing collections.
+     * <li>Create collections automatically when required.
+     * <li>Apply predefined or user-provided collection information.
+     * </ul>
+     *
+     * <p>
+     * The authenticated collector is obtained from the JWT subject claim.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param request
+     *            assignment request containing figurines, collections, and
+     *            assignment options
+     * @return an empty response with HTTP {@code 204 No Content} when the
+     *         assignment succeeds
+     */
     @PostMapping("/assign-figurines")
     @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> assignFigurinesToCollections(@AuthenticationPrincipal Jwt jwt,
@@ -71,6 +127,34 @@ public class CollectorCollectionFigurineController {
 
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Retrieves the latest figurines from the authenticated collector's favorite
+     * collection.
+     *
+     * <p>
+     * The favorite collection is determined by the collector's preferences. Access
+     * requires the {@code collections:figurines:read} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param limit
+     *            maximum number of latest figurines to retrieve (default is 20, max
+     *            is 30)
+     * @return list of latest figurines from the favorite collection
+     */
+    @GetMapping("/favorite/figurines/latest")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public List<CollectorCollectionLatestFavoriteResp> retrieveLatestFavoriteCollectionFigurines(
+            @AuthenticationPrincipal Jwt jwt, @RequestParam(defaultValue = "20") @Min(1) @Max(30) int limit) {
+        Long collectorId = getCollectorId(jwt);
+
+        log.info("Retrieving latest figurines from favorite collection of collector {}, limit {}", collectorId, limit);
+
+        return service.retrieveLatestFavoriteCollectionFigurines(collectorId, limit);
+    }
+
     /**
      * Retrieves all collections belonging to the authenticated collector.
      *

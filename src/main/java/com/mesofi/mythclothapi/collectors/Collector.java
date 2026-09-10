@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
@@ -62,8 +63,10 @@ public class Collector extends Auditable {
      * relationship, and the collections are managed by the collector. Cascade
      * operations are applied to ensure that changes to the collector are reflected
      * in its collections, and orphan removal is enabled to delete collections that
-     * are no longer associated with the collector.
+     * are no longer associated with the collector. Ordering is applied to the
+     * collections based on their ID in descending order.
      */
+    @OrderBy("id DESC")
     @OneToMany(mappedBy = "collector", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CollectorCollection> collections = new ArrayList<>();
 
