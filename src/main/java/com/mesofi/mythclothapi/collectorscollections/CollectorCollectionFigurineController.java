@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,6 +28,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
@@ -306,6 +308,32 @@ public class CollectorCollectionFigurineController {
         return service.retrieveCollections(getCollectorId(jwt));
     }
 
+    /**
+     * Updates an existing collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. Only the provided
+     * collection fields are updated according to the request payload.
+     *
+     * <p>
+     * This operation requires the {@code collections:update} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param id
+     *            unique identifier of the collection to update
+     * @param request
+     *            collection update information
+     * @return the updated collector collection
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_UPDATE + "')")
+    public ResponseEntity<CollectorCollectionResp> updateCollection(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long id, @RequestBody @Valid CollectorCollectionReq request) {
+        CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
+        return ResponseEntity.ok(updated);
+    }
     /**
      * Extracts the authenticated collector identifier from the JWT subject claim.
      *

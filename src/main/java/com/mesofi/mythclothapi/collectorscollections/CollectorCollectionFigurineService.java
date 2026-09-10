@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
@@ -381,6 +382,56 @@ public class CollectorCollectionFigurineService {
 
         log.info("Found {} collections for collector [{}]", collectorCollection.size(), collectorId);
         return collectorCollection.stream().map(collectorMapper::toCollectorCollectionResp).toList();
+    }
+
+    /**
+     * Updates the metadata of an existing collector collection.
+     *
+     * <p>
+     * The collection ownership is validated before applying updates.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to update
+     * @param request
+     *            updated collection information
+     * @return updated collection response
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     */
+    @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    public CollectorCollectionResp updateCollection(@Positive Long collectorId, @Positive Long collectionId,
+            @NotNull @Valid CollectorCollectionReq request) {
+        log.info("Updating collection with id '{}'. New name: '{}'", collectionId, request.name());
+
+        Collector collectorFound = retrieveCollector(collectorId);
+
+        List<CollectorCollection> collectorCollections = collectorFound.getCollections();
+
+        // make sure this collector owns the collection to be updated.
+        var existing = collectorCollections.stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        // is there any other user collection that contains the same collection name? if
+        // so, report it
+        collectorCollections.stream().filter(cc -> !cc.getId().equals(collectionId))
+                .filter(cc -> cc.getName().equals(request.name())).findFirst().ifPresent(cc -> {
+                    throw new CollectorCollectionAlreadyExistsException(cc.getName());
+                });
+
+        // No need to use MapStruct when properties are too simple. Just update them
+        // directly.
+        existing.setName(request.name());
+        existing.setImageUrl(request.imageUrl());
+        existing.setDescription(request.description());
+
+        return new CollectorCollectionResp(existing.getId(), existing.getName(), existing.getImageUrl(),
+                existing.getDescription(), existing.isFavorite(), 0, 0, List.of());
     }
 
     /**
