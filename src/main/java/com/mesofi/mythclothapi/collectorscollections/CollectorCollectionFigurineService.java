@@ -33,11 +33,11 @@ import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionIt
 import com.mesofi.mythclothapi.collectorscollections.model.Condition;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionItemRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
-import com.mesofi.mythclothapi.figurines.repository.projection.FigurineCatalogSummaryProjection;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -157,9 +157,9 @@ public class CollectorCollectionFigurineService {
      * @throws FigurineNotFoundException
      *             if the figurine does not exist
      */
+    @Transactional
     @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
             COLLECTION_SUMMARY_CACHE}, allEntries = true)
-    @Transactional
     public void addFigurineToFavoriteCollection(@Positive Long collectorId, @Positive Long figurineId) {
         log.info("Adding figurine [{}] to favorite collection for collector [{}]", figurineId, collectorId);
 
@@ -185,31 +185,7 @@ public class CollectorCollectionFigurineService {
         }
     }
 
-    /**
-     * Retrieves catalog and collection summary statistics for one collector
-     * collection.
-     *
-     * <p>
-     * The collector must own the collection. The catalog summary is used to build
-     * the overall figurine counts, while the collection summary is mapped to the
-     * collection-specific ownership statistics.
-     * </p>
-     *
-     * @param collectorId
-     *            identifier of the collector
-     * @param collectionId
-     *            identifier of the collection to summarize
-     * @param includeRestocks
-     *            whether to include restocked figurines in the summary counts
-     * @return summary response with catalog and collection totals
-     * @throws CollectorNotFoundException
-     *             if the collector does not exist
-     * @throws CollectorCollectionNotFoundException
-     *             if the collection does not exist or is not owned by the collector
-     */
     @Transactional(readOnly = true)
-    // @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key =
-    // "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks)")
     public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
             @Positive Long collectionId, boolean includeRestocks) {
 
@@ -217,7 +193,8 @@ public class CollectorCollectionFigurineService {
 
         ensureCollectionOwnership(collectorFound, collectionId);
 
-        FigurineCatalogSummaryProjection catalogSummary = figurineRepository.getFigurineCatalogSummary(includeRestocks);
+        CollectorCollectionCatalogProjection catalogSummary = collectorCollectionRepository
+                .getCollectorCollectionCatalog(collectionId, includeRestocks);
         CollectorCollectionCatalogSummaryResp summary = new CollectorCollectionCatalogSummaryResp(
                 catalogSummary.getTotalFigurines(), catalogSummary.getTotalAnnounced(),
                 catalogSummary.getTotalReleased());
@@ -230,7 +207,6 @@ public class CollectorCollectionFigurineService {
 
         return new CollectorCollectionSummaryResp(summary, collection);
     }
-
     /**
      * Retrieves the latest figurines added to the collector's favorite collection.
      *

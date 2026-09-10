@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.collectorscollections.repository;
+package com.mesofi.mythclothapi.collectorscollections.repository.projection;
 
 /**
  * Projection containing summary statistics for a collector's collection,

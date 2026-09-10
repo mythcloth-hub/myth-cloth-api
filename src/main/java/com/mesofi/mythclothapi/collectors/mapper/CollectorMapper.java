@@ -12,7 +12,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
 
 @Mapper(componentModel = "spring")
 public interface CollectorMapper {
