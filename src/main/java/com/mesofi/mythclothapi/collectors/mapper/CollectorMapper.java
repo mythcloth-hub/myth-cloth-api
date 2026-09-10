@@ -10,7 +10,9 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
 
 @Mapper(componentModel = "spring")
 public interface CollectorMapper {
@@ -56,6 +58,30 @@ public interface CollectorMapper {
     default List<Long> getFigurineIds(CollectorCollection collection) {
         return collection.getItems().stream().map(item -> item.getFigurine().getId()).toList();
     }
+
+    /**
+     * Maps a collection summary projection to its response DTO.
+     *
+     * <p>
+     * The projection exposes copy counts and unique figurine counts, while the
+     * {@code totalReleased} argument is used to calculate the missing released
+     * figurines.
+     * </p>
+     *
+     * @param projection
+     *            summary projection returned by the repository
+     * @param totalReleased
+     *            total number of released figurines in the catalog
+     * @return summary response populated from the projection
+     */
+    @Mapping(target = "preorderedCopies", source = "projection.preorderedQuantity")
+    @Mapping(target = "ownedCopies", source = "projection.releasedQuantity")
+    @Mapping(target = "preorderedFigurines", source = "projection.preorderedFigurines")
+    @Mapping(target = "ownedFigurines", source = "projection.releasedFigurines")
+    @Mapping(target = "missingReleasedFigurines", expression = "java(totalReleased - projection.getReleasedFigurines())")
+    CollectorCollectionSummaryStatsResp toCollectorCollectionSummaryResp(
+            CollectorCollectionSummaryProjection projection, int totalReleased);
+
     /**
      * Returns the first available image URL for a figurine.
      *

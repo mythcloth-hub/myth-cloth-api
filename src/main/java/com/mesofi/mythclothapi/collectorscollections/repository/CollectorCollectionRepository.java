@@ -3,6 +3,8 @@ package com.mesofi.mythclothapi.collectorscollections.repository;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectors.Collector;
@@ -38,5 +40,35 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
      * @return matching collection when present
      */
     Optional<CollectorCollection> findByCollectorAndName(Collector collector, String name);
-
+    /**
+     * Retrieves summary statistics for a collector collection.
+     *
+     * <p>
+     * The summary includes total preordered and released copies, as well as the
+     * number of distinct preordered and released figurines.
+     * </p>
+     *
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @param restocks
+     *            whether to include restocked figurines in the summary; when
+     *            {@code true}, all figurines in the collection are considered, and
+     *            when {@code false}, only figurines without a previous release are
+     *            included
+     * @return collection summary projection
+     */
+    @Query(value = """
+            SELECT
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN cci.quantity ELSE 0 END), 0) AS preordered_quantity, -- Total number of preordered copies
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN cci.quantity ELSE 0 END), 0) AS released_quantity,    -- Total number of released copies
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS preordered_figurines,           -- Number of unique preordered figurines
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS released_figurines               -- Number of unique released figurines
+            FROM collector_collection_items cci, figurines f
+            WHERE cci.figurine_id = f.id
+              AND cci.owned = true
+              AND cci.collection_id = :collectionId
+              AND (:restocks = true OR f.previous_release_id IS NULL)
+            """, nativeQuery = true)
+    CollectorCollectionSummaryProjection getCollectorCollectionSummary(Long collectionId,
+            @Param("restocks") boolean restocks);
 }

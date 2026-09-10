@@ -5,6 +5,7 @@ import java.util.List;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
@@ -126,6 +128,34 @@ public class CollectorCollectionFigurineController {
                 request.collectionMode());
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Retrieves the summary statistics for a specific collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. Access requires
+     * the {@code collections:figurines:read} authority.
+     * </p>
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the collector collection
+     * @param includeRestocks
+     *            optional flag to include restocked figurines in the summary
+     * @return collection summary response containing catalog and collection
+     *         statistics
+     */
+    @GetMapping("/{collectionId}/summary")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public CollectorCollectionSummaryResp retrieveCollectionSummary(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId, @RequestParam(required = false) boolean includeRestocks) {
+        log.info("Retrieving collection summary for collection {} of collector {}, includeRestocks {}", collectionId,
+                getCollectorId(jwt), includeRestocks);
+
+        return service.retrieveCollectionSummary(getCollectorId(jwt), collectionId, includeRestocks);
     }
 
     /**

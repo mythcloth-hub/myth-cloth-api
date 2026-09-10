@@ -20,9 +20,12 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
@@ -30,8 +33,11 @@ import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionIt
 import com.mesofi.mythclothapi.collectorscollections.model.Condition;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionItemRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineCatalogSummaryProjection;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -177,6 +183,52 @@ public class CollectorCollectionFigurineService {
                 addFigurinesToCollections(collectorId, request);
             });
         }
+    }
+
+    /**
+     * Retrieves catalog and collection summary statistics for one collector
+     * collection.
+     *
+     * <p>
+     * The collector must own the collection. The catalog summary is used to build
+     * the overall figurine counts, while the collection summary is mapped to the
+     * collection-specific ownership statistics.
+     * </p>
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @param includeRestocks
+     *            whether to include restocked figurines in the summary counts
+     * @return summary response with catalog and collection totals
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or is not owned by the collector
+     */
+    @Transactional(readOnly = true)
+    // @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key =
+    // "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks)")
+    public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
+            @Positive Long collectionId, boolean includeRestocks) {
+
+        Collector collectorFound = retrieveCollector(collectorId);
+
+        ensureCollectionOwnership(collectorFound, collectionId);
+
+        FigurineCatalogSummaryProjection catalogSummary = figurineRepository.getFigurineCatalogSummary(includeRestocks);
+        CollectorCollectionCatalogSummaryResp summary = new CollectorCollectionCatalogSummaryResp(
+                catalogSummary.getTotalFigurines(), catalogSummary.getTotalAnnounced(),
+                catalogSummary.getTotalReleased());
+
+        CollectorCollectionSummaryProjection collectionSummary = collectorCollectionRepository
+                .getCollectorCollectionSummary(collectionId, includeRestocks);
+
+        CollectorCollectionSummaryStatsResp collection = collectorMapper
+                .toCollectorCollectionSummaryResp(collectionSummary, catalogSummary.getTotalReleased());
+
+        return new CollectorCollectionSummaryResp(summary, collection);
     }
 
     /**
