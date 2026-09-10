@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
@@ -69,6 +72,44 @@ import lombok.extern.slf4j.Slf4j;
 public class CollectorCollectionFigurineController {
 
     private final CollectorCollectionFigurineService service;
+
+    /**
+     * Adds a single figurine to a specific collector collection.
+     *
+     * <p>
+     * This endpoint is deprecated. Use
+     * {@link #assignFigurinesToCollections(Jwt, AssignFigurinesReq)} instead, which
+     * supports assigning one or multiple figurines to one or multiple collections
+     * using a unified assignment workflow.
+     *
+     * <p>
+     * The authenticated collector is obtained from the JWT subject claim. The
+     * operation requires the {@code collections:figurines:add} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the target collector collection
+     * @param figurineId
+     *            unique identifier of the figurine to assign
+     * @return an empty response with HTTP {@code 204 No Content} when the
+     *         assignment succeeds
+     */
+    @PostMapping("/{collectionId}/figurines/{figurineId}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
+    public ResponseEntity<Void> addFigurineToCollection(@AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long collectionId, @PathVariable Long figurineId) {
+
+        AssignFigurinesReq request = new AssignFigurinesReq(new ArrayList<>(List.of(figurineId)),
+                CollectionAssignmentMode.EXISTING, List.of(collectionId), null);
+
+        service.assignFigurinesToCollections(getCollectorId(jwt), request);
+        log.info("Current assignment request: figurines {} to collections {} with mode {}", request.figurineIds(),
+                request.collectionIds(), request.collectionMode());
+
+        return ResponseEntity.noContent().build();
+    }
 
     /**
      * Adds a single figurine to the authenticated collector's favorite collection.
@@ -218,6 +259,32 @@ public class CollectorCollectionFigurineController {
         log.info("Retrieving latest figurines from favorite collection of collector {}, limit {}", collectorId, limit);
 
         return service.retrieveLatestFavoriteCollectionFigurines(collectorId, limit);
+    }
+
+    /**
+     * Deletes a specific figurine from a collector collection.
+     *
+     * <p>
+     * The figurine must be assigned to the specified collection owned by the
+     * authenticated collector. Access requires the
+     * {@code collections:figurines:delete} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the collector collection
+     * @param figurineId
+     *            unique identifier of the figurine to delete
+     * @return an empty response with HTTP {@code 204 No Content} when deletion
+     *         succeeds
+     */
+    @DeleteMapping("/{collectionId}/figurines/{figurineId}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_DELETE + "')")
+    public ResponseEntity<Void> deleteCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
+        service.deleteCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
+        return ResponseEntity.noContent().build();
     }
 
     /**

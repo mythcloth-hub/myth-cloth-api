@@ -182,11 +182,8 @@ public class CollectorCollectionFigurineService {
         } else {
             // add the existing figurine to the favorite collection
             collections.stream().filter(CollectorCollection::isFavorite).findFirst().ifPresent(favCollection -> {
-                List<Long> figurineIds = new ArrayList<>();
-                figurineIds.add(figurineId);
-
-                AssignFigurinesReq request = new AssignFigurinesReq(figurineIds, CollectionAssignmentMode.EXISTING,
-                        List.of(favCollection.getId()), null);
+                AssignFigurinesReq request = new AssignFigurinesReq(new ArrayList<>(List.of(figurineId)),
+                        CollectionAssignmentMode.EXISTING, List.of(favCollection.getId()), null);
 
                 addFigurinesToCollections(collectorId, request);
             });
@@ -326,10 +323,52 @@ public class CollectorCollectionFigurineService {
                 PageRequest.of(0, limit));
     }
 
+    /**
+     * Deletes a figurine assignment from a collector collection.
+     *
+     * <p>
+     * The collection must belong to the specified collector. If the figurine is not
+     * currently assigned to the collection, no deletion is performed.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection
+     * @param figurineId
+     *            identifier of the figurine to unassign
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     * @throws FigurineNotFoundException
+     *             if the figurine does not exist
+     */
+    @Transactional
     public void deleteCollectionFigurine(@Positive Long collectorId, @Positive Long collectionId,
             @Positive Long figurineId) {
+        log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
+                collectorId);
 
+        var collectorFound = retrieveCollector(collectorId);
+        var collectionFound = retrieveCollectorCollection(collectionId);
+
+        // make sure this collector owns the collection to be deleted.
+        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        var figurineFound = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new FigurineNotFoundException(figurineId));
+
+        collectorCollectionItemRepository.findByCollectionAndFigurine(collectionFound, figurineFound).ifPresent(ccf -> {
+            ccf.setQuantity(0);
+            ccf.setAddedAt(null);
+            ccf.setOwned(false);
+            log.info("Deleted figurine [{}] - '{}' from collection [{}] - '{}'", figurineFound.getId(),
+                    figurineFound.getNormalizedName(), collectionFound.getId(), collectionFound.getName());
+        });
     }
+
     @Transactional(readOnly = true)
     // @Cacheable(value = COLLECTION_SUMMARY_CACHE, key =
     // "T(java.util.Objects).hash(#collectorId)")
