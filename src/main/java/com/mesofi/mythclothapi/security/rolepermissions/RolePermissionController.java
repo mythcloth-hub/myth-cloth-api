@@ -9,7 +9,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
-import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
 
@@ -47,31 +45,6 @@ public class RolePermissionController {
 
     private final RoleService service;
     private final RolePermissionSyncService syncService;
-
-    /**
-     * Assigns a permission to a role.
-     *
-     * <p>
-     * The authenticated user must have the {@code roles:permissions:assign}
-     * authority.
-     * </p>
-     *
-     * @param roleId
-     *            the unique identifier of the role
-     * @param rolePermissionRequest
-     *            the request containing the permission to assign
-     * @return a response with no content and an HTTP {@code 204 No Content} status
-     *         when the permission is successfully assigned
-     */
-    @PostMapping
-    @Deprecated(forRemoval = true)
-    public ResponseEntity<Void> addPermissionToRole(@PathVariable Long roleId,
-            @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
-
-        service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
-
-        return ResponseEntity.noContent().build();
-    }
 
     /**
      * Retrieves all permissions assigned to a role.
