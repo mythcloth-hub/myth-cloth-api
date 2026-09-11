@@ -19,14 +19,14 @@ public final class OpenApiYamlGenerator {
     private OpenApiYamlGenerator() {
     }
 
-    public static void main(String[] args) throws IOException {
+    static void main(String[] args) throws IOException {
         String output = args.length > 0 ? args[0] : "build/generated/openapi/swagger.yaml";
         Path target = Path.of(output).toAbsolutePath().normalize();
 
         SpringApplication app = new SpringApplication(Application.class);
-        app.setDefaultProperties(Map.of("spring.main.banner-mode", "off", "spring.profiles.active", "test",
-                "spring.rabbitmq.listener.simple.auto-startup", "false", "spring.rabbitmq.listener.direct.auto-startup",
-                "false"));
+        app.setDefaultProperties(Map.of("server.port", "0", "spring.main.banner-mode", "off", "spring.profiles.active",
+                "test", "spring.rabbitmq.listener.simple.auto-startup", "false",
+                "spring.rabbitmq.listener.direct.auto-startup", "false"));
 
         try (ConfigurableApplicationContext context = app.run()) {
             OpenApiWebMvcResource openApiResource = context.getBean(OpenApiWebMvcResource.class);
