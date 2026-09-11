@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -334,6 +335,33 @@ public class CollectorCollectionFigurineController {
         CollectorCollectionResp updated = service.updateCollection(getCollectorId(jwt), id, request);
         return ResponseEntity.ok(updated);
     }
+
+    /**
+     * Duplicates an existing collector collection.
+     *
+     * <p>
+     * The source collection must belong to the authenticated collector. This
+     * operation creates a new collection derived from the source collection and
+     * responds with the URI of the created resource.
+     *
+     * <p>
+     * This operation requires the {@code collections:update} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param id
+     *            unique identifier of the source collection to duplicate
+     * @return an empty response with HTTP {@code 201 Created} and a
+     *         {@code Location} header pointing to the duplicated collection
+     */
+    @PostMapping("/{id}/duplicate")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DUPLICATE + "')")
+    public ResponseEntity<Void> duplicateCollection(@AuthenticationPrincipal Jwt jwt, @Positive @PathVariable Long id) {
+        long collectionId = service.duplicateCollection(getCollectorId(jwt), id);
+        return ResponseEntity.created(URI.create(String.format("/collections/%d", collectionId))).build();
+    }
+
     /**
      * Extracts the authenticated collector identifier from the JWT subject claim.
      *

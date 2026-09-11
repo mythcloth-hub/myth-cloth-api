@@ -450,6 +450,54 @@ public class CollectorCollectionFigurineService {
     }
 
     /**
+     * Duplicates an existing collector collection, including its assigned
+     * figurines.
+     *
+     * <p>
+     * The source collection must belong to the provided collector. The duplicate
+     * uses the original name and description with a {@code " copy"} suffix and
+     * carries over figurine quantity and condition values.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the source collection to duplicate
+     * @return identifier of the newly created collection
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the source collection does not exist or is not owned by the
+     *             collector
+     * @throws CollectorCollectionAlreadyExistsException
+     *             if the generated duplicate name already exists
+     */
+    @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    public long duplicateCollection(@Positive Long collectorId, @Positive Long collectionId) {
+        log.info("Duplicating collection with id '{}' for collector '{}'", collectionId, collectorId);
+
+        var collectorFound = retrieveCollector(collectorId);
+
+        // Finds all collections belonging to the collector.
+        List<CollectorCollection> collectorCollection = collectorCollectionRepository.findByCollector(collectorFound);
+
+        CollectorCollection owningCollection = collectorCollection.stream()
+                .filter(cc -> cc.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        String newName = owningCollection.getName() + " copy";
+        String newImageUrl = owningCollection.getImageUrl() != null ? owningCollection.getImageUrl() : null;
+        String newDescription = owningCollection.getDescription() != null
+                ? owningCollection.getDescription() + " copy"
+                : null;
+
+        List<CollectorCollectionItem> owningCollectionItems = owningCollection.getItems();
+
+        return createCollectionFromExisting(collectorId, owningCollectionItems,
+                new CollectorCollectionReq(false, newName, newImageUrl, newDescription)).getId();
+    }
+
+    /**
      * Creates a new collection for the specified collector with the given
      * figurines.
      *
@@ -463,22 +511,9 @@ public class CollectorCollectionFigurineService {
      */
     private CollectorCollection createCollection(Long collectorId, List<Long> figurineIds,
             CollectorCollectionReq collection) {
-        Collector collector = retrieveCollector(collectorId);
-
-        collectorCollectionRepository.findByCollectorAndName(collector, collection.name()).ifPresent(existing -> {
-            throw new CollectorCollectionAlreadyExistsException(existing.getName());
-        });
-
-        // We make sure that the collector has not reached the maximum number of
-        // collections allowed.
-        long existingCollections = collectorCollectionRepository.countByCollector(collector);
-        if (existingCollections >= MAX_COLLECTIONS_PER_COLLECTOR) {
-            throw new CollectorCollectionLimitReachedException(collectorId, MAX_COLLECTIONS_PER_COLLECTOR);
-        }
-
-        boolean isFavorite = existingCollections == 0; // the first collection created is marked as favorite
-
-        CollectorCollection newCollection = collectorMapper.toCollectorCollection(collection, isFavorite, collector);
+        // Validate that the collector exists and that the collection name is unique for
+        // this collector.
+        CollectorCollection newCollection = prepareCollectionForCreation(collectorId, collection);
 
         var saved = collectorCollectionRepository.save(newCollection);
 
@@ -498,6 +533,69 @@ public class CollectorCollectionFigurineService {
         newCollection.getItems().addAll(savedItems);
 
         return newCollection;
+    }
+
+    /**
+     * Creates a new collection for the specified collector by duplicating an
+     * existing collection's items.
+     *
+     * @param collectorId
+     *            identifier of the collector creating the collection
+     * @param existingItems
+     *            list of items from the existing collection to duplicate
+     * @param collection
+     *            details of the new collection to be created
+     * @return the newly created {@link CollectorCollection}
+     */
+    private CollectorCollection createCollectionFromExisting(Long collectorId,
+            List<CollectorCollectionItem> existingItems, CollectorCollectionReq collection) {
+        log.info("Creating a new collection for collector [{}] from existing collection with name '{}'", collectorId,
+                collection.name());
+
+        CollectorCollection newCollection = prepareCollectionForCreation(collectorId, collection);
+
+        var saved = collectorCollectionRepository.save(newCollection);
+
+        collectorCollectionItemRepository.saveAll(new ArrayList<>(existingItems.stream().map(collectorMapper::copy)
+                .peek(item -> item.setCollection(saved)).collect(Collectors.toList())));
+        return newCollection;
+    }
+
+    /**
+     * Prepares a new {@link CollectorCollection} for creation by validating the
+     * collector and ensuring that the collection name is unique.
+     *
+     * @param collectorId
+     *            identifier of the collector creating the collection
+     * @param collection
+     *            details of the collection to be created
+     * @return a new {@link CollectorCollection} instance ready for persistence
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionAlreadyExistsException
+     *             if a collection with the same name already exists for the
+     *             collector
+     * @throws CollectorCollectionLimitReachedException
+     *             if the collector has reached the maximum number of allowed
+     *             collections
+     */
+    private CollectorCollection prepareCollectionForCreation(Long collectorId, CollectorCollectionReq collection) {
+        Collector collector = retrieveCollector(collectorId);
+
+        collectorCollectionRepository.findByCollectorAndName(collector, collection.name()).ifPresent(existing -> {
+            throw new CollectorCollectionAlreadyExistsException(existing.getName());
+        });
+
+        // We make sure that the collector has not reached the maximum number of
+        // collections allowed.
+        long existingCollections = collectorCollectionRepository.countByCollector(collector);
+        if (existingCollections >= MAX_COLLECTIONS_PER_COLLECTOR) {
+            throw new CollectorCollectionLimitReachedException(collectorId, MAX_COLLECTIONS_PER_COLLECTOR);
+        }
+
+        boolean isFavorite = existingCollections == 0; // the first collection created is marked as favorite
+
+        return collectorMapper.toCollectorCollection(collection, isFavorite, collector);
     }
 
     /**

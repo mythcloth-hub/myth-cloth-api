@@ -1,5 +1,6 @@
 package com.mesofi.mythclothapi.collectorscollections.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +24,15 @@ import com.mesofi.mythclothapi.collectorscollections.repository.projection.Colle
  */
 @Repository
 public interface CollectorCollectionRepository extends JpaRepository<CollectorCollection, Long> {
+    /**
+     * Finds all collections owned by the specified collector.
+     *
+     * @param collector
+     *            collector whose collections should be returned
+     * @return collections owned by the collector
+     */
+    List<CollectorCollection> findByCollector(Collector collector);
+
     /**
      * Counts the collections owned by the specified collector.
      *

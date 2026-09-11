@@ -154,4 +154,21 @@ public interface CollectorMapper {
     @Mapping(target = "items", ignore = true)
     CollectorCollection toCollectorCollection(CollectorCollectionReq collectionReq, boolean isFavorite,
             Collector collector);
+
+    /**
+     * Copies a collector collection item entity to a new instance.
+     *
+     * <p>
+     * The new instance will have its id and collection ignored, while the figurine
+     * and quantity will be copied from the source entity.
+     * </p>
+     *
+     * @param source
+     *            source collector collection item entity to copy
+     * @return new collector collection item entity populated from the source
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "collection", ignore = true)
+    CollectorCollectionItem copy(CollectorCollectionItem source);
+
 }
