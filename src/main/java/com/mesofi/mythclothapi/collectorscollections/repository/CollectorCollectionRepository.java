@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -52,6 +53,16 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
      * @return matching collection when present
      */
     Optional<CollectorCollection> findByCollectorAndName(Collector collector, String name);
+
+    /**
+     * Deletes a collection by its identifier.
+     *
+     * @param id
+     *            collection identifier
+     */
+    @Modifying
+    @Query("DELETE FROM CollectorCollection cc WHERE cc.id = :id")
+    void deleteCollectionById(Long id);
 
     @Query(value = """
             SELECT

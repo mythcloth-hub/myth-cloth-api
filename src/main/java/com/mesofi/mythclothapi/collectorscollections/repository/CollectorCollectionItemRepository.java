@@ -3,8 +3,13 @@ package com.mesofi.mythclothapi.collectorscollections.repository;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
@@ -38,4 +43,23 @@ public interface CollectorCollectionItemRepository extends JpaRepository<Collect
      */
     List<CollectorCollectionItem> findByCollectionAndOwnedTrueOrderByAddedAtDesc(CollectorCollection collection,
             Pageable pageable);
+
+    /**
+     * Deletes all figurines in a collection for a specific collector.
+     *
+     * @param collectionId
+     *            the ID of the collection
+     * @param collectorId
+     *            the ID of the collector
+     * @return the number of figurines deleted
+     */
+    @Modifying
+    @Transactional
+    @Query("""
+                delete from CollectorCollectionItem cci
+                where cci.collection.id = :collectionId
+                  and cci.collection.collector.id = :collectorId
+            """)
+    int deleteByCollectionIdAndCollectorId(@Param("collectionId") Long collectionId,
+            @Param("collectorId") Long collectorId);
 }

@@ -385,6 +385,57 @@ public class CollectorCollectionFigurineService {
     }
 
     /**
+     * Deletes a collector collection and its associated figurine assignments.
+     *
+     * <p>
+     * The collection must belong to the specified collector. Existing
+     * collection-figurine rows are removed before deleting the collection entity.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to delete
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     */
+    @Transactional
+    public void deleteCollection(Long collectorId, Long collectionId) {
+        log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
+
+        // make sure this collector owns the collection to be removed.
+        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        // deletes all the figurines associated with the collection.
+        int deletedCount = collectorCollectionItemRepository.deleteByCollectionIdAndCollectorId(collectionId,
+                collectorId);
+
+        // Ensure the favorite collection is moved to another collection if the deleted
+        // collection was marked as favorite
+        if (collectionFound.isFavorite()) {
+            List<CollectorCollection> remainingCollections = collectorFound.getCollections().stream()
+                    .filter(c -> !c.getId().equals(collectionId)).toList();
+            if (!remainingCollections.isEmpty()) {
+                CollectorCollection newFavorite = remainingCollections.getFirst();
+                newFavorite.setFavorite(true);
+                collectorCollectionRepository.save(newFavorite);
+                log.info("Collection [{}] was favorite. New favorite collection set to [{}]", collectionId,
+                        newFavorite.getId());
+            }
+        }
+
+        collectorCollectionRepository.deleteCollectionById(collectionId);
+
+        log.info("{} items deleted in collection with id {}", deletedCount, collectionId);
+    }
+
+    /**
      * Updates the metadata of an existing collector collection.
      *
      * <p>

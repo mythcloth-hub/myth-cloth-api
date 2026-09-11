@@ -310,6 +310,32 @@ public class CollectorCollectionFigurineController {
     }
 
     /**
+     * Deletes an existing collector collection.
+     *
+     * <p>
+     * The collection must belong to the authenticated collector. Deleting a
+     * collection may also remove its associated figurine assignments depending on
+     * the configured persistence behavior.
+     *
+     * <p>
+     * This operation requires the {@code collections:delete} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param id
+     *            unique identifier of the collection to delete
+     * @return an empty response with HTTP {@code 204 No Content} when deletion
+     *         succeeds
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_DELETE + "')")
+    public ResponseEntity<Void> deleteCollection(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        service.deleteCollection(getCollectorId(jwt), id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Updates an existing collector collection.
      *
      * <p>
