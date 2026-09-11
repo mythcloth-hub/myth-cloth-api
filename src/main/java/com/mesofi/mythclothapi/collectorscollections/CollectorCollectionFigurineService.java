@@ -27,6 +27,7 @@ import com.mesofi.mythclothapi.collectors.mapper.CollectorMapper;
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionCatalogSummaryResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
@@ -274,6 +275,47 @@ public class CollectorCollectionFigurineService {
                             figurine.getCurrentReleaseStatus(), isCollected, ownedQuantity);
                 });
     }
+
+    /**
+     * Retrieves detailed information about a specific figurine within a
+     * collector-owned collection context.
+     *
+     * <p>
+     * This operation validates that the collection exists and belongs to the
+     * provided collector before retrieving figurine details.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection
+     * @param figurineId
+     *            identifier of the figurine
+     * @return detailed figurine information
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     * @throws FigurineNotFoundException
+     *             if the figurine does not exist
+     */
+    @Transactional(readOnly = true)
+    public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@Positive Long collectorId,
+            @Positive Long collectionId, @Positive Long figurineId) {
+
+        var collectorFound = retrieveCollector(collectorId);
+        retrieveCollectorCollection(collectionId);
+
+        // make sure this collector owns the collection to be retrieved.
+        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        var figurineFound = figurineRepository.findById(figurineId)
+                .orElseThrow(() -> new FigurineNotFoundException(figurineId));
+
+        return collectorMapper.toCollectorCollectionFigurineDetailResp(figurineFound);
+    }
+
     /**
      * Retrieves the latest figurines added to the collector's favorite collection.
      *

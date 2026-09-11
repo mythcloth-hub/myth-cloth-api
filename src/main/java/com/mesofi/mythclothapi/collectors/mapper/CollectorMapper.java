@@ -5,8 +5,10 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
@@ -14,6 +16,10 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
+import com.mesofi.mythclothapi.distributors.model.Distributor;
+import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurines.dto.FigurineDistributorResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 
@@ -113,6 +119,63 @@ public interface CollectorMapper {
      */
     default String getFirstImage(List<String> images) {
         return images == null || images.isEmpty() ? null : images.getFirst();
+    }
+
+    /**
+     * Maps a figurine entity to its detailed collection response.
+     *
+     * @param figurine
+     *            figurine entity to map
+     * @return figurine detail response populated from the entity
+     */
+    @Mapping(target = "displayableName", source = "displayName")
+    @Mapping(target = "lineUp", source = "lineup")
+    @Mapping(target = "lineUpUrl", expression = "java(calculateLineUpUrl(figurine.getLineup()))")
+    CollectorCollectionFigurineDetailResp toCollectorCollectionFigurineDetailResp(Figurine figurine);
+
+    /**
+     * Maps a distributor entity to its response DTO.
+     *
+     * @param distributor
+     *            distributor entity to map
+     * @return distributor response populated from the entity
+     */
+    @Mapping(target = "description", expression = "java(distributor.getName().getDescription())")
+    @Mapping(target = "countryCode", source = "country")
+    DistributorResp toDistributorResp(Distributor distributor);
+
+    /**
+     * Maps a figurine distribution entity to its response DTO.
+     *
+     * @param figurineDistributor
+     *            figurine distribution entity to map
+     * @return figurine distributor response populated from the entity
+     */
+    @Mapping(target = "priceWithTax", ignore = true)
+    @Mapping(target = "announcedAt", source = "announcementDate")
+    @Mapping(target = "preorderOpensAt", source = "preorderDate")
+    FigurineDistributorResp toFigurineDistributorResp(FigurineDistributor figurineDistributor);
+
+    /**
+     * Resolves the lineup image URL used in figurine detail responses.
+     *
+     * @param lineup
+     *            lineup whose image should be resolved
+     * @return lineup image URL, or {@code null} when no match exists
+     */
+    default String calculateLineUpUrl(LineUp lineup) {
+        if (lineup == null) {
+            return null;
+        }
+        if (lineup.getDescription().equals("Myth Cloth EX")) {
+            return "https://imagizer.imageshack.com/img922/1037/VGb1UY.png";
+        } else if (lineup.getDescription().equals("Myth Cloth")) {
+            return "https://imagizer.imageshack.com/img924/6752/iUnW9X.png";
+        } else if (lineup.getDescription().contains("Zero")) {
+            return "https://imagizer.imageshack.com/img924/3571/4Lb8pL.png";
+        }
+        // Todo: Add more lineups and their corresponding URLs as needed
+        return null;
     }
 
     /**

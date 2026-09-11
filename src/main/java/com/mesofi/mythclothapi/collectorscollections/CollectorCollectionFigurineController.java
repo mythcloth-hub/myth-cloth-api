@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.collectorscollections.dto.AssignFigurinesReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectionAssignmentMode;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
@@ -237,6 +238,31 @@ public class CollectorCollectionFigurineController {
                 collectionId, page, size, includeRestocks);
 
         return service.retrieveCollectionFigurines(getCollectorId(jwt), collectionId, includeRestocks, page, size);
+    }
+
+    /**
+     * Retrieves detailed information about a specific figurine within a collector
+     * collection.
+     *
+     * <p>
+     * The figurine must be assigned to the specified collection owned by the
+     * authenticated collector. Access requires the
+     * {@code collections:figurines:read} authority.
+     *
+     * @param jwt
+     *            authenticated collector's JWT token containing identity
+     *            information
+     * @param collectionId
+     *            unique identifier of the collector collection
+     * @param figurineId
+     *            unique identifier of the figurine
+     * @return detailed figurine collection information
+     */
+    @GetMapping("/{collectionId}/figurines/{figurineId}")
+    @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_READ + "')")
+    public CollectorCollectionFigurineDetailResp retrieveCollectionFigurine(@AuthenticationPrincipal Jwt jwt,
+            @Positive @PathVariable Long collectionId, @Positive @PathVariable Long figurineId) {
+        return service.retrieveCollectionFigurine(getCollectorId(jwt), collectionId, figurineId);
     }
 
     /**
