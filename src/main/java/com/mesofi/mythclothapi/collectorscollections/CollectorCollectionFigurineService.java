@@ -501,6 +501,45 @@ public class CollectorCollectionFigurineService {
     }
 
     /**
+     * Updates the favorite status of a collector collection.
+     *
+     * <p>
+     * The collection ownership is validated before applying updates. The specified
+     * collection is marked as favorite, and any other collections for the same
+     * collector are unmarked as favorite.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to mark as favorite
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or does not belong to the
+     *             collector
+     */
+    @Transactional
+    @CacheEvict(value = {COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    public void updateCollectionAsFavorite(@Positive Long collectorId, @Positive Long collectionId) {
+        log.info("Updating collection with id '{}' as favorite for collector '{}'", collectionId, collectorId);
+
+        Collector collectorFound = retrieveCollector(collectorId);
+        CollectorCollection collectionFound = retrieveCollectorCollection(collectionId);
+
+        // make sure this collector owns the collection to be updated.
+        collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        // Sets the current collection as favorite and unsets any other favorite
+        // collection for the collector.
+        collectionFound.setFavorite(true);
+        collectorFound.getCollections().stream().filter(c -> !c.getId().equals(collectionId))
+                .forEach(c -> c.setFavorite(false));
+
+        collectorCollectionRepository.save(collectionFound);
+    }
+
+    /**
      * Duplicates an existing collector collection, including its assigned
      * figurines.
      *
