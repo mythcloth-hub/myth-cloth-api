@@ -126,8 +126,8 @@ public class FigurineController {
      * @return API response DTO representing the requested figurine
      */
     @GetMapping("/{id}")
-    public FigurineResp retrieveFigurine(@PathVariable Long id) {
-        return service.readFigurine(id);
+    public FigurineResp retrieveFigurine(@PathVariable Long id, @RequestParam(required = false) Long collectionId) {
+        return service.readFigurine(id, collectionId);
     }
 
     /**
@@ -202,28 +202,29 @@ public class FigurineController {
      */
     @GetMapping
     public ResponseEntity<PaginatedResp> retrieveFigurineDetails(Authentication authentication,
-            @RequestParam(required = false) Long collectionId, @RequestParam(required = false) String name,
-            @RequestParam(required = false) Long lineUpId, @RequestParam(required = false) Long seriesId,
-            @RequestParam(required = false) Long groupId, @RequestParam(required = false) Long distributionId,
-            @RequestParam(required = false) Long anniversaryId, @RequestParam(required = false) Boolean metalBody,
-            @RequestParam(required = false) Boolean oce, @RequestParam(required = false) Boolean revival,
-            @RequestParam(required = false) Boolean plainCloth, @RequestParam(required = false) Boolean broken,
-            @RequestParam(required = false) Boolean golden, @RequestParam(required = false) Boolean gold,
-            @RequestParam(required = false) Boolean manga, @RequestParam(required = false) Boolean set,
-            @RequestParam(required = false) Boolean articulable, @RequestParam(required = false) String releaseStatus,
-            @RequestParam(required = false) Boolean restocks, @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(required = false) Long collectionId, @RequestParam(required = false) Boolean owned,
+            @RequestParam(required = false) String name, @RequestParam(required = false) Long lineUpId,
+            @RequestParam(required = false) Long seriesId, @RequestParam(required = false) Long groupId,
+            @RequestParam(required = false) Long distributionId, @RequestParam(required = false) Long anniversaryId,
+            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
+            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
+            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
+            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
+            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
         CollectablePageImpl<FigurineResp> result;
 
         List<Long> figurineIds = new ArrayList<>();
-        getCollectorId(authentication).ifPresent(
-                collectorId -> figurineIds.addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId)));
+        getCollectorId(authentication).ifPresent(collectorId -> figurineIds
+                .addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId, owned)));
 
         FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
                 distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
                 articulable, releaseStatus, restocks);
 
-        result = service.filterFigurines(figurineFilter, page, size);
+        result = service.filterFigurines(figurineFilter, page, size, collectionId, owned);
 
         log.info("Total figurines retrieved: {}", result.getContent().size());
         return ResponseEntity.ok(new PaginatedResp(result.getContent(), result.getNumber(), result.getSize(),

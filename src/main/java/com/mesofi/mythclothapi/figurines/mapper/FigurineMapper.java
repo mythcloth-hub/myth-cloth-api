@@ -516,27 +516,29 @@ public interface FigurineMapper {
      *            function used to create the figurine's restock responses
      * @return API-facing {@link FigurineResp}
      */
-    @Mapping(target = "name", source = "normalizedName")
-    @Mapping(target = "displayableName", source = "displayName")
-    @Mapping(target = "releaseStatus", source = "currentReleaseStatus")
-    @Mapping(target = "lineUp", source = "lineup")
-    @Mapping(target = "isMetalBody", source = "metalBody")
-    @Mapping(target = "isOriginalColorEdition", source = "oce")
-    @Mapping(target = "isRevival", source = "revival")
-    @Mapping(target = "isPlainCloth", source = "plainCloth")
-    @Mapping(target = "isBattleDamaged", source = "broken")
-    @Mapping(target = "isGoldenArmor", source = "golden")
-    @Mapping(target = "isGold24kEdition", source = "gold")
-    @Mapping(target = "isMangaVersion", source = "manga")
-    @Mapping(target = "isMultiPack", source = "set")
-    @Mapping(target = "isArticulable", source = "articulable")
-    @Mapping(target = "notes", source = "remarks")
-    @Mapping(target = "officialImageUrls", source = "officialImages")
-    @Mapping(target = "unofficialImageUrls", source = "nonOfficialImages")
+    @Mapping(target = "isCollected", source = "collected")
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "displayableName", source = "figurine.displayName")
+    @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
+    @Mapping(target = "lineUp", source = "figurine.lineup")
+    @Mapping(target = "isMetalBody", source = "figurine.metalBody")
+    @Mapping(target = "isOriginalColorEdition", source = "figurine.oce")
+    @Mapping(target = "isRevival", source = "figurine.revival")
+    @Mapping(target = "isPlainCloth", source = "figurine.plainCloth")
+    @Mapping(target = "isBattleDamaged", source = "figurine.broken")
+    @Mapping(target = "isGoldenArmor", source = "figurine.golden")
+    @Mapping(target = "isGold24kEdition", source = "figurine.gold")
+    @Mapping(target = "isMangaVersion", source = "figurine.manga")
+    @Mapping(target = "isMultiPack", source = "figurine.set")
+    @Mapping(target = "isArticulable", source = "figurine.articulable")
+    @Mapping(target = "notes", source = "figurine.remarks")
+    @Mapping(target = "officialImageUrls", source = "figurine.officialImages")
+    @Mapping(target = "unofficialImageUrls", source = "figurine.nonOfficialImages")
     @Mapping(target = "restocks", expression = "java(toFigurineRestockRespList.apply(figurine))")
-    @Mapping(target = "createdAt", source = "creationDate")
-    @Mapping(target = "updatedAt", source = "updateDate")
-    FigurineResp toFigurineResp(Figurine figurine, @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
+    @Mapping(target = "createdAt", source = "figurine.creationDate")
+    @Mapping(target = "updatedAt", source = "figurine.updateDate")
+    FigurineResp toFigurineResp(Boolean collected, Figurine figurine,
+            @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
     /**
