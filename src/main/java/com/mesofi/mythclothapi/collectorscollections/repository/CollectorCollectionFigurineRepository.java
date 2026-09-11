@@ -57,9 +57,9 @@ public interface CollectorCollectionFigurineRepository extends JpaRepository<Col
     @Modifying
     @Transactional
     @Query("""
-                delete from CollectorCollectionFigurine cci
-                where cci.collection.id = :collectionId
-                  and cci.collection.collector.id = :collectorId
+                delete from CollectorCollectionFigurine ccf
+                where ccf.collection.id = :collectionId
+                  and ccf.collection.collector.id = :collectorId
             """)
     int deleteByCollectionIdAndCollectorId(@Param("collectionId") Long collectionId,
             @Param("collectorId") Long collectorId);

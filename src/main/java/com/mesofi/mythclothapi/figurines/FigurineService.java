@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_FIGURINE_CACHE;
+import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_SUMMARY_CACHE;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.ANNOUNCEMENT;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.PREORDER_OPEN;
 import static com.mesofi.mythclothapi.figurineevents.model.FigurineEventType.RELEASE;
@@ -186,7 +188,8 @@ public class FigurineService {
      * @return API response DTO for the created figurine
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
@@ -235,11 +238,12 @@ public class FigurineService {
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
         Boolean collected = null;
+
         if (collectionId != null) {
             CollectorCollection collectionFound = collectorCollectionRepository.findById(collectionId)
                     .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
             collected = collectionFound.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
-                    .anyMatch(cci -> cci.getFigurine().getId().equals(existing.getId()));
+                    .anyMatch(ccf -> ccf.getFigurine().getId().equals(existing.getId()));
         }
         return mapper.toFigurineResp(collected, existing, this::calculatePriceWithTax, this::buildRestockHistory);
     }
@@ -267,6 +271,9 @@ public class FigurineService {
      *            the page number to retrieve (zero-based)
      * @param size
      *            the number of items per page
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
      * @param collectionId
      *            optional identifier of the collector's collection to filter by
      * @return a page of {@link FigurineResp} objects matching the filter
@@ -282,7 +289,7 @@ public class FigurineService {
 
         Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
                 .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
-                        .filter(CollectorCollectionFigurine::isOwned).map(cci -> cci.getFigurine().getId()).toList()));
+                        .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size),
                 collectionId);
@@ -296,6 +303,25 @@ public class FigurineService {
                 figurines.getTotalCollectables());
     }
 
+    /**
+     * Determines whether a figurine is considered "collected" based on the provided
+     * ownership status and the list of owned figurine IDs.
+     *
+     * <p>
+     * If the ownership status is {@code null}, the figurine is considered
+     * collected. If the ownership status is {@code false}, the figurine is also
+     * considered collected. Otherwise, the method checks if the figurine ID is
+     * present in the list of owned figurine IDs.
+     *
+     * @param owned
+     *            the ownership status; may be {@code null}
+     * @param ownedFigurineIds
+     *            a list of IDs representing owned figurines
+     * @param figurineId
+     *            the ID of the figurine to check
+     * @return {@code true} if the figurine is considered collected; otherwise,
+     *         {@code false}
+     */
     private boolean isCollected(Boolean owned, List<Long> ownedFigurineIds, Long figurineId) {
         if (owned == null) {
             return true;
@@ -339,6 +365,8 @@ public class FigurineService {
      *            identifier of the collector
      * @param collectionId
      *            identifier of the collection to inspect; may be {@code null}
+     * @param owned
+     *            whether to filter by owned figurines
      * @return a list containing the ids of all figurines in the specified
      *         collection, or an empty list if the collection does not exist or no
      *         collection id was provided
@@ -353,6 +381,8 @@ public class FigurineService {
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
+        // Only return owned figurines if the 'owned' parameter is true; otherwise,
+        // return all figurines in the collection
         if (owned != null && owned) {
             return collectorFound.getCollections().stream()
                     .filter(collection -> collection.getId().equals(collectionId)).findFirst()
@@ -493,7 +523,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
 
@@ -565,7 +596,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            PRICING_SUMMARY_CACHE}, allEntries = true)
     public void deleteFigurine(@Positive Long id) {
         log.info("Deleting figurine with id '{}'", id);
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -912,5 +944,4 @@ public class FigurineService {
         return collectorCollectionRepository.findById(collectionId)
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
     }
-
 }

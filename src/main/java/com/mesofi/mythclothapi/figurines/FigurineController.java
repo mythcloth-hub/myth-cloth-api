@@ -123,6 +123,8 @@ public class FigurineController {
      *
      * @param id
      *            identifier of the figurine to retrieve
+     * @param collectionId
+     *            optional id of a specific collector collection to scope results to
      * @return API response DTO representing the requested figurine
      */
     @GetMapping("/{id}")
@@ -155,6 +157,9 @@ public class FigurineController {
      *            unauthenticated requests
      * @param collectionId
      *            optional id of a specific collector collection to scope results to
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
      * @param name
      *            optional name filter (substring match on normalized name)
      * @param lineUpId

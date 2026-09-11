@@ -83,11 +83,23 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             WHERE 1 = 1
             """;
 
+    /**
+     * Base SQL query used as the starting point for dynamic figurine queries that
+     * filter by collection.
+     *
+     * <p>
+     * The query calculates the release status for each figurine, retrieves the
+     * first distributor associated with each figurine, and joins with the
+     * collector_collection_figurines table to filter figurines belonging to a
+     * specific collection. Additional filtering, sorting, and pagination clauses
+     * are appended dynamically.
+     * </p>
+     */
     private static final String BASE_FIGURINE_SEARCH_SQL_WITH_COLLECTION = """
             SELECT
                 f.*
             FROM figurines f
-            JOIN collector_collection_figurines cci ON cci.figurine_id = f.id
+            JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
             LEFT JOIN (
                 SELECT *
                 FROM (
@@ -254,7 +266,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
 
         // Dynamic filters
         if (Objects.nonNull(collectionId)) {
-            dynamicSql.append(" AND cci.collection_id = :collectionId");
+            dynamicSql.append(" AND ccf.collection_id = :collectionId");
             params.put("collectionId", collectionId);
         }
         if (Objects.nonNull(filter.figurineIds()) && !filter.figurineIds().isEmpty()) {

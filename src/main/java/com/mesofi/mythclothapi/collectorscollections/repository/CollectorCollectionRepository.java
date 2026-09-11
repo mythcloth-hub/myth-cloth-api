@@ -25,6 +25,7 @@ import com.mesofi.mythclothapi.collectorscollections.repository.projection.Colle
  */
 @Repository
 public interface CollectorCollectionRepository extends JpaRepository<CollectorCollection, Long> {
+
     /**
      * Finds all collections owned by the specified collector.
      *
@@ -64,14 +65,31 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
     @Query("DELETE FROM CollectorCollection cc WHERE cc.id = :id")
     void deleteCollectionById(Long id);
 
+    /**
+     * Retrieves catalog statistics for a collector collection.
+     *
+     * <p>
+     * The catalog includes total figurines, released figurines, and announced
+     * figurines.
+     * </p>
+     *
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @param restocks
+     *            whether to include restocked figurines in the summary; when
+     *            {@code true}, all figurines in the collection are considered, and
+     *            when {@code false}, only figurines without a previous release are
+     *            included
+     * @return collection catalog projection
+     */
     @Query(value = """
             SELECT
                 COALESCE(SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END), 0) AS totalFigurines,
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
-            FROM collector_collection_figurines cci, figurines f
-            WHERE cci.figurine_id = f.id
-              AND cci.collection_id = :collectionId
+            FROM collector_collection_figurines ccf, figurines f
+            WHERE ccf.figurine_id = f.id
+              AND ccf.collection_id = :collectionId
               AND (:restocks = true OR f.previous_release_id IS NULL)
             """, nativeQuery = true)
     CollectorCollectionCatalogProjection getCollectorCollectionCatalog(Long collectionId,
@@ -96,14 +114,14 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
      */
     @Query(value = """
             SELECT
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN cci.quantity ELSE 0 END), 0) AS preordered_quantity, -- Total number of preordered copies
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN cci.quantity ELSE 0 END), 0) AS released_quantity,    -- Total number of released copies
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN ccf.quantity ELSE 0 END), 0) AS preordered_quantity, -- Total number of preordered copies
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN ccf.quantity ELSE 0 END), 0) AS released_quantity,    -- Total number of released copies
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS preordered_figurines,           -- Number of unique preordered figurines
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS released_figurines               -- Number of unique released figurines
-            FROM collector_collection_figurines cci, figurines f
-            WHERE cci.figurine_id = f.id
-              AND cci.owned = true
-              AND cci.collection_id = :collectionId
+            FROM collector_collection_figurines ccf, figurines f
+            WHERE ccf.figurine_id = f.id
+              AND ccf.owned = true
+              AND ccf.collection_id = :collectionId
               AND (:restocks = true OR f.previous_release_id IS NULL)
             """, nativeQuery = true)
     CollectorCollectionSummaryProjection getCollectorCollectionSummary(Long collectionId,

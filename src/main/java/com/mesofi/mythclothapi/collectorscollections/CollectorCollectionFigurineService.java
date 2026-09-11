@@ -14,6 +14,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -103,6 +104,38 @@ public class CollectorCollectionFigurineService {
     private final FigurineRepository figurineRepository;
     private final CollectorMapper collectorMapper;
 
+    /**
+     * Assigns one or more figurines to one or more collector collections.
+     *
+     * <p>
+     * The assignment behavior depends on the requested
+     * {@link CollectionAssignmentMode}.
+     *
+     * <p>
+     * This method:
+     *
+     * <ul>
+     * <li>Validates that all requested figurines exist.
+     * <li>Retrieves existing collections or creates new collections depending on
+     * the assignment mode.
+     * <li>Creates missing figurine-collection relationships.
+     * <li>Increases the quantity when the figurine already exists in a collection.
+     * </ul>
+     *
+     * @param collectorId
+     *            identifier of the collector performing the assignment
+     * @param request
+     *            assignment request containing figurines, collections, and
+     *            assignment mode
+     * @throws FigurineNotFoundException
+     *             if any requested figurine does not exist
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if an existing collection cannot be found
+     * @throws CollectorCollectionAlreadyExistsException
+     *             if creating a collection with an existing name
+     */
     @Transactional
     @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
             COLLECTION_SUMMARY_CACHE}, allEntries = true)
@@ -112,6 +145,16 @@ public class CollectorCollectionFigurineService {
         addFigurinesToCollections(collectorId, request);
     }
 
+    /**
+     * Internal method to handle figurine assignment based on the specified
+     * {@link CollectionAssignmentMode}.
+     *
+     * @param collectorId
+     *            identifier of the collector performing the assignment
+     * @param request
+     *            assignment request containing figurines, collections, and
+     *            assignment mode
+     */
     private void addFigurinesToCollections(Long collectorId, AssignFigurinesReq request) {
         switch (request.collectionMode()) {
             case CREATE :
@@ -192,7 +235,30 @@ public class CollectorCollectionFigurineService {
         }
     }
 
+    /**
+     * Retrieves catalog and collection summary statistics for one collector
+     * collection.
+     *
+     * <p>
+     * The collector must own the collection. The catalog summary is used to build
+     * the overall figurine counts, while the collection summary is mapped to the
+     * collection-specific ownership statistics.
+     * </p>
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @param includeRestocks
+     *            whether to include restocked figurines in the summary counts
+     * @return summary response with catalog and collection totals
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     * @throws CollectorCollectionNotFoundException
+     *             if the collection does not exist or is not owned by the collector
+     */
     @Transactional(readOnly = true)
+    @Cacheable(value = COLLECTOR_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks)")
     public CollectorCollectionSummaryResp retrieveCollectionSummary(@Positive Long collectorId,
             @Positive Long collectionId, boolean includeRestocks) {
 
@@ -245,6 +311,7 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = COLLECTOR_FIGURINE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #collectionId, #includeRestocks, #page, #size)")
     public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@Positive Long collectorId,
             @Positive Long collectionId, boolean includeRestocks, @PositiveOrZero int page, @PositiveOrZero int size) {
 
@@ -388,6 +455,8 @@ public class CollectorCollectionFigurineService {
      *             if the figurine does not exist
      */
     @Transactional
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public void deleteCollectionFigurine(@Positive Long collectorId, @Positive Long collectionId,
             @Positive Long figurineId) {
         log.info("Deleting figurine [{}] from collection [{}] for collector [{}]", figurineId, collectionId,
@@ -413,9 +482,17 @@ public class CollectorCollectionFigurineService {
                 });
     }
 
+    /**
+     * Retrieves all collections associated with a collector.
+     *
+     * @param collectorId
+     *            identifier of the collector
+     * @return list of collector collections
+     * @throws CollectorNotFoundException
+     *             if the collector does not exist
+     */
     @Transactional(readOnly = true)
-    // @Cacheable(value = COLLECTION_SUMMARY_CACHE, key =
-    // "T(java.util.Objects).hash(#collectorId)")
+    @Cacheable(value = COLLECTION_SUMMARY_CACHE, key = "T(java.util.Objects).hash(#collectorId)")
     public List<CollectorCollectionResp> retrieveCollections(final Long collectorId) {
         log.info("Retrieving all collections for collector [{}]", collectorId);
 
@@ -445,6 +522,8 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
+            COLLECTION_SUMMARY_CACHE}, allEntries = true)
     public void deleteCollection(Long collectorId, Long collectionId) {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 
