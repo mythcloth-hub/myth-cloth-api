@@ -87,7 +87,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             SELECT
                 f.*
             FROM figurines f
-            JOIN collector_collection_items cci ON cci.figurine_id = f.id
+            JOIN collector_collection_figurines cci ON cci.figurine_id = f.id
             LEFT JOIN (
                 SELECT *
                 FROM (

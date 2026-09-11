@@ -21,7 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionItemRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemResp;
@@ -73,7 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CollectorPurchaseService {
 
-    private final CollectorCollectionItemRepository collectorCollectionItemRepository;
+    private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
     private final CollectorPurchaseFigurineRepository collectorPurchaseFigurineRepository;
@@ -296,11 +296,11 @@ public class CollectorPurchaseService {
             // This is a placeholder for your actual sync logic.
             log.info("Syncing line item [{}] for purchase [{}]", lineItem.getId(), purchaseId);
 
-            collectorCollectionItemRepository.findByCollectionAndFigurine(existingCollection, lineItem.getFigurine())
-                    .ifPresent((cf -> {
+            collectorCollectionFigurineRepository
+                    .findByCollectionAndFigurine(existingCollection, lineItem.getFigurine()).ifPresent((cf -> {
                         // Update the collection figurine with the purchase line item details
                         cf.setQuantity(lineItem.getQuantity());
-                        collectorCollectionItemRepository.save(cf);
+                        collectorCollectionFigurineRepository.save(cf);
                         log.info("Updated collection figurine [{}] with new quantity [{}]", cf.getId(),
                                 cf.getQuantity());
                     }));

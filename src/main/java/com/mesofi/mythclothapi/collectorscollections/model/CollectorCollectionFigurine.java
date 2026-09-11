@@ -26,9 +26,9 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "collector_collection_items", uniqueConstraints = @UniqueConstraint(name = "uk_collection_figurine", columnNames = {
+@Table(name = "collector_collection_figurines", uniqueConstraints = @UniqueConstraint(name = "uk_collection_figurine", columnNames = {
         "collection_id", "figurine_id"}))
-public class CollectorCollectionItem extends Auditable {
+public class CollectorCollectionFigurine extends Auditable {
 
     /**
      * The collector's collection to which this item belongs. This is a mandatory

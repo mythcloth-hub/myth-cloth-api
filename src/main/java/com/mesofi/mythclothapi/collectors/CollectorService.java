@@ -1,6 +1,9 @@
 package com.mesofi.mythclothapi.collectors;
 
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.FACEBOOK;
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.GOOGLE;
 import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.LOCAL;
+import static com.mesofi.mythclothapi.collectorproviders.model.ProviderType.SELF_USER;
 
 import java.time.Instant;
 import java.util.Locale;
@@ -20,11 +23,17 @@ import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
 import com.mesofi.mythclothapi.collectors.dto.CollectorSignupReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorSignupResp;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailAlreadyExistsException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorEmailNotFoundException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidCredentialsException;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.demo.DemoProperties;
 import com.mesofi.mythclothapi.integration.fb.FbApiClient;
+import com.mesofi.mythclothapi.integration.fb.FbTokenData;
+import com.mesofi.mythclothapi.integration.fb.FbUserInfoResponse;
 import com.mesofi.mythclothapi.integration.fb.FcCredentialsProperties;
 import com.mesofi.mythclothapi.integration.google.GoogleApiClient;
 import com.mesofi.mythclothapi.integration.google.GoogleCredentialsProperties;
+import com.mesofi.mythclothapi.integration.google.GoogleTokenInfoResponse;
 import com.mesofi.mythclothapi.security.roles.RoleRepository;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
@@ -79,6 +88,9 @@ public class CollectorService {
         ProviderType providerType = resolveProvider(provider);
 
         return switch (providerType) {
+            case FACEBOOK -> loginWithFacebook(loginRequest.accessToken());
+            case GOOGLE -> loginWithGoogle(loginRequest.idToken());
+            case SELF_USER -> loginWithEmailAndPassword(loginRequest.email(), loginRequest.password());
             case LOCAL -> loginWithLocal();
             default -> throw new IllegalArgumentException("Provider %s is not supported yet".formatted(providerType));
         };
@@ -110,6 +122,138 @@ public class CollectorService {
                 currRole);
 
         return new CollectorSignupResp(saved.getId(), saved.getDisplayName(), saved.getEmail());
+    }
+
+    /**
+     * Validates a Facebook access token and logs in or provisions the related
+     * collector.
+     *
+     * @param accessToken
+     *            Facebook user access token
+     * @return authenticated collector response containing API token details
+     * @throws IllegalArgumentException
+     *             if the token is blank
+     * @throws CollectorInvalidTokenException
+     *             if the token is invalid for this application
+     */
+    private CollectorLoginResp loginWithFacebook(String accessToken) {
+        requireToken(accessToken, "Facebook access token is required");
+
+        FbTokenData fbTokenData = fbApiClient.validateAccessToken(accessToken).data();
+        boolean appMatches = fcCredentials.appId().equals(fbTokenData.appId());
+
+        if (!fbTokenData.valid() || !appMatches) {
+            String errorMessage = "Facebook token is invalid.";
+            if (!fbTokenData.valid() && fbTokenData.error() != null) {
+                errorMessage += " Reason: " + fbTokenData.error().message();
+            }
+            log.warn(errorMessage);
+            throw new CollectorInvalidTokenException(errorMessage);
+        }
+
+        FbUserInfoResponse userInfo = fbApiClient.getUserInfo(accessToken);
+        String providerUserId = userInfo.id();
+        String name = userInfo.name();
+        String providerEmail = userInfo.email();
+
+        Collector collector = createOrUpdateRegisteredCollector(FACEBOOK, providerUserId, name, providerEmail, true,
+                null);
+
+        return buildLoginResponse(collector, FACEBOOK, providerUserId);
+    }
+
+    /**
+     * Validates a Google ID token and logs in or provisions the related collector.
+     *
+     * @param idToken
+     *            Google ID token
+     * @return authenticated collector response containing API token details
+     * @throws IllegalArgumentException
+     *             if the token is blank
+     * @throws CollectorInvalidTokenException
+     *             if token claims are invalid or expired
+     */
+    private CollectorLoginResp loginWithGoogle(String idToken) {
+        requireToken(idToken, "Google idToken is required");
+
+        GoogleTokenInfoResponse tokenInfo = googleApiClient.validateIdToken(idToken);
+        validateGoogleToken(tokenInfo);
+
+        Collector collector = createOrUpdateRegisteredCollector(GOOGLE, tokenInfo.sub(), tokenInfo.name(),
+                tokenInfo.email(), tokenInfo.emailVerified(), tokenInfo.picture());
+
+        return buildLoginResponse(collector, GOOGLE, tokenInfo.sub());
+    }
+
+    /**
+     * Verifies Google token claims required by this API.
+     *
+     * @param tokenInfo
+     *            parsed token info returned by Google token introspection
+     * @throws CollectorInvalidTokenException
+     *             if issuer, audience, expiry, or subject is invalid
+     */
+    private void validateGoogleToken(GoogleTokenInfoResponse tokenInfo) {
+        boolean issuerValid = "https://accounts.google.com".equals(tokenInfo.iss())
+                || "accounts.google.com".equals(tokenInfo.iss());
+
+        if (!issuerValid) {
+            throw new CollectorInvalidTokenException("Google token issuer is invalid");
+        }
+
+        if (!googleCredentials.clientId().equals(tokenInfo.aud())) {
+            throw new CollectorInvalidTokenException("Google token audience is invalid");
+        }
+
+        long expiresAt;
+        try {
+            expiresAt = tokenInfo.expiresAtEpochSecond();
+        } catch (NumberFormatException ex) {
+            throw new CollectorInvalidTokenException("Google token expiry claim is invalid");
+        }
+
+        if (expiresAt <= Instant.now().getEpochSecond()) {
+            throw new CollectorInvalidTokenException("Google token is expired");
+        }
+
+        if (tokenInfo.sub() == null || tokenInfo.sub().isBlank()) {
+            throw new CollectorInvalidTokenException("Google token subject is missing");
+        }
+    }
+
+    /**
+     * Logs in a collector using email and password authentication.
+     *
+     * @param email
+     *            collector's email address
+     * @param password
+     *            collector's password
+     * @return login response payload for API clients
+     */
+    private CollectorLoginResp loginWithEmailAndPassword(String email, String password) {
+        Collector collector = collectorRepository.findByEmail(email).orElseThrow(CollectorEmailNotFoundException::new);
+
+        if (!passwordEncoder.matches(password, collector.getPasswordHash())) {
+            throw new CollectorInvalidCredentialsException();
+        }
+
+        return toLoginResponse(collector);
+    }
+
+    /**
+     * Converts an existing collector entity into a login response payload.
+     *
+     * @param existingCollector
+     *            the existing collector entity
+     * @return the login response payload for API clients
+     */
+    private CollectorLoginResp toLoginResponse(Collector existingCollector) {
+        String userId = PREFIX + existingCollector.getId();
+
+        Collector collector = createOrUpdateRegisteredCollector(SELF_USER, userId, existingCollector.getDisplayName(),
+                existingCollector.getEmail(), false, null);
+
+        return buildLoginResponse(collector, SELF_USER, userId);
     }
 
     /**
@@ -167,6 +311,49 @@ public class CollectorService {
         }
     }
 
+    /**
+     * Ensures a required token value is present.
+     *
+     * @param token
+     *            token value to validate
+     * @param message
+     *            error message used when token is missing
+     * @throws IllegalArgumentException
+     *             if token is null or blank
+     */
+    private void requireToken(String token, String message) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
+    /**
+     * Creates or retrieves a collector associated with an external authentication
+     * provider.
+     *
+     * <p>
+     * If a collector is already registered for the given provider and user ID, the
+     * existing collector is returned. Otherwise, a new collector is created and
+     * assigned a role based on the provider and configured administrator accounts,
+     * and the authentication provider association is persisted.
+     * </p>
+     *
+     * @param providerType
+     *            the authentication provider used by the collector
+     * @param userId
+     *            the unique user ID assigned by the authentication provider
+     * @param name
+     *            the collector's display name
+     * @param email
+     *            the collector's email address
+     * @param emailVerified
+     *            whether the email address has been verified by the provider
+     * @param picture
+     *            the collector's profile picture URL
+     * @return the existing or newly created collector
+     * @throws RoleNotFoundException
+     *             if the role assigned to the collector does not exist
+     */
     private Collector createOrUpdateRegisteredCollector(ProviderType providerType, String userId, String name,
             String email, boolean emailVerified, String picture) {
         log.info("Processing collector authentication for provider: {}, userId: {}", providerType, userId);
@@ -196,6 +383,21 @@ public class CollectorService {
         return collectorAuthProvider.getCollector();
     }
 
+    /**
+     * Creates a new collector account with the specified details.
+     *
+     * @param email
+     *            the collector's email address
+     * @param hashedPassword
+     *            the hashed password for the collector
+     * @param displayName
+     *            the collector's display name
+     * @param profilePictureUrl
+     *            the URL of the collector's profile picture
+     * @param role
+     *            the role assigned to the collector
+     * @return the newly created collector
+     */
     private Collector createCollectorAccount(String email, String hashedPassword, String displayName,
             String profilePictureUrl, Role role) {
         log.info("Creating new collector with email '{}', display name '{}', and role '{}'", email, displayName,

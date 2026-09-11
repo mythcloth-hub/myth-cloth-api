@@ -66,10 +66,10 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
 
     @Query(value = """
             SELECT
-                SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END) AS totalFigurines,
+                COALESCE(SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END), 0) AS totalFigurines,
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
-            FROM collector_collection_items cci, figurines f
+            FROM collector_collection_figurines cci, figurines f
             WHERE cci.figurine_id = f.id
               AND cci.collection_id = :collectionId
               AND (:restocks = true OR f.previous_release_id IS NULL)
@@ -100,7 +100,7 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN cci.quantity ELSE 0 END), 0) AS released_quantity,    -- Total number of released copies
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS preordered_figurines,           -- Number of unique preordered figurines
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS released_figurines               -- Number of unique released figurines
-            FROM collector_collection_items cci, figurines f
+            FROM collector_collection_figurines cci, figurines f
             WHERE cci.figurine_id = f.id
               AND cci.owned = true
               AND cci.collection_id = :collectionId

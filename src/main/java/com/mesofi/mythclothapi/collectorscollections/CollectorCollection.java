@@ -12,7 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.common.Auditable;
 
 import lombok.Getter;
@@ -62,6 +62,7 @@ public class CollectorCollection extends Auditable {
      */
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Collector collector;
+
     /**
      * The list of items (figurines) in this collection. This is a one-to-many
      * relationship, and the items are managed by the collection. Cascade operations
@@ -70,5 +71,5 @@ public class CollectorCollection extends Auditable {
      * associated with the collection.
      */
     @OneToMany(mappedBy = "collection", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CollectorCollectionItem> items = new ArrayList<>();
+    private List<CollectorCollectionFigurine> figurines = new ArrayList<>();
 }

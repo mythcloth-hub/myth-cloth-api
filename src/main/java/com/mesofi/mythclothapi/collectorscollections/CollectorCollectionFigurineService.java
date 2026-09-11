@@ -37,9 +37,9 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSumm
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.model.Condition;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionItemRepository;
+import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionFigurineRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
@@ -97,7 +97,7 @@ public class CollectorCollectionFigurineService {
     public static final String COLLECTION_SUMMARY_CACHE = "collection-summary";
     private static final int MAX_COLLECTIONS_PER_COLLECTOR = 6;
 
-    private final CollectorCollectionItemRepository collectorCollectionItemRepository;
+    private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CollectorRepository collectorRepository;
     private final FigurineRepository figurineRepository;
@@ -122,7 +122,7 @@ public class CollectorCollectionFigurineService {
                 var newCollection = createCollection(collectorId, request.figurineIds(), request.collection());
 
                 log.info("New collection [{}] created for collector [{}] with {} figurines", newCollection.getName(),
-                        collectorId, newCollection.getItems().size());
+                        collectorId, newCollection.getFigurines().size());
                 break;
             case EXISTING :
                 // Handle existing collection assignment
@@ -254,8 +254,8 @@ public class CollectorCollectionFigurineService {
         ensureCollectionOwnership(collectorFound, collectionId);
 
         // build a map to quickly check if a figurine is already in the collection
-        Map<Long, CollectorCollectionItem> collectionFigurineMap = collectionFound.getItems().stream()
-                .filter(CollectorCollectionItem::isOwned)
+        Map<Long, CollectorCollectionFigurine> collectionFigurineMap = collectionFound.getFigurines().stream()
+                .filter(CollectorCollectionFigurine::isOwned)
                 .collect(Collectors.toMap(ccf -> ccf.getFigurine().getId(), Function.identity()));
 
         FigurineFilter figurineFilter;
@@ -348,7 +348,7 @@ public class CollectorCollectionFigurineService {
      *            maximum number of latest figurines to retrieve
      * @return list of latest figurines in the favorite collection
      */
-    public List<CollectorCollectionItem> findLatestFavoriteCollectionFigurines(Long collectorId, int limit) {
+    public List<CollectorCollectionFigurine> findLatestFavoriteCollectionFigurines(Long collectorId, int limit) {
 
         Collector collectorFound = retrieveCollector(collectorId);
 
@@ -362,7 +362,7 @@ public class CollectorCollectionFigurineService {
         }
         CollectorCollection collection = favCollection.get();
 
-        return collectorCollectionItemRepository.findByCollectionAndOwnedTrueOrderByAddedAtDesc(collection,
+        return collectorCollectionFigurineRepository.findByCollectionAndOwnedTrueOrderByAddedAtDesc(collection,
                 PageRequest.of(0, limit));
     }
 
@@ -403,13 +403,14 @@ public class CollectorCollectionFigurineService {
         var figurineFound = figurineRepository.findById(figurineId)
                 .orElseThrow(() -> new FigurineNotFoundException(figurineId));
 
-        collectorCollectionItemRepository.findByCollectionAndFigurine(collectionFound, figurineFound).ifPresent(ccf -> {
-            ccf.setQuantity(0);
-            ccf.setAddedAt(null);
-            ccf.setOwned(false);
-            log.info("Deleted figurine [{}] - '{}' from collection [{}] - '{}'", figurineFound.getId(),
-                    figurineFound.getNormalizedName(), collectionFound.getId(), collectionFound.getName());
-        });
+        collectorCollectionFigurineRepository.findByCollectionAndFigurine(collectionFound, figurineFound)
+                .ifPresent(ccf -> {
+                    ccf.setQuantity(0);
+                    ccf.setAddedAt(null);
+                    ccf.setOwned(false);
+                    log.info("Deleted figurine [{}] - '{}' from collection [{}] - '{}'", figurineFound.getId(),
+                            figurineFound.getNormalizedName(), collectionFound.getId(), collectionFound.getName());
+                });
     }
 
     @Transactional(readOnly = true)
@@ -455,7 +456,7 @@ public class CollectorCollectionFigurineService {
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
 
         // deletes all the figurines associated with the collection.
-        int deletedCount = collectorCollectionItemRepository.deleteByCollectionIdAndCollectorId(collectionId,
+        int deletedCount = collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(collectionId,
                 collectorId);
 
         // Ensure the favorite collection is moved to another collection if the deleted
@@ -623,7 +624,7 @@ public class CollectorCollectionFigurineService {
                 ? owningCollection.getDescription() + " copy"
                 : null;
 
-        List<CollectorCollectionItem> owningCollectionItems = owningCollection.getItems();
+        List<CollectorCollectionFigurine> owningCollectionItems = owningCollection.getFigurines();
 
         return createCollectionFromExisting(collectorId, owningCollectionItems,
                 new CollectorCollectionReq(false, newName, newImageUrl, newDescription)).getId();
@@ -649,7 +650,7 @@ public class CollectorCollectionFigurineService {
 
         var saved = collectorCollectionRepository.save(newCollection);
 
-        List<CollectorCollectionItem> newItems = new ArrayList<>();
+        List<CollectorCollectionFigurine> newItems = new ArrayList<>();
         for (Long figurineId : collection.subCollection()
                 ? figurineIds
                 : figurineRepository.findAllFigurineIdsWithReleasedOrAnnouncedStatus()) {
@@ -660,9 +661,9 @@ public class CollectorCollectionFigurineService {
 
         // The collection items are saved in bulk to optimize database operations and
         // ensure consistency.
-        List<CollectorCollectionItem> savedItems = collectorCollectionItemRepository.saveAll(newItems);
+        List<CollectorCollectionFigurine> savedItems = collectorCollectionFigurineRepository.saveAll(newItems);
 
-        newCollection.getItems().addAll(savedItems);
+        newCollection.getFigurines().addAll(savedItems);
 
         return newCollection;
     }
@@ -680,7 +681,7 @@ public class CollectorCollectionFigurineService {
      * @return the newly created {@link CollectorCollection}
      */
     private CollectorCollection createCollectionFromExisting(Long collectorId,
-            List<CollectorCollectionItem> existingItems, CollectorCollectionReq collection) {
+            List<CollectorCollectionFigurine> existingItems, CollectorCollectionReq collection) {
         log.info("Creating a new collection for collector [{}] from existing collection with name '{}'", collectorId,
                 collection.name());
 
@@ -688,7 +689,7 @@ public class CollectorCollectionFigurineService {
 
         var saved = collectorCollectionRepository.save(newCollection);
 
-        collectorCollectionItemRepository.saveAll(new ArrayList<>(existingItems.stream().map(collectorMapper::copy)
+        collectorCollectionFigurineRepository.saveAll(new ArrayList<>(existingItems.stream().map(collectorMapper::copy)
                 .peek(item -> item.setCollection(saved)).collect(Collectors.toList())));
         return newCollection;
     }
@@ -749,8 +750,8 @@ public class CollectorCollectionFigurineService {
                     log.info("Adding {} figurines to collection [{}] for collector [{}]", figurineIds.size(),
                             collection.getName(), collectorId);
 
-                    List<CollectorCollectionItem> itemList = collection.getItems();
-                    for (CollectorCollectionItem item : itemList) {
+                    List<CollectorCollectionFigurine> itemList = collection.getFigurines();
+                    for (CollectorCollectionFigurine item : itemList) {
                         if (figurineIds.contains(item.getFigurine().getId())) {
                             // Perform the necessary action for the matching figurine
                             if (item.isOwned()) {
@@ -771,15 +772,15 @@ public class CollectorCollectionFigurineService {
                                 collectorId, figurineIds);
 
                         for (Long figurineId : figurineIds) {
-                            collection.getItems().add(createCollectorCollectionItem(collection, figurineId, false));
+                            collection.getFigurines().add(createCollectorCollectionItem(collection, figurineId, false));
                         }
                     }
                 });
     }
 
     /**
-     * Creates a new {@link CollectorCollectionItem} for the specified collection
-     * and figurine.
+     * Creates a new {@link CollectorCollectionFigurine} for the specified
+     * collection and figurine.
      *
      * @param collection
      *            the collector's collection to which the item belongs
@@ -787,14 +788,14 @@ public class CollectorCollectionFigurineService {
      *            the figurine to be added to the collection
      * @param owned
      *            whether the collector owns this figurine
-     * @return a new {@link CollectorCollectionItem} instance
+     * @return a new {@link CollectorCollectionFigurine} instance
      */
-    private CollectorCollectionItem createCollectorCollectionItem(CollectorCollection collection, Long figurineId,
+    private CollectorCollectionFigurine createCollectorCollectionItem(CollectorCollection collection, Long figurineId,
             boolean owned) {
         Figurine figurine = new Figurine();
         figurine.setId(figurineId);
 
-        CollectorCollectionItem newItem = new CollectorCollectionItem();
+        CollectorCollectionFigurine newItem = new CollectorCollectionFigurine();
         newItem.setCollection(collection);
         newItem.setFigurine(figurine);
         newItem.setQuantity(owned ? 1 : 0);

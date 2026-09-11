@@ -47,7 +47,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -238,7 +238,7 @@ public class FigurineService {
         if (collectionId != null) {
             CollectorCollection collectionFound = collectorCollectionRepository.findById(collectionId)
                     .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
-            collected = collectionFound.getItems().stream().filter(CollectorCollectionItem::isOwned)
+            collected = collectionFound.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
                     .anyMatch(cci -> cci.getFigurine().getId().equals(existing.getId()));
         }
         return mapper.toFigurineResp(collected, existing, this::calculatePriceWithTax, this::buildRestockHistory);
@@ -281,8 +281,8 @@ public class FigurineService {
         List<Long> ownedFigurineIds = new ArrayList<>();
 
         Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
-                .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getItems().stream()
-                        .filter(CollectorCollectionItem::isOwned).map(cci -> cci.getFigurine().getId()).toList()));
+                .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
+                        .filter(CollectorCollectionFigurine::isOwned).map(cci -> cci.getFigurine().getId()).toList()));
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size),
                 collectionId);
@@ -356,14 +356,14 @@ public class FigurineService {
         if (owned != null && owned) {
             return collectorFound.getCollections().stream()
                     .filter(collection -> collection.getId().equals(collectionId)).findFirst()
-                    .map(collection -> collection.getItems().stream().filter(CollectorCollectionItem::isOwned)
-                            .map(CollectorCollectionItem::getFigurine).map(BaseId::getId).toList())
+                    .map(collection -> collection.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
+                            .map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList())
                     .orElseGet(List::of);
         }
 
         return collectorFound.getCollections().stream().filter(collection -> collection.getId().equals(collectionId))
-                .findFirst().map(collection -> collection.getItems().stream()
-                        .map(CollectorCollectionItem::getFigurine).map(BaseId::getId).toList())
+                .findFirst().map(collection -> collection.getFigurines().stream()
+                        .map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList())
                 .orElseGet(List::of);
     }
 
@@ -418,7 +418,7 @@ public class FigurineService {
             return findDefaultRecommendations(filter, limit);
         } else {
             // personalized recommendations for logged-in users
-            List<CollectorCollectionItem> partialCollection = collectorCollectionFigurineService
+            List<CollectorCollectionFigurine> partialCollection = collectorCollectionFigurineService
                     .findLatestFavoriteCollectionFigurines(collectorId, MAX_FIGURINES_PER_COLLECTOR);
             log.info("Retrieved {} latest figurines for collector '{}'", partialCollection.size(), collectorId);
 
@@ -432,7 +432,7 @@ public class FigurineService {
             Set<Long> distinctGroupIds = new HashSet<>();
             Set<Long> figurineIds = new HashSet<>();
 
-            for (CollectorCollectionItem collection : partialCollection) {
+            for (CollectorCollectionFigurine collection : partialCollection) {
                 Figurine figurine = collection.getFigurine();
 
                 figurineIds.add(figurine.getId());

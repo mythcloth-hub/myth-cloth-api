@@ -13,23 +13,24 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionItem;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 @Repository
-public interface CollectorCollectionItemRepository extends JpaRepository<CollectorCollectionItem, Long> {
+public interface CollectorCollectionFigurineRepository extends JpaRepository<CollectorCollectionFigurine, Long> {
 
     /**
-     * Finds a collector collection item by its collection and figurine.
+     * Finds a collector collection figurine by its collection and figurine.
      *
      * @param collection
      *            the collector's collection
      * @param figurine
      *            the figurine
-     * @return an optional containing the collector collection item if found, or
+     * @return an optional containing the collector collection figurine if found, or
      *         empty if not found
      */
-    Optional<CollectorCollectionItem> findByCollectionAndFigurine(CollectorCollection collection, Figurine figurine);
+    Optional<CollectorCollectionFigurine> findByCollectionAndFigurine(CollectorCollection collection,
+            Figurine figurine);
 
     /**
      * Finds all owned figurines in a collection, ordered by the date they were
@@ -41,7 +42,7 @@ public interface CollectorCollectionItemRepository extends JpaRepository<Collect
      *            the pagination information
      * @return a list of collector collection figurines
      */
-    List<CollectorCollectionItem> findByCollectionAndOwnedTrueOrderByAddedAtDesc(CollectorCollection collection,
+    List<CollectorCollectionFigurine> findByCollectionAndOwnedTrueOrderByAddedAtDesc(CollectorCollection collection,
             Pageable pageable);
 
     /**
@@ -56,7 +57,7 @@ public interface CollectorCollectionItemRepository extends JpaRepository<Collect
     @Modifying
     @Transactional
     @Query("""
-                delete from CollectorCollectionItem cci
+                delete from CollectorCollectionFigurine cci
                 where cci.collection.id = :collectionId
                   and cci.collection.collector.id = :collectorId
             """)
