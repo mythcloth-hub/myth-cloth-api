@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.security.SecurityMapper;
-import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
@@ -38,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 public class RoleService {
 
     private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
     private final SecurityMapper mapper;
 
     /**

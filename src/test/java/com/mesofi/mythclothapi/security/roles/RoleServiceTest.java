@@ -1,12 +1,241 @@
 package com.mesofi.mythclothapi.security.roles;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.config.MapperTestConfig;
+import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
+import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
+import com.mesofi.mythclothapi.security.permissions.model.Permission;
+import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
+import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
+import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
+import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
+import com.mesofi.mythclothapi.security.roles.model.Role;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = {RoleService.class, MapperTestConfig.class})
 public class RoleServiceTest {
 
+    @Autowired
+    private RoleService roleService;
+
+    @MockitoBean
+    private RoleRepository roleRepository;
+    @MockitoBean
+    private PermissionRepository permissionRepository;
+
+    @Test
+    void createRole_shouldThrowRoleAlreadyExistsException_whenRoleAlreadyExists() {
+        // Arrange
+        Role existingRole = role(1L, "Admin");
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.of(existingRole));
+
+        RoleReq request = new RoleReq("Admin");
+
+        // Act + Assert
+        assertThatThrownBy(() -> roleService.createRole(request))
+                .isInstanceOfSatisfying(RoleAlreadyExistsException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Role with description 'Admin' already exists");
+                    assertThat(ex.getDescription()).isEqualTo("Admin");
+                    assertThat(ex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                });
+    }
+
+    @Test
+    void createRole_shouldPersistAndReturnMappedResponse_whenRequestIsValid() {
+        // Arrange
+        when(roleRepository.findByName("Admin")).thenReturn(Optional.empty());
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> {
+            Role entity = invocation.getArgument(0);
+            entity.setId(1L);
+            return entity;
+        });
+
+        RoleReq request = new RoleReq("Admin");
+
+        // Act
+        RoleResp response = roleService.createRole(request);
+
+        // Assert
+        assertThat(response).isEqualTo(new RoleResp(1L, "Admin"));
+
+        ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
+        verify(roleRepository).save(captor.capture());
+
+        Role saved = captor.getValue();
+        assertThat(saved.getName()).isEqualTo("Admin");
+    }
+
+    @Test
+    void retrieveRole_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
+        // Arrange
+        when(roleRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> roleService.retrieveRole(99L)).isInstanceOfSatisfying(RoleNotFoundException.class,
+                ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 99 was not found");
+                    assertThat(ex.getId()).isEqualTo(99L);
+                });
+
+        verify(roleRepository).findById(99L);
+    }
+
+    @Test
+    void retrieveRole_shouldReturnMappedResponse_whenRoleExists() {
+        // Arrange
+        Role role = role(7L, "Admin");
+
+        when(roleRepository.findById(7L)).thenReturn(Optional.of(role));
+
+        // Act
+        RoleResp response = roleService.retrieveRole(7L);
+
+        // Assert
+        assertThat(response).isEqualTo(new RoleResp(7L, "Admin"));
+        verify(roleRepository).findById(7L);
+    }
+
+    @Test
+    void retrieveRoles_shouldReturnMappedResponses_whenRepositoryReturnsEntities() {
+        // Arrange
+        when(roleRepository.findAll(Sort.by("id"))).thenReturn(List.of(role(1L, "Admin"), role(2L, "Basic Collector")));
+
+        // Act
+        List<RoleResp> responses = roleService.retrieveRoles();
+
+        // Assert
+        assertThat(responses).containsExactly(new RoleResp(1L, "Admin"), new RoleResp(2L, "Basic Collector"));
+
+        verify(roleRepository).findAll(Sort.by("id"));
+    }
+
+    @Test
+    void updateRole_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
+        // Arrange
+        RoleReq request = new RoleReq("Admin");
+        when(roleRepository.findById(77L)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> roleService.updateRole(77L, request))
+                .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
+                    assertThat(ex.getId()).isEqualTo(77L);
+                });
+
+        verify(roleRepository).findById(77L);
+        verify(roleRepository, never()).save(any(Role.class));
+    }
+
+    @Test
+    void updateRole_shouldUpdateExistingEntityAndReturnMappedResponse_whenRequestIsValid() {
+        // Arrange
+        Role existing = role(3L, "Old Name");
+        RoleReq request = new RoleReq("Updated Name");
+
+        when(roleRepository.findById(3L)).thenReturn(Optional.of(existing));
+        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        RoleResp response = roleService.updateRole(3L, request);
+
+        // Assert
+        assertThat(response).isEqualTo(new RoleResp(3L, "Updated Name"));
+
+        ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
+        verify(roleRepository).save(captor.capture());
+
+        Role saved = captor.getValue();
+        assertThat(saved).isSameAs(existing);
+        assertThat(saved.getName()).isEqualTo("Updated Name");
+
+        verify(roleRepository).findById(3L);
+    }
+
+    @Test
+    void retrievePermissionsByRoleId_shouldReturnMappedResponses_whenRepositoryReturnsEntities_() {
+        // Arrange
+        when(roleRepository.findAll(Sort.by("id"))).thenReturn(List.of(role(1L, "Admin"), role(2L, "Basic Collector")));
+
+        // Act
+        List<RoleResp> responses = roleService.retrieveRoles();
+
+        // Assert
+        assertThat(responses).containsExactly(new RoleResp(1L, "Admin"), new RoleResp(2L, "Basic Collector"));
+
+        verify(roleRepository).findAll(Sort.by("id"));
+    }
+
+    @Test
+    void retrievePermissionsByRoleId_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
+        // Arrange
+        when(roleRepository.findById(77L)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> roleService.retrievePermissionsByRoleId(77L))
+                .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
+                    assertThat(ex.getId()).isEqualTo(77L);
+                });
+
+        verify(roleRepository).findById(77L);
+        verify(roleRepository, never()).save(any(Role.class));
+    }
+
+    @Test
+    void retrievePermissionsByRoleId_shouldReturnMappedResponses_whenRepositoryReturnsEntities() {
+        // Arrange
+        Role existingAdmin = role(77L, "Admin");
+
+        RolePermission rp1 = new RolePermission();
+        rp1.setPermission(permission(100L, "figurines:create"));
+        RolePermission rp2 = new RolePermission();
+        rp2.setPermission(permission(88L, "figurines:create"));
+        existingAdmin.setPermissions(List.of(rp1, rp2));
+
+        when(roleRepository.findById(77L)).thenReturn(Optional.of(existingAdmin));
+
+        // Act
+        List<PermissionResp> responses = roleService.retrievePermissionsByRoleId(77L);
+
+        // Assert
+        assertThat(responses).containsExactly(new PermissionResp(100L, "figurines:create"),
+                new PermissionResp(88L, "figurines:create"));
+
+        verify(roleRepository).findById(77L);
+    }
+
+    private Role role(Long id, String name) {
+        Role role = new Role();
+        role.setId(id);
+        role.setName(name);
+
+        return role;
+    }
+
+    private Permission permission(Long id, String name) {
+        Permission permission = new Permission();
+        permission.setId(id);
+        permission.setName(name);
+
+        return permission;
+    }
 }

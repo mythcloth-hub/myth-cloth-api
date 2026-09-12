@@ -22,7 +22,8 @@ import com.mesofi.mythclothapi.integration.ServiceName;
 class GoogleApiClientTest {
 
     private TestContext context() {
-        GoogleApiClient client = new GoogleApiClient();
+        GoogleApiClient client = new GoogleApiClient(
+                new GoogleCredentialsProperties("client-id", "https://oauth2.googleapis.com"));
         RestClient.Builder restClientBuilder = RestClient.builder().baseUrl("https://oauth2.googleapis.com");
         MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
 
