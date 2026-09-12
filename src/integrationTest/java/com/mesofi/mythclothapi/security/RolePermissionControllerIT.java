@@ -14,18 +14,25 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
-import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
+/**
+ * Normally the roles and permissions are created by the application itself, but
+ * for testing purposes, we will create them manually and test the flow of
+ * creating roles, permissions, associating them, syncing them, and deleting
+ * them.
+ */
+@Sql(scripts = "/cleanup-role-permission-it.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/cleanup-role-permission-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class RolePermissionControllerIT extends ControllerBaseIT {
 
-    private final String ROLE = "/roles";
-    private final String PERMISSION = "/permissions";
-    private final String ROLE_PERMISSION = "/roles/{roleId}/permissions";
+    private static final String ROLE = "/roles";
+    private static final String PERMISSION = "/permissions";
+    private static final String ROLE_PERMISSION = "/roles/{roleId}/permissions";
+    private static final String ROLE_PERMISSION_ADD = "/roles/{roleId}/permissions/{permissionId}";
 
     @Test
     @DisplayName("Test flow to manage roles and permissions")
@@ -138,8 +145,7 @@ public class RolePermissionControllerIT extends ControllerBaseIT {
     }
 
     private void addPermissionToRole(Long idRole, Long idPermission) {
-        RolePermissionReq request = new RolePermissionReq(idPermission);
-        rest.post().uri(ROLE_PERMISSION, idRole).body(request).retrieve().toBodilessEntity();
+        rest.post().uri(ROLE_PERMISSION_ADD, idRole, idPermission).retrieve().toBodilessEntity();
     }
 
     private Long createRole(String description) {

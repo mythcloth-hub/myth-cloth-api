@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -87,6 +88,30 @@ public class RolePermissionController {
             @Valid @RequestBody SyncPermissionsReq request) {
 
         syncService.syncPermissions(roleId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Adds a permission to a role.
+     *
+     * <p>
+     * The authenticated user must have the {@code roles:permissions:sync}
+     * authority.
+     * </p>
+     *
+     * @param roleId
+     *            the unique identifier of the role
+     * @param permissionId
+     *            the unique identifier of the permission to add
+     * @return a response with no content and an HTTP {@code 204 No Content} status
+     *         when the permission is successfully added to the role
+     */
+    @PostMapping("/{permissionId}")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_PERMISSIONS_SYNC + "')")
+    public ResponseEntity<Void> addRolePermissions(@PathVariable Long roleId, @PathVariable Long permissionId) {
+
+        syncService.addPermissionToRole(roleId, permissionId);
 
         return ResponseEntity.noContent().build();
     }

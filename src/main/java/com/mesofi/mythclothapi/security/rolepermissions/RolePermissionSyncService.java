@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jakarta.transaction.Transactional;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
@@ -40,6 +39,7 @@ public class RolePermissionSyncService {
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final RolePermissionRepository rolePermissionRepository;
 
     /**
      * Synchronizes the permissions assigned to a role.
@@ -107,5 +107,37 @@ public class RolePermissionSyncService {
         // Cascade and orphan removal configured on Role handle the
         // corresponding RolePermission persistence operations.
         roleRepository.save(role);
+    }
+
+    /**
+     * Adds a single permission to a role.
+     *
+     * <p>
+     * This method creates a new association between the specified role and
+     * permission. If the association already exists, no changes are made.
+     * </p>
+     *
+     * @param roleId
+     *            the unique identifier of the role to which the permission should
+     *            be added
+     * @param permissionId
+     *            the unique identifier of the permission to add to the role
+     * @throws RoleNotFoundException
+     *             if no role exists with the specified identifier
+     * @throws PermissionNotFoundException
+     *             if no permission exists with the specified identifier
+     */
+    @Transactional
+    public void addPermissionToRole(Long roleId, Long permissionId) {
+        log.info("Adding permission {} to role {}", permissionId, roleId);
+
+        Role role = roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new PermissionNotFoundException(permissionId));
+
+        RolePermission rolePermission = new RolePermission();
+        rolePermission.setRole(role);
+        rolePermission.setPermission(permission);
+        rolePermissionRepository.save(rolePermission);
     }
 }

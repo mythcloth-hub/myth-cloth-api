@@ -1,8 +1,8 @@
 logging:
   level:
-    root: DEBUG
-    org.hibernate.SQL: DEBUG  # <- Shows SQL statements
-    org.hibernate.orm.jdbc.bind: DEBUG  # <- Shows query parameters
+    root: INFO
+    org.hibernate.SQL: INFO  # <- Shows SQL statements
+    org.hibernate.orm.jdbc.bind: INFO  # <- Shows query parameters
 
 myth-cloth:
   bootstrap:
