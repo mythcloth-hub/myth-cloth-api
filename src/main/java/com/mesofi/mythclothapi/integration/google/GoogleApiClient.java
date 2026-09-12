@@ -22,8 +22,8 @@ public class GoogleApiClient {
     private final RestClient restClient;
 
     /** Creates a Google API client configured with the OAuth base URL. */
-    public GoogleApiClient() {
-        this.restClient = RestClient.builder().baseUrl("https://oauth2.googleapis.com").build();
+    public GoogleApiClient(GoogleCredentialsProperties googleCredentials) {
+        this.restClient = RestClient.builder().baseUrl(googleCredentials.oauthUrl()).build();
     }
 
     /**

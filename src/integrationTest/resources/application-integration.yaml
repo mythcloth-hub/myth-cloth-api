@@ -24,6 +24,7 @@ myth-cloth:
 
   google:
     client-id: "90909090"
+    oauth-url: http://localhost:${wiremock.google.server.port:8091}
 
   import:
     drive-url: http://localhost:9090/spreadsheets/d/%s/export?format=csv
