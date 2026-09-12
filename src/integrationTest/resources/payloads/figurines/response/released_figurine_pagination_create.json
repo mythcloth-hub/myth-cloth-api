@@ -2,6 +2,7 @@
   "content": [
     {
       "id": 1,
+      "isCollected": true,
       "name": "Dragon Shiryu",
       "displayableName": "Dragon Shiryu ~Original Color Edition~",
       "distributors": [
@@ -68,6 +69,7 @@
     },
     {
       "id": 2,
+      "isCollected": true,
       "name": "Andromeda Shun",
       "displayableName": "Andromeda Shun ~Original Color Edition~",
       "distributors": [
@@ -133,6 +135,7 @@
     },
     {
       "id": 3,
+      "isCollected": true,
       "name": "Cygnus Hyoga",
       "displayableName": "Cygnus Hyoga ~Original Color Edition~",
       "distributors": [
@@ -198,6 +201,7 @@
     },
     {
       "id": 4,
+      "isCollected": true,
       "name": "Phoenix Ikki",
       "displayableName": "Phoenix Ikki ~Original Color Edition~",
       "distributors": [
@@ -262,6 +266,7 @@
     },
     {
       "id": 5,
+      "isCollected": true,
       "name": "Pegasus Seiya",
       "displayableName": "Pegasus Seiya ~Original Color Edition~",
       "distributors": [
