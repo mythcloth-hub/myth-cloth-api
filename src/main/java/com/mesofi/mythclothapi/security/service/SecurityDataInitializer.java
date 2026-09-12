@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 
+ *
  * Initializes the application's security data when the application is ready.
  *
  * <p>
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
  * event is received, it delegates the initialization of roles, permissions, and
  * their relationships to {@link SecurityDataService}.
  * </p>
- * 
+ *
  */
 @Component
 @RequiredArgsConstructor
@@ -34,8 +34,8 @@ public class SecurityDataInitializer {
      * security data is persisted consistently.
      * </p>
      */
-    @EventListener(ApplicationReadyEvent.class)
     @Transactional
+    @EventListener(ApplicationReadyEvent.class)
     public void initializeSecurityData() {
         securityDataService.initializeSecurityData();
     }
