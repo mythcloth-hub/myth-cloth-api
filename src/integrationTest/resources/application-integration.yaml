@@ -20,7 +20,7 @@ myth-cloth:
   facebook:
     app-id: "0000"
     app-secret: "1111"
-    graph-url: http://localhost.facebook.com/
+    graph-url: http://localhost:${wiremock.server.port:8090}/
 
   google:
     client-id: "90909090"
