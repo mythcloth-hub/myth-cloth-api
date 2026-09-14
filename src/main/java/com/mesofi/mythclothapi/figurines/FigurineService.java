@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -383,18 +384,14 @@ public class FigurineService {
 
         // Only return owned figurines if the 'owned' parameter is true; otherwise,
         // return all figurines in the collection
-        if (owned != null && owned) {
-            return collectorFound.getCollections().stream()
-                    .filter(collection -> collection.getId().equals(collectionId)).findFirst()
-                    .map(collection -> collection.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
-                            .map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList())
-                    .orElseGet(List::of);
-        }
-
         return collectorFound.getCollections().stream().filter(collection -> collection.getId().equals(collectionId))
-                .findFirst().map(collection -> collection.getFigurines().stream()
-                        .map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList())
-                .orElseGet(List::of);
+                .findFirst().map(collection -> {
+                    Stream<CollectorCollectionFigurine> figurines = collection.getFigurines().stream();
+                    if (Boolean.TRUE.equals(owned)) {
+                        figurines = figurines.filter(CollectorCollectionFigurine::isOwned);
+                    }
+                    return figurines.map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList();
+                }).orElseGet(List::of);
     }
 
     @Transactional(readOnly = true)
