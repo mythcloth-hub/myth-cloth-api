@@ -1,8 +1,8 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.common.CurrencyCode.CAD;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.CAD;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 

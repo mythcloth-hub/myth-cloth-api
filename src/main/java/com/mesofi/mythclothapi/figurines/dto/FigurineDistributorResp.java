@@ -3,8 +3,8 @@ package com.mesofi.mythclothapi.figurines.dto;
 import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 /**
  * Represents distributor-specific information for a figurine in an API

@@ -1,6 +1,6 @@
 package com.mesofi.mythclothapi.figurines;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -172,7 +172,7 @@ class FigurineControllerTest {
                         "{\"name\":\"Seiya\", \"distributors\":[{\"currency\":\"=\"}],\"lineUpId\":\"3\",\"seriesId\":\"2\", \"groupId\":\"5\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value(
-                        "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode` from String \"=\": not one of the values accepted for Enum class: [EUR, MXN, CAD, CNY, JPY, USD]"))
+                        "JSON parse error: Cannot deserialize value of type `com.mesofi.mythclothapi.common.CurrencyCode` from String \"=\": not one of the values accepted for Enum class: [EUR, MXN, CAD, CNY, JPY, USD]"))
                 .andExpect(jsonPath("$.instance").value("/figurines")).andExpect(jsonPath("$.status").value("400"))
                 .andExpect(jsonPath("$.title").value("Invalid body")).andExpect(jsonPath("$.timestamp").exists());
     }

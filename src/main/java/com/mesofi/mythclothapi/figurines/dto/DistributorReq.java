@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 
 /**
  * Represents distributor-specific information supplied when creating or

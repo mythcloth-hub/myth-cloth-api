@@ -1,15 +1,15 @@
 package com.mesofi.mythclothapi.figurines;
 
+import static com.mesofi.mythclothapi.common.CurrencyCode.CNY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.EUR;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.MXN;
+import static com.mesofi.mythclothapi.common.CurrencyCode.USD;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.ES;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.MX;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.US;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.CNY;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.EUR;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.USD;
 
 import java.util.Map;
 import java.util.Optional;
@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 
 /**
  * Resolves the country/region associated with a figurine distribution currency.

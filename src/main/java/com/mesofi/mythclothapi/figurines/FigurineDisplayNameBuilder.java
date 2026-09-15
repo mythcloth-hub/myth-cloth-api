@@ -12,7 +12,7 @@ import com.mesofi.mythclothapi.catalogs.model.GroupType;
 import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.model.SeriesType;
 import com.mesofi.mythclothapi.common.Descriptive;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
 /**

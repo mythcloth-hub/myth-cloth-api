@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.figurinedistributions.model;
+package com.mesofi.mythclothapi.figurinedistributions;
 
 import java.time.LocalDate;
 
@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 
 import com.mesofi.mythclothapi.common.Auditable;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
