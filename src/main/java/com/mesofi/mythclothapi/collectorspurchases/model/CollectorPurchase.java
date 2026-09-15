@@ -12,7 +12,7 @@ import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.common.Auditable;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 
 import lombok.Getter;
 import lombok.Setter;

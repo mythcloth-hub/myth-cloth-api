@@ -1,6 +1,6 @@
 package com.mesofi.mythclothapi.figurines;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.PROTOTYPE;
 import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
@@ -10,7 +10,7 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.UNRELEASED;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 

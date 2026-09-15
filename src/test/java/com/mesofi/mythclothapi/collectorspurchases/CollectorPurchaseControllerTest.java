@@ -38,7 +38,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryL
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.security.config.SecurityConfig;
 
 import tools.jackson.databind.ObjectMapper;
