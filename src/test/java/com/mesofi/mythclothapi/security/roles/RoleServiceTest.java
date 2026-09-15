@@ -7,7 +7,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,14 +22,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
-import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
 import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
-import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
 
 @ActiveProfiles("test")
@@ -171,93 +168,6 @@ public class RoleServiceTest {
         assertThat(saved.getName()).isEqualTo("Updated Name");
 
         verify(roleRepository).findById(3L);
-    }
-
-    @Test
-    void addPermissionToRole_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
-        // Arrange
-        when(roleRepository.findById(77L)).thenReturn(Optional.empty());
-
-        // Act + Assert
-        assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
-                .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role with id 77 was not found");
-                    assertThat(ex.getId()).isEqualTo(77L);
-                });
-
-        verify(roleRepository).findById(77L);
-        verify(roleRepository, never()).save(any(Role.class));
-    }
-
-    @Test
-    void addPermissionToRole_shouldThrowPermissionNotFoundException_whenPermissionDoesNotExist() {
-        // Arrange
-        when(roleRepository.findById(77L)).thenReturn(Optional.of(role(77L, "Admin")));
-        when(permissionRepository.findById(88L)).thenReturn(Optional.empty());
-
-        // Act + Assert
-        assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
-                .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Permission with id 88 was not found");
-                    assertThat(ex.getId()).isEqualTo(88L);
-                });
-
-        verify(roleRepository).findById(77L);
-        verify(permissionRepository).findById(88L);
-        verify(roleRepository, never()).save(any(Role.class));
-    }
-
-    @Test
-    void addPermissionToRole_shouldThrowRoleAlreadyAssociatedToPermissionException_whenAssociationExists() {
-        // Arrange
-        Role existing = role(77L, "Admin");
-        RolePermission rp = new RolePermission();
-        rp.setPermission(permission(88L, "figurines:create"));
-        existing.setPermissions(List.of(rp));
-
-        when(roleRepository.findById(77L)).thenReturn(Optional.of(existing));
-        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:create")));
-
-        // Act + Assert
-        assertThatThrownBy(() -> roleService.addPermissionToRole(77L, 88L))
-                .isInstanceOfSatisfying(RolePermissionAlreadyExistsException.class, ex -> {
-                    assertThat(ex.getMessage()).isEqualTo("Role with ID 77 already has permission 88 assigned.");
-                    assertThat(ex.getRoleId()).isEqualTo(77L);
-                    assertThat(ex.getPermissionId()).isEqualTo(88L);
-                });
-
-        verify(roleRepository).findById(77L);
-        verify(permissionRepository).findById(88L);
-        verify(roleRepository, never()).save(any(Role.class));
-    }
-
-    @Test
-    void addPermissionToRole_shouldAddPermissionToRole_whenRequestIsValid() {
-        // Arrange
-        Role existing = role(77L, "Admin");
-        RolePermission rp = new RolePermission();
-        rp.setPermission(permission(100L, "figurines:read"));
-        List<RolePermission> permissions = new ArrayList<>();
-        permissions.add(rp);
-        existing.setPermissions(permissions);
-
-        when(roleRepository.findById(77L)).thenReturn(Optional.of(existing));
-        when(permissionRepository.findById(88L)).thenReturn(Optional.of(permission(88L, "figurines:create")));
-        when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // Act + Assert
-        roleService.addPermissionToRole(77L, 88L);
-
-        ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
-        verify(roleRepository).save(captor.capture());
-
-        Role saved = captor.getValue();
-        assertThat(saved.getPermissions().size()).isEqualTo(2);
-        assertThat(saved.getPermissions().get(1).getRole()).isNotNull();
-        assertThat(saved.getPermissions().get(1).getPermission()).isNotNull();
-
-        verify(roleRepository).findById(77L);
-        verify(permissionRepository).findById(88L);
     }
 
     @Test

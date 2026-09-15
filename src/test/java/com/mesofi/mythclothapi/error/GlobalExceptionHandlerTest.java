@@ -23,6 +23,7 @@ import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundExce
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
 import com.mesofi.mythclothapi.integration.ServiceName;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;

@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.it;
+package com.mesofi.mythclothapi.support;
 
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;

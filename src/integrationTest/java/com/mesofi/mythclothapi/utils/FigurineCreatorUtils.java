@@ -19,6 +19,19 @@ import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineReq;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 
+/**
+ * Utility class for creating figurines and related resources in integration
+ * tests.
+ *
+ * <p>
+ * This class provides methods to create basic figurine resources, including
+ * lineups, series, groups, distributors, and figurines. It also includes
+ * methods to remove resources after tests.
+ *
+ * <p>
+ * The methods use a {@link RestClient} to perform HTTP requests to the API
+ * endpoints.
+ */
 public final class FigurineCreatorUtils {
 
     public static final String LINE_UP = "/catalogs/lineups";
@@ -40,6 +53,15 @@ public final class FigurineCreatorUtils {
     private FigurineCreatorUtils() {
     }
 
+    /**
+     * Creates a basic figurine with associated resources (lineup, series, group,
+     * distributor) using the provided {@link RestClient}.
+     *
+     * @param rest
+     *            the {@link RestClient} to use for HTTP requests
+     * @return a {@link FigurineIdentifiers} object containing the IDs of the
+     *         created resources
+     */
     public static FigurineIdentifiers createBasicFigurine(RestClient rest) {
         Long lineUpId = createCatalog(rest, LINE_UP, "Myth Cloth");
         Long seriesId = createCatalog(rest, SERIES, "Saint Seiya");
@@ -55,6 +77,18 @@ public final class FigurineCreatorUtils {
         return new FigurineIdentifiers(figurineId, distributorId, groupId, lineUpId, seriesId);
     }
 
+    /**
+     * Creates a catalog entry with the specified description using the provided
+     * {@link RestClient}.
+     *
+     * @param rest
+     *            the {@link RestClient} to use for HTTP requests
+     * @param catalogUrl
+     *            the URL of the catalog endpoint
+     * @param description
+     *            the description of the catalog entry
+     * @return the ID of the created catalog entry
+     */
     private static Long createCatalog(RestClient rest, String catalogUrl, String description) {
         CatalogReq catalogReq = new CatalogReq(description);
         ResponseEntity<CatalogResp> response = rest.post().uri(catalogUrl).body(catalogReq).retrieve()
@@ -66,6 +100,13 @@ public final class FigurineCreatorUtils {
         return response.getBody().id();
     }
 
+    /**
+     * Creates a distributor entry using the provided {@link RestClient}.
+     *
+     * @param rest
+     *            the {@link RestClient} to use for HTTP requests
+     * @return the ID of the created distributor entry
+     */
     private static Long createDistributor(RestClient rest) {
         DistributorReq distributorReq = new DistributorReq(BANDAI, JP, "https://tamashiiweb.com/");
 
@@ -78,6 +119,16 @@ public final class FigurineCreatorUtils {
         return response.getBody().id();
     }
 
+    /**
+     * Creates a figurine entry using the provided {@link RestClient} and
+     * {@link FigurineReq}.
+     *
+     * @param rest
+     *            the {@link RestClient} to use for HTTP requests
+     * @param request
+     *            the {@link FigurineReq} containing the figurine details
+     * @return the ID of the created figurine entry
+     */
     private static Long createFigurine(RestClient rest, FigurineReq request) {
         ResponseEntity<FigurineResp> response = rest.post().uri(FIGURINES).body(request).retrieve()
                 .toEntity(FigurineResp.class);
@@ -88,12 +139,36 @@ public final class FigurineCreatorUtils {
         return response.getBody().id();
     }
 
+    /**
+     * Creates a basic figurine request with the specified distributor, lineup,
+     * series, and group IDs.
+     *
+     * @param distributorReq
+     *            the distributor request containing distributor details
+     * @param lineUpId
+     *            the ID of the lineup
+     * @param seriesId
+     *            the ID of the series
+     * @param groupId
+     *            the ID of the group
+     * @return a {@link FigurineReq} object representing the figurine request
+     */
     private static FigurineReq createBasicFigurine(com.mesofi.mythclothapi.figurines.dto.DistributorReq distributorReq,
             Long lineUpId, Long seriesId, Long groupId) {
         return new FigurineReq("Pegasus Seiya", List.of(distributorReq), null, null, lineUpId, seriesId, groupId, null,
                 null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
+    /**
+     * Removes a resource using the provided {@link RestClient} and URI.
+     *
+     * @param rest
+     *            the {@link RestClient} to use for HTTP requests
+     * @param uri
+     *            the URI of the resource to remove
+     * @param uriVariables
+     *            optional URI variables for the request
+     */
     public static void removeResource(RestClient rest, String uri, @Nullable Object... uriVariables) {
         rest.delete().uri(uri, uriVariables).retrieve().toBodilessEntity();
     }

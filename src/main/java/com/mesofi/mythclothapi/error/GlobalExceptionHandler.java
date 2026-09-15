@@ -2,7 +2,6 @@ package com.mesofi.mythclothapi.error;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
@@ -35,6 +34,9 @@ import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollect
 import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
+import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
+import com.mesofi.mythclothapi.error.exceptions.ResourceNotFoundException;
+import com.mesofi.mythclothapi.error.exceptions.UnexpectedException;
 import com.mesofi.mythclothapi.figurineimports.FigurineImportException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
@@ -47,7 +49,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ProblemDetail handleNoResourceFound(NoResourceFoundException ex) {
-        return ApiProblemDetail.of(NOT_FOUND, "Endpoint not found", "The URL you are calling does not exist.");
+        return ApiProblemDetail.of(new ResourceNotFoundException());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -146,7 +148,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CollectorCollectionNotFoundException.class)
     public ProblemDetail handleCollectionNotFoundException(CollectorCollectionNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(CollectorCollectionAlreadyExistsException.class)

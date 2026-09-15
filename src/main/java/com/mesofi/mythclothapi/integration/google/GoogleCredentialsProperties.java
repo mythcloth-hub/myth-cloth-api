@@ -7,7 +7,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * @param clientId
  *            Google OAuth client id expected in token audience claims
+ * @param oauthUrl
+ *            base URL for Google's OAuth token info endpoint
  */
 @ConfigurationProperties(prefix = "myth-cloth.google")
-public record GoogleCredentialsProperties(String clientId) {
+public record GoogleCredentialsProperties(String clientId, String oauthUrl) {
 }

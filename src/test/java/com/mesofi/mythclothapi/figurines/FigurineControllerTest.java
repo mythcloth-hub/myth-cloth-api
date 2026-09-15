@@ -198,12 +198,12 @@ class FigurineControllerTest {
     void retrieveFigurine_shouldReturn200_whenFigurineExists() throws Exception {
         FigurineResp response = createFigurineResponse(1L, "Pegasus Seiya");
 
-        when(service.readFigurine(1L)).thenReturn(response);
+        when(service.readFigurine(1L, null)).thenReturn(response);
 
         mockMvc.perform(get("/figurines/{id}", 1L)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.name").value("Pegasus Seiya"));
 
-        verify(service).readFigurine(1L);
+        verify(service).readFigurine(1L, null);
     }
 
     @Test
@@ -212,7 +212,7 @@ class FigurineControllerTest {
         FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
-        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first, second), pageRequest, 5, 0));
 
         mockMvc.perform(get("/figurines").param("page", "0").param("size", "2")).andExpect(status().isOk())
@@ -220,7 +220,7 @@ class FigurineControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(5)).andExpect(jsonPath("$.totalPages").value(3))
                 .andExpect(jsonPath("$.content.length()").value(2));
 
-        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null));
     }
 
     @Test
@@ -239,14 +239,15 @@ class FigurineControllerTest {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
-        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
-        mockMvc.perform(get("/figurines").param("name", "seiya").param("page", "0").param("size", "2"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
+        mockMvc.perform(get("/figurines").param("name", "seiya").param("page", "0").param("size", "2")
+                .param("collectionId", "99").param("owned", "false")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Pegasus Seiya"));
 
-        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false));
     }
 
     @Test
@@ -254,18 +255,20 @@ class FigurineControllerTest {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
-        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
         // name param too short
-        mockMvc.perform(get("/figurines").param("name", "ab").param("page", "0").param("size", "2"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1));
-
-        // name param missing
-        mockMvc.perform(get("/figurines").param("page", "0").param("size", "2")).andExpect(status().isOk())
+        mockMvc.perform(get("/figurines").param("name", "ab").param("page", "0").param("size", "2")
+                .param("collectionId", "99").param("owned", "false")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1));
 
-        verify(service, org.mockito.Mockito.times(2)).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+        // name param missing
+        mockMvc.perform(get("/figurines").param("page", "0").param("size", "2").param("collectionId", "99")
+                .param("owned", "false")).andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1));
+
+        verify(service, org.mockito.Mockito.times(2)).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L),
+                eq(false));
     }
 
     @Test
@@ -298,30 +301,31 @@ class FigurineControllerTest {
         FigurineResp first = createFigurineResponse(1L, "Abc");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
-        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
         mockMvc.perform(get("/figurines").param("name", "abc").param("page", "0").param("size", "2"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Abc"));
 
-        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null));
     }
 
     @Test
     void retrieveFigurines_shouldUseCollectorSelection_whenJwtIsAuthenticated() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
-        when(service.retrieveCollectedFigurineIds(1L, 99L)).thenReturn(List.of(10L, 11L));
-        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2)))
+
+        when(service.retrieveCollectedFigurineIds(1L, 99L, false)).thenReturn(List.of(10L, 11L));
+        when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 2));
 
         mockMvc.perform(get("/figurines").with(jwt().jwt(jwt -> jwt.subject("1"))).param("collectionId", "99")
-                .param("page", "0").param("size", "2")).andExpect(status().isOk())
+                .param("page", "0").param("size", "2").param("owned", "false")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1));
 
-        verify(service).retrieveCollectedFigurineIds(1L, 99L);
-        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2));
+        verify(service).retrieveCollectedFigurineIds(1L, 99L, false);
+        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false));
     }
 
     @Test
@@ -383,8 +387,8 @@ class FigurineControllerTest {
     }
 
     private FigurineResp createFigurineResponse(long id, String name) {
-        return new FigurineResp(id, name, name + " Myth Cloth EX", List.of(), "https://tamashiiweb.com/item/12345",
-                com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED,
+        return new FigurineResp(id, null, name, name + " Myth Cloth EX", List.of(),
+                "https://tamashiiweb.com/item/12345", com.mesofi.mythclothapi.figurines.model.ReleaseStatus.ANNOUNCED,
                 new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(2L, "Tamashii Nations"),
                 new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(1L, "Myth Cloth EX"),
                 new com.mesofi.mythclothapi.catalogs.dto.CatalogResp(1L, "Saint Seiya"),

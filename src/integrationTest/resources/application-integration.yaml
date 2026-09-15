@@ -20,10 +20,11 @@ myth-cloth:
   facebook:
     app-id: "0000"
     app-secret: "1111"
-    graph-url: http://localhost.facebook.com/
+    graph-url: http://localhost:${wiremock.server.port:8090}/
 
   google:
     client-id: "90909090"
+    oauth-url: http://localhost:${wiremock.google.server.port:8091}
 
   import:
     drive-url: http://localhost:9090/spreadsheets/d/%s/export?format=csv

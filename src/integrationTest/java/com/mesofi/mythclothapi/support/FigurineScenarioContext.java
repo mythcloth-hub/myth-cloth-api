@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.it;
+package com.mesofi.mythclothapi.support;
 
 import java.util.List;
 

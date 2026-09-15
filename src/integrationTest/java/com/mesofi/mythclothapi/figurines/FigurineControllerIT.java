@@ -26,12 +26,12 @@ import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.PaginatedResp;
-import com.mesofi.mythclothapi.it.CatalogSelector;
-import com.mesofi.mythclothapi.it.FigurineScenario;
-import com.mesofi.mythclothapi.it.FigurineScenarioContext;
-import com.mesofi.mythclothapi.it.FigurineScenarioExtension;
-import com.mesofi.mythclothapi.it.ScenarioArtifact;
-import com.mesofi.mythclothapi.it.ScenarioRequest;
+import com.mesofi.mythclothapi.support.CatalogSelector;
+import com.mesofi.mythclothapi.support.FigurineScenario;
+import com.mesofi.mythclothapi.support.FigurineScenarioContext;
+import com.mesofi.mythclothapi.support.FigurineScenarioExtension;
+import com.mesofi.mythclothapi.support.ScenarioArtifact;
+import com.mesofi.mythclothapi.support.ScenarioRequest;
 import com.mesofi.mythclothapi.utils.JsonTestUtils;
 
 /**

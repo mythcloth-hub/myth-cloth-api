@@ -67,7 +67,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      * sorting, and pagination clauses are appended dynamically.
      * </p>
      */
-    private final String BASE_SQL = """
+    private static final String BASE_FIGURINE_SEARCH_SQL = """
             SELECT
                 f.*
             FROM figurines f
@@ -77,8 +77,37 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
                     SELECT fd.*,
                         ROW_NUMBER() OVER (PARTITION BY figurine_id ORDER BY id) rn
                     FROM figurine_distributor fd
-                 ) x
-                 WHERE rn = 1
+                ) x
+                WHERE rn = 1
+            ) fd ON fd.figurine_id = f.id
+            WHERE 1 = 1
+            """;
+
+    /**
+     * Base SQL query used as the starting point for dynamic figurine queries that
+     * filter by collection.
+     *
+     * <p>
+     * The query calculates the release status for each figurine, retrieves the
+     * first distributor associated with each figurine, and joins with the
+     * collector_collection_figurines table to filter figurines belonging to a
+     * specific collection. Additional filtering, sorting, and pagination clauses
+     * are appended dynamically.
+     * </p>
+     */
+    private static final String BASE_FIGURINE_SEARCH_SQL_WITH_COLLECTION = """
+            SELECT
+                f.*
+            FROM figurines f
+            JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
+            LEFT JOIN (
+                SELECT *
+                FROM (
+                    SELECT fd.*,
+                        ROW_NUMBER() OVER (PARTITION BY figurine_id ORDER BY id) rn
+                    FROM figurine_distributor fd
+                ) x
+                WHERE rn = 1
             ) fd ON fd.figurine_id = f.id
             WHERE 1 = 1
             """;
@@ -106,7 +135,38 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      */
     @Override
     public CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable) {
-        SearchQueryContext queryContext = getSearchQueryContext(filter);
+        // Delegate to the overloaded method with a null collectionId
+        return findPaginated(filter, pageable, null);
+    }
+
+    /**
+     * Retrieves a paginated list of figurines matching the specified filter and
+     * belonging to the specified collection.
+     *
+     * <p>
+     * In addition to the requested page of figurines, the returned page contains
+     * the total number of matching figurines and the total number of collectable
+     * figurines.
+     * </p>
+     *
+     * <p>
+     * A figurine is considered collectable when its calculated release status is
+     * {@code ANNOUNCED} or {@code RELEASED}.
+     * </p>
+     *
+     * @param filter
+     *            the filtering criteria used to restrict the search results
+     * @param pageable
+     *            the pagination information, including page size and offset
+     * @param collectionId
+     *            the identifier of the collection to which the figurines must
+     *            belong; may be {@code null} to ignore collection filtering
+     * @return a paginated result containing the matching figurines and collectable
+     *         figurine count
+     */
+    @Override
+    public CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable, Long collectionId) {
+        SearchQueryContext queryContext = getSearchQueryContext(filter, collectionId);
 
         StringBuilder sqlBuilder = queryContext.sql();
         Map<String, Object> params = queryContext.params();
@@ -137,7 +197,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
     @Override
     @SuppressWarnings("unchecked")
     public List<Figurine> findAll(FigurineFilter filter) {
-        SearchQueryContext queryContext = getSearchQueryContext(filter);
+        SearchQueryContext queryContext = getSearchQueryContext(filter, null);
 
         StringBuilder sql = queryContext.sql();
         sql.append(" ").append(buildOrderByStatement());
@@ -163,7 +223,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
     @Override
     @SuppressWarnings("unchecked")
     public List<Figurine> findAllByYear(int year) {
-        SearchQueryContext queryContext = getSearchQueryContext(null);
+        SearchQueryContext queryContext = getSearchQueryContext(null, null);
 
         StringBuilder sql = queryContext.sql();
         Map<String, Object> params = queryContext.params();
@@ -189,11 +249,15 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      * @param filter
      *            the filter criteria used to build the dynamic query; may be
      *            {@code null}
+     * @param collectionId
+     *            the ID of the collection used to filter figurines; may be
+     *            {@code null}
      * @return a {@link SearchQueryContext} containing the generated SQL and its
      *         named parameters
      */
-    private SearchQueryContext getSearchQueryContext(FigurineFilter filter) {
-        StringBuilder dynamicSql = new StringBuilder(BASE_SQL);
+    private SearchQueryContext getSearchQueryContext(FigurineFilter filter, Long collectionId) {
+        StringBuilder dynamicSql = new StringBuilder(
+                collectionId == null ? BASE_FIGURINE_SEARCH_SQL : BASE_FIGURINE_SEARCH_SQL_WITH_COLLECTION);
         Map<String, Object> params = new HashMap<>();
 
         if (Objects.isNull(filter)) {
@@ -201,6 +265,10 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
         }
 
         // Dynamic filters
+        if (Objects.nonNull(collectionId)) {
+            dynamicSql.append(" AND ccf.collection_id = :collectionId");
+            params.put("collectionId", collectionId);
+        }
         if (Objects.nonNull(filter.figurineIds()) && !filter.figurineIds().isEmpty()) {
             dynamicSql.append(" AND f.id IN (:figurineIds)");
             params.put("figurineIds", filter.figurineIds());

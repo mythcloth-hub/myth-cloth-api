@@ -25,15 +25,29 @@ import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventReq;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 
+/**
+ * Integration tests for {@link FigurineEventController}.
+ *
+ * <p>
+ * Validates the complete lifecycle of figurine event resources: creation,
+ * retrieval, update, and deletion through the HTTP layer.
+ *
+ * <p>
+ * The test uses the real Spring context, security configuration, validation,
+ * persistence layer, and REST endpoints.
+ */
 @Sql(scripts = "/cleanup-figurine-event-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineEventControllerIT extends ControllerBaseIT {
 
     private static final String EVENTS_BY_FIGURINE = "/figurines/{figurineId}/events";
     private static final String EVENTS_BY_ID = EVENTS_BY_FIGURINE + "/{id}";
 
+    /**
+     * Verifies the complete CRUD lifecycle for figurine event resources.
+     */
     @Test
     @DisplayName("Test flow to create and process figurine events")
     void fullCrudFigurineEventFlow() {

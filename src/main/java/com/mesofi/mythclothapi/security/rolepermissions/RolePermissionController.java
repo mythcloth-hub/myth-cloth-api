@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
-import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
 
@@ -47,31 +46,6 @@ public class RolePermissionController {
 
     private final RoleService service;
     private final RolePermissionSyncService syncService;
-
-    /**
-     * Assigns a permission to a role.
-     *
-     * <p>
-     * The authenticated user must have the {@code roles:permissions:assign}
-     * authority.
-     * </p>
-     *
-     * @param roleId
-     *            the unique identifier of the role
-     * @param rolePermissionRequest
-     *            the request containing the permission to assign
-     * @return a response with no content and an HTTP {@code 204 No Content} status
-     *         when the permission is successfully assigned
-     */
-    @PostMapping
-    @Deprecated(forRemoval = true)
-    public ResponseEntity<Void> addPermissionToRole(@PathVariable Long roleId,
-            @Valid @RequestBody RolePermissionReq rolePermissionRequest) {
-
-        service.addPermissionToRole(roleId, rolePermissionRequest.permissionId());
-
-        return ResponseEntity.noContent().build();
-    }
 
     /**
      * Retrieves all permissions assigned to a role.
@@ -114,6 +88,30 @@ public class RolePermissionController {
             @Valid @RequestBody SyncPermissionsReq request) {
 
         syncService.syncPermissions(roleId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Adds a permission to a role.
+     *
+     * <p>
+     * The authenticated user must have the {@code roles:permissions:sync}
+     * authority.
+     * </p>
+     *
+     * @param roleId
+     *            the unique identifier of the role
+     * @param permissionId
+     *            the unique identifier of the permission to add
+     * @return a response with no content and an HTTP {@code 204 No Content} status
+     *         when the permission is successfully added to the role
+     */
+    @PostMapping("/{permissionId}")
+    @PreAuthorize("hasAuthority('" + Permissions.ROLES_PERMISSIONS_SYNC + "')")
+    public ResponseEntity<Void> addRolePermissions(@PathVariable Long roleId, @PathVariable Long permissionId) {
+
+        syncService.addPermissionToRole(roleId, permissionId);
 
         return ResponseEntity.noContent().build();
     }

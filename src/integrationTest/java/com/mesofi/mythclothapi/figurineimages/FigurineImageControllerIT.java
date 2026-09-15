@@ -21,7 +21,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageResp;
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 
 @Sql(scripts = "/cleanup-figurine-image-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)

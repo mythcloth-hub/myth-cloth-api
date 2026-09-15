@@ -24,7 +24,6 @@ import com.mesofi.mythclothapi.catalogs.model.Distribution;
 import com.mesofi.mythclothapi.catalogs.model.Group;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.catalogs.model.Series;
-import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
@@ -119,17 +118,6 @@ public class Figurine extends Auditable {
      */
     @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FigurineDistributor> distributors = new ArrayList<>();
-
-    /**
-     * Collector collections containing this figurine.
-     *
-     * <p>
-     * Collection associations are owned by this figurine and are automatically
-     * persisted and removed with it.
-     * </p>
-     */
-    @OneToMany(mappedBy = "figurine", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CollectorCollectionFigurine> collections = new ArrayList<>();
 
     /**
      * Stores associated with this figurine.

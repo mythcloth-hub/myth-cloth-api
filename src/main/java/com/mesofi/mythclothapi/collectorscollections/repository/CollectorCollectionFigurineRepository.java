@@ -19,12 +19,22 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 @Repository
 public interface CollectorCollectionFigurineRepository extends JpaRepository<CollectorCollectionFigurine, Long> {
 
+    /**
+     * Finds a collector collection figurine by its collection and figurine.
+     *
+     * @param collection
+     *            the collector's collection
+     * @param figurine
+     *            the figurine
+     * @return an optional containing the collector collection figurine if found, or
+     *         empty if not found
+     */
     Optional<CollectorCollectionFigurine> findByCollectionAndFigurine(CollectorCollection collection,
             Figurine figurine);
 
     /**
-     * Finds all figurines in a collection, ordered by the date they were added to
-     * the collection in descending order.
+     * Finds all owned figurines in a collection, ordered by the date they were
+     * added to the collection in descending order.
      *
      * @param collection
      *            the collector's collection
@@ -32,7 +42,7 @@ public interface CollectorCollectionFigurineRepository extends JpaRepository<Col
      *            the pagination information
      * @return a list of collector collection figurines
      */
-    List<CollectorCollectionFigurine> findByCollectionOrderByAddedAtDesc(CollectorCollection collection,
+    List<CollectorCollectionFigurine> findByCollectionAndOwnedTrueOrderByAddedAtDesc(CollectorCollection collection,
             Pageable pageable);
 
     /**

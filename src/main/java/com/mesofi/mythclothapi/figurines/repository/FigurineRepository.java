@@ -5,12 +5,10 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
-import com.mesofi.mythclothapi.figurines.repository.projection.FigurineCatalogSummaryProjection;
 import com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection;
 
 /**
@@ -103,31 +101,6 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
     int clearPreviousReleases();
 
     /**
-     * Retrieves summary counts for the figurine catalog.
-     *
-     * <p>
-     * The summary includes the total number of figurines, the number of released
-     * figurines, and the number of announced figurines.
-     * </p>
-     *
-     * @param restocks
-     *            whether to include restocked figurines in the summary; when
-     *            {@code true}, all figurines are considered, and when
-     *            {@code false}, only figurines without a previous release are
-     *            included
-     * @return catalog summary projection with figurine totals
-     */
-    @Query(value = """
-            SELECT
-                SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END) AS totalFigurines,
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
-                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
-            FROM figurines f
-            WHERE (:restocks = true OR f.previous_release_id IS NULL)
-            """, nativeQuery = true)
-    FigurineCatalogSummaryProjection getFigurineCatalogSummary(@Param("restocks") boolean restocks);
-
-    /**
      * Retrieves a summary of released figurines grouped by release year and lineup.
      * For each figurine, only the first distributor record is considered when
      * determining the release date.
@@ -166,4 +139,39 @@ public interface FigurineRepository extends JpaRepository<Figurine, Long>, Figur
                 lineupDescription
             """, nativeQuery = true)
     List<FigurineReleaseYearSummaryProjection> getReleaseYearSummary();
+
+    /**
+     * Retrieves the IDs of all figurines that are either released or announced.
+     *
+     * <p>
+     * For each figurine, only the first distributor record is considered when
+     * determining the release date.
+     * </p>
+     *
+     * @return a list of IDs for figurines with released or announced status
+     */
+    @Query(value = """
+             SELECT
+                 f.id
+             FROM figurines f
+             LEFT JOIN (
+                 SELECT *
+                 FROM (
+                     SELECT
+                         fd.*,
+                         ROW_NUMBER() OVER (
+                             PARTITION BY figurine_id
+                             ORDER BY id
+                         ) AS rn
+                     FROM figurine_distributor fd
+                 ) x
+                 WHERE rn = 1
+            ) fd
+                ON fd.figurine_id = f.id
+            JOIN lineups l
+                ON l.id = f.lineup_id
+            WHERE f.current_release_status IN ('RELEASED', 'ANNOUNCED')\s
+            ORDER by f.id ;
+            """, nativeQuery = true)
+    List<Long> findAllFigurineIdsWithReleasedOrAnnouncedStatus();
 }

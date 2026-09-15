@@ -38,13 +38,24 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreMatchedResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStorePriceResp;
 import com.mesofi.mythclothapi.figurinestores.dto.FigurineStoreUnmatchedResp;
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
 import com.mesofi.mythclothapi.messaging.pricing.model.ListingStatus;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreListing;
 import com.mesofi.mythclothapi.messaging.pricing.model.StoreName;
 import com.mesofi.mythclothapi.stores.dto.StoreReq;
 import com.mesofi.mythclothapi.stores.dto.StoreResp;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
+/**
+ * Integration tests for {@link FigurineStoreService}.
+ *
+ * <p>
+ * Validates the complete lifecycle of figurine store resources: creation,
+ * retrieval, update, and deletion through the HTTP layer.
+ *
+ * <p>
+ * The test uses the real Spring context, security configuration, validation,
+ * persistence layer, and REST endpoints.
+ */
 @Sql(scripts = "/cleanup-store-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineStoreServiceIT extends ControllerBaseIT {
 
@@ -74,6 +85,16 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
         }
     }
 
+    /**
+     * Test case to verify that processed store listings from Nin-Nin-Game can be
+     * matched to a figurine.
+     *
+     * <p>
+     * This test creates a store, catalog, series, distributor, and figurine, then
+     * processes store listings from Nin-Nin-Game. It checks that the unmatched
+     * listings can be matched to the created figurine and verifies the matched
+     * listings.
+     */
     @Test
     @DisplayName("NIN-NIN-GAME -> Should match processed store listings to a figurine")
     void shouldMatchProcessedStoreListingsToAFigurine() {
@@ -138,6 +159,16 @@ public class FigurineStoreServiceIT extends ControllerBaseIT {
                                 ListingStatus.OUT_OF_STOCK, List.of(new BigDecimal("5013.00"))));
     }
 
+    /**
+     * Test case to verify that processed store listings from Myth Factory can be
+     * processed multiple times and matched to a figurine.
+     *
+     * <p>
+     * This test creates a store, catalog, series, distributor, and figurine, then
+     * processes the same store listings from Myth Factory multiple times. It checks
+     * that the figurine's matched listings are updated correctly with each
+     * processing.
+     */
     @Test
     @DisplayName("MYTH FACTORY -> Should process the same store listings to a figurine multiple times")
     void shouldProcessesSameStoreListingsToAFigurineMultipleTimes() {

@@ -24,6 +24,7 @@ myth-cloth:
 
   google:
     client-id: ${GOOGLE_CLIENT_ID:1068577777042-fmeugfjurp1nbbfqq4q544gjk2h2l3cb.apps.googleusercontent.com}
+    oauth-url: https://oauth2.googleapis.com
 
   import:
     drive-url: https://docs.google.com/spreadsheets/d/%s/export?format=csv

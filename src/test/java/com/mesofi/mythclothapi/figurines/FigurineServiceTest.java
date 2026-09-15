@@ -11,11 +11,14 @@ import static com.mesofi.mythclothapi.figurines.model.ReleaseStatus.RELEASED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.AssertionsForClassTypes.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -27,10 +30,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.PageRequest;
@@ -42,12 +54,15 @@ import com.mesofi.mythclothapi.catalogs.CatalogService;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.config.MethodValidationTestConfig;
 import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
@@ -68,6 +83,7 @@ import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 @SpringBootTest(classes = {FigurineService.class, MethodValidationTestConfig.class})
 public class FigurineServiceTest {
 
@@ -115,11 +131,12 @@ public class FigurineServiceTest {
         });
         when(figurineRepository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc())
                 .thenReturn(List.of(incoming, previousRelease));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any())).thenAnswer(invocation -> {
-            Figurine figurine = invocation.getArgument(0);
-            Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(2);
-            return figurineResponse(figurine, restockFn.apply(figurine));
-        });
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Figurine figurine = invocation.getArgument(1);
+                    Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(3);
+                    return figurineResponse(figurine, null, restockFn.apply(figurine));
+                });
         when(currencyRegionResolver.resolveCountry(CurrencyCode.JPY)).thenReturn(JP);
 
         FigurineResp response = figurineService.createFigurine(request);
@@ -142,8 +159,8 @@ public class FigurineServiceTest {
         when(catalogService.retrieveCatalogContext()).thenReturn(emptyCatalogContext());
         when(figurineMapper.toFigurine(eq(request), any())).thenReturn(incoming);
         when(figurineRepository.saveAndFlush(any(Figurine.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any()))
-                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(0), List.of()));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(1), null, List.of()));
 
         FigurineResp response = figurineService.createFigurine(request);
 
@@ -161,8 +178,8 @@ public class FigurineServiceTest {
         when(catalogService.retrieveCatalogContext()).thenReturn(emptyCatalogContext());
         when(figurineMapper.toFigurine(eq(request), any())).thenReturn(incoming);
         when(figurineRepository.saveAndFlush(any(Figurine.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any()))
-                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(0), List.of()));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(1), null, List.of()));
 
         FigurineResp response = figurineService.createFigurine(request);
 
@@ -196,8 +213,117 @@ public class FigurineServiceTest {
     void readFigurine_shouldThrowException_whenFigurineDoesNotExist() {
         when(figurineRepository.findById(44L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> figurineService.readFigurine(44L)).isInstanceOf(FigurineNotFoundException.class)
+        assertThatThrownBy(() -> figurineService.readFigurine(44L, null)).isInstanceOf(FigurineNotFoundException.class)
                 .extracting(ex -> ((FigurineNotFoundException) ex).getId()).isEqualTo(44L);
+    }
+
+    @Test
+    void readFigurine_shouldThrowCollectorCollectionNotFoundException_whenCollectorCollectionDoesNotExist() {
+        Figurine figurine = figurine(6L, "seiya", "Seiya", RELEASED);
+
+        when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
+        when(collectorCollectionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> figurineService.readFigurine(6L, 1L))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .extracting(ex -> ((CollectorCollectionNotFoundException) ex).getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void readFigurine_shouldCollectedReturnFalse_whenCollectorCollectionFigurinesIsEmpty() {
+        Figurine figurine = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollection collectorCollection = collectorCollection(1L, "My Collection",
+                "My personal collection of figurines", false);
+
+        when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
+        when(collectorCollectionRepository.findById(1L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean collected = invocation.getArgument(0);
+                    Figurine current = invocation.getArgument(1);
+                    return figurineResponse(current, collected);
+                });
+
+        FigurineResp response = figurineService.readFigurine(6L, 1L);
+        assertThat(response.isCollected()).isFalse();
+    }
+
+    @Test
+    void readFigurine_shouldCollectedReturnFalse_whenCollectorCollectionFigurinesContainsNotOwnedFigurine() {
+        Figurine figurine = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollection collectorCollection = collectorCollection(1L, "My Collection",
+                "My personal collection of figurines", false);
+
+        Figurine figurine2 = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollectionFigurine collectorCollectionFigurine = new CollectorCollectionFigurine();
+        collectorCollectionFigurine.setFigurine(figurine2);
+        collectorCollectionFigurine.setOwned(false); // not owned yet
+
+        collectorCollection.setFigurines(List.of(collectorCollectionFigurine));
+
+        when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
+        when(collectorCollectionRepository.findById(1L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean collected = invocation.getArgument(0);
+                    Figurine current = invocation.getArgument(1);
+                    return figurineResponse(current, collected);
+                });
+
+        FigurineResp response = figurineService.readFigurine(6L, 1L);
+        assertThat(response.isCollected()).isFalse();
+    }
+
+    @Test
+    void readFigurine_shouldCollectedReturnFalse_whenCollectorCollectionFigurinesContainsOwnedFigurineNotMatching() {
+        Figurine figurine = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollection collectorCollection = collectorCollection(1L, "My Collection",
+                "My personal collection of figurines", false);
+
+        Figurine figurine2 = figurine(3L, "seiya", "Seiya", RELEASED);
+        CollectorCollectionFigurine collectorCollectionFigurine = new CollectorCollectionFigurine();
+        collectorCollectionFigurine.setFigurine(figurine2);
+        collectorCollectionFigurine.setOwned(true);
+
+        collectorCollection.setFigurines(List.of(collectorCollectionFigurine));
+
+        when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
+        when(collectorCollectionRepository.findById(1L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean collected = invocation.getArgument(0);
+                    Figurine current = invocation.getArgument(1);
+                    return figurineResponse(current, collected);
+                });
+
+        FigurineResp response = figurineService.readFigurine(6L, 1L);
+        assertThat(response.isCollected()).isFalse();
+    }
+
+    @Test
+    void readFigurine_shouldCollectedReturnTrue_whenCollectorCollectionFigurinesContainsOwnedFigurine() {
+        Figurine figurine = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollection collectorCollection = collectorCollection(1L, "My Collection",
+                "My personal collection of figurines", false);
+
+        Figurine figurine2 = figurine(6L, "seiya", "Seiya", RELEASED);
+        CollectorCollectionFigurine collectorCollectionFigurine = new CollectorCollectionFigurine();
+        collectorCollectionFigurine.setFigurine(figurine2);
+        collectorCollectionFigurine.setOwned(true);
+
+        collectorCollection.setFigurines(List.of(collectorCollectionFigurine));
+
+        when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
+        when(collectorCollectionRepository.findById(1L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean collected = invocation.getArgument(0);
+                    Figurine current = invocation.getArgument(1);
+                    return figurineResponse(current, collected);
+                });
+
+        FigurineResp response = figurineService.readFigurine(6L, 1L);
+        assertThat(response.isCollected()).isTrue();
     }
 
     @Test
@@ -212,14 +338,15 @@ public class FigurineServiceTest {
         figurine.setPreviousRelease(previousRelease);
 
         when(figurineRepository.findById(6L)).thenReturn(Optional.of(figurine));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any())).thenAnswer(invocation -> {
-            Figurine current = invocation.getArgument(0);
-            Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(2);
-            return figurineResponse(current, restockFn.apply(current));
-        });
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Figurine current = invocation.getArgument(1);
+                    Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(3);
+                    return figurineResponse(current, null, restockFn.apply(current));
+                });
         when(currencyRegionResolver.resolveCountry(CurrencyCode.JPY)).thenReturn(JP);
 
-        FigurineResp response = figurineService.readFigurine(6L);
+        FigurineResp response = figurineService.readFigurine(6L, null);
 
         assertThat(response.restocks()).containsExactly(new FigurineRestockResp(5L, LocalDate.of(2023, 3, 1)));
     }
@@ -231,15 +358,96 @@ public class FigurineServiceTest {
                 LocalDate.of(2024, 2, 1), LocalDate.of(2024, 3, 1), true))));
 
         when(figurineRepository.findById(7L)).thenReturn(Optional.of(figurine));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any())).thenAnswer(invocation -> {
-            Figurine current = invocation.getArgument(0);
-            Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(2);
-            return figurineResponse(current, restockFn.apply(current));
-        });
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Figurine current = invocation.getArgument(1);
+                    Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(3);
+                    return figurineResponse(current, null, restockFn.apply(current));
+                });
 
-        FigurineResp response = figurineService.readFigurine(7L);
+        FigurineResp response = figurineService.readFigurine(7L, null);
 
         assertThat(response.restocks()).isNull();
+    }
+
+    @Test
+    void filterFigurines_shouldThrowCollectorCollectionNotFoundException_whenCollectionDoesNotExist_andIdIsNegative() {
+
+        when(collectorCollectionRepository.findById(-1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> figurineService.filterFigurines(emptyFilter(), 0, 2, -1L, null))
+                .isInstanceOf(CollectorCollectionNotFoundException.class)
+                .extracting(ex -> ((CollectorCollectionNotFoundException) ex).getId()).isEqualTo(-1L);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(booleans = false)
+    void filterFigurines_shouldReturnPageOfMappedResponses_whenFigurinesWithCollectionIdIsProvided(Boolean owned) {
+        Figurine first = figurine(1L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(2L, "hyoga", "Hyoga", ANNOUNCED);
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
+                2);
+
+        CollectorCollection collectorCollection = collectorCollection(3L, "My Collection",
+                "My personal collection of figurines", false);
+        collectorCollection.setFigurines(List.of()); // empty figurines list to simulate that the collector has not
+                                                        // collected any figurines yet
+        when(collectorCollectionRepository.findById(3L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean isCollected = invocation.getArgument(0);
+                    return figurineResponse(invocation.getArgument(1), isCollected, List.of());
+                });
+
+        CollectablePageImpl<FigurineResp> response = figurineService.filterFigurines(emptyFilter(), 0, 2, 3L, owned);
+        assertThat(response.getContent()).hasSize(2);
+        assertThat(response.getContent()).extracting(FigurineResp::id, FigurineResp::isCollected)
+                .containsExactly(tuple(1L, true), tuple(2L, true));
+        assertThat(response.getTotalCollectables()).isEqualTo(2);
+        verify(figurineRepository).findPaginated(any(), any(), any());
+    }
+
+    @Test
+    void filterFigurines_shouldReturnPageOfMappedResponses_whenSomeFigurinesAreCollected() {
+        Figurine first = figurine(1L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(2L, "hyoga", "Hyoga", ANNOUNCED);
+        Figurine third = figurine(3L, "shun", "Shun", ANNOUNCED);
+        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
+                2);
+
+        CollectorCollection collectorCollection = collectorCollection(3L, "My Collection",
+                "My personal collection of figurines", false);
+
+        CollectorCollectionFigurine ccf1 = new CollectorCollectionFigurine();
+        ccf1.setOwned(false);
+
+        CollectorCollectionFigurine ccf2 = new CollectorCollectionFigurine();
+        ccf2.setOwned(true);
+        ccf2.setFigurine(third);
+
+        CollectorCollectionFigurine ccf3 = new CollectorCollectionFigurine();
+        ccf3.setOwned(true);
+        ccf3.setFigurine(first);
+
+        collectorCollection.setFigurines(List.of(ccf1, ccf2, ccf3)); // simulate that the collector has collected some
+        // figurines
+
+        when(collectorCollectionRepository.findById(3L)).thenReturn(Optional.of(collectorCollection));
+        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Boolean isCollected = invocation.getArgument(0);
+                    return figurineResponse(invocation.getArgument(1), isCollected, List.of());
+                });
+
+        CollectablePageImpl<FigurineResp> response = figurineService.filterFigurines(emptyFilter(), 0, 2, 3L, true);
+        assertThat(response.getContent()).hasSize(2);
+        assertThat(response.getContent()).extracting(FigurineResp::id, FigurineResp::isCollected)
+                .containsExactly(tuple(1L, true), tuple(2L, false));
+        assertThat(response.getTotalCollectables()).isEqualTo(2);
+        verify(figurineRepository).findPaginated(any(), any(), any());
     }
 
     @Test
@@ -249,16 +457,75 @@ public class FigurineServiceTest {
         CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
                 2);
 
-        when(figurineRepository.findPaginated(any(), any())).thenReturn(page);
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any()))
-                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(0), List.of()));
+        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(1), null, List.of()));
 
-        CollectablePageImpl<FigurineResp> response = figurineService.filterFigurines(emptyFilter(), 0, 2);
+        CollectablePageImpl<FigurineResp> response = figurineService.filterFigurines(emptyFilter(), 0, 2, null, null);
 
         assertThat(response.getContent()).hasSize(2);
         assertThat(response.getContent()).extracting(FigurineResp::id).containsExactly(1L, 2L);
         assertThat(response.getTotalCollectables()).isEqualTo(2);
-        verify(figurineRepository).findPaginated(any(), any());
+        verify(figurineRepository).findPaginated(any(), any(), any());
+    }
+
+    @Test
+    void retrieveCollectedFigurineIds_shouldReturnEmptyList_whenNoCollectionsExist_AndOwnedCollection() {
+        Collector collector = new Collector();
+        collector.setId(10L);
+
+        when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
+        collector.setCollections(List.of()); // no collections for this collector
+
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L, true)).containsExactly();
+    }
+
+    @Test
+    void retrieveCollectedFigurineIds_shouldReturnEmptyList_whenUnmatchedCollectionsExist_AndOwnedCollection() {
+        Collector collector = new Collector();
+        collector.setId(10L);
+
+        CollectorCollection wrongCollection = new CollectorCollection();
+        wrongCollection.setId(19L);
+        wrongCollection.setFigurines(new ArrayList<>(List.of(collectionFigurine(99L))));
+
+        when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
+        collector.setCollections(List.of(wrongCollection)); // no matching collection for this collector
+
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L, true)).containsExactly();
+    }
+
+    @ParameterizedTest
+    @MethodSource("ownedParameters")
+    void retrieveCollectedFigurineIds_shouldReturnExpectedFigurines(Boolean owned, List<Long> expectedIds) {
+        Collector collector = new Collector();
+        collector.setId(10L);
+
+        CollectorCollection matchedCollection = new CollectorCollection();
+        matchedCollection.setId(20L);
+
+        CollectorCollectionFigurine ccf1 = new CollectorCollectionFigurine();
+        ccf1.setId(1L);
+        ccf1.setFigurine(figurine(11L, "seiya", "Seiya", RELEASED));
+        CollectorCollectionFigurine ccf2 = new CollectorCollectionFigurine();
+        ccf2.setId(2L);
+        ccf2.setFigurine(figurine(22L, "shiryuu", "Shiryu", RELEASED));
+        CollectorCollectionFigurine ccf3 = new CollectorCollectionFigurine();
+        ccf3.setId(3L);
+        ccf3.setFigurine(figurine(33L, "hyoga", "Hyoga", RELEASED));
+
+        matchedCollection.setFigurines(List.of(ccf1, ccf2, ccf3));
+
+        when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
+        collector.setCollections(List.of(matchedCollection));
+
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L, owned))
+                .containsExactlyElementsOf(expectedIds);
+    }
+
+    private static Stream<Arguments> ownedParameters() {
+        return Stream.of(Arguments.of(null, List.of(11L, 22L, 33L)), Arguments.of(false, List.of(11L, 22L, 33L)),
+                Arguments.of(true, List.of()));
     }
 
     @Test
@@ -275,28 +542,29 @@ public class FigurineServiceTest {
         matchingCollection.setFigurines(new ArrayList<>(List.of(collectionFigurine(1L), collectionFigurine(2L))));
 
         when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByCollector(collector))
-                .thenReturn(List.of(wrongCollection, matchingCollection));
+        collector.setCollections(new ArrayList<>(List.of(wrongCollection, matchingCollection)));
 
-        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L)).containsExactly(1L, 2L);
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L, null)).containsExactly(1L, 2L);
     }
 
     @Test
     void retrieveCollectedFigurineIds_shouldReturnEmptyList_whenCollectionIdIsNull() {
-        assertThat(figurineService.retrieveCollectedFigurineIds(10L, null)).isEmpty();
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, null, null)).isEmpty();
     }
 
     @Test
     void retrieveCollectedFigurineIds_shouldThrowException_whenCollectorDoesNotExist() {
         when(collectorRepository.findById(10L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> figurineService.retrieveCollectedFigurineIds(10L, 20L))
+        assertThatThrownBy(() -> figurineService.retrieveCollectedFigurineIds(10L, 20L, null))
                 .isInstanceOf(CollectorNotFoundException.class)
                 .extracting(ex -> ((CollectorNotFoundException) ex).getId()).isEqualTo(10L);
     }
 
-    @Test
-    void retrieveCollectedFigurineIds_shouldReturnIds_whenCollectionExists() {
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(booleans = false)
+    void retrieveCollectedFigurineIds_shouldReturnIds_whenCollectionExists(Boolean owned) {
         Collector collector = new Collector();
         collector.setId(10L);
 
@@ -305,9 +573,9 @@ public class FigurineServiceTest {
         collection.setFigurines(new ArrayList<>(List.of(collectionFigurine(1L), collectionFigurine(2L))));
 
         when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByCollector(collector)).thenReturn(List.of(collection));
+        collector.setCollections(new ArrayList<>(List.of(collection)));
 
-        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L)).containsExactly(1L, 2L);
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 20L, owned)).containsExactly(1L, 2L);
     }
 
     @Test
@@ -317,11 +585,12 @@ public class FigurineServiceTest {
 
         CollectorCollection collection = new CollectorCollection();
         collection.setId(20L);
+        collection.setFigurines(new ArrayList<>());
 
         when(collectorRepository.findById(10L)).thenReturn(Optional.of(collector));
-        when(collectorCollectionRepository.findByCollector(collector)).thenReturn(List.of(collection));
+        collector.setCollections(new ArrayList<>(List.of(collection)));
 
-        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 21L)).isEmpty();
+        assertThat(figurineService.retrieveCollectedFigurineIds(10L, 21L, null)).isEmpty();
     }
 
     @Test
@@ -353,36 +622,68 @@ public class FigurineServiceTest {
     }
 
     @Test
-    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorIsAnonymous() {
+    void retrieveRecommendedFigurines_shouldNotUsePersonalizedBranch_whenCollectorIdIsNull() {
         Figurine first = figurine(101L, "seiya", "Seiya", RELEASED);
         Figurine second = figurine(102L, "hyoga", "Hyoga", ANNOUNCED);
-        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
-                2);
 
-        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 2)))).thenReturn(page);
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 5), 2, 2));
+
         when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
                 .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
 
-        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 2);
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(isNull(Long.class), eq(5)))
+                .thenThrow(new AssertionError("Personalized branch should not be executed"));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 5);
 
         assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(101L, 102L);
+
+        verify(collectorCollectionFigurineService, never()).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorIsAnonymous() {
+
+        Figurine first = figurine(101L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(102L, "hyoga", "Hyoga", ANNOUNCED);
+        Figurine third = figurine(103L, "shun", "Shun", RELEASED);
+
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second, third), PageRequest.of(0, 5), 3, 3));
+
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 5);
+
+        assertThat(response).isNotNull();
+        assertThat(response).hasSize(3);
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(101L, 102L, 103L);
         verify(collectorCollectionFigurineService, never()).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
     }
 
     @Test
     void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorHasNoFavorites() {
-        Figurine first = figurine(103L, "shun", "Shun", RELEASED);
-        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first), PageRequest.of(0, 1), 1, 1);
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(99L, 5)).thenReturn(List.of());
 
-        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(7L, 5)).thenReturn(List.of());
-        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 1)))).thenReturn(page);
+        Figurine first = figurine(103L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(104L, "hyoga", "Hyoga", ANNOUNCED);
+
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 5), 2, 2));
+
         when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
                 .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
 
-        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(7L, 1);
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(99L, 5);
 
-        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(103L);
-        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(7L, 5);
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(103L, 104L);
+        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
     }
 
     @Test
@@ -514,11 +815,12 @@ public class FigurineServiceTest {
         when(figurineRepository.findAll()).thenReturn(List.of(existing, previousRelease));
         when(figurineRepository.findReleasedOrAnnouncedOrderByFirstReleaseDateDesc())
                 .thenReturn(List.of(existing, previousRelease));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any())).thenAnswer(invocation -> {
-            Figurine current = invocation.getArgument(0);
-            Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(2);
-            return figurineResponse(current, restockFn.apply(current));
-        });
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> {
+                    Figurine current = invocation.getArgument(1);
+                    Function<Figurine, List<FigurineRestockResp>> restockFn = invocation.getArgument(3);
+                    return figurineResponse(current, null, restockFn.apply(current));
+                });
         when(currencyRegionResolver.resolveCountry(CurrencyCode.JPY)).thenReturn(JP);
         when(currencyRegionResolver.resolveCountry(CurrencyCode.MXN)).thenReturn(MX);
 
@@ -546,8 +848,8 @@ public class FigurineServiceTest {
         when(catalogService.retrieveCatalogContext()).thenReturn(emptyCatalogContext());
         when(figurineMapper.toFigurine(eq(request), any())).thenReturn(incoming);
         when(figurineRepository.saveAndFlush(any(Figurine.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(figurineMapper.toFigurineResp(any(Figurine.class), any(), any()))
-                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(0), List.of()));
+        when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
+                .thenAnswer(invocation -> figurineResponse(invocation.getArgument(1), null, List.of()));
 
         figurineService.updateFigurine(45L, request);
 
@@ -775,8 +1077,7 @@ public class FigurineServiceTest {
     @Test
     void findBestMatchingFigurine_shouldReturnEmpty_whenLineUpIsNotConfigured() {
         when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
-        assertThat(figurineService.findBestMatchingFigurine(
-                com.mesofi.mythclothapi.catalogs.model.LineUpType.TAMASHII_NATIONS_BOX, "seiya")).isEmpty();
+        assertThat(figurineService.findBestMatchingFigurine(LineUpType.TAMASHII_NATIONS_BOX, "seiya")).isEmpty();
     }
 
     @Test
@@ -811,11 +1112,13 @@ public class FigurineServiceTest {
     }
 
     @Test
-    void findBestMatchingFigurine_shouldReturnEmpty_whenSimilarityIsBelowThreshold() {
+    void findBestMatchingFigurine_shouldReturnEmpty_whenSimilarityIsBelowThreshold(CapturedOutput output) {
         when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
         when(figurineCache.get("by-mythcloth-ex", List.class)).thenReturn(List.of(new CachedFigurine(30L, "A")));
 
         assertThat(figurineService.findBestMatchingFigurine(MYTH_CLOTH_EX, "zzzzzzzzzz")).isEmpty();
+
+        assertThat(output).contains("No suitable match found for 'zzzzzzzzzz', similarity: 0.00 %.");
     }
 
     @Test
@@ -935,6 +1238,15 @@ public class FigurineServiceTest {
         return figurine;
     }
 
+    private CollectorCollection collectorCollection(Long id, String name, String description, boolean favorite) {
+        CollectorCollection collection = new CollectorCollection();
+        collection.setId(id);
+        collection.setName(name);
+        collection.setDescription(description);
+        collection.setFavorite(favorite);
+        return collection;
+    }
+
     private FigurineDistributor distributor(CurrencyCode currency, Double price, LocalDate announcementDate,
             LocalDate preorderDate, LocalDate releaseDate, boolean confirmed) {
         FigurineDistributor distributor = new FigurineDistributor();
@@ -988,11 +1300,18 @@ public class FigurineServiceTest {
         return collectionFigurine;
     }
 
-    private FigurineResp figurineResponse(Figurine figurine, List<FigurineRestockResp> restocks) {
-        return new FigurineResp(figurine.getId(), figurine.getNormalizedName(), figurine.getDisplayName(), List.of(),
-                figurine.getTamashiiUrl(), figurine.getCurrentReleaseStatus(), null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, figurine.getRemarks(), List.of(), List.of(), List.of(),
-                restocks, null, null);
+    private FigurineResp figurineResponse(Figurine figurine, Boolean isCollected, List<FigurineRestockResp> restocks) {
+        return new FigurineResp(figurine.getId(), isCollected, figurine.getNormalizedName(), figurine.getDisplayName(),
+                List.of(), figurine.getTamashiiUrl(), figurine.getCurrentReleaseStatus(), null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, figurine.getRemarks(), List.of(), List.of(),
+                List.of(), restocks, null, null);
+    }
+
+    private FigurineResp figurineResponse(Figurine figurine, Boolean isCollected) {
+        return new FigurineResp(figurine.getId(), isCollected, figurine.getNormalizedName(), figurine.getDisplayName(),
+                List.of(), figurine.getTamashiiUrl(), figurine.getCurrentReleaseStatus(), null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null, figurine.getRemarks(), List.of(), List.of(),
+                List.of(), null, null, null);
     }
 
     private FigurineSummaryResp summaryResponse(Figurine figurine) {

@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.security.rolepermissions;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +37,8 @@ public class RolePermissionSyncServiceTest {
     private RoleRepository roleRepository;
     @MockitoBean
     private PermissionRepository permissionRepository;
+    @MockitoBean
+    private RolePermissionRepository rolePermissionRepository;
 
     @Test
     void syncPermissions_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
@@ -58,7 +61,7 @@ public class RolePermissionSyncServiceTest {
         // Arrange
         Role targetRole = new Role();
         targetRole.setId(1L);
-        // targetRole.setDescription("Admin");
+        targetRole.setName("Admin");
 
         List<Permission> targetPermissions = List.of(); // no permissions were found in DB.
 
@@ -82,7 +85,7 @@ public class RolePermissionSyncServiceTest {
         // Arrange
         Role targetRole = new Role();
         targetRole.setId(1L);
-        // targetRole.setDescription("Admin");
+        targetRole.setName("Admin");
 
         RolePermission targetRolePermission1 = new RolePermission();
         targetRolePermission1.setId(1L);
@@ -120,7 +123,7 @@ public class RolePermissionSyncServiceTest {
         when(permissionRepository.findAllById(List.of(1L, 2L, 3L))).thenReturn(targetPermissions);
         when(roleRepository.save(any(Role.class))).thenAnswer(invocation -> {
             Role entity = invocation.getArgument(0);
-            // entity.setId(1L);
+            entity.setId(1L);
             return entity;
         });
 
@@ -134,7 +137,7 @@ public class RolePermissionSyncServiceTest {
         ArgumentCaptor<Role> captor = ArgumentCaptor.forClass(Role.class);
         verify(roleRepository).save(captor.capture());
         Role saved = captor.getValue();
-        // assertThat(saved.getDescription()).isEqualTo("Admin");
+        assertThat(saved.getName()).isEqualTo("Admin");
         List<RolePermission> allPermissions = saved.getPermissions();
         assertThat(allPermissions).hasSize(3);
 
@@ -150,10 +153,75 @@ public class RolePermissionSyncServiceTest {
         saved.getPermissions().forEach(rp -> assertThat(rp.getRole()).isEqualTo(targetRole));
     }
 
+    @Test
+    void addPermissionToRole_shouldThrowRoleNotFoundException_whenRoleDoesNotExist() {
+        // Arrange
+        when(roleRepository.findById(99L)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> rolePermissionSyncService.addPermissionToRole(99L, 55L))
+                .isInstanceOfSatisfying(RoleNotFoundException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Role with id 99 was not found");
+                    assertThat(ex.getId()).isEqualTo(99L);
+                });
+
+        verify(roleRepository).findById(99L);
+        verify(permissionRepository, never()).findAllById(any());
+    }
+
+    @Test
+    void addPermissionToRole_shouldThrowPermissionNotFoundException_whenPermissionDoesNotExist() {
+        // Arrange
+        Role targetRole = new Role();
+        targetRole.setId(99L);
+        targetRole.setName("Admin");
+
+        when(roleRepository.findById(99L)).thenReturn(Optional.of(targetRole));
+        when(permissionRepository.findById(55L)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> rolePermissionSyncService.addPermissionToRole(99L, 55L))
+                .isInstanceOfSatisfying(PermissionNotFoundException.class, ex -> {
+                    assertThat(ex.getMessage()).isEqualTo("Permission with id 55 was not found");
+                    assertThat(ex.getId()).isEqualTo(55L);
+                });
+
+        verify(roleRepository).findById(99L);
+        verify(permissionRepository).findById(55L);
+    }
+
+    @Test
+    void addPermissionToRole_shouldPersistRolePermission_whenRequestIsValid() {
+        // Arrange
+        Role targetRole = new Role();
+        targetRole.setId(99L);
+        targetRole.setName("Admin");
+
+        Permission targetPermission = new Permission();
+        targetPermission.setId(55L);
+        targetPermission.setName("figurines:create");
+
+        when(roleRepository.findById(99L)).thenReturn(Optional.of(targetRole));
+        when(permissionRepository.findById(55L)).thenReturn(Optional.of(targetPermission));
+
+        when(rolePermissionRepository.save(any(RolePermission.class))).thenAnswer(invocation -> {
+            RolePermission entity = invocation.getArgument(0);
+            entity.setId(1L);
+
+            assertThat(entity.getRole()).isEqualTo(targetRole);
+            assertThat(entity.getPermission()).isEqualTo(targetPermission);
+
+            return entity;
+        });
+
+        // Act + Assert
+        rolePermissionSyncService.addPermissionToRole(99L, 55L);
+    }
+
     private Permission permission(Long id, String description) {
         Permission permission = new Permission();
         permission.setId(id);
-        // permission.setDescription(description);
+        permission.setName(description);
 
         return permission;
     }

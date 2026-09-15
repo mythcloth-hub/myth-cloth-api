@@ -16,13 +16,27 @@ import org.springframework.test.context.jdbc.Sql;
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
+/**
+ * Integration tests for {@link DistributorController}.
+ *
+ * <p>
+ * Validates the complete lifecycle of distributor resources: creation,
+ * retrieval, update, and deletion through the HTTP layer.
+ *
+ * <p>
+ * The test uses the real Spring context, security configuration, validation,
+ * persistence layer, and REST endpoints.
+ */
 @Sql(scripts = "/cleanup-distributor-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class DistributorControllerIT extends ControllerBaseIT {
 
     private static final String DISTRIBUTORS = "/distributors";
 
+    /**
+     * Verifies the complete CRUD lifecycle for distributor resources.
+     */
     @Test
     @DisplayName("Test flow to create and process distributors")
     void fullCrudDistributorFlow() {

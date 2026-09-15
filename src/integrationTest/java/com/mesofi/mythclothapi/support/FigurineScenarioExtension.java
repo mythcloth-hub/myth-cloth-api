@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.it;
+package com.mesofi.mythclothapi.support;
 
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.CN;
 import static com.mesofi.mythclothapi.distributors.model.CountryCode.JP;
@@ -290,7 +290,7 @@ public class FigurineScenarioExtension
          * this.series, CatalogResp::id, id -> client.deleteCatalog(CatalogType.series,
          * id)); safeDelete( "Groups", this.groups, CatalogResp::id, id ->
          * client.deleteCatalog(CatalogType.groups, id));
-         * 
+         *
          * safeDelete("Anniversaries", this.anniversaries, AnniversaryResp::id,
          * client::deleteAnniversary);
          */

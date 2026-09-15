@@ -14,7 +14,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
 /**
  * Integration tests for {@link CatalogController}.

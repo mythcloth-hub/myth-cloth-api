@@ -7,18 +7,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.security.SecurityMapper;
-import com.mesofi.mythclothapi.security.permissions.PermissionRepository;
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
-import com.mesofi.mythclothapi.security.permissions.exceptions.PermissionNotFoundException;
-import com.mesofi.mythclothapi.security.permissions.model.Permission;
 import com.mesofi.mythclothapi.security.rolepermissions.RolePermission;
 import com.mesofi.mythclothapi.security.roles.dto.RoleReq;
 import com.mesofi.mythclothapi.security.roles.dto.RoleResp;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.exceptions.RoleNotFoundException;
-import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 import com.mesofi.mythclothapi.security.roles.model.Role;
-import com.mesofi.mythclothapi.security.service.SecurityDataService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 public class RoleService {
 
     private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
     private final SecurityMapper mapper;
 
     /**
@@ -123,51 +117,6 @@ public class RoleService {
 
         var saved = roleRepository.save(existing);
         return mapper.toRoleResp(saved);
-    }
-
-    /**
-     * Assigns a permission to an existing role.
-     *
-     * <p>
-     * The role and permission must both exist, and the permission must not already
-     * be assigned to the role.
-     * </p>
-     * Check if this method can be replaced with the
-     * {@link SecurityDataService#initializeSecurityData()}
-     *
-     * @param roleId
-     *            the unique identifier of the role
-     * @param permissionId
-     *            the unique identifier of the permission to assign
-     * @throws RoleNotFoundException
-     *             if the specified role does not exist
-     * @throws PermissionNotFoundException
-     *             if the specified permission does not exist
-     * @throws RolePermissionAlreadyExistsException
-     *             if the permission is already assigned to the role
-     */
-    @Transactional
-    @Deprecated(forRemoval = true)
-    public void addPermissionToRole(Long roleId, Long permissionId) {
-        Role role = roleRepository.findById(roleId).orElseThrow(() -> new RoleNotFoundException(roleId));
-
-        Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new PermissionNotFoundException(permissionId));
-
-        // Check whether the association already exists.
-        boolean alreadyExists = role.getPermissions().stream()
-                .anyMatch(rp -> rp.getPermission().getId().equals(permission.getId()));
-
-        if (alreadyExists) {
-            throw new RolePermissionAlreadyExistsException(role.getId(), permission.getId());
-        }
-
-        RolePermission rolePermission = new RolePermission();
-        rolePermission.setRole(role);
-        rolePermission.setPermission(permission);
-        role.getPermissions().add(rolePermission);
-
-        roleRepository.save(role);
     }
 
     /**

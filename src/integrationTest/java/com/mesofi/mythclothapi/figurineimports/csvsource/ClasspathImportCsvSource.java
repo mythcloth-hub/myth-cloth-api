@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("integration")
-public class LocalFileImportCsvSource implements FigurineImportCsvSource {
+public class ClasspathImportCsvSource implements FigurineImportCsvSource {
 
     /**
      * Opens a reader for the local figurine import CSV fixture.
@@ -33,6 +33,10 @@ public class LocalFileImportCsvSource implements FigurineImportCsvSource {
     @Override
     public Reader openReader() throws IOException {
         ClassPathResource resource = new ClassPathResource("import/MythCloth Catalog - CatalogMyth.csv");
+
+        if (!resource.exists()) {
+            throw new IOException("CSV fixture not found: " + resource.getPath());
+        }
 
         return new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8);
     }

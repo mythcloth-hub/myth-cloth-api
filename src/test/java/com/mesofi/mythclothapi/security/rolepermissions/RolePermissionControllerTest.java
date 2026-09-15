@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.security.rolepermissions;
 
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -20,10 +19,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionResp;
-import com.mesofi.mythclothapi.security.rolepermissions.dto.RolePermissionReq;
 import com.mesofi.mythclothapi.security.rolepermissions.dto.SyncPermissionsReq;
 import com.mesofi.mythclothapi.security.roles.RoleService;
-import com.mesofi.mythclothapi.security.roles.exceptions.RolePermissionAlreadyExistsException;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -41,30 +38,6 @@ public class RolePermissionControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    void addPermissionToRole_shouldReturn409_whenRolePermissionAlreadyExists() throws Exception {
-        doThrow(new RolePermissionAlreadyExistsException(1L, 2L)).when(roleService).addPermissionToRole(1L, 2L);
-
-        RolePermissionReq request = new RolePermissionReq(2L);
-
-        mockMvc.perform(post("/roles/{roleId}/permissions", 1L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))).andExpect(status().isConflict());
-
-        verify(roleService).addPermissionToRole(1L, 2L);
-    }
-
-    @Test
-    void addPermissionToRole_shouldReturn204_whenPermissionAddedToRole() throws Exception {
-        RolePermissionReq request = new RolePermissionReq(2L);
-
-        doNothing().when(roleService).addPermissionToRole(1L, 2L);
-
-        mockMvc.perform(post("/roles/{roleId}/permissions", 1L).contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))).andExpect(status().isNoContent());
-
-        verify(roleService).addPermissionToRole(1L, 2L);
-    }
 
     @Test
     void retrievePermissionsByRoleId_shouldReturn200_whenPermissionEntriesExist() throws Exception {
@@ -90,5 +63,14 @@ public class RolePermissionControllerTest {
                 .content(objectMapper.writeValueAsString(request))).andExpect(status().isNoContent());
 
         verify(syncService).syncPermissions(1L, request);
+    }
+
+    @Test
+    void addRolePermissions_shouldReturn204_whenRoleIsAddedToPermission() throws Exception {
+        doNothing().when(syncService).addPermissionToRole(1L, 1L);
+
+        mockMvc.perform(post("/roles/{roleId}/permissions/{permissionId}", 1L, 1L)).andExpect(status().isNoContent());
+
+        verify(syncService).addPermissionToRole(1L, 1L);
     }
 }

@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -48,6 +49,7 @@ import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
+import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.common.BaseId;
@@ -198,7 +200,7 @@ public class FigurineService {
         var saved = repository.saveAndFlush(newFigurine);
 
         linkToPreviousRelease(saved);
-        return mapper.toFigurineResp(saved, this::calculatePriceWithTax, this::buildRestockHistory);
+        return mapper.toFigurineResp(null, saved, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     private void linkToPreviousRelease(Figurine persistedFigurine) {
@@ -225,16 +227,26 @@ public class FigurineService {
      *
      * @param id
      *            identifier of the figurine to retrieve
+     * @param collectionId
+     *            optional identifier of the collector's collection to filter by
      * @return API response DTO representing the requested figurine
      * @throws FigurineNotFoundException
      *             if no figurine exists with the given id
      */
     @Transactional(readOnly = true)
-    public FigurineResp readFigurine(@Positive Long id) {
-        log.info("Reading figurine with id '{}'", id);
+    public FigurineResp readFigurine(@Positive Long id, Long collectionId) {
+        log.info("Reading figurine with id '{}' and collectionId '{}'", id, collectionId);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
-        return mapper.toFigurineResp(existing, this::calculatePriceWithTax, this::buildRestockHistory);
+        Boolean collected = null;
+
+        if (collectionId != null) {
+            CollectorCollection collectionFound = collectorCollectionRepository.findById(collectionId)
+                    .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+            collected = collectionFound.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
+                    .anyMatch(ccf -> ccf.getFigurine().getId().equals(existing.getId()));
+        }
+        return mapper.toFigurineResp(collected, existing, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     /**
@@ -260,23 +272,65 @@ public class FigurineService {
      *            the page number to retrieve (zero-based)
      * @param size
      *            the number of items per page
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
+     * @param collectionId
+     *            optional identifier of the collector's collection to filter by
      * @return a page of {@link FigurineResp} objects matching the filter
      */
     @Transactional(readOnly = true)
     @Timed(value = "figurine.search", description = "Time spent searching figurines")
-    @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter, #page, #size)")
+    @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter, #page, #size, #collectionId, #owned)")
     public CollectablePageImpl<FigurineResp> filterFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
-            @Positive int size) {
+            @Positive int size, Long collectionId, Boolean owned) {
         log.info("Reading figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
+        List<Long> ownedFigurineIds = new ArrayList<>();
 
-        List<FigurineResp> list = figurines.getContent().stream().map(
-                figurine -> mapper.toFigurineResp(figurine, this::calculatePriceWithTax, this::buildRestockHistory))
+        Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
+                .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
+                        .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
+
+        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size),
+                collectionId);
+
+        List<FigurineResp> list = figurines.getContent().stream()
+                .map(figurine -> mapper.toFigurineResp(isCollected(owned, ownedFigurineIds, figurine.getId()), figurine,
+                        this::calculatePriceWithTax, this::buildRestockHistory))
                 .toList();
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());
+    }
+
+    /**
+     * Determines whether a figurine is considered "collected" based on the provided
+     * ownership status and the list of owned figurine IDs.
+     *
+     * <p>
+     * If the ownership status is {@code null}, the figurine is considered
+     * collected. If the ownership status is {@code false}, the figurine is also
+     * considered collected. Otherwise, the method checks if the figurine ID is
+     * present in the list of owned figurine IDs.
+     *
+     * @param owned
+     *            the ownership status; may be {@code null}
+     * @param ownedFigurineIds
+     *            a list of IDs representing owned figurines
+     * @param figurineId
+     *            the ID of the figurine to check
+     * @return {@code true} if the figurine is considered collected; otherwise,
+     *         {@code false}
+     */
+    private boolean isCollected(Boolean owned, List<Long> ownedFigurineIds, Long figurineId) {
+        if (owned == null) {
+            return true;
+        }
+        if (!owned) {
+            return true;
+        }
+        return ownedFigurineIds.contains(figurineId);
     }
 
     private List<FigurineRestockResp> buildRestockHistory(Figurine figurine) {
@@ -312,13 +366,15 @@ public class FigurineService {
      *            identifier of the collector
      * @param collectionId
      *            identifier of the collection to inspect; may be {@code null}
+     * @param owned
+     *            whether to filter by owned figurines
      * @return a list containing the ids of all figurines in the specified
      *         collection, or an empty list if the collection does not exist or no
      *         collection id was provided
      * @throws CollectorNotFoundException
      *             if the collector does not exist
      */
-    public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId) {
+    public List<Long> retrieveCollectedFigurineIds(long collectorId, Long collectionId, Boolean owned) {
         if (collectionId == null) {
             return List.of();
         }
@@ -326,12 +382,16 @@ public class FigurineService {
         Collector collectorFound = collectorRepository.findById(collectorId)
                 .orElseThrow(() -> new CollectorNotFoundException(collectorId));
 
-        List<CollectorCollection> collectorCollection = collectorCollectionRepository.findByCollector(collectorFound);
-
-        return collectorCollection.stream().filter(cc -> cc.getId().equals(collectionId)).findFirst()
-                .map(collection -> collection.getFigurines().stream().map(CollectorCollectionFigurine::getFigurine)
-                        .map(BaseId::getId).toList())
-                .orElseGet(List::of);
+        // Only return owned figurines if the 'owned' parameter is true; otherwise,
+        // return all figurines in the collection
+        return collectorFound.getCollections().stream().filter(collection -> collection.getId().equals(collectionId))
+                .findFirst().map(collection -> {
+                    Stream<CollectorCollectionFigurine> figurines = collection.getFigurines().stream();
+                    if (Boolean.TRUE.equals(owned)) {
+                        figurines = figurines.filter(CollectorCollectionFigurine::isOwned);
+                    }
+                    return figurines.map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).toList();
+                }).orElseGet(List::of);
     }
 
     @Transactional(readOnly = true)
@@ -477,7 +537,7 @@ public class FigurineService {
             rebuildRestockHistory(repository.findAll());
         }
 
-        return mapper.toFigurineResp(updated, this::calculatePriceWithTax, this::buildRestockHistory);
+        return mapper.toFigurineResp(null, updated, this::calculatePriceWithTax, this::buildRestockHistory);
     }
 
     /**
@@ -868,4 +928,17 @@ public class FigurineService {
         figurine.getEvents().forEach(e -> e.setFigurine(figurine));
     }
 
+    /**
+     * Retrieves a collector collection by its identifier.
+     *
+     * @param collectionId
+     *            the identifier of the collection to retrieve
+     * @return the collector collection with the specified identifier
+     * @throws CollectorCollectionNotFoundException
+     *             if no collection with the specified identifier exists
+     */
+    private CollectorCollection retrieveCollectorCollection(Long collectionId) {
+        return collectorCollectionRepository.findById(collectionId)
+                .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+    }
 }

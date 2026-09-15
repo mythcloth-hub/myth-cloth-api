@@ -47,8 +47,28 @@ public interface FigurineQueryRepository {
      *            pagination configuration, including page size and offset
      * @return a paginated result containing the matching figurines and collectable
      *         figurine count
+     * @see #findPaginated(FigurineFilter, Pageable, Long)
      */
     CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable);
+
+    /**
+     * Retrieves a paginated list of figurines matching the specified filter
+     * criteria and belonging to the specified collection. Even though this method
+     * is similar to {@link #findPaginated(FigurineFilter, Pageable)}, it also
+     * filters the results by collection ID.
+     *
+     * @param filter
+     *            filtering criteria used to restrict the figurine search; may be
+     *            {@code null}
+     * @param pageable
+     *            pagination configuration, including page size and offset
+     * @param collectionId
+     *            identifier of the collection to which the figurines must belong
+     * @return a paginated result containing the matching figurines and collectable
+     *         figurine count
+     * @see #findPaginated(FigurineFilter, Pageable)
+     */
+    CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable, Long collectionId);
 
     /**
      * Retrieves all figurines matching the specified filter criteria.

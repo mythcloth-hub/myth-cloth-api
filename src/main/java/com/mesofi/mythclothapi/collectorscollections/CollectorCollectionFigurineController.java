@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.validation.Valid;
@@ -104,8 +105,10 @@ public class CollectorCollectionFigurineController {
     @PreAuthorize("hasAuthority('" + Permissions.COLLECTIONS_FIGURINES_ADD + "')")
     public ResponseEntity<Void> addFigurineToCollection(@AuthenticationPrincipal Jwt jwt,
             @PathVariable Long collectionId, @PathVariable Long figurineId) {
-        AssignFigurinesReq request = new AssignFigurinesReq(List.of(figurineId), CollectionAssignmentMode.EXISTING,
-                List.of(collectionId), null);
+
+        AssignFigurinesReq request = new AssignFigurinesReq(new ArrayList<>(List.of(figurineId)),
+                CollectionAssignmentMode.EXISTING, List.of(collectionId), null);
+
         service.assignFigurinesToCollections(getCollectorId(jwt), request);
         log.info("Current assignment request: figurines {} to collections {} with mode {}", request.figurineIds(),
                 request.collectionIds(), request.collectionMode());

@@ -18,8 +18,19 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.jdbc.Sql;
 
-import com.mesofi.mythclothapi.it.ControllerBaseIT;
+import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
+/**
+ * Integration tests for {@link FigurineImportController}.
+ *
+ * <p>
+ * Validates the complete lifecycle of figurine import resources: loading and
+ * retrieval through the HTTP layer.
+ *
+ * <p>
+ * The test uses the real Spring context, security configuration, validation,
+ * persistence layer, and REST endpoints.
+ */
 @Sql(scripts = "/seed-catalogs.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/cleanup-figurine-import-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineImportControllerIT extends ControllerBaseIT {
@@ -41,6 +52,10 @@ public class FigurineImportControllerIT extends ControllerBaseIT {
         }
     }
 
+    /**
+     * Verifies the complete flow of loading figurines and retrieving import
+     * history.
+     */
     @Test
     @DisplayName("Should load figurines and expose import history")
     void shouldLoadFigurinesAndExposeImportHistory() {

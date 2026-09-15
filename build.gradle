@@ -116,7 +116,7 @@ dependencies {
     integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
     integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
     integrationTestImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    integrationTestImplementation 'org.wiremock:wiremock-standalone:3.3.1'
+    integrationTestImplementation 'org.wiremock:wiremock-standalone:3.13.1'
     integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     integrationTestRuntimeOnly 'com.h2database:h2'
 
@@ -161,8 +161,8 @@ pitest {
             'com.mesofi.mythclothapi.stores.StoreMapperImpl',
             'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapper',
             'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapperImpl',
-            'com.mesofi.mythclothapi.figurines.repository.FigurineListener',
-            'com.mesofi.mythclothapi.StartupRunner'
+            'com.mesofi.mythclothapi.figurineimports.service.FigurineImportInitializer',
+            'com.mesofi.mythclothapi.figurines.repository.FigurineListener'
     ]
 
     mutationThreshold = 99

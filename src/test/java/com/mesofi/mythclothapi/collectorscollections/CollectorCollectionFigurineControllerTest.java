@@ -204,76 +204,6 @@ class CollectorCollectionFigurineControllerTest {
     }
 
     @Test
-    void assignFigurinesToCollections_shouldReturnNotFound_whenCollectorDoesNotExist() throws Exception {
-        AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("test", null, "test desc"));
-
-        doThrow(new CollectorNotFoundException(123L)).when(service).assignFigurinesToCollections(123L, req);
-
-        String requestBody = "{\"collectionMode\":\"CREATE\", \"figurineIds\": [3], \"collection\": {\"name\": \"test\", \"description\": \"test desc\"}}";
-
-        mockMvc.perform(
-                post("/collections/assign-figurines").contentType(MediaType.APPLICATION_JSON).content(requestBody)
-                        .with(jwt().jwt(jwt -> jwt.subject("123"))
-                                .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Collector with id 123 was not found"))
-                .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
-                .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector not found"))
-                .andExpect(jsonPath("$.timestamp").exists());
-
-        verify(service).assignFigurinesToCollections(123L, req);
-    }
-
-    @Test
-    void assignFigurinesToCollections_shouldReturnConflict_whenCollectionAlreadyExists() throws Exception {
-        AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.CREATE, null,
-                new CollectorCollectionReq("my collection", null, "test desc"));
-
-        doThrow(new CollectorCollectionAlreadyExistsException("my collection")).when(service)
-                .assignFigurinesToCollections(123L, req);
-
-        String requestBody = "{\"collectionMode\":\"CREATE\", \"figurineIds\": [3], \"collection\": {\"name\": \"my collection\", \"description\": \"test desc\"}}";
-
-        mockMvc.perform(
-                post("/collections/assign-figurines").contentType(MediaType.APPLICATION_JSON).content(requestBody)
-                        .with(jwt().jwt(jwt -> jwt.subject("123"))
-                                .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.detail").value("Collector collection with name 'my collection' already exists"))
-                .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
-                .andExpect(jsonPath("$.status").value("409"))
-                .andExpect(jsonPath("$.title").value("Collector collection with name 'my collection' already exists"))
-                .andExpect(jsonPath("$.timestamp").exists());
-
-        verify(service).assignFigurinesToCollections(123L, req);
-    }
-
-    @Test
-    void assignFigurinesToCollections_shouldReturnNotFound_whenTargetCollectionDoesNotExist() throws Exception {
-        AssignFigurinesReq req = new AssignFigurinesReq(List.of(3L), CollectionAssignmentMode.EXISTING, List.of(2L),
-                null);
-
-        doThrow(new CollectorCollectionNotFoundException(2L)).when(service).assignFigurinesToCollections(123L, req);
-
-        String requestBody = "{\"collectionMode\":\"EXISTING\", \"figurineIds\": [3], \"collectionIds\": [2]}";
-
-        mockMvc.perform(
-                post("/collections/assign-figurines").contentType(MediaType.APPLICATION_JSON).content(requestBody)
-                        .with(jwt().jwt(jwt -> jwt.subject("123"))
-                                .authorities(new SimpleGrantedAuthority("collections:figurines:add"))))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Collector collection with id 2 was not found"))
-                .andExpect(jsonPath("$.instance").value("/collections/assign-figurines"))
-                .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector collection with id 2 was not found"))
-                .andExpect(jsonPath("$.timestamp").exists());
-
-        verify(service).assignFigurinesToCollections(123L, req);
-    }
-
-    @Test
     void assignFigurinesToCollections_shouldAssignFigurines_whenRequestIsValid() throws Exception {
         String requestBody = "{\"collectionMode\":\"EXISTING\", \"figurineIds\": [3]}";
 
@@ -325,7 +255,7 @@ class CollectorCollectionFigurineControllerTest {
     @Test
     void retrieveCollections_shouldReturnCollectorCollections_whenRequestIsAuthenticated() throws Exception {
 
-        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", "test desc", null, false, 1,
+        CollectorCollectionResp resp = new CollectorCollectionResp(1L, "test", null, "test desc", false, 0, 1,
                 List.of(1L));
         when(service.retrieveCollections(123L)).thenReturn(List.of(resp));
 
@@ -385,6 +315,22 @@ class CollectorCollectionFigurineControllerTest {
     }
 
     @Test
+    void deleteCollectionFigurine_shouldReturnNoContent_whenRequestIsAuthenticated_andFigurineDoesNotExist()
+            throws Exception {
+        doThrow(new CollectorCollectionNotFoundException(2L)).when(service).deleteCollectionFigurine(123L, 2L, 1L);
+
+        mockMvc.perform(delete("/collections/2/figurines/1").with(jwt().jwt(jwt -> jwt.subject("123"))
+                .authorities(new SimpleGrantedAuthority("collections:figurines:delete"))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Collector collection with id 2 was not found"))
+                .andExpect(jsonPath("$.instance").value("/collections/2/figurines/1"))
+                .andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.title").value("Collector collection not found"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_COLLECTION_NOT_FOUND"));
+    }
+
+    @Test
     void deleteCollectionFigurine_shouldReturnNoContent_whenRequestIsAuthenticated() throws Exception {
         mockMvc.perform(delete("/collections/2/figurines/9").with(jwt().jwt(jwt -> jwt.subject("123"))
                 .authorities(new SimpleGrantedAuthority("collections:figurines:delete"))))
@@ -404,20 +350,20 @@ class CollectorCollectionFigurineControllerTest {
 
     @Test
     void updateCollection_shouldReturnUpdatedCollection_whenRequestIsAuthenticated() throws Exception {
-        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", null, "Updated desc", false, 0,
+        CollectorCollectionResp resp = new CollectorCollectionResp(2L, "Updated", null, "Updated desc", false, 0, 0,
                 List.of());
-        when(service.updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc")))
+        when(service.updateCollection(123L, 2L, new CollectorCollectionReq(false, "Updated", null, "Updated desc")))
                 .thenReturn(resp);
 
         mockMvc.perform(put("/collections/2").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Updated\",\"description\":\"Updated desc\"}")
+                .content("{\"subCollection\":false,\"name\":\"Updated\",\"description\":\"Updated desc\"}")
                 .with(jwt().jwt(jwt -> jwt.subject("123"))
                         .authorities(new SimpleGrantedAuthority("collections:update"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(2))
                 .andExpect(jsonPath("$.name").value("Updated"))
                 .andExpect(jsonPath("$.description").value("Updated desc"));
 
-        verify(service).updateCollection(123L, 2L, new CollectorCollectionReq("Updated", null, "Updated desc"));
+        verify(service).updateCollection(123L, 2L, new CollectorCollectionReq(false, "Updated", null, "Updated desc"));
     }
 
     @Test
@@ -441,6 +387,23 @@ class CollectorCollectionFigurineControllerTest {
     void duplicateCollection_shouldReturnUnauthorized_whenJwtTokenIsMissing() throws Exception {
         mockMvc.perform(post("/collections/2/duplicate")).andExpect(status().isUnauthorized());
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void duplicateCollection_shouldReturnCreatedWithLocation_whenRequestIsAuthenticated_() throws Exception {
+        when(service.duplicateCollection(123L, 2L))
+                .thenThrow(new CollectorCollectionAlreadyExistsException("duplicate"));
+
+        mockMvc.perform(post("/collections/2/duplicate").with(
+                jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("collections:duplicate"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Collector collection with name 'duplicate' already exists"))
+                .andExpect(jsonPath("$.instance").value("/collections/2/duplicate"))
+                .andExpect(jsonPath("$.status").value("409"))
+                .andExpect(jsonPath("$.title").value("Collector collection with name 'duplicate' already exists"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(service).duplicateCollection(123L, 2L);
     }
 
     @Test

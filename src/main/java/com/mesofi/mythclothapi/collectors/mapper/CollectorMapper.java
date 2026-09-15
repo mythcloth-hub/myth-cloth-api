@@ -6,14 +6,16 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineDetailResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigurineResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionLatestFavoriteResp;
+import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionSummaryStatsResp;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
-import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
@@ -38,10 +40,23 @@ public interface CollectorMapper {
      *            collection entity to map
      * @return collection response populated from the entity
      */
+    @Mapping(target = "isFavorite", source = "favorite")
+    @Mapping(target = "collectedFigurines", expression = "java(getCollectedFigurinesCount(collectorCollection))")
     @Mapping(target = "totalFigurines", expression = "java(collectorCollection.getFigurines().size())")
     @Mapping(target = "figurineIds", expression = "java(getFigurineIds(collectorCollection))")
-    @Mapping(target = "isFavorite", source = "favorite")
     CollectorCollectionResp toCollectorCollectionResp(CollectorCollection collectorCollection);
+
+    /**
+     * Returns the number of figurines in the supplied collection that are owned by
+     * the collector.
+     *
+     * @param collection
+     *            collection whose owned figurines should be counted
+     * @return number of owned figurines in the collection
+     */
+    default int getCollectedFigurinesCount(CollectorCollection collection) {
+        return (int) collection.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned).count();
+    }
 
     /**
      * Returns the ids of the figurines in the supplied collection.
@@ -178,4 +193,48 @@ public interface CollectorMapper {
     @Mapping(target = "ownedQuantity", source = "quantity")
     CollectorCollectionLatestFavoriteResp toCollectorCollectionLatestFavoriteResp(
             CollectorCollectionFigurine collectorCollectionFigurine);
+
+    /**
+     * Maps a collector collection request to a new collector collection entity.
+     *
+     * <p>
+     * The entity will have its id, creation date, and update date ignored. The
+     * favorite status and collector will be set from the supplied parameters. The
+     * element list will be initialized as empty.
+     * </p>
+     *
+     * @param collectionReq
+     *            request containing collection metadata
+     * @param isFavorite
+     *            whether the collection should be marked as favorite
+     * @param collector
+     *            collector who owns the collection
+     * @return new collector collection entity populated from the request and
+     *         parameters
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "favorite", source = "isFavorite")
+    @Mapping(target = "collector", source = "collector")
+    @Mapping(target = "figurines", ignore = true)
+    CollectorCollection toCollectorCollection(CollectorCollectionReq collectionReq, boolean isFavorite,
+            Collector collector);
+
+    /**
+     * Copies a collector collection figurine entity to a new instance.
+     *
+     * <p>
+     * The new instance will have its id and collection ignored, while the figurine
+     * and quantity will be copied from the source entity.
+     * </p>
+     *
+     * @param source
+     *            source collector collection figurine entity to copy
+     * @return new collector collection figurine entity populated from the source
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "collection", ignore = true)
+    CollectorCollectionFigurine copy(CollectorCollectionFigurine source);
+
 }

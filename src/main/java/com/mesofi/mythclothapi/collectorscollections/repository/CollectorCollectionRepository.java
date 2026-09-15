@@ -11,6 +11,8 @@ import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
+import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
 
 /**
  * Repository for {@link CollectorCollection} persistence and collection summary
@@ -23,6 +25,7 @@ import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
  */
 @Repository
 public interface CollectorCollectionRepository extends JpaRepository<CollectorCollection, Long> {
+
     /**
      * Finds all collections owned by the specified collector.
      *
@@ -63,6 +66,36 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
     void deleteCollectionById(Long id);
 
     /**
+     * Retrieves catalog statistics for a collector collection.
+     *
+     * <p>
+     * The catalog includes total figurines, released figurines, and announced
+     * figurines.
+     * </p>
+     *
+     * @param collectionId
+     *            identifier of the collection to summarize
+     * @param restocks
+     *            whether to include restocked figurines in the summary; when
+     *            {@code true}, all figurines in the collection are considered, and
+     *            when {@code false}, only figurines without a previous release are
+     *            included
+     * @return collection catalog projection
+     */
+    @Query(value = """
+            SELECT
+                COALESCE(SUM(CASE WHEN f.current_release_status IN ('RELEASED', 'ANNOUNCED') THEN 1 ELSE 0 END), 0) AS totalFigurines,
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS totalReleased,
+                COALESCE(SUM(CASE WHEN f.current_release_status = 'ANNOUNCED' THEN 1 ELSE 0 END), 0) AS totalAnnounced
+            FROM collector_collection_figurines ccf, figurines f
+            WHERE ccf.figurine_id = f.id
+              AND ccf.collection_id = :collectionId
+              AND (:restocks = true OR f.previous_release_id IS NULL)
+            """, nativeQuery = true)
+    CollectorCollectionCatalogProjection getCollectorCollectionCatalog(Long collectionId,
+            @Param("restocks") boolean restocks);
+
+    /**
      * Retrieves summary statistics for a collector collection.
      *
      * <p>
@@ -87,6 +120,7 @@ public interface CollectorCollectionRepository extends JpaRepository<CollectorCo
                 COALESCE(SUM(CASE WHEN f.current_release_status = 'RELEASED' THEN 1 ELSE 0 END), 0) AS released_figurines               -- Number of unique released figurines
             FROM collector_collection_figurines ccf, figurines f
             WHERE ccf.figurine_id = f.id
+              AND ccf.owned = true
               AND ccf.collection_id = :collectionId
               AND (:restocks = true OR f.previous_release_id IS NULL)
             """, nativeQuery = true)

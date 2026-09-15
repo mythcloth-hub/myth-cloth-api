@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.it;
+package com.mesofi.mythclothapi.support;
 
 /**
  * Defines the type of JSON fixture used in scenario-driven integration tests.

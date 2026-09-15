@@ -15,6 +15,10 @@ myth-cloth:
     app-id: "0000"
     app-secret: "1111"
 
+  google:
+    client-id: "90909090"
+    oauth-url: https://oauth2.googleapis.com
+
   security:
     jwt:
       secret: "mzEqoh2WPlyQ3LBB7C7kC59IZRcpG3Twxgdj2RGMRik="
