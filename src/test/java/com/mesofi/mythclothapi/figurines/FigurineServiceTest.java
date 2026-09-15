@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -32,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -39,6 +41,8 @@ import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.PageRequest;
@@ -50,6 +54,7 @@ import com.mesofi.mythclothapi.catalogs.CatalogService;
 import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
+import com.mesofi.mythclothapi.catalogs.model.LineUpType;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.collectors.Collector;
 import com.mesofi.mythclothapi.collectors.CollectorRepository;
@@ -78,6 +83,7 @@ import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
 
 @ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 @SpringBootTest(classes = {FigurineService.class, MethodValidationTestConfig.class})
 public class FigurineServiceTest {
 
@@ -616,36 +622,68 @@ public class FigurineServiceTest {
     }
 
     @Test
-    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorIsAnonymous() {
+    void retrieveRecommendedFigurines_shouldNotUsePersonalizedBranch_whenCollectorIdIsNull() {
         Figurine first = figurine(101L, "seiya", "Seiya", RELEASED);
         Figurine second = figurine(102L, "hyoga", "Hyoga", ANNOUNCED);
-        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
-                2);
 
-        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 2)))).thenReturn(page);
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 5), 2, 2));
+
         when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
                 .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
 
-        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 2);
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(isNull(Long.class), eq(5)))
+                .thenThrow(new AssertionError("Personalized branch should not be executed"));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 5);
 
         assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(101L, 102L);
+
+        verify(collectorCollectionFigurineService, never()).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
+    }
+
+    @Test
+    void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorIsAnonymous() {
+
+        Figurine first = figurine(101L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(102L, "hyoga", "Hyoga", ANNOUNCED);
+        Figurine third = figurine(103L, "shun", "Shun", RELEASED);
+
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second, third), PageRequest.of(0, 5), 3, 3));
+
+        when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
+                .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
+
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(null, 5);
+
+        assertThat(response).isNotNull();
+        assertThat(response).hasSize(3);
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(101L, 102L, 103L);
         verify(collectorCollectionFigurineService, never()).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
     }
 
     @Test
     void retrieveRecommendedFigurines_shouldReturnDefaultRecommendations_whenCollectorHasNoFavorites() {
-        Figurine first = figurine(103L, "shun", "Shun", RELEASED);
-        CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first), PageRequest.of(0, 1), 1, 1);
+        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(99L, 5)).thenReturn(List.of());
 
-        when(collectorCollectionFigurineService.findLatestFavoriteCollectionFigurines(7L, 5)).thenReturn(List.of());
-        when(figurineRepository.findPaginated(any(), eq(PageRequest.of(0, 1)))).thenReturn(page);
+        Figurine first = figurine(103L, "seiya", "Seiya", RELEASED);
+        Figurine second = figurine(104L, "hyoga", "Hyoga", ANNOUNCED);
+
+        FigurineFilter filter = FigurineFilterFactory.buildReleasedAndAnnounced(false);
+        when(figurineRepository.findPaginated(filter, PageRequest.of(0, 5)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 5), 2, 2));
+
         when(figurineMapper.toFigurineRecommendationResp(any(Figurine.class)))
                 .thenAnswer(invocation -> recommendationResponse(invocation.getArgument(0)));
 
-        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(7L, 1);
+        List<FigurineRecommendationResp> response = figurineService.retrieveRecommendedFigurines(99L, 5);
 
-        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(103L);
-        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(7L, 5);
+        assertThat(response).extracting(FigurineRecommendationResp::id).containsExactly(103L, 104L);
+        verify(collectorCollectionFigurineService).findLatestFavoriteCollectionFigurines(anyLong(), anyInt());
     }
 
     @Test
@@ -1039,8 +1077,7 @@ public class FigurineServiceTest {
     @Test
     void findBestMatchingFigurine_shouldReturnEmpty_whenLineUpIsNotConfigured() {
         when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
-        assertThat(figurineService.findBestMatchingFigurine(
-                com.mesofi.mythclothapi.catalogs.model.LineUpType.TAMASHII_NATIONS_BOX, "seiya")).isEmpty();
+        assertThat(figurineService.findBestMatchingFigurine(LineUpType.TAMASHII_NATIONS_BOX, "seiya")).isEmpty();
     }
 
     @Test
@@ -1075,11 +1112,13 @@ public class FigurineServiceTest {
     }
 
     @Test
-    void findBestMatchingFigurine_shouldReturnEmpty_whenSimilarityIsBelowThreshold() {
+    void findBestMatchingFigurine_shouldReturnEmpty_whenSimilarityIsBelowThreshold(CapturedOutput output) {
         when(cacheManager.getCache(FigurineService.FIGURINE_CACHE)).thenReturn(figurineCache);
         when(figurineCache.get("by-mythcloth-ex", List.class)).thenReturn(List.of(new CachedFigurine(30L, "A")));
 
         assertThat(figurineService.findBestMatchingFigurine(MYTH_CLOTH_EX, "zzzzzzzzzz")).isEmpty();
+
+        assertThat(output).contains("No suitable match found for 'zzzzzzzzzz', similarity: 0.00 %.");
     }
 
     @Test
