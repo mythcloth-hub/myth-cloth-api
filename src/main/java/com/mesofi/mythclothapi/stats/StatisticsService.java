@@ -1,6 +1,6 @@
 package com.mesofi.mythclothapi.stats;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -34,7 +34,7 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;

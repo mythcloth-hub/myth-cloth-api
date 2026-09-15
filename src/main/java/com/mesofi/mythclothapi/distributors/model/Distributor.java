@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.common.Auditable;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

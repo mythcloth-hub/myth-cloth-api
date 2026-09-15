@@ -26,8 +26,7 @@ import com.mesofi.mythclothapi.catalogs.model.Series;
 import com.mesofi.mythclothapi.catalogs.repository.GroupRepository;
 import com.mesofi.mythclothapi.catalogs.repository.LineUpRepository;
 import com.mesofi.mythclothapi.catalogs.repository.SeriesRepository;
-import com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineService;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -389,10 +388,4 @@ class StatisticsServiceTest {
         return distributor;
     }
 
-    private FigurineDistributor distributor(LocalDate releaseDate, Double price, CurrencyCode currency) {
-        FigurineDistributor distributor = distributor(releaseDate);
-        distributor.setPrice(price);
-        distributor.setCurrency(currency);
-        return distributor;
-    }
 }

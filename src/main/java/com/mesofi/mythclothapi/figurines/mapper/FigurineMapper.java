@@ -1,8 +1,8 @@
 package com.mesofi.mythclothapi.figurines.mapper;
 
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.CNY;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.JPY;
-import static com.mesofi.mythclothapi.figurinedistributions.model.CurrencyCode.MXN;
+import static com.mesofi.mythclothapi.common.CurrencyCode.CNY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
+import static com.mesofi.mythclothapi.common.CurrencyCode.MXN;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -33,7 +33,7 @@ import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
-import com.mesofi.mythclothapi.figurinedistributions.model.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
