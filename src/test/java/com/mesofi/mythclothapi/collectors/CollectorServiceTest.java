@@ -618,8 +618,11 @@ class CollectorServiceTest {
         basicRole.setId(2L);
         basicRole.setName("Collector");
         when(roleRepository.findByName("Collector")).thenReturn(Optional.of(basicRole));
-        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(collectorAuthProviderRepository.save(any(CollectorAuthProvider.class))).thenAnswer(invocation -> {
+            CollectorAuthProvider entity = invocation.getArgument(0);
+            assertThat(entity.getLastLogin()).isNotNull();
+            return entity;
+        });
         when(collectorRepository.save(any(Collector.class))).thenAnswer(invocation -> {
             Collector entity = invocation.getArgument(0);
             entity.setId(6L);

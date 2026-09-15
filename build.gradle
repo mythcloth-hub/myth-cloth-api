@@ -161,8 +161,8 @@ pitest {
             'com.mesofi.mythclothapi.stores.StoreMapperImpl',
             'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapper',
             'com.mesofi.mythclothapi.figurinestores.FigurineStoreMapperImpl',
-            'com.mesofi.mythclothapi.figurines.repository.FigurineListener',
-            'com.mesofi.mythclothapi.StartupRunner'
+            'com.mesofi.mythclothapi.figurineimports.service.FigurineImportInitializer',
+            'com.mesofi.mythclothapi.figurines.repository.FigurineListener'
     ]
 
     mutationThreshold = 99
