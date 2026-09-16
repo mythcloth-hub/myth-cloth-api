@@ -1,7 +1,16 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import java.math.BigDecimal;
+import java.util.Currency;
+import java.util.function.Function;
+
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 
 @Mapper(componentModel = "spring")
 public interface CollectorPurchaseMapper {
@@ -13,5 +22,22 @@ public interface CollectorPurchaseMapper {
     CollectorPurchase toCollectorPurchase(CollectorPurchaseReq request);
 
     @Mapping(target = "purchaseId", source = "id")
-    CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase);
+    @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount.apply(purchase))")
+    CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase,
+            @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount);
+
+    /**
+     * Maps a {@link Currency} object to a {@link CurrencyCode} enum.
+     *
+     * @param currency
+     *            the {@link Currency} object to be mapped
+     * @return the corresponding {@link CurrencyCode} enum, or null if the input is
+     *         null
+     */
+    default CurrencyCode mapCurrencyCode(Currency currency) {
+        if (currency == null) {
+            return null;
+        }
+        return CurrencyCode.valueOf(currency.getCurrencyCode());
+    }
 }

@@ -4,9 +4,13 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
+import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.common.Auditable;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -45,34 +49,27 @@ public class CollectorPurchase extends Auditable {
     private String seller;
 
     /**
-     * The order number associated with the purchase. This field has a maximum
-     * length of 50 characters.
+     * The order number of the purchase if provided by the seller. This field has a
+     * maximum length of 50 characters.
      */
-    // @Column(length = 50)
-    // private String orderNumber;
+    @Column(length = 50, comment = "The order number of the purchase if provided by the seller.")
+    private String orderNumber;
 
     /**
      * The currency in which the purchase was made. This field is mandatory and has
      * a maximum length of 3 characters.
      */
-    // @Enumerated(EnumType.STRING)
-    // @Column(nullable = false, length = 3)
-    // private CurrencyCode currency;
-
-    /**
-     * The total amount of the purchase. This field has a precision of 12 and a
-     * scale of 2.
-     */
-    // @Column(precision = 12, scale = 2)
-    // private BigDecimal totalAmount;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    private CurrencyCode currency;
 
     /**
      * The channel through which the purchase was made. This field is mandatory and
      * has a maximum length of 20 characters.
      */
-    // @Enumerated(EnumType.STRING)
-    // @Column(nullable = false, length = 20)
-    // private PurchaseChannel purchaseChannel;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PurchaseChannel purchaseChannel;
 
     /**
      * The shipping status of the purchase. This field has a maximum length of 20
