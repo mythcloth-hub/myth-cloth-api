@@ -18,6 +18,7 @@ import org.springframework.test.context.jdbc.Sql;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
+import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
 @Sql(scripts = "/cleanup-purchases-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
@@ -39,7 +40,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     private CollectorPurchaseResp registerInStorePurchase() {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "RockShow", null,
-                Currency.getInstance("MXN"), PurchaseChannel.PHYSICAL_STORE);
+                Currency.getInstance("MXN"), PurchaseChannel.PHYSICAL_STORE, null, null, null);
 
         CollectorPurchaseResp body = sendRequestAndGetResponse(request);
         assertThat(body.purchaseId()).isNotNull();
@@ -49,13 +50,19 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.currency()).isEqualTo("MXN");
         assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.PHYSICAL_STORE);
+        assertThat(body.shippingStatus()).isNull();
+        assertThat(body.trackingNumber()).isNull();
+        assertThat(body.carrier()).isNull();
+        assertThat(body.deliveredDate()).isNull();
+        assertThat(body.shippedDate()).isNull();
 
         return body;
     }
 
     private CollectorPurchaseResp registerOnlinePurchase() {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Mandarake", "XQKUHSCWV",
-                Currency.getInstance("JPY"), PurchaseChannel.ONLINE);
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189",
+                "FEDEX");
 
         CollectorPurchaseResp body = sendRequestAndGetResponse(request);
         assertThat(body.purchaseId()).isNotNull();
@@ -65,6 +72,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.currency()).isEqualTo("JPY");
         assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
+        assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
+        assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");
+        assertThat(body.carrier()).isEqualTo("FEDEX");
+        assertThat(body.deliveredDate()).isNotNull();
+        assertThat(body.shippedDate()).isNull();
 
         return body;
     }

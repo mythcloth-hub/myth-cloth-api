@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
+import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 
 /**
  * Represents a request to create a collector purchase.
@@ -43,5 +44,19 @@ public record CollectorPurchaseReq(
          * The channel through which the purchase was made. This field is mandatory and
          * must be one of the predefined purchase channels.
          */
-        @NotNull PurchaseChannel purchaseChannel) {
+        @NotNull PurchaseChannel purchaseChannel,
+        /*
+         * The shipping status of the purchase. This field is NOT mandatory.
+         */
+        ShippingStatus shippingStatus,
+        /*
+         * The tracking number of the purchase if provided by the seller. This field is
+         * optional and has a maximum length of 100 characters.
+         */
+        @Size(max = 100) String trackingNumber,
+        /*
+         * The carrier responsible for the shipment. This field is optional and has a
+         * maximum length of 100 characters.
+         */
+        @Size(max = 100) String carrier) {
 }

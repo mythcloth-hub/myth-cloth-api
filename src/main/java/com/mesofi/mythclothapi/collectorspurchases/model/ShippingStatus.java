@@ -1,19 +1,39 @@
 package com.mesofi.mythclothapi.collectorspurchases.model;
 
 /**
- * Enum representing the shipping status of a purchase.
+ * Represents the physical fulfillment and delivery status of a purchase.
+ *
+ * <p>
+ * This status describes whether the purchased item has been shipped and
+ * delivered. It does not indicate whether the purchase itself has been paid,
+ * cancelled, or fulfilled by the seller.
+ * </p>
+ *
+ * <p>
+ * For preorders, {@link #NOT_SHIPPED} is expected until the item is released
+ * and the seller ships the order. A preorder may therefore remain in this
+ * status for an extended period without indicating a problem with the purchase.
+ * </p>
  */
 public enum ShippingStatus {
+
     /**
-     * The purchase is pending and has not yet been shipped.
+     * The purchased item has not yet been shipped.
+     *
+     * <p>
+     * This includes purchases that are awaiting fulfillment, such as preorders that
+     * have not yet reached their release date.
+     * </p>
      */
-    PENDING,
+    NOT_SHIPPED,
+
     /**
-     * The purchase has been shipped but not yet delivered.
+     * The purchased item has been shipped but has not yet been delivered.
      */
     SHIPPED,
+
     /**
-     * The purchase has been delivered to the recipient.
+     * The purchased item has been delivered to the recipient.
      */
     DELIVERED
 }

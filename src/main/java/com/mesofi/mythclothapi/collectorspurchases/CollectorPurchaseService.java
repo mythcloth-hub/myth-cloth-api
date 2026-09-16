@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,12 @@ public class CollectorPurchaseService {
         log.info("Creating collector purchase with order date {}", request.purchaseDate());
 
         CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
+        if (ShippingStatus.SHIPPED.equals(collectorPurchase.getShippingStatus())) {
+            collectorPurchase.setShippedDate(LocalDate.now());
+        }
+        if (ShippingStatus.DELIVERED.equals(collectorPurchase.getShippingStatus())) {
+            collectorPurchase.setDeliveredDate(LocalDate.now());
+        }
 
         var saved = collectorPurchaseRepository.save(collectorPurchase);
 

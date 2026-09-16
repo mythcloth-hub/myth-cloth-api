@@ -19,6 +19,8 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "orderDate", source = "purchaseDate")
+    @Mapping(target = "shippedDate", ignore = true)
+    @Mapping(target = "deliveredDate", ignore = true)
     CollectorPurchase toCollectorPurchase(CollectorPurchaseReq request);
 
     @Mapping(target = "purchaseId", source = "id")
