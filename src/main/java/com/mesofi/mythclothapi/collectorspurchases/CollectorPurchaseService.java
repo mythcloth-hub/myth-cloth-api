@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectors.CollectorRepository;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
@@ -23,13 +26,18 @@ import lombok.extern.slf4j.Slf4j;
 public class CollectorPurchaseService {
 
     private final CollectorPurchaseRepository collectorPurchaseRepository;
+    private final CollectorRepository collectorRepository;
     private final CollectorPurchaseMapper mapper;
 
     @Transactional
-    public CollectorPurchaseResp createPurchase(@NotNull @Valid CollectorPurchaseReq request) {
+    public CollectorPurchaseResp createPurchase(Long collectorId, @NotNull @Valid CollectorPurchaseReq request) {
         log.info("Creating collector purchase with order date {}", request.purchaseDate());
 
+        Collector collector = retrieveCollector(collectorId);
+
         CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
+
+        collectorPurchase.setCollector(collector);
         if (ShippingStatus.SHIPPED.equals(collectorPurchase.getShippingStatus())) {
             collectorPurchase.setShippedDate(LocalDate.now());
         }
@@ -59,5 +67,18 @@ public class CollectorPurchaseService {
         // TODO: Implement the logic to calculate the total amount based on the
         // associated figurines and their prices.
         return BigDecimal.ONE;
+    }
+
+    /**
+     * Retrieves a collector by its identifier.
+     *
+     * @param collectorId
+     *            the identifier of the collector to retrieve
+     * @return the collector with the specified identifier
+     * @throws CollectorNotFoundException
+     *             if no collector with the specified identifier exists
+     */
+    private Collector retrieveCollector(Long collectorId) {
+        return collectorRepository.findById(collectorId).orElseThrow(() -> new CollectorNotFoundException(collectorId));
     }
 }
