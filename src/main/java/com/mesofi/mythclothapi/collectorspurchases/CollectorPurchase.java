@@ -41,8 +41,8 @@ public class CollectorPurchase extends Auditable {
      * The name of the seller from whom the purchase was made. This field has a
      * maximum length of 150 characters.
      */
-    // @Column(length = 150)
-    // private String seller;
+    @Column(nullable = false, length = 150, comment = "The name of the seller from whom the purchase was made, maximum length of 150 characters")
+    private String seller;
 
     /**
      * The order number associated with the purchase. This field has a maximum

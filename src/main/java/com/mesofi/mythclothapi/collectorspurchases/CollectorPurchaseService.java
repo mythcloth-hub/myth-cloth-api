@@ -20,12 +20,13 @@ public class CollectorPurchaseService {
     private final CollectorPurchaseMapper mapper;
 
     @Transactional
-    public void createPurchase(@NotNull @Valid CollectorPurchaseReq request) {
+    public CollectorPurchaseResp createPurchase(@NotNull @Valid CollectorPurchaseReq request) {
         log.info("Creating collector purchase with order date {}", request.purchaseDate());
 
         CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
 
         var saved = collectorPurchaseRepository.save(collectorPurchase);
-        log.info("Saved collector purchase {}", saved);
+        log.info("Saved collector purchase with ID {} and seller '{}'", saved.getId(), saved.getSeller());
+        return mapper.toCollectorPurchaseResp(saved);
     }
 }

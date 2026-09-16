@@ -1,7 +1,12 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
-import java.time.LocalDate;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.springframework.http.HttpStatus.CREATED;
 
+import java.time.LocalDate;
+import java.util.Objects;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,27 +23,26 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String PURCHASES = "/purchases";
 
     @Test
-    // @DisplayName("Login with Facebook provider")
-    void loginWithUsingFacebookProvider() {
-        CollectorPurchaseResp userLoginResp = loginWithProvider();
-        log.info("User logged in with Facebook: {}", userLoginResp);
+    @DisplayName("Register a new purchase")
+    void registerNewPurchase() {
+        CollectorPurchaseResp purchaseResp = registerPurchase();
+        log.info("New purchase registered: {}", purchaseResp);
     }
 
-    private CollectorPurchaseResp loginWithProvider() {
-        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now());
+    private CollectorPurchaseResp registerPurchase() {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Mandarake");
 
         ResponseEntity<CollectorPurchaseResp> response = rest.post().uri(PURCHASES).body(request).retrieve()
                 .toEntity(CollectorPurchaseResp.class);
 
-        // assertThat(response.getStatusCode()).isEqualTo(OK);
-        // assertThat(response.getBody()).isNotNull();
-        // assertThat(response.getBody().collectorId()).isPositive();
-        // assertThat(response.getBody().displayName()).isEqualTo(expectedDisplayName);
-        // assertThat(response.getBody().email()).isEqualTo(demoProperties.email());
-        // assertThat(response.getBody().role()).isEqualTo("Collector");
-        // assertThat(response.getBody().accessToken()).isNotBlank();
-        // assertThat(response.getBody().tokenType()).isEqualTo("Bearer");
-        // assertThat(response.getBody().expiresInSeconds()).isPositive();
+        assertThat(response.getStatusCode()).isEqualTo(CREATED);
+
+        CollectorPurchaseResp body = Objects.requireNonNull(response.getBody(),
+                "Purchase response body should not be null");
+
+        assertThat(body.purchaseId()).isNotNull();
+        assertThat(body.purchaseId()).isPositive();
+        assertThat(body.seller()).isEqualTo("Mandarake");
 
         return response.getBody();
     }

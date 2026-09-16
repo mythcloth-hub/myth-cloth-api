@@ -12,4 +12,6 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "orderDate", source = "purchaseDate")
     CollectorPurchase toCollectorPurchase(CollectorPurchaseReq request);
 
+    @Mapping(target = "purchaseId", source = "id")
+    CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase);
 }
