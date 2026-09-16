@@ -1,6 +1,10 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 
@@ -15,11 +19,13 @@ public class CollectorPurchaseService {
     private final CollectorPurchaseRepository collectorPurchaseRepository;
     private final CollectorPurchaseMapper mapper;
 
-    public void createPurchase() {
-        log.info("Creating a new collector purchase");
+    @Transactional
+    public void createPurchase(@NotNull @Valid CollectorPurchaseReq request) {
+        log.info("Creating collector purchase with order date {}", request.purchaseDate());
 
-        CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(new CollectorPurchaseReq());
+        CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
 
         var saved = collectorPurchaseRepository.save(collectorPurchase);
+        log.info("Saved collector purchase {}", saved);
     }
 }

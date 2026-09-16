@@ -1,27 +1,12 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
-import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
-import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
-import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.common.Auditable;
-import com.mesofi.mythclothapi.common.CurrencyCode;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -41,92 +26,92 @@ public class CollectorPurchase extends Auditable {
      * The collector who made the purchase. This is a mandatory relationship, and
      * the collector is fetched lazily to optimize performance.
      */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "collector_id", nullable = false)
-    private Collector collector;
+    // @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // @JoinColumn(name = "collector_id", nullable = false)
+    // private Collector collector;
 
     /**
      * The date when the order was placed. This field is mandatory and cannot be
      * null.
      */
-    @Column(nullable = false)
+    @Column(nullable = false, comment = "The date when the order was placed, cannot be a future date")
     private LocalDate orderDate;
 
     /**
      * The name of the seller from whom the purchase was made. This field has a
      * maximum length of 150 characters.
      */
-    @Column(length = 150)
-    private String seller;
+    // @Column(length = 150)
+    // private String seller;
 
     /**
      * The order number associated with the purchase. This field has a maximum
      * length of 50 characters.
      */
-    @Column(length = 50)
-    private String orderNumber;
+    // @Column(length = 50)
+    // private String orderNumber;
 
     /**
      * The currency in which the purchase was made. This field is mandatory and has
      * a maximum length of 3 characters.
      */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 3)
-    private CurrencyCode currency;
+    // @Enumerated(EnumType.STRING)
+    // @Column(nullable = false, length = 3)
+    // private CurrencyCode currency;
 
     /**
      * The total amount of the purchase. This field has a precision of 12 and a
      * scale of 2.
      */
-    @Column(precision = 12, scale = 2)
-    private BigDecimal totalAmount;
+    // @Column(precision = 12, scale = 2)
+    // private BigDecimal totalAmount;
 
     /**
      * The channel through which the purchase was made. This field is mandatory and
      * has a maximum length of 20 characters.
      */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private PurchaseChannel purchaseChannel;
+    // @Enumerated(EnumType.STRING)
+    // @Column(nullable = false, length = 20)
+    // private PurchaseChannel purchaseChannel;
 
     /**
      * The shipping status of the purchase. This field has a maximum length of 20
      * characters.
      */
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private ShippingStatus shippingStatus;
+    // @Enumerated(EnumType.STRING)
+    // @Column(length = 20)
+    // private ShippingStatus shippingStatus;
 
     /**
      * The tracking number for the shipment. This field has a maximum length of 100
      * characters.
      */
-    @Column(length = 100)
-    private String trackingNumber;
+    // @Column(length = 100)
+    // private String trackingNumber;
 
     /**
      * The carrier responsible for the shipment. This field has a maximum length of
      * 100 characters.
      */
-    @Column(length = 100)
-    private String carrier;
+    // @Column(length = 100)
+    // private String carrier;
 
     /**
      * The date when the purchase was shipped.
      */
-    private LocalDate shippedDate;
+    // private LocalDate shippedDate;
 
     /**
      * The date when the purchase was delivered.
      */
-    private LocalDate deliveredDate;
+    // private LocalDate deliveredDate;
 
     /**
      * The list of figurines associated with this purchase. This is a one-to-many
      * relationship, and the figurines are managed with cascade operations and
      * orphan removal.
      */
-    @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CollectorPurchaseFigurine> figurines = new ArrayList<>();
-
+    // @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL, orphanRemoval =
+    // true)
+    // private List<CollectorPurchaseFigurine> figurines = new ArrayList<>();
 }

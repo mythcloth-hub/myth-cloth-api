@@ -1,5 +1,8 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import java.time.LocalDate;
+
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +17,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     private static final String PURCHASES = "/purchases";
 
-    // @Test
+    @Test
     // @DisplayName("Login with Facebook provider")
     void loginWithUsingFacebookProvider() {
         CollectorPurchaseResp userLoginResp = loginWithProvider();
@@ -22,7 +25,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     }
 
     private CollectorPurchaseResp loginWithProvider() {
-        CollectorPurchaseReq request = new CollectorPurchaseReq();
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now());
 
         ResponseEntity<CollectorPurchaseResp> response = rest.post().uri(PURCHASES).body(request).retrieve()
                 .toEntity(CollectorPurchaseResp.class);

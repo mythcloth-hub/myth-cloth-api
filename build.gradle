@@ -150,6 +150,8 @@ pitest {
             'com.mesofi.mythclothapi.catalogs.CatalogMapperImpl',
             'com.mesofi.mythclothapi.collectors.mapper.CollectorMapper',
             'com.mesofi.mythclothapi.collectors.mapper.CollectorMapperImpl',
+            'com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseMapper',
+            'com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseMapperImpl',
             'com.mesofi.mythclothapi.distributors.DistributorMapperImpl',
             'com.mesofi.mythclothapi.error.Problem',
             'com.mesofi.mythclothapi.figurineevents.FigurineEventMapperImpl',

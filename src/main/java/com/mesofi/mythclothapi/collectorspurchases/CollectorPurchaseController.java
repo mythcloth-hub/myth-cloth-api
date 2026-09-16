@@ -1,7 +1,10 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import jakarta.validation.Valid;
+
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,9 +21,8 @@ public class CollectorPurchaseController {
     private final CollectorPurchaseService collectorPurchaseService;
 
     @PostMapping
-    public CollectorPurchase createPurchase() {
-        System.out.println("Creating a new collector purchase");
-        collectorPurchaseService.createPurchase();
+    public CollectorPurchase createPurchase(@RequestBody @Valid CollectorPurchaseReq purchaseRequest) {
+        collectorPurchaseService.createPurchase(purchaseRequest);
         return null;
     }
 }
