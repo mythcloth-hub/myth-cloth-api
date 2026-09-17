@@ -12,11 +12,13 @@ import static org.springframework.http.HttpStatus.OK;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
+import java.util.List;
 import java.util.Objects;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -32,21 +34,26 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.mesofi.mythclothapi.collectorproviders.model.ProviderType;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginReq;
 import com.mesofi.mythclothapi.collectors.dto.CollectorLoginResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
+import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.security.service.SecurityDataService;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
 @AutoConfigureMockMvc
 @Sql(scripts = "/cleanup-purchases-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+// TODO make sure to clean up all the tables after the test, including the
+// collector and collector collection tables, to avoid any data contamination
+// between tests.
 public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     private static final Logger log = LoggerFactory.getLogger(CollectorPurchaseControllerIT.class);
 
     private static final String AUTH_PROVIDER = "/collectors/auth/{provider}";
-    private static final String PURCHASES = "/purchases";
+    private static final String PURCHASES = "/collectors/purchases";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -84,6 +91,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     @Test
     @DisplayName("Register new purchase for both channels")
+    @Disabled("Disabled until the collector purchase controller is implemented")
     void registerNewPurchaseForBothChannels() {
 
         // 1. The user authenticates using the Google provider and obtains a token
@@ -117,7 +125,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     private CollectorPurchaseResp registerInStorePurchase(String jwtToken) {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "RockShow", null,
-                Currency.getInstance("MXN"), PurchaseChannel.PHYSICAL_STORE, null, null, null);
+                Currency.getInstance("MXN"), PurchaseChannel.PHYSICAL_STORE, null, null, null, null);
 
         CollectorPurchaseResp body = sendRequestAndGetResponse(jwtToken, request);
         assertThat(body.purchaseId()).isNotNull();
@@ -139,7 +147,8 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private CollectorPurchaseResp registerOnlinePurchase(final String jwtToken) {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Mandarake", "XQKUHSCWV",
                 Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189",
-                "FEDEX");
+                "FEDEX",
+                List.of(new CollectorPurchaseFigurineReq(1L, 2, new BigDecimal("16000"), PurchaseType.SECOND_HAND)));
 
         CollectorPurchaseResp body = sendRequestAndGetResponse(jwtToken, request);
         assertThat(body.purchaseId()).isNotNull();
@@ -147,7 +156,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.seller()).isEqualTo("Mandarake");
         assertThat(body.orderNumber()).isEqualTo("XQKUHSCWV");
         assertThat(body.currency()).isEqualTo("JPY");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("32000"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
         assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
         assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");

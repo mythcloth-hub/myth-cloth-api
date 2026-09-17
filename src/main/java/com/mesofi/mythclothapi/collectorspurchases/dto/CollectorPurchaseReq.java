@@ -2,7 +2,9 @@ package com.mesofi.mythclothapi.collectorspurchases.dto;
 
 import java.time.LocalDate;
 import java.util.Currency;
+import java.util.List;
 
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
@@ -58,5 +60,10 @@ public record CollectorPurchaseReq(
          * The carrier responsible for the shipment. This field is optional and has a
          * maximum length of 100 characters.
          */
-        @Size(max = 100) String carrier) {
+        @Size(max = 100) String carrier,
+        /*
+         * The list of figurines associated with the purchase. This field is mandatory
+         * and must not be empty.
+         */
+        @NotEmpty List<CollectorPurchaseFigurineReq> figurines) {
 }

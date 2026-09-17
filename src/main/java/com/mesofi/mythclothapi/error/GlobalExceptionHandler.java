@@ -31,7 +31,8 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionAlreadyExistsException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionLimitReachedException;
 import com.mesofi.mythclothapi.collectorscollections.exceptions.CollectorCollectionNotFoundException;
-import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
@@ -74,7 +75,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CollectorPurchaseNotFoundException.class)
     public ProblemDetail handleCollectorPurchaseNotFoundException(CollectorPurchaseNotFoundException ex) {
-        return ApiProblemDetail.of(ex.getStatus(), ex.getMessage(), ex.getDetail());
+        return ApiProblemDetail.of(ex);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -203,6 +204,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CollectorCollectionLimitReachedException.class)
     public ProblemDetail handleCollectorCollectionLimitReachedException(CollectorCollectionLimitReachedException ex) {
+        return ApiProblemDetail.of(ex);
+    }
+
+    @ExceptionHandler(CollectorPurchaseFigurineNotFoundException.class)
+    public ProblemDetail handleCollectorPurchaseFigurineNotFoundException(
+            CollectorPurchaseFigurineNotFoundException ex) {
         return ApiProblemDetail.of(ex);
     }
 

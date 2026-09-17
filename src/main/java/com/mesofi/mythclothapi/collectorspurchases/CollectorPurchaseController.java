@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,11 +23,14 @@ import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * REST controller for managing collector purchases.
+ */
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/purchases")
 @RequiredArgsConstructor
+@RequestMapping("/collectors")
 public class CollectorPurchaseController {
 
     private final CollectorPurchaseService collectorPurchaseService;
@@ -40,7 +44,7 @@ public class CollectorPurchaseController {
      * @return a ResponseEntity containing the created purchase response and the
      *         location of the new resource
      */
-    @PostMapping
+    @PostMapping("/purchases")
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_CREATE + "')")
     public ResponseEntity<CollectorPurchaseResp> createPurchase(@AuthenticationPrincipal Jwt jwt,
             @RequestBody @Valid CollectorPurchaseReq purchaseRequest) {
@@ -60,6 +64,6 @@ public class CollectorPurchaseController {
      * @return collector identifier
      */
     private Long getCollectorId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject() == null ? "0" : jwt.getSubject());
+        return Long.parseLong(StringUtils.hasText(jwt.getSubject()) ? jwt.getSubject() : "0");
     }
 }

@@ -186,9 +186,6 @@ public class CollectorCollectionFigurineService {
                 log.info("Default collection [{}] for collector [{}] has been created", defaultCollection.getName(),
                         collectorId);
                 break;
-            default :
-                throw new IllegalArgumentException(
-                        "Unsupported collection assignment mode: " + request.collectionMode());
         }
     }
 

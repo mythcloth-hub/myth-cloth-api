@@ -47,6 +47,11 @@ public enum ErrorCode {
     COLLECTOR_PURCHASE_NOT_FOUND,
 
     /**
+     * Indicates that the requested collector purchase figurine could not be found.
+     */
+    COLLECTOR_PURCHASE_FIGURINE_NOT_FOUND,
+
+    /**
      * Indicates that an attempt was made to create a collector email that already
      * exists.
      */
