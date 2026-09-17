@@ -11,6 +11,7 @@ import static org.springframework.http.HttpStatus.OK;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.distributors.dto.DistributorReq;
@@ -29,6 +30,7 @@ import com.mesofi.mythclothapi.support.ControllerBaseIT;
  * The test uses the real Spring context, security configuration, validation,
  * persistence layer, and REST endpoints.
  */
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-distributor-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class DistributorControllerIT extends ControllerBaseIT {
 

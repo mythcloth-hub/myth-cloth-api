@@ -6,6 +6,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -18,7 +19,6 @@ import java.util.Objects;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -28,6 +28,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -44,15 +45,15 @@ import com.mesofi.mythclothapi.security.service.SecurityDataService;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
 @AutoConfigureMockMvc
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=min")
+@Sql(scripts = "/seed-catalogs.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/cleanup-purchases-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-// TODO make sure to clean up all the tables after the test, including the
-// collector and collector collection tables, to avoid any data contamination
-// between tests.
 public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     private static final Logger log = LoggerFactory.getLogger(CollectorPurchaseControllerIT.class);
 
     private static final String AUTH_PROVIDER = "/collectors/auth/{provider}";
+    private static final String LOAD = "/figurines/load";
     private static final String PURCHASES = "/collectors/purchases";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
@@ -91,17 +92,24 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
     @Test
     @DisplayName("Register new purchase for both channels")
-    @Disabled("Disabled until the collector purchase controller is implemented")
+    // @Disabled("Disabled until the collector purchase controller is implemented")
     void registerNewPurchaseForBothChannels() {
 
         // 1. The user authenticates using the Google provider and obtains a token
+        log.info("1. Authenticating collector with Google provider");
         CollectorLoginResp loginResp = authenticateCollectorWithGoogle();
 
-        CollectorPurchaseResp onlinePurchaseResp = registerOnlinePurchase(loginResp.accessToken());
-        log.info("New online purchase registered: {}", onlinePurchaseResp);
+        // 2. The user imports some figurines into the catalog
+        log.info("2. Importing figurines into the catalog");
+        importFigurinesIntoCatalog();
 
-        CollectorPurchaseResp inStorePurchaseResp = registerInStorePurchase(loginResp.accessToken());
-        log.info("New in-store purchase registered: {}", inStorePurchaseResp);
+        // CollectorPurchaseResp onlinePurchaseResp =
+        // registerOnlinePurchase(loginResp.accessToken());
+        // log.info("New online purchase registered: {}", onlinePurchaseResp);
+
+        // CollectorPurchaseResp inStorePurchaseResp =
+        // registerInStorePurchase(loginResp.accessToken());
+        // log.info("New in-store purchase registered: {}", inStorePurchaseResp);
     }
 
     private CollectorLoginResp authenticateCollectorWithGoogle() {
@@ -121,6 +129,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         Assertions.assertThat(response.getBody().expiresInSeconds()).isPositive();
 
         return response.getBody();
+    }
+
+    private void importFigurinesIntoCatalog() {
+        ResponseEntity<Void> responseLoad = rest.post().uri(LOAD).retrieve().toEntity(Void.class);
+        assertThat(responseLoad.getStatusCode()).isEqualTo(ACCEPTED);
     }
 
     private CollectorPurchaseResp registerInStorePurchase(String jwtToken) {

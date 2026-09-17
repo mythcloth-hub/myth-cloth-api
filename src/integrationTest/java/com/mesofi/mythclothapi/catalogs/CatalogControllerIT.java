@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.catalogs.dto.CatalogReq;
@@ -27,6 +28,7 @@ import com.mesofi.mythclothapi.support.ControllerBaseIT;
  * The test uses the real Spring context, security configuration, validation,
  * persistence layer, and REST endpoints.
  */
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-catalog-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class CatalogControllerIT extends ControllerBaseIT {
 

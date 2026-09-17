@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -60,6 +61,7 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
 @ActiveProfiles("integration")
 @ExtendWith(FigurineScenarioExtension.class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-figurine-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineControllerIT {
 

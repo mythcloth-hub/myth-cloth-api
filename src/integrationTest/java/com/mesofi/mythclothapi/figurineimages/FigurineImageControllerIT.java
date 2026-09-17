@@ -17,6 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageReq;
@@ -24,6 +25,7 @@ import com.mesofi.mythclothapi.figurineimages.dto.FigurineImageResp;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 import com.mesofi.mythclothapi.utils.FigurineIdentifiers;
 
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-figurine-image-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineImageControllerIT extends ControllerBaseIT {
 

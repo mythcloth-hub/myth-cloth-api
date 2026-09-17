@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * Integration test to verify that the application context starts successfully
@@ -10,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
  */
 @SpringBootTest
 @ActiveProfiles("integration")
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 class ApplicationContextIT {
 
     /**
