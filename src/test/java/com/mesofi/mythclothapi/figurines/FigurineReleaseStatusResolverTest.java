@@ -82,9 +82,22 @@ class FigurineReleaseStatusResolverTest {
         assertThat(FigurineReleaseStatusResolver.resolve(released)).isEqualTo(ReleaseStatus.RELEASED);
     }
 
+    @Test
+    void resolve_shouldPrioritizeJpyDistributorOverEarlierNonJpyEntries() {
+        Figurine figurine = figurine(
+                distributor(LocalDate.now().minusYears(1), LocalDate.now().minusDays(1), CurrencyCode.USD),
+                distributor(LocalDate.now().minusYears(1), LocalDate.now().plusDays(1), CurrencyCode.JPY));
+
+        assertThat(FigurineReleaseStatusResolver.resolve(figurine)).isEqualTo(ReleaseStatus.ANNOUNCED);
+    }
+
     private Figurine figurine(FigurineDistributor distributor) {
+        return figurine(new FigurineDistributor[]{distributor});
+    }
+
+    private Figurine figurine(FigurineDistributor... distributors) {
         Figurine figurine = new Figurine();
-        figurine.setDistributors(List.of(distributor));
+        figurine.setDistributors(List.of(distributors));
         return figurine;
     }
 

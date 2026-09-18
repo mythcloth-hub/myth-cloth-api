@@ -394,7 +394,7 @@ public class FigurineServiceTest {
         collectorCollection.setFigurines(List.of()); // empty figurines list to simulate that the collector has not
                                                         // collected any figurines yet
         when(collectorCollectionRepository.findById(3L)).thenReturn(Optional.of(collectorCollection));
-        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineRepository.findPaginated(any(), any())).thenReturn(page);
         when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
                 .thenAnswer(invocation -> {
                     Boolean isCollected = invocation.getArgument(0);
@@ -406,7 +406,7 @@ public class FigurineServiceTest {
         assertThat(response.getContent()).extracting(FigurineResp::id, FigurineResp::isCollected)
                 .containsExactly(tuple(1L, true), tuple(2L, true));
         assertThat(response.getTotalCollectables()).isEqualTo(2);
-        verify(figurineRepository).findPaginated(any(), any(), any());
+        verify(figurineRepository).findPaginated(any(), any());
     }
 
     @Test
@@ -435,7 +435,7 @@ public class FigurineServiceTest {
         // figurines
 
         when(collectorCollectionRepository.findById(3L)).thenReturn(Optional.of(collectorCollection));
-        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineRepository.findPaginated(any(), any())).thenReturn(page);
         when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
                 .thenAnswer(invocation -> {
                     Boolean isCollected = invocation.getArgument(0);
@@ -447,7 +447,7 @@ public class FigurineServiceTest {
         assertThat(response.getContent()).extracting(FigurineResp::id, FigurineResp::isCollected)
                 .containsExactly(tuple(1L, true), tuple(2L, false));
         assertThat(response.getTotalCollectables()).isEqualTo(2);
-        verify(figurineRepository).findPaginated(any(), any(), any());
+        verify(figurineRepository).findPaginated(any(), any());
     }
 
     @Test
@@ -457,7 +457,7 @@ public class FigurineServiceTest {
         CollectablePageImpl<Figurine> page = new CollectablePageImpl<>(List.of(first, second), PageRequest.of(0, 2), 2,
                 2);
 
-        when(figurineRepository.findPaginated(any(), any(), any())).thenReturn(page);
+        when(figurineRepository.findPaginated(any(), any())).thenReturn(page);
         when(figurineMapper.toFigurineResp(nullable(Boolean.class), any(Figurine.class), any(), any()))
                 .thenAnswer(invocation -> figurineResponse(invocation.getArgument(1), null, List.of()));
 
@@ -466,7 +466,7 @@ public class FigurineServiceTest {
         assertThat(response.getContent()).hasSize(2);
         assertThat(response.getContent()).extracting(FigurineResp::id).containsExactly(1L, 2L);
         assertThat(response.getTotalCollectables()).isEqualTo(2);
-        verify(figurineRepository).findPaginated(any(), any(), any());
+        verify(figurineRepository).findPaginated(any(), any());
     }
 
     @Test

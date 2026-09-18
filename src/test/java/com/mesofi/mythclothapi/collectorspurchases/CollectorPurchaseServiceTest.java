@@ -3,31 +3,31 @@ package com.mesofi.mythclothapi.collectorspurchases;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.NullSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.collectors.CollectorRepository;
-import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
@@ -38,61 +38,100 @@ import com.mesofi.mythclothapi.figurines.model.Figurine;
 @SpringBootTest(classes = {CollectorPurchaseService.class, MapperTestConfig.class})
 public class CollectorPurchaseServiceTest {
 
+    private static final long COLLECTOR_ID = 123L;
+    private static final long COLLECTION_ID = 456L;
+
     @Autowired
     private CollectorPurchaseService collectorPurchaseService;
 
     @MockitoBean
-    private CollectorPurchaseRepository collectorPurchaseRepository;
+    private CollectorCollectionFigurineService collectorCollectionFigurineService;
 
     @MockitoBean
-    private CollectorRepository collectorRepository;
+    private CollectorPurchaseRepository collectorPurchaseRepository;
 
     @Test
-    void createPurchase_shouldThrowCollectorNotFoundException() {
-        when(collectorRepository.findById(0L)).thenReturn(Optional.empty());
+    void createPurchase_shouldCreateShippedPurchaseWithMappedFigurines() {
+        CollectorCollection collection = stubOwnedCollection(createCollectorCollectionFigurine(1001L, 201L, true),
+                createCollectorCollectionFigurine(1002L, 202L, true));
+        CollectorPurchaseReq request = createPurchaseRequest(ShippingStatus.SHIPPED,
+                List.of(createCollectorPurchaseFigurineReq(1001L, new BigDecimal("100.00")),
+                        createCollectorPurchaseFigurineReq(1002L, new BigDecimal("250.00"))));
 
-        assertThatThrownBy(() -> collectorPurchaseService.createPurchase(0L,
-                new CollectorPurchaseReq(null, null, null, null, null, null, null, null, null)))
-                .isInstanceOf(CollectorNotFoundException.class).hasMessage("Collector with id 0 was not found");
+        when(collectorPurchaseRepository.save(any(CollectorPurchase.class))).thenAnswer(invocation -> {
+            CollectorPurchase purchase = invocation.getArgument(0);
+            purchase.setId(900L);
+            return purchase;
+        });
+
+        CollectorPurchaseResp response = collectorPurchaseService.createPurchase(COLLECTOR_ID, COLLECTION_ID, request);
+
+        verify(collectorCollectionFigurineService).ensureCollectionOwnership(collection.getCollector(), COLLECTION_ID);
+        ArgumentCaptor<CollectorPurchase> purchaseCaptor = ArgumentCaptor.forClass(CollectorPurchase.class);
+        verify(collectorPurchaseRepository).save(purchaseCaptor.capture());
+
+        CollectorPurchase savedPurchase = purchaseCaptor.getValue();
+        assertThat(savedPurchase.getCollector()).isSameAs(collection.getCollector());
+        assertThat(savedPurchase.getOrderDate()).isEqualTo(request.purchaseDate());
+        assertThat(savedPurchase.getSeller()).isEqualTo(request.seller());
+        assertThat(savedPurchase.getOrderNumber()).isEqualTo(request.orderNumber());
+        assertThat(savedPurchase.getCurrency().name()).isEqualTo("USD");
+        assertThat(savedPurchase.getPurchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
+        assertThat(savedPurchase.getShippingStatus()).isEqualTo(ShippingStatus.SHIPPED);
+        assertThat(savedPurchase.getTrackingNumber()).isEqualTo(request.trackingNumber());
+        assertThat(savedPurchase.getCarrier()).isEqualTo(request.carrier());
+        assertThat(savedPurchase.getShippedDate()).isEqualTo(LocalDate.now());
+        assertThat(savedPurchase.getDeliveredDate()).isNull();
+        assertThat(savedPurchase.getFigurines()).hasSize(2);
+        assertThat(savedPurchase.getFigurines())
+                .extracting(purchaseFigurine -> purchaseFigurine.getCollectionFigurine().getId())
+                .containsExactly(1001L, 1002L);
+        assertThat(savedPurchase.getFigurines())
+                .allSatisfy(purchaseFigurine -> assertThat(purchaseFigurine.getPurchase()).isSameAs(savedPurchase));
+
+        assertThat(response.purchaseId()).isEqualTo(900L);
+        assertThat(response.seller()).isEqualTo("Mandarake");
+        assertThat(response.orderNumber()).isEqualTo("ORDER-123");
+        assertThat(response.currency()).isEqualTo("USD");
+        assertThat(response.totalAmount()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(response.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
+        assertThat(response.shippingStatus()).isEqualTo(ShippingStatus.SHIPPED);
+        assertThat(response.trackingNumber()).isEqualTo("TRACK-123");
+        assertThat(response.carrier()).isEqualTo("DHL");
+        assertThat(response.shippedDate()).isEqualTo(LocalDate.now());
+        assertThat(response.deliveredDate()).isNull();
     }
 
     @Test
-    void createPurchase_shouldThrowCollectorPurchaseFigurineNotFoundException_whenFigurineIdsAreEmpty() {
-        Collector collector = new Collector();
-        when(collectorRepository.findById(123L)).thenReturn(Optional.of(collector));
+    void createPurchase_shouldSetDeliveredDateWhenDelivered() {
+        stubOwnedCollection(createCollectorCollectionFigurine(1003L, 203L, true));
+        CollectorPurchaseReq request = createPurchaseRequest(ShippingStatus.DELIVERED,
+                List.of(createCollectorPurchaseFigurineReq(1003L, new BigDecimal("300.00"))));
 
-        assertThatThrownBy(() -> collectorPurchaseService.createPurchase(123L,
-                new CollectorPurchaseReq(null, null, null, null, null, null, null, null, List.of())))
-                .isInstanceOf(CollectorPurchaseFigurineNotFoundException.class)
-                .hasMessage("Collector purchase figurines with IDs [] were not found");
+        when(collectorPurchaseRepository.save(any(CollectorPurchase.class))).thenAnswer(invocation -> {
+            CollectorPurchase purchase = invocation.getArgument(0);
+            purchase.setId(901L);
+            return purchase;
+        });
 
+        CollectorPurchaseResp response = collectorPurchaseService.createPurchase(COLLECTOR_ID, COLLECTION_ID, request);
+
+        ArgumentCaptor<CollectorPurchase> purchaseCaptor = ArgumentCaptor.forClass(CollectorPurchase.class);
+        verify(collectorPurchaseRepository).save(purchaseCaptor.capture());
+
+        CollectorPurchase savedPurchase = purchaseCaptor.getValue();
+        assertThat(savedPurchase.getShippedDate()).isNull();
+        assertThat(savedPurchase.getDeliveredDate()).isEqualTo(LocalDate.now());
+        assertThat(response.purchaseId()).isEqualTo(901L);
+        assertThat(response.totalAmount()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(response.shippedDate()).isNull();
+        assertThat(response.deliveredDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
-    void createPurchase_shouldThrowCollectorPurchaseFigurineNotFoundException_whenFigurineIsNotOwned() {
+    void createPurchase_shouldThrowCollectorPurchaseFigurineNotFoundException() {
         Collector collector = new Collector();
-        collector.setCollections(List.of(createCollection(1L, List.of()), createCollection(2L, List.of())));
-
-        when(collectorRepository.findById(123L)).thenReturn(Optional.of(collector));
-
-        assertThatThrownBy(() -> collectorPurchaseService.createPurchase(123L,
-                new CollectorPurchaseReq(null, null, null, null, null, null, null, null,
-                        List.of(createCollectorPurchaseFigurineReq(3L, new BigDecimal("100.00")),
-                                createCollectorPurchaseFigurineReq(2L, new BigDecimal("100.00"))))))
-                .isInstanceOf(CollectorPurchaseFigurineNotFoundException.class)
-                .hasMessage("Collector purchase figurines with IDs [3, 2] were not found");
-    }
-
-    @ParameterizedTest
-    @NullSource
-    @EnumSource(ShippingStatus.class)
-    void createPurchase_shouldSetShippedAndDeliveredDates(ShippingStatus shippingStatus) {
-        LocalDate today = LocalDate.now();
-
-        // set up the collector with 2 collections, each with 3 figurines, some owned
-        // and some not
-        Collector collector = new Collector();
-        collector.setId(123L);
+        collector.setId(COLLECTOR_ID);
         collector.setCollections(List.of(
                 createCollection(1L,
                         List.of(createCollectorCollectionFigurine(1001L, 201L, false),
@@ -103,49 +142,46 @@ public class CollectorPurchaseServiceTest {
                                 createCollectorCollectionFigurine(2002L, 500L, false),
                                 createCollectorCollectionFigurine(2003L, 600L, true)))));
 
-        when(collectorRepository.findById(123L)).thenReturn(Optional.of(collector));
-        when(collectorPurchaseRepository.save(any(CollectorPurchase.class))).thenAnswer(invocation -> {
-            CollectorPurchase purchase = invocation.getArgument(0);
-            assertThat(purchase.getCollector().getId()).isEqualTo(123L);
-            if (shippingStatus == ShippingStatus.SHIPPED) {
-                assertThat(purchase.getShippedDate()).isEqualTo(today);
-                assertThat(purchase.getDeliveredDate()).isNull();
-            } else if (shippingStatus == ShippingStatus.DELIVERED) {
-                assertThat(purchase.getShippedDate()).isNull();
-                assertThat(purchase.getDeliveredDate()).isEqualTo(today);
-            } else {
-                assertThat(purchase.getShippedDate()).isNull();
-                assertThat(purchase.getDeliveredDate()).isNull();
-            }
+        CollectorCollection collectorCollection = new CollectorCollection();
+        collectorCollection.setCollector(collector);
 
-            purchase.setId(1L); // Simulate saving and assigning an ID
-            return purchase;
-        });
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorCollectionFigurineService.retrieveCollectorCollection(COLLECTION_ID))
+                .thenReturn(collectorCollection);
 
-        CollectorPurchaseResp collectorPurchaseResp = collectorPurchaseService.createPurchase(123L,
-                new CollectorPurchaseReq(null, null, null, null, null, shippingStatus, null, null,
+        doNothing().when(collectorCollectionFigurineService).ensureCollectionOwnership(collector, COLLECTION_ID);
+
+        assertThatThrownBy(() -> collectorPurchaseService.createPurchase(COLLECTOR_ID, COLLECTION_ID,
+                new CollectorPurchaseReq(null, null, null, null, null, null, null, null,
                         List.of(createCollectorPurchaseFigurineReq(400L, new BigDecimal("100.00")),
-                                createCollectorPurchaseFigurineReq(600L, new BigDecimal("100.00")))));
+                                createCollectorPurchaseFigurineReq(600L, new BigDecimal("100.00"))))))
+                .isInstanceOf(CollectorPurchaseFigurineNotFoundException.class)
+                .hasMessage("Collector purchase figurines with IDs [400, 600] were not found");
+    }
 
-        assertThat(collectorPurchaseResp).isNotNull();
-        assertThat(collectorPurchaseResp)
-                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::seller,
-                        CollectorPurchaseResp::orderNumber, CollectorPurchaseResp::currency,
-                        CollectorPurchaseResp::totalAmount, CollectorPurchaseResp::purchaseChannel,
-                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier)
-                .containsExactly(1L, null, null, null, new BigDecimal("1"), null, null, null);
+    @Test
+    void calculateTotalAmount_shouldReturnOne() {
+        assertThat(collectorPurchaseService.calculateTotalAmount(new CollectorPurchase()))
+                .isEqualByComparingTo(BigDecimal.ONE);
+    }
 
-        assertThat(collectorPurchaseResp.shippingStatus()).isEqualTo(shippingStatus);
-        if (shippingStatus == ShippingStatus.SHIPPED) {
-            assertThat(collectorPurchaseResp.shippedDate()).isEqualTo(today);
-            assertThat(collectorPurchaseResp.deliveredDate()).isNull();
-        } else if (shippingStatus == ShippingStatus.DELIVERED) {
-            assertThat(collectorPurchaseResp.shippedDate()).isNull();
-            assertThat(collectorPurchaseResp.deliveredDate()).isEqualTo(today);
-        } else {
-            assertThat(collectorPurchaseResp.shippedDate()).isNull();
-            assertThat(collectorPurchaseResp.deliveredDate()).isNull();
-        }
+    private CollectorCollection stubOwnedCollection(CollectorCollectionFigurine... figurines) {
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorCollection collection = createCollection(COLLECTION_ID, List.of(figurines));
+        collection.setCollector(collector);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorCollectionFigurineService.retrieveCollectorCollection(COLLECTION_ID)).thenReturn(collection);
+        doNothing().when(collectorCollectionFigurineService).ensureCollectionOwnership(collector, COLLECTION_ID);
+        return collection;
+    }
+
+    private CollectorPurchaseReq createPurchaseRequest(ShippingStatus shippingStatus,
+            List<CollectorPurchaseFigurineReq> figurines) {
+        return new CollectorPurchaseReq(LocalDate.of(2026, 9, 1), "Mandarake", "ORDER-123", Currency.getInstance("USD"),
+                PurchaseChannel.ONLINE, shippingStatus, "TRACK-123", "DHL", figurines);
     }
 
     private CollectorPurchaseFigurineReq createCollectorPurchaseFigurineReq(Long figurineId, BigDecimal pricePaid) {
@@ -167,6 +203,7 @@ public class CollectorPurchaseServiceTest {
         collectionFigurine.setOwned(owned);
         return collectionFigurine;
     }
+
     private Figurine createFigurine(Long figurineId) {
         Figurine figurine = new Figurine();
         figurine.setId(figurineId);

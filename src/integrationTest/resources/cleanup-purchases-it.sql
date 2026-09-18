@@ -21,8 +21,11 @@ TRUNCATE TABLE public.figurine_imports RESTART IDENTITY;
 TRUNCATE TABLE public.figurines RESTART IDENTITY;
 TRUNCATE TABLE public.non_official_images RESTART IDENTITY;
 TRUNCATE TABLE public.official_images RESTART IDENTITY;
-
+-- Collection tables
+TRUNCATE TABLE public.collector_collections RESTART IDENTITY;
+TRUNCATE TABLE public.collector_collection_figurines RESTART IDENTITY;
 -- Purchases tables
---TRUNCATE TABLE public.collector_purchases RESTART IDENTITY;
+TRUNCATE TABLE public.collector_purchases RESTART IDENTITY;
+TRUNCATE TABLE public.collector_purchase_figurines RESTART IDENTITY;
 
 SET REFERENTIAL_INTEGRITY TRUE;

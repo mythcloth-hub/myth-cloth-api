@@ -330,13 +330,17 @@ public class CollectorCollectionFigurineService {
         }
 
         return figurineRepository.findPaginated(figurineFilter, PageRequest.of(page, size), collectionId)
-                .map(figurine -> {
+                .map(figurineWithCollectionId -> {
 
-                    boolean isCollected = collectionFigurineMap.containsKey(figurine.getId());
-                    int ownedQuantity = isCollected ? collectionFigurineMap.get(figurine.getId()).getQuantity() : 0;
+                    boolean isCollected = collectionFigurineMap
+                            .containsKey(figurineWithCollectionId.figurine().getId());
+                    int ownedQuantity = isCollected
+                            ? collectionFigurineMap.get(figurineWithCollectionId.figurine().getId()).getQuantity()
+                            : 0;
 
-                    return collectorMapper.toCollectorCollectionFigurineResp(figurine,
-                            figurine.getCurrentReleaseStatus(), isCollected, ownedQuantity);
+                    return collectorMapper.toCollectorCollectionFigurineResp(
+                            figurineWithCollectionId.collectionFigurineId(), figurineWithCollectionId.figurine(),
+                            figurineWithCollectionId.figurine().getCurrentReleaseStatus(), isCollected, ownedQuantity);
                 });
     }
 
@@ -892,7 +896,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorCollectionNotFoundException
      *             if the collection does not exist or is not owned by the collector
      */
-    private void ensureCollectionOwnership(Collector collector, Long collectionId) {
+    public void ensureCollectionOwnership(Collector collector, Long collectionId) {
         collector.getCollections().stream()
                 .filter(collectorCollection -> collectorCollection.getId().equals(collectionId)).findFirst()
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
@@ -907,7 +911,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorNotFoundException
      *             if no collector with the specified identifier exists
      */
-    private Collector retrieveCollector(Long collectorId) {
+    public Collector retrieveCollector(Long collectorId) {
         return collectorRepository.findById(collectorId).orElseThrow(() -> new CollectorNotFoundException(collectorId));
     }
 
@@ -920,7 +924,7 @@ public class CollectorCollectionFigurineService {
      * @throws CollectorCollectionNotFoundException
      *             if no collection with the specified identifier exists
      */
-    private CollectorCollection retrieveCollectorCollection(Long collectionId) {
+    public CollectorCollection retrieveCollectorCollection(Long collectionId) {
         return collectorCollectionRepository.findById(collectionId)
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
     }

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -58,6 +59,7 @@ import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
@@ -396,27 +398,30 @@ class CollectorCollectionFigurineServiceTest {
                 null);
         collection.setFigurines(new ArrayList<>(List.of(collected, unowned)));
         Collector collector = collector(1L, collection);
-        List<Figurine> figurines = List.of(released, announced);
+        List<FigurineWithCollectionId> figurines = List.of(new FigurineWithCollectionId(released, 101L),
+                new FigurineWithCollectionId(announced, 102L));
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(collection));
         when(figurineRepository.findPaginated(any(FigurineFilter.class), any(PageRequest.class), eq(2L)))
-                .thenReturn(new CollectablePageImpl<>(figurines, PageRequest.of(0, 50), 2, 2));
-        when(collectorMapper.toCollectorCollectionFigurineResp(any(Figurine.class), any(ReleaseStatus.class),
+                .thenReturn(new CollectablePageImpl<>(figurines, PageRequest.of(0, 50), 2, 3));
+        when(collectorMapper.toCollectorCollectionFigurineResp(anyLong(), any(Figurine.class), any(ReleaseStatus.class),
                 anyBoolean(), anyInt())).thenAnswer(invocation -> {
-                    Figurine figurine = invocation.getArgument(0);
-                    ReleaseStatus releaseStatus = invocation.getArgument(1);
-                    boolean isCollected = invocation.getArgument(2);
-                    int ownedQuantity = invocation.getArgument(3);
-                    return new CollectorCollectionFigurineResp(figurine.getId(), figurine.getNormalizedName(),
-                            releaseStatus, null, null, isCollected, ownedQuantity);
+                    long collectionFigurineId = invocation.getArgument(0);
+                    Figurine figurine = invocation.getArgument(1);
+                    ReleaseStatus releaseStatus = invocation.getArgument(2);
+                    boolean isCollected = invocation.getArgument(3);
+                    int ownedQuantity = invocation.getArgument(4);
+                    return new CollectorCollectionFigurineResp(collectionFigurineId, figurine.getId(),
+                            figurine.getNormalizedName(), releaseStatus, null, null, isCollected, ownedQuantity);
                 });
 
         Page<CollectorCollectionFigurineResp> response = service.retrieveCollectionFigurines(1L, 2L, false, 0, 50);
 
         assertThat(response.getContent()).containsExactly(
-                new CollectorCollectionFigurineResp(9L, "seiya", ReleaseStatus.RELEASED, null, null, true, 2),
-                new CollectorCollectionFigurineResp(10L, "shiryu", ReleaseStatus.ANNOUNCED, null, null, false, 0));
+                new CollectorCollectionFigurineResp(101L, 9L, "seiya", ReleaseStatus.RELEASED, null, null, true, 2),
+                new CollectorCollectionFigurineResp(102L, 10L, "shiryu", ReleaseStatus.ANNOUNCED, null, null, false,
+                        0));
 
         ArgumentCaptor<FigurineFilter> filterCaptor = ArgumentCaptor.forClass(FigurineFilter.class);
         verify(figurineRepository).findPaginated(filterCaptor.capture(), eq(PageRequest.of(0, 50)), eq(2L));
@@ -433,10 +438,12 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(collection));
         when(figurineRepository.findPaginated(any(FigurineFilter.class), any(PageRequest.class), eq(2L)))
-                .thenReturn(new CollectablePageImpl<>(List.of(figurine), PageRequest.of(0, 10), 1, 1));
-        when(collectorMapper.toCollectorCollectionFigurineResp(any(Figurine.class), any(ReleaseStatus.class),
-                anyBoolean(), anyInt())).thenReturn(
-                        new CollectorCollectionFigurineResp(9L, "seiya", ReleaseStatus.RELEASED, null, null, false, 0));
+                .thenReturn(new CollectablePageImpl<>(List.of(new FigurineWithCollectionId(figurine, 101L)),
+                        PageRequest.of(0, 10), 1, 1));
+        when(collectorMapper.toCollectorCollectionFigurineResp(anyLong(), any(Figurine.class), any(ReleaseStatus.class),
+                anyBoolean(), anyInt()))
+                .thenReturn(new CollectorCollectionFigurineResp(101L, 9L, "seiya", ReleaseStatus.RELEASED, null, null,
+                        false, 0));
 
         service.retrieveCollectionFigurines(1L, 2L, true, 0, 10);
 

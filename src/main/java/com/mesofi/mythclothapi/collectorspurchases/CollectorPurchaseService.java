@@ -3,6 +3,7 @@ package com.mesofi.mythclothapi.collectorspurchases;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.collectors.CollectorRepository;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService;
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
@@ -33,8 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CollectorPurchaseService {
 
+    private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
-    private final CollectorRepository collectorRepository;
     private final CollectorPurchaseMapper mapper;
 
     /**
@@ -42,6 +43,8 @@ public class CollectorPurchaseService {
      *
      * @param collectorId
      *            the identifier of the collector for whom to create the purchase
+     * @param collectionId
+     *            the identifier of the collection to which the purchase belongs
      * @param request
      *            the request containing the details of the purchase to create
      * @return the response containing the details of the created purchase
@@ -52,15 +55,34 @@ public class CollectorPurchaseService {
      *             collector or do not belong to the same collection
      */
     @Transactional
-    public CollectorPurchaseResp createPurchase(Long collectorId, @NotNull @Valid CollectorPurchaseReq request) {
+    public CollectorPurchaseResp createPurchase(Long collectorId, Long collectionId,
+            @NotNull @Valid CollectorPurchaseReq request) {
         log.info("Creating collector purchase with order date {}", request.purchaseDate());
 
-        Collector collector = retrieveCollector(collectorId);
-        ensureOwnershipAndCollection(collector,
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+        CollectorCollection collection = collectorCollectionFigurineService.retrieveCollectorCollection(collectionId);
+
+        collectorCollectionFigurineService.ensureCollectionOwnership(collector, collectionId);
+
+        ensureOwnershipAndCollection(collection,
                 request.figurines().stream().map(CollectorPurchaseFigurineReq::collectionFigurineId).toList());
 
         CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
 
+        // Prepares the purchase figurines by setting the collection figurine references
+        // from the collector's collection
+        for (int i = 0; i < request.figurines().size(); i++) {
+            long collectionFigurineId = request.figurines().get(i).collectionFigurineId();
+
+            Optional<CollectorCollectionFigurine> collectorFigurine = collection.getFigurines().stream()
+                    .filter(cf -> cf.getId().equals(collectionFigurineId)).findFirst();
+
+            if (collectorFigurine.isPresent()) {
+                collectorPurchase.getFigurines().get(i).setCollectionFigurine(collectorFigurine.get());
+            }
+        }
+
+        collectorPurchase.getFigurines().forEach(purchaseFigurine -> purchaseFigurine.setPurchase(collectorPurchase));
         collectorPurchase.setCollector(collector);
         if (ShippingStatus.SHIPPED.equals(collectorPurchase.getShippingStatus())) {
             collectorPurchase.setShippedDate(LocalDate.now());
@@ -79,58 +101,44 @@ public class CollectorPurchaseService {
      * Ensures that the collector owns all the figurines in the collection and that
      * they belong to the same collection.
      *
-     * @param collector
-     *            the collector to check ownership for
+     * @param collection
+     *            the collector's collection to check ownership for
      * @param collectionFigurineIds
      *            the list of figurine IDs to check ownership and collection for
      * @throws CollectorPurchaseFigurineNotFoundException
      *             if any of the figurines are not owned by the collector or do not
      *             belong to the same collection
      */
-    private void ensureOwnershipAndCollection(Collector collector, List<Long> collectionFigurineIds) {
-        log.info("Ensuring ownership and collection for figurine IDs {}", collectionFigurineIds);
+    private void ensureOwnershipAndCollection(CollectorCollection collection, List<Long> collectionFigurineIds) {
+        log.info("Ensuring ownership and collection for collection figurine ids {}", collectionFigurineIds);
+        long collectorId = collection.getCollector().getId();
 
         // finds the figurines in the collector's collections and checks if they belong
         // to the collector
-        for (CollectorCollection collection : collector.getCollections()) {
-            Set<Long> ownedFigurineIds = collection.getFigurines().stream().filter(CollectorCollectionFigurine::isOwned)
-                    .map(CollectorCollectionFigurine::getFigurine).map(BaseId::getId).collect(Collectors.toSet());
+        Set<Long> ownedCollectionFigurineIds = collection.getFigurines().stream()
+                .filter(CollectorCollectionFigurine::isOwned).map(BaseId::getId).collect(Collectors.toSet());
 
-            if (ownedFigurineIds.containsAll(collectionFigurineIds)) {
-                log.info("All figurine IDs {} are owned by collector ID {}", collectionFigurineIds, collector.getId());
-                return;
-            }
+        if (ownedCollectionFigurineIds.containsAll(collectionFigurineIds)) {
+            log.info("All collection figurine IDs {} are owned by collector ID {}", collectionFigurineIds, collectorId);
+            return;
         }
 
-        log.warn("Collector ID {} does not own all figurine IDs {}", collector.getId(), collectionFigurineIds);
+        log.warn("Collector ID {} does not own all figurine IDs {}", collectorId, collectionFigurineIds);
         throw new CollectorPurchaseFigurineNotFoundException(collectionFigurineIds);
     }
 
     /**
-     * Calculates the total amount of a collector purchase based on the associated
-     * figurines and their prices.
+     * Calculates the total amount of the purchase based on the figurines and their
+     * prices.
      *
      * @param purchase
      *            the collector purchase for which to calculate the total amount
-     * @return the total amount as a BigDecimal, or BigDecimal.ZERO if the purchase
-     *         is null
+     * @return the total amount of the purchase
      */
     public BigDecimal calculateTotalAmount(CollectorPurchase purchase) {
-        // TODO: Implement the logic to calculate the total amount based on the
-        // associated figurines and their prices.
-        return BigDecimal.ONE;
-    }
 
-    /**
-     * Retrieves a collector by its identifier.
-     *
-     * @param collectorId
-     *            the identifier of the collector to retrieve
-     * @return the collector with the specified identifier
-     * @throws CollectorNotFoundException
-     *             if no collector with the specified identifier exists
-     */
-    private Collector retrieveCollector(Long collectorId) {
-        return collectorRepository.findById(collectorId).orElseThrow(() -> new CollectorNotFoundException(collectorId));
+        // TODO: Implement the logic to calculate the total amount based on the
+        // figurines and their prices.
+        return BigDecimal.ONE;
     }
 }

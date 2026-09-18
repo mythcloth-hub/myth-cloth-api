@@ -15,6 +15,7 @@ import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
 
 /**
  * Custom repository implementation for executing advanced figurine queries.
@@ -59,7 +60,9 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
     private EntityManager em;
 
     /**
-     * Base SQL query used as the starting point for dynamic figurine queries.
+     * Base SQL query used as the starting point for dynamic figurine queries. For
+     * this query, the collection_figurine_id column is set to NULL, as it is not
+     * relevant when filtering by collection.
      *
      * <p>
      * The query calculates the release status for each figurine and retrieves the
@@ -69,7 +72,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      */
     private static final String BASE_FIGURINE_SEARCH_SQL = """
             SELECT
-                f.*
+                f.*, NULL as collection_figurine_id
             FROM figurines f
             LEFT JOIN (
                 SELECT *
@@ -97,7 +100,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      */
     private static final String BASE_FIGURINE_SEARCH_SQL_WITH_COLLECTION = """
             SELECT
-                f.*
+                f.*, ccf.id as collection_figurine_id
             FROM figurines f
             JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
             LEFT JOIN (
@@ -113,7 +116,8 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             """;
 
     /**
-     * Retrieves a paginated list of figurines matching the specified filter.
+     * Retrieves a paginated list of figurines matching the specified filter and
+     * belonging to the specified collection.
      *
      * <p>
      * In addition to the requested page of figurines, the returned page contains
@@ -136,7 +140,11 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
     @Override
     public CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable) {
         // Delegate to the overloaded method with a null collectionId
-        return findPaginated(filter, pageable, null);
+
+        CollectablePageImpl<FigurineWithCollectionId> md = findPaginated(filter, pageable, null);
+
+        List<Figurine> content = md.getContent().stream().map(FigurineWithCollectionId::figurine).toList();
+        return new CollectablePageImpl<>(content, pageable, md.getTotalElements(), md.getTotalCollectables());
     }
 
     /**
@@ -165,14 +173,15 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      *         figurine count
      */
     @Override
-    public CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable, Long collectionId) {
+    public CollectablePageImpl<FigurineWithCollectionId> findPaginated(FigurineFilter filter, Pageable pageable,
+            Long collectionId) {
         SearchQueryContext queryContext = getSearchQueryContext(filter, collectionId);
 
         StringBuilder sqlBuilder = queryContext.sql();
         Map<String, Object> params = queryContext.params();
 
-        List<Figurine> result = executeAndGetContent("%s %s".formatted(sqlBuilder, buildOrderByStatement()), params,
-                pageable);
+        List<FigurineWithCollectionId> result = executeAndGetContent(
+                "%s %s".formatted(sqlBuilder, buildOrderByStatement()), params, pageable);
 
         long totalFigurines = executeAndGetTotal(buildCountStatement().formatted(sqlBuilder), params);
 
@@ -443,15 +452,24 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
      * @return the figurines contained in the requested page
      */
     @SuppressWarnings("unchecked")
-    private List<Figurine> executeAndGetContent(String sql, Map<String, Object> params, Pageable pageable) {
+    private List<FigurineWithCollectionId> executeAndGetContent(String sql, Map<String, Object> params,
+            Pageable pageable) {
 
-        Query query = em.createNativeQuery(sql, Figurine.class);
+        Query query = em.createNativeQuery(sql, "FigurineWithCollectionIdMapping");
+
         params.forEach(query::setParameter);
 
         query.setFirstResult((int) pageable.getOffset());
         query.setMaxResults(pageable.getPageSize());
 
-        return query.getResultList();
+        @SuppressWarnings("unchecked")
+        List<Object[]> results = query.getResultList();
+
+        return results.stream().map(row -> {
+            Figurine figurine = (Figurine) row[0];
+            Long collectionFigurineId = row[1] != null ? ((Number) row[1]).longValue() : null;
+            return new FigurineWithCollectionId(figurine, collectionFigurineId);
+        }).toList();
     }
 
     /**
