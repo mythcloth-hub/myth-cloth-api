@@ -8,6 +8,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
@@ -69,8 +70,26 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "purchase", ignore = true)
-    @Mapping(target = "collectionFigurine", ignore = true)
+    @Mapping(target = "collectionFigurine", source = "collectionFigurineId")
     CollectorPurchaseFigurine toCollectorPurchaseFigurine(CollectorPurchaseFigurineReq request);
+
+    /**
+     * Converts a collection figurine ID into a {@link CollectorCollectionFigurine}.
+     *
+     * <p>
+     * This method creates a new {@link CollectorCollectionFigurine} instance and
+     * sets its ID to the provided value. This is useful for mapping the collection
+     * figurine ID from a request DTO to the corresponding entity.
+     *
+     * @param collectionFigurineId
+     *            the ID of the collection figurine
+     * @return a new {@link CollectorCollectionFigurine} with the specified ID
+     */
+    default CollectorCollectionFigurine toCollectorCollectionFigurine(long collectionFigurineId) {
+        CollectorCollectionFigurine figurine = new CollectorCollectionFigurine();
+        figurine.setId(collectionFigurineId);
+        return figurine;
+    }
 
     /**
      * Converts a {@link CollectorPurchase} into a {@link CollectorPurchaseResp}.

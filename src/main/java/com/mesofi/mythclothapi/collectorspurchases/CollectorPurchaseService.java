@@ -3,7 +3,6 @@ package com.mesofi.mythclothapi.collectorspurchases;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,27 +62,15 @@ public class CollectorPurchaseService {
         CollectorCollection collection = collectorCollectionFigurineService.retrieveCollectorCollection(collectionId);
 
         collectorCollectionFigurineService.ensureCollectionOwnership(collector, collectionId);
-
-        ensureOwnershipAndCollection(collection,
-                request.figurines().stream().map(CollectorPurchaseFigurineReq::collectionFigurineId).toList());
+        ensureOwnershipAndCollection(collection, request.figurines());
 
         CollectorPurchase collectorPurchase = mapper.toCollectorPurchase(request);
 
         // Prepares the purchase figurines by setting the collection figurine references
         // from the collector's collection
-        for (int i = 0; i < request.figurines().size(); i++) {
-            long collectionFigurineId = request.figurines().get(i).collectionFigurineId();
-
-            Optional<CollectorCollectionFigurine> collectorFigurine = collection.getFigurines().stream()
-                    .filter(cf -> cf.getId().equals(collectionFigurineId)).findFirst();
-
-            if (collectorFigurine.isPresent()) {
-                collectorPurchase.getFigurines().get(i).setCollectionFigurine(collectorFigurine.get());
-            }
-        }
-
-        collectorPurchase.getFigurines().forEach(purchaseFigurine -> purchaseFigurine.setPurchase(collectorPurchase));
         collectorPurchase.setCollector(collector);
+        collectorPurchase.getFigurines().forEach(purchaseFigurine -> purchaseFigurine.setPurchase(collectorPurchase));
+
         if (ShippingStatus.SHIPPED.equals(collectorPurchase.getShippingStatus())) {
             collectorPurchase.setShippedDate(LocalDate.now());
         }
@@ -103,14 +90,17 @@ public class CollectorPurchaseService {
      *
      * @param collection
      *            the collector's collection to check ownership for
-     * @param collectionFigurineIds
-     *            the list of figurine IDs to check ownership and collection for
+     * @param figurines
+     *            the list of figurines to check ownership and collection for
      * @throws CollectorPurchaseFigurineNotFoundException
      *             if any of the figurines are not owned by the collector or do not
      *             belong to the same collection
      */
-    private void ensureOwnershipAndCollection(CollectorCollection collection, List<Long> collectionFigurineIds) {
-        log.info("Ensuring ownership and collection for collection figurine ids {}", collectionFigurineIds);
+    private void ensureOwnershipAndCollection(CollectorCollection collection,
+            List<CollectorPurchaseFigurineReq> figurines) {
+        List<Long> figurineIds = figurines.stream().map(CollectorPurchaseFigurineReq::collectionFigurineId).toList();
+
+        log.info("Ensuring ownership and collection for collection figurine ids {}", figurineIds);
         long collectorId = collection.getCollector().getId();
 
         // finds the figurines in the collector's collections and checks if they belong
@@ -118,13 +108,13 @@ public class CollectorPurchaseService {
         Set<Long> ownedCollectionFigurineIds = collection.getFigurines().stream()
                 .filter(CollectorCollectionFigurine::isOwned).map(BaseId::getId).collect(Collectors.toSet());
 
-        if (ownedCollectionFigurineIds.containsAll(collectionFigurineIds)) {
-            log.info("All collection figurine IDs {} are owned by collector ID {}", collectionFigurineIds, collectorId);
+        if (ownedCollectionFigurineIds.containsAll(figurineIds)) {
+            log.info("All collection figurine IDs {} are owned by collector ID {}", figurineIds, collectorId);
             return;
         }
 
-        log.warn("Collector ID {} does not own all figurine IDs {}", collectorId, collectionFigurineIds);
-        throw new CollectorPurchaseFigurineNotFoundException(collectionFigurineIds);
+        log.warn("Collector ID {} does not own all figurine IDs {}", collectorId, figurineIds);
+        throw new CollectorPurchaseFigurineNotFoundException(figurineIds);
     }
 
     /**
