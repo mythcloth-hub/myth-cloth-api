@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,7 +45,8 @@ import tools.jackson.databind.ObjectMapper;
 public class CollectorPurchaseControllerTest {
 
     private static final long COLLECTION_ID = 77L;
-    private static final String PURCHASE_URL = "/collectors/collections/" + COLLECTION_ID;
+    private static final String PURCHASES = "/collectors/purchases";
+    private static final String PURCHASES_CREATION = PURCHASES + "/collections/" + COLLECTION_ID;
 
     @Autowired
     private MockMvc mockMvc;
@@ -60,19 +62,20 @@ public class CollectorPurchaseControllerTest {
 
     @Test
     void createPurchase_shouldReturnUnauthorized_whenNotAuthenticated() throws Exception {
-        mockMvc.perform(post(PURCHASE_URL)).andExpect(status().isUnauthorized());
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)).andExpect(status().isUnauthorized());
 
         verifyNoInteractions(collectorPurchaseService);
     }
 
     @Test
     void createPurchase_shouldReturnBadRequest_whenRequestBodyIsMissing() throws Exception {
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail", containsString("Required request body is missing")))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Invalid body")).andExpect(jsonPath("$.timestamp").exists());
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Invalid body"))
+                .andExpect(jsonPath("$.timestamp").exists());
 
         verifyNoInteractions(collectorPurchaseService);
     }
@@ -80,11 +83,12 @@ public class CollectorPurchaseControllerTest {
     @Test
     void createPurchase_shouldReturnUnsupportedMediaType_whenContentTypeIsMissing() throws Exception {
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .content("{}")).andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("415"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("415"))
                 .andExpect(jsonPath("$.title").value("Unsupported Media Type"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
@@ -95,13 +99,14 @@ public class CollectorPurchaseControllerTest {
     void createPurchase_shouldReturnBadRequest_whenRequestContainsInvalidRequiredFields() throws Exception {
         CollectorPurchaseReq request = new CollectorPurchaseReq(null, null, null, null, null, null, null, null, null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.seller").value("must not be null"))
                 .andExpect(jsonPath("$.errors.purchaseDate").value("must not be null"))
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
@@ -116,13 +121,14 @@ public class CollectorPurchaseControllerTest {
         CollectorPurchaseReq request = new CollectorPurchaseReq(null, "yoyaKuNow", null, null, null, null, null, null,
                 null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.purchaseDate").value("must not be null"))
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
                 .andExpect(jsonPath("$.errors.currency").value("must not be null"))
@@ -136,13 +142,14 @@ public class CollectorPurchaseControllerTest {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2099, 1, 1), "yoyaKuNow", null, null, null,
                 null, null, null, null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.purchaseDate").value("must be a date in the past or in the present"))
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
                 .andExpect(jsonPath("$.errors.currency").value("must not be null"))
@@ -157,13 +164,14 @@ public class CollectorPurchaseControllerTest {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null, null, null,
                 null, null, null, null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
                 .andExpect(jsonPath("$.errors.currency").value("must not be null"))
                 .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
@@ -177,13 +185,14 @@ public class CollectorPurchaseControllerTest {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null,
                 Currency.getInstance("JPY"), null, null, null, null, null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
                 .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
 
@@ -195,13 +204,14 @@ public class CollectorPurchaseControllerTest {
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null,
                 Currency.getInstance("JPY"), PurchaseChannel.ONLINE, null, null, null, null);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("400"))
-                .andExpect(jsonPath("$.title").value("Validation Failed")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errors.figurines").value("must not be empty"));
 
         verifyNoInteractions(collectorPurchaseService);
@@ -218,12 +228,13 @@ public class CollectorPurchaseControllerTest {
                 .thenThrow(new CollectorNotFoundException(0L));
 
         // subject is sent with empty value.
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Collector with id 0 was not found"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("404"))
                 .andExpect(jsonPath("$.title").value("Collector not found")).andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errorCode").value("COLLECTOR_NOT_FOUND"));
 
@@ -240,12 +251,13 @@ public class CollectorPurchaseControllerTest {
         when(collectorPurchaseService.createPurchase(123L, COLLECTION_ID, request))
                 .thenThrow(new CollectorPurchaseFigurineNotFoundException(List.of(33L, 55L)));
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Collector purchase figurines with IDs [33, 55] were not found"))
-                .andExpect(jsonPath("$.instance").value(PURCHASE_URL)).andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("404"))
                 .andExpect(jsonPath("$.title").value("Collector purchase figurines not found"))
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_FIGURINE_NOT_FOUND"));
@@ -264,11 +276,11 @@ public class CollectorPurchaseControllerTest {
 
         CollectorPurchaseResp response = new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
                 new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                LocalDate.now(), null);
+                LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.createPurchase(collectorId, COLLECTION_ID, request)).thenReturn(response);
 
-        mockMvc.perform(post(PURCHASE_URL)
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
                         .authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
@@ -283,5 +295,33 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.deliveredDate").doesNotExist());
 
         verify(collectorPurchaseService).createPurchase(collectorId, COLLECTION_ID, request);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnPurchases() throws Exception {
+        Long collectorId = 123L;
+
+        List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
+                new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                LocalDate.now(), null, List.of()));
+
+        when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
+
+        mockMvc.perform(get(PURCHASES)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].purchaseId").value(999L))
+                .andExpect(jsonPath("$[0].seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$[0].orderNumber").value("FZCAQSZTC"))
+                .andExpect(jsonPath("$[0].currency").value("JPY"))
+                .andExpect(jsonPath("$[0].totalAmount").value("62000"))
+                .andExpect(jsonPath("$[0].purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$[0].shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$[0].trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$[0].carrier").value("FedEX")).andExpect(jsonPath("$[0].shippedDate").exists())
+                .andExpect(jsonPath("$[0].deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).retrievePurchases(collectorId);
     }
 }

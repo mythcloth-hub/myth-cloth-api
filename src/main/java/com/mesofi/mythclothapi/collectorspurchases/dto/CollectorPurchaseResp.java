@@ -2,6 +2,7 @@ package com.mesofi.mythclothapi.collectorspurchases.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
@@ -56,6 +57,11 @@ public record CollectorPurchaseResp(
         /*
          * The date when the purchase was delivered.
          */
-        LocalDate deliveredDate) {
+        LocalDate deliveredDate,
+        /*
+         * The list of figurines associated with the collector purchase. This field is
+         * mandatory and must contain at least one figurine.
+         */
+        List<CollectorPurchaseFigurineResp> figurines) {
 
 }

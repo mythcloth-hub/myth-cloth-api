@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
@@ -109,6 +110,22 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount.apply(purchase))")
     CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase,
             @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount);
+
+    /**
+     * Converts a {@link CollectorPurchaseFigurine} into a
+     * {@link CollectorPurchaseFigurineResp}.
+     *
+     * <p>
+     * The {@code collectionFigurineId} is mapped from the associated
+     * {@link CollectorCollectionFigurine}'s {@code id}. Other fields are mapped
+     * directly from the entity.
+     *
+     * @param purchaseFigurine
+     *            the entity to be converted
+     * @return a new {@link CollectorPurchaseFigurineResp} populated from the entity
+     */
+    @Mapping(target = "collectionFigurineId", source = "collectionFigurine.id")
+    CollectorPurchaseFigurineResp toCollectorPurchaseFigurineResp(CollectorPurchaseFigurine purchaseFigurine);
 
     /**
      * Maps a {@link Currency} object to a {@link CurrencyCode} enum.

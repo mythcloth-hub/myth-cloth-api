@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,11 @@ public class CollectorPurchaseService {
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
     private final CollectorPurchaseMapper mapper;
+
+    /**
+     * The maximum number of purchases to retrieve for a collector.
+     */
+    private static final int MAX_PURCHASES = 10;
 
     /**
      * Creates a new collector purchase for the specified collector.
@@ -85,6 +91,25 @@ public class CollectorPurchaseService {
     }
 
     /**
+     * Retrieves all collector purchases for the specified collector.
+     *
+     * @param collectorId
+     *            the identifier of the collector for whom to retrieve purchases
+     * @return a list of CollectorPurchaseResp objects representing the collector's
+     *         purchases
+     */
+    @Transactional(readOnly = true)
+    public List<CollectorPurchaseResp> retrievePurchases(Long collectorId) {
+        log.info("Retrieving collector purchases for collector ID {}", collectorId);
+
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+
+        return collectorPurchaseRepository
+                .findByCollectorOrderByOrderDateDesc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
+                .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount)).toList();
+    }
+
+    /**
      * Ensures that the collector owns all the figurines in the collection and that
      * they belong to the same collection.
      *
@@ -126,9 +151,11 @@ public class CollectorPurchaseService {
      * @return the total amount of the purchase
      */
     public BigDecimal calculateTotalAmount(CollectorPurchase purchase) {
-
-        // TODO: Implement the logic to calculate the total amount based on the
-        // figurines and their prices.
-        return BigDecimal.ONE;
+        return purchase.getFigurines().stream().map(purchaseFigurine -> {
+            BigDecimal unitPrice = purchaseFigurine.getPricePaid();
+            int quantity = purchaseFigurine.getQuantity();
+            return unitPrice.multiply(BigDecimal.valueOf(quantity));
+        }).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
 }

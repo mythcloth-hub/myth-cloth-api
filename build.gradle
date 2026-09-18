@@ -132,6 +132,8 @@ pitest {
     pitestVersion = '1.25.5'
     targetClasses = ['com.mesofi.mythclothapi.*']
     targetTests = ['com.mesofi.mythclothapi.*']
+    //targetClasses = ['com.mesofi.mythclothapi.collectorspurchases.*']
+    //targetTests = ['com.mesofi.mythclothapi.collectorspurchases.*']
     junit5PluginVersion = '1.2.1'
 
     threads = 4

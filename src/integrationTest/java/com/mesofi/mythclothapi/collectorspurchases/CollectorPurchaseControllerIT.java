@@ -45,6 +45,7 @@ import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionFigu
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionReq;
 import com.mesofi.mythclothapi.collectorscollections.dto.CollectorCollectionResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
@@ -70,7 +71,8 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String ASSIGN_FIGURINES_TO_COLLECTION = "/collections/assign-figurines";
     private static final String COLLECTIONS = "/collections";
     private static final String COLLECTIONS_FIGURINES = "/collections/{collectionId}/figurines?page=0&size=40";
-    private static final String PURCHASES = "/collectors/collections/{collectionId}";
+    private static final String PURCHASES = "/collectors/purchases";
+    private static final String PURCHASES_CREATION = PURCHASES + "/collections/{collectionId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -139,6 +141,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         CollectorPurchaseResp inStorePurchaseResp = registerInStorePurchase(loginResp.accessToken(),
                 collectionResp.id(), collectionFigurineRespList);
         log.info("New in-store purchase registered: {}", inStorePurchaseResp);
+
+        // 6. The user retrieves all purchases for the collector to verify that both
+        // purchases were registered.
+        log.info("6. Retrieving all purchases for the collector to verify that both purchases were registered");
+        List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(loginResp.accessToken());
     }
 
     /**
@@ -304,7 +311,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.seller()).isEqualTo("Mandarake");
         assertThat(body.orderNumber()).isEqualTo("XQKUHSCWV");
         assertThat(body.currency()).isEqualTo("JPY");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("12800"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
         assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
         assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");
@@ -343,7 +350,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         List<CollectorPurchaseFigurineReq> purchaseFigurineReqs = Stream.of(secondFigurine)
                 .map(ccf -> new CollectorPurchaseFigurineReq(ccf.collectionFigurineId(), ccf.ownedQuantity(),
-                        new BigDecimal("12000"), PurchaseType.SECOND_HAND))
+                        new BigDecimal("1200"), PurchaseType.SECOND_HAND))
                 .toList();
 
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Rockshow", null,
@@ -355,7 +362,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.seller()).isEqualTo("Rockshow");
         assertThat(body.orderNumber()).isNull();
         assertThat(body.currency()).isEqualTo("MXN");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1200"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.PHYSICAL_STORE);
         assertThat(body.shippingStatus()).isNull();
         assertThat(body.trackingNumber()).isNull();
@@ -366,12 +373,68 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         return body;
     }
 
-    private CollectorPurchaseResp createPurchaseAndGetResponse(final String jwtToken, final Long collectionId,
+    private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector) {
+
+        ResponseEntity<List<CollectorPurchaseResp>> response = rest.get().uri(PURCHASES)
+                .headers(bearerToken(jwtCollector)).retrieve().toEntity(new ParameterizedTypeReference<>() {
+                });
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        assertThat(response.getBody()).isNotNull();
+        List<CollectorPurchaseResp> purchases = response.getBody();
+        assertThat(purchases).isNotNull();
+        Objects.requireNonNull(purchases, "Purchases response body should not be null");
+
+        assertThat(purchases.size()).isEqualTo(2);
+
+        // online purchase assertions
+        assertThat(purchases.getFirst()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::seller,
+                        CollectorPurchaseResp::orderNumber, CollectorPurchaseResp::currency,
+                        CollectorPurchaseResp::totalAmount, CollectorPurchaseResp::purchaseChannel,
+                        CollectorPurchaseResp::shippingStatus, CollectorPurchaseResp::trackingNumber,
+                        CollectorPurchaseResp::carrier, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
+                .containsExactly(1L, "Mandarake", "XQKUHSCWV", "JPY", new BigDecimal("12800.00"),
+                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx", null,
+                        LocalDate.now(),
+                        List.of(new CollectorPurchaseFigurineResp(1L, 1, new BigDecimal("6400.00"),
+                                PurchaseType.RETAIL),
+                                new CollectorPurchaseFigurineResp(16L, 1, new BigDecimal("6400.00"),
+                                        PurchaseType.RETAIL)));
+
+        // in-store purchase assertions
+        assertThat(purchases.getLast()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::seller,
+                        CollectorPurchaseResp::orderNumber, CollectorPurchaseResp::currency,
+                        CollectorPurchaseResp::totalAmount, CollectorPurchaseResp::purchaseChannel,
+                        CollectorPurchaseResp::shippingStatus, CollectorPurchaseResp::trackingNumber,
+                        CollectorPurchaseResp::carrier, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
+                .containsExactly(2L, "Rockshow", null, "MXN", new BigDecimal("1200.00"), PurchaseChannel.PHYSICAL_STORE,
+                        null, null, null, null, null, List.of(new CollectorPurchaseFigurineResp(8L, 1,
+                                new BigDecimal("1200.00"), PurchaseType.SECOND_HAND)));
+
+        return purchases;
+    }
+
+    /**
+     * Creates a new purchase for the collector and returns the response.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @param collectionId
+     *            The ID of the collection for which to create the purchase.
+     * @param request
+     *            The CollectorPurchaseReq containing the purchase details.
+     * @return The CollectorPurchaseResp representing the created purchase.
+     */
+    private CollectorPurchaseResp createPurchaseAndGetResponse(final String jwtCollector, final Long collectionId,
             final CollectorPurchaseReq request) {
         // The jwtToken is used to authenticate the request, and the request body
         // contains the purchase details.
-        ResponseEntity<CollectorPurchaseResp> response = rest.post().uri(PURCHASES, collectionId)
-                .headers(bearerToken(jwtToken)).body(request).retrieve().toEntity(CollectorPurchaseResp.class);
+        ResponseEntity<CollectorPurchaseResp> response = rest.post().uri(PURCHASES_CREATION, collectionId)
+                .headers(bearerToken(jwtCollector)).body(request).retrieve().toEntity(CollectorPurchaseResp.class);
 
         assertThat(response.getStatusCode()).isEqualTo(CREATED);
         Objects.requireNonNull(response.getBody(), "Purchase response body should not be null");
@@ -385,6 +448,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         wireMockServer.start();
         return wireMockServer;
     }
+
     private Consumer<HttpHeaders> bearerToken(String jwtToken) {
         return headers -> headers.set("Authorization", "Bearer %s".formatted(jwtToken));
     }

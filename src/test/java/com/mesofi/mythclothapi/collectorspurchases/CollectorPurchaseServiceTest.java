@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -31,6 +32,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 
@@ -93,7 +95,7 @@ public class CollectorPurchaseServiceTest {
         assertThat(response.seller()).isEqualTo("Mandarake");
         assertThat(response.orderNumber()).isEqualTo("ORDER-123");
         assertThat(response.currency()).isEqualTo("USD");
-        assertThat(response.totalAmount()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(response.totalAmount()).isEqualByComparingTo(new BigDecimal("350.00"));
         assertThat(response.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
         assertThat(response.shippingStatus()).isEqualTo(ShippingStatus.SHIPPED);
         assertThat(response.trackingNumber()).isEqualTo("TRACK-123");
@@ -123,7 +125,7 @@ public class CollectorPurchaseServiceTest {
         assertThat(savedPurchase.getShippedDate()).isNull();
         assertThat(savedPurchase.getDeliveredDate()).isEqualTo(LocalDate.now());
         assertThat(response.purchaseId()).isEqualTo(901L);
-        assertThat(response.totalAmount()).isEqualByComparingTo(BigDecimal.ONE);
+        assertThat(response.totalAmount()).isEqualByComparingTo(new BigDecimal("300.00"));
         assertThat(response.shippedDate()).isNull();
         assertThat(response.deliveredDate()).isEqualTo(LocalDate.now());
     }
@@ -160,9 +162,35 @@ public class CollectorPurchaseServiceTest {
     }
 
     @Test
+    void retrievePurchases_shouldReturnPurchases() {
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+        collector.setCollections(List.of(
+                createCollection(1L,
+                        List.of(createCollectorCollectionFigurine(1001L, 201L, false),
+                                createCollectorCollectionFigurine(1002L, 500L, true),
+                                createCollectorCollectionFigurine(1003L, 300L, true))),
+                createCollection(2L,
+                        List.of(createCollectorCollectionFigurine(2001L, 400L, true),
+                                createCollectorCollectionFigurine(2002L, 500L, false),
+                                createCollectorCollectionFigurine(2003L, 600L, true)))));
+
+        CollectorCollection collectorCollection = new CollectorCollection();
+        collectorCollection.setCollector(collector);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByCollectorOrderByOrderDateDesc(any(Collector.class),
+                any(PageRequest.class))).thenReturn(List.of(createCollectorPurchase(1L), createCollectorPurchase(2L)));
+
+        List<CollectorPurchaseResp> purchases = collectorPurchaseService.retrievePurchases(COLLECTOR_ID);
+        assertThat(purchases).hasSize(2);
+        assertThat(purchases).extracting(CollectorPurchaseResp::purchaseId).containsExactly(1L, 2L);
+    }
+
+    @Test
     void calculateTotalAmount_shouldReturnOne() {
         assertThat(collectorPurchaseService.calculateTotalAmount(new CollectorPurchase()))
-                .isEqualByComparingTo(BigDecimal.ONE);
+                .isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     private CollectorCollection stubOwnedCollection(CollectorCollectionFigurine... figurines) {
@@ -208,5 +236,22 @@ public class CollectorPurchaseServiceTest {
         Figurine figurine = new Figurine();
         figurine.setId(figurineId);
         return figurine;
+    }
+
+    private CollectorPurchase createCollectorPurchase(long id) {
+        CollectorPurchase purchase = new CollectorPurchase();
+        purchase.setId(id);
+        purchase.setCollector(new Collector());
+        purchase.setOrderDate(LocalDate.of(2026, 9, 1));
+        purchase.setSeller("Mandarake");
+        purchase.setOrderNumber("ORDER-123");
+        purchase.setCurrency(CurrencyCode.JPY);
+        purchase.setPurchaseChannel(PurchaseChannel.ONLINE);
+        purchase.setShippingStatus(ShippingStatus.SHIPPED);
+        purchase.setTrackingNumber("TRACK-123");
+        purchase.setCarrier("DHL");
+        purchase.setShippedDate(LocalDate.of(2026, 9, 2));
+        purchase.setDeliveredDate(null);
+        return purchase;
     }
 }

@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
 import java.net.URI;
+import java.util.List;
 
 import jakarta.validation.Valid;
 
@@ -10,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/collectors")
+@RequestMapping("/collectors/purchases")
 public class CollectorPurchaseController {
 
     private final CollectorPurchaseService collectorPurchaseService;
@@ -62,6 +64,21 @@ public class CollectorPurchaseController {
                 .buildAndExpand(response.purchaseId()).toUri();
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    /**
+     * Retrieves all collector purchases for the authenticated collector.
+     *
+     * @param jwt
+     *            the authenticated collector JWT token
+     * @return a list of CollectorPurchaseResp objects representing the collector's
+     *         purchases
+     */
+    @GetMapping
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
+    public List<CollectorPurchaseResp> retrievePurchases(@AuthenticationPrincipal Jwt jwt) {
+
+        return collectorPurchaseService.retrievePurchases(getCollectorId(jwt));
     }
 
     /**
