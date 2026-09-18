@@ -22,6 +22,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 import com.mesofi.mythclothapi.common.BaseId;
@@ -107,6 +108,29 @@ public class CollectorPurchaseService {
         return collectorPurchaseRepository
                 .findByCollectorOrderByOrderDateDesc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
                 .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount)).toList();
+    }
+
+    /**
+     * Retrieves a specific collector purchase for the specified collector.
+     *
+     * @param collectorId
+     *            the identifier of the collector for whom to retrieve the purchase
+     * @param purchaseId
+     *            the identifier of the purchase to retrieve
+     * @return a CollectorPurchaseResp object representing the requested purchase
+     * @throws CollectorPurchaseNotFoundException
+     *             if no purchase with the specified identifier exists for the
+     *             collector
+     */
+    @Transactional(readOnly = true)
+    public CollectorPurchaseResp retrievePurchase(Long collectorId, Long purchaseId) {
+        log.info("Retrieving collector purchase with ID {} for collector ID {}", purchaseId, collectorId);
+
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+
+        CollectorPurchase purchase = collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)
+                .orElseThrow(() -> new CollectorPurchaseNotFoundException(collectorId));
+        return mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount);
     }
 
     /**

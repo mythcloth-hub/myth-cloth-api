@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
@@ -185,6 +187,54 @@ public class CollectorPurchaseServiceTest {
         List<CollectorPurchaseResp> purchases = collectorPurchaseService.retrievePurchases(COLLECTOR_ID);
         assertThat(purchases).hasSize(2);
         assertThat(purchases).extracting(CollectorPurchaseResp::purchaseId).containsExactly(1L, 2L);
+    }
+
+    @Test
+    void retrievePurchase_shouldThrowCollectorPurchaseNotFoundException() {
+        Long purchaseId = 0L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+        collector.setCollections(List.of(
+                createCollection(1L,
+                        List.of(createCollectorCollectionFigurine(1001L, 201L, false),
+                                createCollectorCollectionFigurine(1002L, 500L, true),
+                                createCollectorCollectionFigurine(1003L, 300L, true))),
+                createCollection(2L,
+                        List.of(createCollectorCollectionFigurine(2001L, 400L, true),
+                                createCollectorCollectionFigurine(2002L, 500L, false),
+                                createCollectorCollectionFigurine(2003L, 600L, true)))));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(any(Long.class), any(Collector.class)))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId))
+                .isInstanceOf(CollectorPurchaseNotFoundException.class)
+                .hasMessageContaining("Collector purchase with id 123 was not found");
+    }
+
+    @Test
+    void retrievePurchase_shouldReturnPurchase() {
+        Long purchaseId = 0L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+        collector.setCollections(List.of(
+                createCollection(1L,
+                        List.of(createCollectorCollectionFigurine(1001L, 201L, false),
+                                createCollectorCollectionFigurine(1002L, 500L, true),
+                                createCollectorCollectionFigurine(1003L, 300L, true))),
+                createCollection(2L,
+                        List.of(createCollectorCollectionFigurine(2001L, 400L, true),
+                                createCollectorCollectionFigurine(2002L, 500L, false),
+                                createCollectorCollectionFigurine(2003L, 600L, true)))));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(any(Long.class), any(Collector.class)))
+                .thenReturn(Optional.of(createCollectorPurchase(1L)));
+
+        CollectorPurchaseResp purchase = collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId);
+        assertThat(purchase).isNotNull();
+        assertThat(purchase.purchaseId()).isEqualTo(1L);
     }
 
     @Test

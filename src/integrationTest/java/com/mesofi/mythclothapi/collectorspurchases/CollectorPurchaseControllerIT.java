@@ -73,6 +73,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String COLLECTIONS_FIGURINES = "/collections/{collectionId}/figurines?page=0&size=40";
     private static final String PURCHASES = "/collectors/purchases";
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/{collectionId}";
+    private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -146,6 +147,16 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // purchases were registered.
         log.info("6. Retrieving all purchases for the collector to verify that both purchases were registered");
         List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(loginResp.accessToken());
+
+        // 7. The user retrieves a specific purchase by its ID to verify that the
+        // details are correct.
+        log.info("7. Retrieving a specific purchase by its ID to verify that the details are correct");
+        CollectorPurchaseResp retrievedOnlinePurchase = retrievePurchaseById(loginResp.accessToken(),
+                purchases.getFirst().purchaseId());
+        assertThat(retrievedOnlinePurchase).isEqualTo(onlinePurchaseResp);
+        CollectorPurchaseResp retrievedInStorePurchase = retrievePurchaseById(loginResp.accessToken(),
+                purchases.getLast().purchaseId());
+        assertThat(retrievedInStorePurchase).isEqualTo(inStorePurchaseResp);
     }
 
     /**
@@ -298,7 +309,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         List<CollectorPurchaseFigurineReq> purchaseFigurineReqs = Stream.of(firstFigurine, lastFigurine)
                 .map(ccf -> new CollectorPurchaseFigurineReq(ccf.collectionFigurineId(), ccf.ownedQuantity(),
-                        new BigDecimal("6400"), PurchaseType.RETAIL))
+                        new BigDecimal("6400.00"), PurchaseType.RETAIL))
                 .toList();
 
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Mandarake", "XQKUHSCWV",
@@ -311,7 +322,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.seller()).isEqualTo("Mandarake");
         assertThat(body.orderNumber()).isEqualTo("XQKUHSCWV");
         assertThat(body.currency()).isEqualTo("JPY");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("12800"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("12800.00"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
         assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
         assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");
@@ -350,7 +361,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         List<CollectorPurchaseFigurineReq> purchaseFigurineReqs = Stream.of(secondFigurine)
                 .map(ccf -> new CollectorPurchaseFigurineReq(ccf.collectionFigurineId(), ccf.ownedQuantity(),
-                        new BigDecimal("1200"), PurchaseType.SECOND_HAND))
+                        new BigDecimal("1200.00"), PurchaseType.SECOND_HAND))
                 .toList();
 
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Rockshow", null,
@@ -362,7 +373,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.seller()).isEqualTo("Rockshow");
         assertThat(body.orderNumber()).isNull();
         assertThat(body.currency()).isEqualTo("MXN");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1200"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("1200.00"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.PHYSICAL_STORE);
         assertThat(body.shippingStatus()).isNull();
         assertThat(body.trackingNumber()).isNull();
@@ -373,6 +384,15 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         return body;
     }
 
+    /**
+     * Retrieves all existing purchases for the collector and performs assertions to
+     * verify the correctness of the retrieved data.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @return A list of CollectorPurchaseResp representing the existing purchases
+     *         for the collector.
+     */
     private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector) {
 
         ResponseEntity<List<CollectorPurchaseResp>> response = rest.get().uri(PURCHASES)
@@ -416,6 +436,26 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                                 new BigDecimal("1200.00"), PurchaseType.SECOND_HAND)));
 
         return purchases;
+    }
+
+    /**
+     * Retrieves a specific purchase by its ID for the given collector.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @param purchaseId
+     *            The ID of the purchase to retrieve.
+     * @return The CollectorPurchaseResp representing the retrieved purchase.
+     */
+    public CollectorPurchaseResp retrievePurchaseById(String jwtCollector, Long purchaseId) {
+        ResponseEntity<CollectorPurchaseResp> response = rest.get().uri(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
+                .headers(bearerToken(jwtCollector)).retrieve().toEntity(CollectorPurchaseResp.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        Objects.requireNonNull(response.getBody(), "Purchase response body should not be null");
+        assertThat(response.getBody()).isNotNull();
+
+        return response.getBody();
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.collectorspurchases.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,4 +30,16 @@ public interface CollectorPurchaseRepository extends JpaRepository<CollectorPurc
      *         Collector, ordered by orderDate in descending order
      */
     List<CollectorPurchase> findByCollectorOrderByOrderDateDesc(Collector collector, Pageable pageable);
+
+    /**
+     * Finds a CollectorPurchase entity by its ID and associated Collector.
+     *
+     * @param purchaseId
+     *            the ID of the CollectorPurchase entity to find
+     * @param collector
+     *            the Collector entity associated with the purchase
+     * @return an Optional containing the found CollectorPurchase entity, or empty
+     *         if not found
+     */
+    Optional<CollectorPurchase> findByIdAndCollector(Long purchaseId, Collector collector);
 }

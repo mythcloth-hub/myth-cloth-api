@@ -77,8 +77,22 @@ public class CollectorPurchaseController {
     @GetMapping
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
     public List<CollectorPurchaseResp> retrievePurchases(@AuthenticationPrincipal Jwt jwt) {
-
         return collectorPurchaseService.retrievePurchases(getCollectorId(jwt));
+    }
+
+    /**
+     * Retrieves a specific collector purchase by its identifier.
+     *
+     * @param jwt
+     *            the authenticated collector JWT token
+     * @param purchaseId
+     *            the identifier of the purchase to retrieve
+     * @return a CollectorPurchaseResp object representing the requested purchase
+     */
+    @GetMapping("/{purchaseId}")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
+    public CollectorPurchaseResp retrievePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
+        return collectorPurchaseService.retrievePurchase(getCollectorId(jwt), purchaseId);
     }
 
     /**

@@ -30,6 +30,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
@@ -47,6 +48,7 @@ public class CollectorPurchaseControllerTest {
     private static final long COLLECTION_ID = 77L;
     private static final String PURCHASES = "/collectors/purchases";
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/" + COLLECTION_ID;
+    private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -323,5 +325,55 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$[0].deliveredDate").doesNotExist());
 
         verify(collectorPurchaseService).retrievePurchases(collectorId);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnNotFound_whenPurchaseDoesNotExist() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 0L;
+
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId))
+                .thenThrow(new CollectorPurchaseNotFoundException(purchaseId));
+
+        // subject is sent with empty value.
+        mockMvc.perform(get(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Collector purchase with id 0 was not found"))
+                .andExpect(jsonPath("$.instance").value("/collectors/purchases/0"))
+                .andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.title").value("Collector purchase not found"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_NOT_FOUND"));
+
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnPurchase_whenPurchaseExists() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 999L;
+
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
+                new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                LocalDate.now(), null, List.of());
+
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId)).thenReturn(response);
+
+        mockMvc.perform(get(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.purchaseId").value(999L)).andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
     }
 }
