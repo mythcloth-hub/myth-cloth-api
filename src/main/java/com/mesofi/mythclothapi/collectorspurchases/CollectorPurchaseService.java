@@ -77,18 +77,28 @@ public class CollectorPurchaseService {
         // from the collector's collection
         collectorPurchase.setCollector(collector);
         collectorPurchase.getFigurines().forEach(purchaseFigurine -> purchaseFigurine.setPurchase(collectorPurchase));
+        updateShippingDates(collectorPurchase);
 
+        var saved = collectorPurchaseRepository.save(collectorPurchase);
+
+        log.info("Saved collector purchase with ID {} and seller '{}'", saved.getId(), saved.getSeller());
+        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount);
+    }
+
+    /**
+     * Updates the shipping dates of the collector purchase based on its shipping
+     * status.
+     *
+     * @param collectorPurchase
+     *            the collector purchase to update
+     */
+    private void updateShippingDates(CollectorPurchase collectorPurchase) {
         if (ShippingStatus.SHIPPED.equals(collectorPurchase.getShippingStatus())) {
             collectorPurchase.setShippedDate(LocalDate.now());
         }
         if (ShippingStatus.DELIVERED.equals(collectorPurchase.getShippingStatus())) {
             collectorPurchase.setDeliveredDate(LocalDate.now());
         }
-
-        var saved = collectorPurchaseRepository.save(collectorPurchase);
-
-        log.info("Saved collector purchase with ID {} and seller '{}'", saved.getId(), saved.getSeller());
-        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount);
     }
 
     /**
@@ -131,6 +141,22 @@ public class CollectorPurchaseService {
         CollectorPurchase purchase = collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)
                 .orElseThrow(() -> new CollectorPurchaseNotFoundException(collectorId));
         return mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount);
+    }
+
+    @Transactional
+    public CollectorPurchaseResp updatePurchase(Long collectorId, Long existingPurchaseId,
+            @NotNull @Valid CollectorPurchaseReq request) {
+        log.info("Updating collector purchase with ID {} for collector ID {}", existingPurchaseId, collectorId);
+
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+        CollectorPurchase existing = collectorPurchaseRepository.findByIdAndCollector(existingPurchaseId, collector)
+                .orElseThrow(() -> new CollectorPurchaseNotFoundException(collectorId));
+
+        CollectorPurchase incoming = mapper.toCollectorPurchase(request);
+        updateShippingDates(incoming);
+        mapper.updateCollectorPurchase(existing, incoming);
+
+        return mapper.toCollectorPurchaseResp(existing, this::calculateTotalAmount);
     }
 
     /**

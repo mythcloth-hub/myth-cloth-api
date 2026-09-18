@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,6 +50,7 @@ public class CollectorPurchaseControllerTest {
     private static final String PURCHASES = "/collectors/purchases";
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/" + COLLECTION_ID;
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -276,9 +278,9 @@ public class CollectorPurchaseControllerTest {
                 List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
                         new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
 
-        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
-                new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                LocalDate.now(), null, List.of());
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.createPurchase(collectorId, COLLECTION_ID, request)).thenReturn(response);
 
@@ -288,6 +290,7 @@ public class CollectorPurchaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.purchaseId").value(999L))
                 .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
                 .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
                 .andExpect(jsonPath("$.totalAmount").value("62000"))
                 .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
@@ -303,9 +306,9 @@ public class CollectorPurchaseControllerTest {
     void retrievePurchases_shouldReturnPurchases() throws Exception {
         Long collectorId = 123L;
 
-        List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
-                new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                LocalDate.now(), null, List.of()));
+        List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1),
+                "yoyaKuNow", "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE,
+                ShippingStatus.SHIPPED, "884469419291", "FedEX", LocalDate.now(), null, List.of()));
 
         when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
 
@@ -314,6 +317,7 @@ public class CollectorPurchaseControllerTest {
                         .authorities(new SimpleGrantedAuthority("purchases:read")))
                 .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].purchaseId").value(999L))
+                .andExpect(jsonPath("$[0].purchaseDate").value("2026-01-01"))
                 .andExpect(jsonPath("$[0].seller").value("yoyaKuNow"))
                 .andExpect(jsonPath("$[0].orderNumber").value("FZCAQSZTC"))
                 .andExpect(jsonPath("$[0].currency").value("JPY"))
@@ -355,9 +359,9 @@ public class CollectorPurchaseControllerTest {
         Long collectorId = 123L;
         Long purchaseId = 999L;
 
-        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, "yoyaKuNow", "FZCAQSZTC", "JPY",
-                new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                LocalDate.now(), null, List.of());
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId)).thenReturn(response);
 
@@ -365,7 +369,9 @@ public class CollectorPurchaseControllerTest {
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
                         .authorities(new SimpleGrantedAuthority("purchases:read")))
                 .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.purchaseId").value(999L)).andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
                 .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
                 .andExpect(jsonPath("$.totalAmount").value("62000"))
                 .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
@@ -375,5 +381,39 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.deliveredDate").doesNotExist());
 
         verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+    }
+
+    @Test
+    void updatePurchase_shouldReturnOK_whenRequestIsValid() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+
+        when(collectorPurchaseService.updatePurchase(collectorId, purchaseId, request)).thenReturn(response);
+
+        mockMvc.perform(put(PURCHASES_UPDATE_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:update")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).updatePurchase(collectorId, purchaseId, request);
     }
 }

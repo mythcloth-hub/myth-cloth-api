@@ -14,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -93,6 +94,14 @@ public class CollectorPurchaseController {
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
     public CollectorPurchaseResp retrievePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
         return collectorPurchaseService.retrievePurchase(getCollectorId(jwt), purchaseId);
+    }
+
+    @PutMapping("/{purchaseId}")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_UPDATE + "')")
+    public CollectorPurchaseResp updatePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId,
+            @RequestBody @Valid CollectorPurchaseReq purchaseRequest) {
+
+        return collectorPurchaseService.updatePurchase(getCollectorId(jwt), purchaseId, purchaseRequest);
     }
 
     /**

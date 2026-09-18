@@ -7,6 +7,7 @@ import java.util.function.Function;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
@@ -107,6 +108,7 @@ public interface CollectorPurchaseMapper {
      * @return a new {@link CollectorPurchaseResp} populated from the entity
      */
     @Mapping(target = "purchaseId", source = "id")
+    @Mapping(target = "purchaseDate", source = "orderDate")
     @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount.apply(purchase))")
     CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase,
             @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount);
@@ -126,6 +128,27 @@ public interface CollectorPurchaseMapper {
      */
     @Mapping(target = "collectionFigurineId", source = "collectionFigurine.id")
     CollectorPurchaseFigurineResp toCollectorPurchaseFigurineResp(CollectorPurchaseFigurine purchaseFigurine);
+
+    /**
+     * Updates an existing {@link CollectorPurchase} entity with values from another
+     * {@link CollectorPurchase} instance.
+     *
+     * <p>
+     * The {@code id}, {@code creationDate}, and {@code updateDate} fields are
+     * ignored to prevent changing the primary key and timestamps of the entity.
+     * Other fields are updated based on the source entity.
+     *
+     * @param target
+     *            the entity to update
+     * @param source
+     *            the source containing the updated values
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "collector", ignore = true) // The collector will not be updated here
+    @Mapping(target = "figurines", ignore = true) // The figurines will be managed separately in the service layer
+    void updateCollectorPurchase(@MappingTarget CollectorPurchase target, CollectorPurchase source);
 
     /**
      * Maps a {@link Currency} object to a {@link CurrencyCode} enum.

@@ -15,6 +15,10 @@ public record CollectorPurchaseResp(
          */
         Long purchaseId,
         /*
+         * The date when the collector purchase was made.
+         */
+        LocalDate purchaseDate,
+        /*
          * The seller of the collector purchase.
          */
         String seller,

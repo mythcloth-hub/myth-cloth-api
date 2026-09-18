@@ -14,7 +14,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 
 /**
- * Represents a request to create a collector purchase.
+ * Represents a request to create or update a collector purchase.
  *
  * @param purchaseDate
  *            the date of the purchase; must not be null and must be a past or

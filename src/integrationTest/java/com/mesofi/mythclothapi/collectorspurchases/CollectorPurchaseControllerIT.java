@@ -74,6 +74,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String PURCHASES = "/collectors/purchases";
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/{collectionId}";
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -157,6 +158,13 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         CollectorPurchaseResp retrievedInStorePurchase = retrievePurchaseById(loginResp.accessToken(),
                 purchases.getLast().purchaseId());
         assertThat(retrievedInStorePurchase).isEqualTo(inStorePurchaseResp);
+
+        // 8. The user performs multiple edits on the purchases, such as updating the
+        // shipping status, changing the order number, and modifying the total amount.
+        // The user verifies that the changes are reflected correctly in the retrieved
+        // purchase details.
+        log.info("8. Performing multiple edits on the purchases and verifying the changes");
+        updateExistingPurchasesAndVerifyChanges(loginResp.accessToken(), purchases);
     }
 
     /**
@@ -409,15 +417,16 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         // online purchase assertions
         assertThat(purchases.getFirst()).isNotNull()
-                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::seller,
-                        CollectorPurchaseResp::orderNumber, CollectorPurchaseResp::currency,
-                        CollectorPurchaseResp::totalAmount, CollectorPurchaseResp::purchaseChannel,
-                        CollectorPurchaseResp::shippingStatus, CollectorPurchaseResp::trackingNumber,
-                        CollectorPurchaseResp::carrier, CollectorPurchaseResp::shippedDate,
-                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
-                .containsExactly(1L, "Mandarake", "XQKUHSCWV", "JPY", new BigDecimal("12800.00"),
-                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx", null,
-                        LocalDate.now(),
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
+                        CollectorPurchaseResp::figurines)
+                .containsExactly(1L, LocalDate.of(2026, 9, 18), "Mandarake", "XQKUHSCWV", "JPY",
+                        new BigDecimal("12800.00"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED,
+                        "1ZV912320456954189", "FedEx", null, LocalDate.now(),
                         List.of(new CollectorPurchaseFigurineResp(1L, 1, new BigDecimal("6400.00"),
                                 PurchaseType.RETAIL),
                                 new CollectorPurchaseFigurineResp(16L, 1, new BigDecimal("6400.00"),
@@ -425,15 +434,17 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         // in-store purchase assertions
         assertThat(purchases.getLast()).isNotNull()
-                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::seller,
-                        CollectorPurchaseResp::orderNumber, CollectorPurchaseResp::currency,
-                        CollectorPurchaseResp::totalAmount, CollectorPurchaseResp::purchaseChannel,
-                        CollectorPurchaseResp::shippingStatus, CollectorPurchaseResp::trackingNumber,
-                        CollectorPurchaseResp::carrier, CollectorPurchaseResp::shippedDate,
-                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
-                .containsExactly(2L, "Rockshow", null, "MXN", new BigDecimal("1200.00"), PurchaseChannel.PHYSICAL_STORE,
-                        null, null, null, null, null, List.of(new CollectorPurchaseFigurineResp(8L, 1,
-                                new BigDecimal("1200.00"), PurchaseType.SECOND_HAND)));
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
+                        CollectorPurchaseResp::figurines)
+                .containsExactly(2L, LocalDate.of(2026, 9, 18), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
+                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null,
+                        List.of(new CollectorPurchaseFigurineResp(8L, 1, new BigDecimal("1200.00"),
+                                PurchaseType.SECOND_HAND)));
 
         return purchases;
     }
@@ -447,7 +458,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
      *            The ID of the purchase to retrieve.
      * @return The CollectorPurchaseResp representing the retrieved purchase.
      */
-    public CollectorPurchaseResp retrievePurchaseById(String jwtCollector, Long purchaseId) {
+    private CollectorPurchaseResp retrievePurchaseById(String jwtCollector, Long purchaseId) {
         ResponseEntity<CollectorPurchaseResp> response = rest.get().uri(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
                 .headers(bearerToken(jwtCollector)).retrieve().toEntity(CollectorPurchaseResp.class);
 
@@ -456,6 +467,50 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(response.getBody()).isNotNull();
 
         return response.getBody();
+    }
+
+    private void updateExistingPurchasesAndVerifyChanges(String jwtCollector,
+            List<CollectorPurchaseResp> existingPurchases) {
+        // Update the first purchase (online purchase)
+        CollectorPurchaseResp online = existingPurchases.getFirst();
+
+        List<CollectorPurchaseFigurineReq> updatedFigurines = online.figurines().stream()
+                .map(this::toCollectorPurchaseFigurineReq).toList();
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW",
+                Currency.getInstance("USD"), online.purchaseChannel(), ShippingStatus.NOT_SHIPPED, "877394518353",
+                "UPS", updatedFigurines);
+
+        ResponseEntity<CollectorPurchaseResp> response = rest.put().uri(PURCHASES_UPDATE_BY_ID, online.purchaseId())
+                .headers(bearerToken(jwtCollector)).body(request).retrieve().toEntity(CollectorPurchaseResp.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        Objects.requireNonNull(response.getBody(), "Purchase response body should not be null");
+        assertThat(response.getBody()).isNotNull();
+
+        assertThat(response.getBody()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
+                        CollectorPurchaseResp::figurines)
+                .containsExactly(1L, LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
+                        new BigDecimal("12800.00"), PurchaseChannel.ONLINE, ShippingStatus.NOT_SHIPPED, "877394518353",
+                        "UPS", null, null,
+                        List.of(new CollectorPurchaseFigurineResp(1L, 1, new BigDecimal("6400.00"),
+                                PurchaseType.RETAIL),
+                                new CollectorPurchaseFigurineResp(16L, 1, new BigDecimal("6400.00"),
+                                        PurchaseType.RETAIL)));
+    }
+
+    private CollectorPurchaseFigurineReq toCollectorPurchaseFigurineReq(CollectorPurchaseFigurineResp resp) {
+        // For the purpose of this test, we will use a dummy collectionFigurineId
+        // (99999L) since we don't have the actual ID.
+        // The update should ignore the collectionFigurineId and only update the
+        // quantity, pricePaid, and purchaseType.
+        return new CollectorPurchaseFigurineReq(99999L, resp.quantity(), resp.pricePaid(), resp.purchaseType());
     }
 
     /**
