@@ -100,7 +100,8 @@ public class SecurityDataService {
             Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_FIGURINES_READ,
             Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ,
             Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
-            Permissions.PURCHASES_CREATE, Permissions.PURCHASES_READ, Permissions.PURCHASES_UPDATE);
+            Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
+            Permissions.PURCHASES_UPDATE);
 
     /**
      * Permissions assigned to the demo role.

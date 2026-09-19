@@ -31,11 +31,11 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
-import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
@@ -362,6 +362,39 @@ public class CollectorPurchaseServiceTest {
                         List.of(createCollectorPurchaseFigurineReq(1001L, new BigDecimal("100.00"))))))
                 .isInstanceOf(CollectorPurchaseNotFoundException.class)
                 .hasMessageContaining("Collector purchase with id 999 was not found");
+    }
+
+    @Test
+    void deletePurchase_shouldThrowCollectorPurchaseNotFoundException() {
+        long purchaseId = 999L;
+
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> collectorPurchaseService.deletePurchase(COLLECTOR_ID, purchaseId))
+                .isInstanceOf(CollectorPurchaseNotFoundException.class)
+                .hasMessageContaining("Collector purchase with id 999 was not found");
+    }
+
+    @Test
+    void deletePurchase_shouldDeletePurchase() {
+        long purchaseId = 999L;
+
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorPurchase purchase = new CollectorPurchase();
+        purchase.setId(purchaseId);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)).thenReturn(Optional.of(purchase));
+
+        collectorPurchaseService.deletePurchase(COLLECTOR_ID, purchaseId);
+
+        verify(collectorPurchaseRepository).delete(purchase);
     }
 
     @Test

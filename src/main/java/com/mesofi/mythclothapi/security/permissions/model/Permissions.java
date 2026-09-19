@@ -135,9 +135,6 @@ public interface Permissions {
     /** Allows reading purchases. */
     String PURCHASES_READ = "purchases:read";
 
-    /** Allows synchronizing purchases. */
-    // String PURCHASES_SYNC = "purchases:sync";
-
     /** Allows updating purchases. */
     String PURCHASES_UPDATE = "purchases:update";
 

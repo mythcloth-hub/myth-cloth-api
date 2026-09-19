@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import java.math.BigDecimal;
@@ -75,6 +76,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/{collectionId}";
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -147,7 +149,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // 6. The user retrieves all purchases for the collector to verify that both
         // purchases were registered.
         log.info("6. Retrieving all purchases for the collector to verify that both purchases were registered");
-        List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(loginResp.accessToken());
+        List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(loginResp.accessToken(), true);
 
         // 7. The user retrieves a specific purchase by its ID to verify that the
         // details are correct.
@@ -165,6 +167,18 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // purchase details.
         log.info("8. Performing multiple edits on the purchases and verifying the changes");
         updateExistingPurchasesAndVerifyChanges(loginResp.accessToken(), purchases, collectionFigurineRespList);
+
+        // 9. Retrieve again all the existing purchases for the collector to delete them
+        // and verify that the purchases were deleted successfully.
+        log.info("9. Retrieving all existing purchases for the collector to delete them");
+        List<CollectorPurchaseResp> existingPurchases = retrieveExistingPurchasesForCollector(loginResp.accessToken(),
+                false);
+
+        // 10. Finally, the user deletes all existing purchases for the collector and
+        // verifies that the purchases were deleted successfully.
+        log.info(
+                "10. Deleting all existing purchases for the collector and verifying that the purchases were deleted successfully");
+        deleteExistingPurchasesAndVerifyDeletion(loginResp.accessToken(), existingPurchases);
     }
 
     /**
@@ -398,10 +412,14 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
      *
      * @param jwtCollector
      *            The JWT token of the collector.
+     * @param assertPurchases
+     *            A boolean flag indicating whether to perform assertions on the
+     *            retrieved purchases.
      * @return A list of CollectorPurchaseResp representing the existing purchases
      *         for the collector.
      */
-    private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector) {
+    private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector,
+            final boolean assertPurchases) {
 
         ResponseEntity<List<CollectorPurchaseResp>> response = rest.get().uri(PURCHASES)
                 .headers(bearerToken(jwtCollector)).retrieve().toEntity(new ParameterizedTypeReference<>() {
@@ -412,6 +430,10 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         List<CollectorPurchaseResp> purchases = response.getBody();
         assertThat(purchases).isNotNull();
         Objects.requireNonNull(purchases, "Purchases response body should not be null");
+
+        if (!assertPurchases) {
+            return purchases;
+        }
 
         assertThat(purchases.size()).isEqualTo(2);
 
@@ -424,9 +446,9 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
                         CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
                         CollectorPurchaseResp::figurines)
-                .containsExactly(1L, LocalDate.of(2026, 9, 18), "Mandarake", "XQKUHSCWV", "JPY",
-                        new BigDecimal("12800.00"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED,
-                        "1ZV912320456954189", "FedEx", null, LocalDate.now(),
+                .containsExactly(1L, LocalDate.now(), "Mandarake", "XQKUHSCWV", "JPY", new BigDecimal("12800.00"),
+                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx", null,
+                        LocalDate.now(),
                         List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("6400.00"),
                                 PurchaseType.RETAIL),
                                 new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("6400.00"),
@@ -441,7 +463,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
                         CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
                         CollectorPurchaseResp::figurines)
-                .containsExactly(2L, LocalDate.of(2026, 9, 18), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
+                .containsExactly(2L, LocalDate.now(), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
                         PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null,
                         List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("1200.00"),
                                 PurchaseType.SECOND_HAND)));
@@ -543,6 +565,32 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         .extracting(CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
                                 CollectorPurchaseFigurineResp::purchaseType)
                         .containsExactly(1, new BigDecimal("1111.00"), PurchaseType.SECOND_HAND));
+    }
+
+    /**
+     * Deletes existing purchases for the collector and verifies that the deletion
+     * was successful.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @param existingPurchases
+     *            The list of existing purchases to be deleted.
+     */
+    private void deleteExistingPurchasesAndVerifyDeletion(String jwtCollector,
+            List<CollectorPurchaseResp> existingPurchases) {
+
+        for (CollectorPurchaseResp purchase : existingPurchases) {
+
+            ResponseEntity<Void> response = rest.delete().uri(PURCHASES_DELETION_BY_ID, purchase.purchaseId())
+                    .headers(bearerToken(jwtCollector)).retrieve().toEntity(Void.class);
+
+            Assertions.assertThat(response.getStatusCode()).as("Purchase deletion should return HTTP 204")
+                    .isEqualTo(NO_CONTENT);
+        }
+
+        // Verify that all purchases have been deleted
+        List<CollectorPurchaseResp> remainingPurchases = retrieveExistingPurchasesForCollector(jwtCollector, false);
+        Assertions.assertThat(remainingPurchases).isEmpty();
     }
 
     /**

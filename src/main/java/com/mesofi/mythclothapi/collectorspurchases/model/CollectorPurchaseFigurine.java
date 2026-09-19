@@ -13,7 +13,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFigurine;
-import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchase;
 import com.mesofi.mythclothapi.common.Auditable;
 
 import lombok.Getter;

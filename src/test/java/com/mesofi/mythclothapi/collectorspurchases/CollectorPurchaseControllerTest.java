@@ -1,10 +1,12 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -51,6 +53,7 @@ public class CollectorPurchaseControllerTest {
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/" + COLLECTION_ID;
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -415,5 +418,20 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.deliveredDate").doesNotExist());
 
         verify(collectorPurchaseService).updatePurchase(collectorId, purchaseId, request);
+    }
+
+    @Test
+    void deletePurchase_shouldReturnPurchases() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
+
+        doNothing().when(collectorPurchaseService).deletePurchase(collectorId, purchaseId);
+
+        mockMvc.perform(delete(PURCHASES_DELETION_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:delete")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
+
+        verify(collectorPurchaseService).deletePurchase(collectorId, purchaseId);
     }
 }

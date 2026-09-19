@@ -14,6 +14,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 

@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.collectorspurchases;
+package com.mesofi.mythclothapi.collectorspurchases.model;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -16,9 +16,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectors.Collector;
-import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
-import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
-import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 

@@ -26,9 +26,9 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
-import com.mesofi.mythclothapi.collectorspurchases.repository.CollectorPurchaseRepository;
 import com.mesofi.mythclothapi.common.BaseId;
 
 import lombok.RequiredArgsConstructor;
@@ -220,6 +220,27 @@ public class CollectorPurchaseService {
                 .map(existingFigurine -> existingFigurine.getCollectionFigurine().getId()).collect(Collectors.toSet())
                 .forEach(requested::remove);
         requested.values().forEach(req -> createPurchaseFigurine(existingPurchase, req));
+    }
+
+    /**
+     * Deletes a specific collector purchase for the specified collector.
+     *
+     * @param collectorId
+     *            the identifier of the collector for whom to delete the purchase
+     * @param purchaseId
+     *            the identifier of the purchase to delete
+     * @throws CollectorPurchaseNotFoundException
+     *             if no purchase with the specified identifier exists for the
+     *             collector
+     */
+    @Transactional
+    public void deletePurchase(Long collectorId, Long purchaseId) {
+        log.info("Deleting collector purchase with ID {}", purchaseId);
+
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+        CollectorPurchase existing = collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)
+                .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
+        collectorPurchaseRepository.delete(existing);
     }
 
     /**

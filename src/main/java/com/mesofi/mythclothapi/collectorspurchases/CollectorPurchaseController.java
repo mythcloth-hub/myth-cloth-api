@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -96,12 +97,37 @@ public class CollectorPurchaseController {
         return collectorPurchaseService.retrievePurchase(getCollectorId(jwt), purchaseId);
     }
 
+    /**
+     * Updates a specific collector purchase by its identifier.
+     *
+     * @param jwt
+     *            the authenticated collector JWT token
+     * @param purchaseId
+     *            the identifier of the purchase to update
+     * @param purchaseRequest
+     *            the request body containing the updated details of the purchase
+     * @return a CollectorPurchaseResp object representing the updated purchase
+     */
     @PutMapping("/{purchaseId}")
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_UPDATE + "')")
     public CollectorPurchaseResp updatePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId,
             @RequestBody @Valid CollectorPurchaseReq purchaseRequest) {
-
         return collectorPurchaseService.updatePurchase(getCollectorId(jwt), purchaseId, purchaseRequest);
+    }
+
+    /**
+     * Deletes a specific collector purchase by its identifier.
+     *
+     * @param jwt
+     *            the authenticated collector JWT token
+     * @param purchaseId
+     *            the identifier of the purchase to delete
+     */
+    @DeleteMapping("/{purchaseId}")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_DELETE + "')")
+    public ResponseEntity<Void> deletePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
+        collectorPurchaseService.deletePurchase(getCollectorId(jwt), purchaseId);
+        return ResponseEntity.noContent().build();
     }
 
     /**
