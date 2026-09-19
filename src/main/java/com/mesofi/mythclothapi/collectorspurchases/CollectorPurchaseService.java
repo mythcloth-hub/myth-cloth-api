@@ -219,6 +219,7 @@ public class CollectorPurchaseService {
         existingPurchase.getFigurines().stream()
                 .map(existingFigurine -> existingFigurine.getCollectionFigurine().getId()).collect(Collectors.toSet())
                 .forEach(requested::remove);
+
         requested.values().forEach(req -> createPurchaseFigurine(existingPurchase, req));
     }
 

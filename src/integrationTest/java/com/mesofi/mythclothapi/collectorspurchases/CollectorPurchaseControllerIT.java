@@ -161,12 +161,18 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                 purchases.getLast().purchaseId());
         assertThat(retrievedInStorePurchase).isEqualTo(inStorePurchaseResp);
 
-        // 8. The user performs multiple edits on the purchases, such as updating the
+        // 8.1. The user performs multiple edits on the purchases, such as updating the
         // shipping status, changing the order number, and modifying the total amount.
         // The user verifies that the changes are reflected correctly in the retrieved
         // purchase details.
-        log.info("8. Performing multiple edits on the purchases and verifying the changes");
-        updateExistingPurchasesAndVerifyChanges(loginResp.accessToken(), purchases, collectionFigurineRespList);
+        log.info("8.1. Performing multiple edits on the purchases and verifying the changes");
+        updateExistingOnlinePurchasesAndVerifyChanges(loginResp.accessToken(), purchases.getFirst(),
+                collectionFigurineRespList);
+        // 8.2. Now we do some updates on the in-store purchase, such as changing the
+        // seller.
+        log.info("8.2. Performing updates on the in-store purchase and verifying the changes");
+        updateExistingInStorePurchasesAndVerifyChanges(loginResp.accessToken(), purchases.getLast(),
+                collectionFigurineRespList);
 
         // 9. Retrieve again all the existing purchases for the collector to delete them
         // and verify that the purchases were deleted successfully.
@@ -491,10 +497,9 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         return response.getBody();
     }
 
-    private void updateExistingPurchasesAndVerifyChanges(String jwtCollector,
-            List<CollectorPurchaseResp> existingPurchases, List<CollectorCollectionFigurineResp> collectionFigurines) {
+    private void updateExistingOnlinePurchasesAndVerifyChanges(String jwtCollector, CollectorPurchaseResp online,
+            List<CollectorCollectionFigurineResp> collectionFigurines) {
         // Update the first purchase (online purchase)
-        CollectorPurchaseResp online = existingPurchases.getFirst();
         CollectorPurchaseFigurineResp existingFirstFigurine = online.figurines().getFirst();
         CollectorPurchaseFigurineResp existingLastFigurine = online.figurines().getLast();
         CollectorCollectionFigurineResp newCollectionFigurine = collectionFigurines.stream()
@@ -565,6 +570,69 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         .extracting(CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
                                 CollectorPurchaseFigurineResp::purchaseType)
                         .containsExactly(1, new BigDecimal("1111.00"), PurchaseType.SECOND_HAND));
+    }
+
+    /**
+     * Updates an existing in-store purchase for the collector and verifies the
+     * changes.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @param inStore
+     *            The CollectorPurchaseResp representing the existing in-store
+     *            purchase to be updated.
+     * @param collectionFigurines
+     *            The list of figurines in the collector's collection.
+     */
+    private void updateExistingInStorePurchasesAndVerifyChanges(String jwtCollector, CollectorPurchaseResp inStore,
+            List<CollectorCollectionFigurineResp> collectionFigurines) {
+        // Update the in-store purchase by changing the orderDate, seller and other
+        // collector figurines.
+
+        // For this example, this collectorFigurineId must be one. It's safe to extract
+        // the first one
+        Long existingCollectionFigurineId = inStore.figurines().getFirst().collectionFigurineId();
+
+        List<CollectorCollectionFigurineResp> collectedFigurines = collectionFigurines.stream()
+                .filter(CollectorCollectionFigurineResp::isCollected).toList();
+
+        // I can add any of the available figurines whose collectionFigurineId is not
+        // the same as the existing one in the purchase.
+        Long newCollectionFigurineId = collectedFigurines.stream()
+                .map(CollectorCollectionFigurineResp::collectionFigurineId)
+                .filter(l -> !(l.equals(existingCollectionFigurineId))).findFirst()
+                .orElseThrow(() -> new IllegalStateException("No available figurines to add to the purchase"));
+
+        List<CollectorPurchaseFigurineReq> updatedFigurines = List.of(new CollectorPurchaseFigurineReq(
+                newCollectionFigurineId, 10, new BigDecimal("1110.00"), PurchaseType.RETAIL));
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 6, 6), "AnotherSeller",
+                inStore.orderNumber(), Currency.getInstance(inStore.currency()), inStore.purchaseChannel(), null, null,
+                null, updatedFigurines);
+
+        ResponseEntity<CollectorPurchaseResp> response = rest.put().uri(PURCHASES_UPDATE_BY_ID, inStore.purchaseId())
+                .headers(bearerToken(jwtCollector)).body(request).retrieve().toEntity(CollectorPurchaseResp.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        Objects.requireNonNull(response.getBody(), "Purchase response body should not be null");
+        assertThat(response.getBody()).isNotNull();
+
+        assertThat(response.getBody()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                .containsExactly(inStore.purchaseId(), LocalDate.of(2026, 6, 6), "AnotherSeller", null, "MXN",
+                        new BigDecimal("11100.00"), PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null);
+
+        Assertions.assertThat(response.getBody().figurines()).hasSize(1);
+        assertThat(response.getBody().figurines().getFirst()).isNotNull()
+                .extracting(CollectorPurchaseFigurineResp::collectionFigurineId,
+                        CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
+                        CollectorPurchaseFigurineResp::purchaseType)
+                .containsExactly(newCollectionFigurineId, 10, new BigDecimal("1110.00"), PurchaseType.RETAIL);
     }
 
     /**
