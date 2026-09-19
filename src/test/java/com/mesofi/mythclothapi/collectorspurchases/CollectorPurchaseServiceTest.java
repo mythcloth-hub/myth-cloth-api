@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
@@ -191,7 +193,7 @@ public class CollectorPurchaseServiceTest {
 
     @Test
     void retrievePurchase_shouldThrowCollectorPurchaseNotFoundException() {
-        Long purchaseId = 0L;
+        Long purchaseId = 789L;
         Collector collector = new Collector();
         collector.setId(COLLECTOR_ID);
         collector.setCollections(List.of(
@@ -210,7 +212,7 @@ public class CollectorPurchaseServiceTest {
 
         assertThatThrownBy(() -> collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId))
                 .isInstanceOf(CollectorPurchaseNotFoundException.class)
-                .hasMessageContaining("Collector purchase with id 123 was not found");
+                .hasMessageContaining("Collector purchase with id 789 was not found");
     }
 
     @Test
@@ -238,7 +240,132 @@ public class CollectorPurchaseServiceTest {
     }
 
     @Test
-    void calculateTotalAmount_shouldReturnOne() {
+    void updatePurchase_shouldCreateNewPurchaseFigurineWhenRequestIncludesNewCollectionFigurine() {
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorCollection collection = createCollection(COLLECTION_ID,
+                List.of(createCollectorCollectionFigurine(1001L, 201L, true),
+                        createCollectorCollectionFigurine(1002L, 202L, true)));
+        collection.setCollector(collector);
+        collector.setCollections(List.of(collection));
+
+        CollectorPurchase existingPurchase = createCollectorPurchase(900L);
+        existingPurchase.setCollector(collector);
+        existingPurchase.setFigurines(new ArrayList<>(List.of(createPurchaseFigurine(501L, existingPurchase, 1001L, 1,
+                new BigDecimal("100.00"), PurchaseType.RETAIL))));
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 9, 10), "AmiAmi", "ORDER-999",
+                Currency.getInstance("USD"), PurchaseChannel.PHYSICAL_STORE, ShippingStatus.DELIVERED, "TRACK-999",
+                "FedEx",
+                List.of(new CollectorPurchaseFigurineReq(1001L, 2, new BigDecimal("120.00"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(1002L, 1, new BigDecimal("250.00"), PurchaseType.RETAIL)));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(existingPurchase.getId(), collector))
+                .thenReturn(Optional.of(existingPurchase));
+        when(collectorPurchaseRepository.saveAndFlush(existingPurchase)).thenReturn(existingPurchase);
+
+        CollectorPurchaseResp response = collectorPurchaseService.updatePurchase(COLLECTOR_ID, existingPurchase.getId(),
+                request);
+
+        assertThat(existingPurchase.getFigurines()).hasSize(2);
+        assertThat(existingPurchase.getFigurines())
+                .extracting(purchaseFigurine -> purchaseFigurine.getCollectionFigurine().getId())
+                .containsExactlyInAnyOrder(1001L, 1002L);
+        assertThat(existingPurchase.getFigurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.getCollectionFigurine().getId().equals(1001L))
+                .singleElement().satisfies(purchaseFigurine -> {
+                    assertThat(purchaseFigurine.getId()).isEqualTo(501L);
+                    assertThat(purchaseFigurine.getQuantity()).isEqualTo(2);
+                    assertThat(purchaseFigurine.getPricePaid()).isEqualByComparingTo("120.00");
+                    assertThat(purchaseFigurine.getPurchaseType()).isEqualTo(PurchaseType.PREORDER);
+                });
+        assertThat(existingPurchase.getFigurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.getCollectionFigurine().getId().equals(1002L))
+                .singleElement().satisfies(purchaseFigurine -> {
+                    assertThat(purchaseFigurine.getPurchase()).isSameAs(existingPurchase);
+                    assertThat(purchaseFigurine.getQuantity()).isEqualTo(1);
+                    assertThat(purchaseFigurine.getPricePaid()).isEqualByComparingTo("250.00");
+                    assertThat(purchaseFigurine.getPurchaseType()).isEqualTo(PurchaseType.RETAIL);
+                });
+        assertThat(existingPurchase.getOrderDate()).isEqualTo(LocalDate.of(2026, 9, 10));
+        assertThat(existingPurchase.getSeller()).isEqualTo("AmiAmi");
+        assertThat(existingPurchase.getOrderNumber()).isEqualTo("ORDER-999");
+        assertThat(existingPurchase.getPurchaseChannel()).isEqualTo(PurchaseChannel.PHYSICAL_STORE);
+        assertThat(existingPurchase.getShippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
+        assertThat(existingPurchase.getTrackingNumber()).isEqualTo("TRACK-999");
+        assertThat(existingPurchase.getCarrier()).isEqualTo("FedEx");
+        assertThat(existingPurchase.getShippedDate()).isNull();
+        assertThat(existingPurchase.getDeliveredDate()).isEqualTo(LocalDate.now());
+        assertThat(response.totalAmount()).isEqualByComparingTo("490.00");
+        assertThat(response.seller()).isEqualTo("AmiAmi");
+        assertThat(response.orderNumber()).isEqualTo("ORDER-999");
+        assertThat(response.purchaseChannel()).isEqualTo(PurchaseChannel.PHYSICAL_STORE);
+        assertThat(response.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
+        assertThat(response.trackingNumber()).isEqualTo("TRACK-999");
+        assertThat(response.carrier()).isEqualTo("FedEx");
+        assertThat(response.deliveredDate()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    void updatePurchase_shouldRemoveExistingPurchaseFigurineWhenMissingFromRequest() {
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorCollection collection = createCollection(COLLECTION_ID,
+                List.of(createCollectorCollectionFigurine(1001L, 201L, true),
+                        createCollectorCollectionFigurine(1002L, 202L, true)));
+        collection.setCollector(collector);
+        collector.setCollections(List.of(collection));
+
+        CollectorPurchase existingPurchase = createCollectorPurchase(901L);
+        existingPurchase.setCollector(collector);
+        existingPurchase.setFigurines(new ArrayList<>(List.of(
+                createPurchaseFigurine(601L, existingPurchase, 1001L, 1, new BigDecimal("100.00"), PurchaseType.RETAIL),
+                createPurchaseFigurine(602L, existingPurchase, 1002L, 3, new BigDecimal("200.00"),
+                        PurchaseType.PREORDER))));
+
+        CollectorPurchaseReq request = createPurchaseRequest(ShippingStatus.SHIPPED,
+                List.of(new CollectorPurchaseFigurineReq(1002L, 2, new BigDecimal("210.00"), PurchaseType.RETAIL)));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(existingPurchase.getId(), collector))
+                .thenReturn(Optional.of(existingPurchase));
+        when(collectorPurchaseRepository.saveAndFlush(existingPurchase)).thenReturn(existingPurchase);
+
+        CollectorPurchaseResp response = collectorPurchaseService.updatePurchase(COLLECTOR_ID, existingPurchase.getId(),
+                request);
+
+        assertThat(existingPurchase.getFigurines()).hasSize(1);
+        assertThat(existingPurchase.getFigurines()).singleElement().satisfies(purchaseFigurine -> {
+            assertThat(purchaseFigurine.getId()).isEqualTo(602L);
+            assertThat(purchaseFigurine.getCollectionFigurine().getId()).isEqualTo(1002L);
+            assertThat(purchaseFigurine.getQuantity()).isEqualTo(2);
+            assertThat(purchaseFigurine.getPricePaid()).isEqualByComparingTo("210.00");
+            assertThat(purchaseFigurine.getPurchaseType()).isEqualTo(PurchaseType.RETAIL);
+        });
+        assertThat(response.totalAmount()).isEqualByComparingTo("420.00");
+    }
+
+    @Test
+    void updatePurchase_shouldThrowCollectorPurchaseNotFoundException() {
+        long purchaseId = 999L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> collectorPurchaseService.updatePurchase(COLLECTOR_ID, purchaseId,
+                createPurchaseRequest(ShippingStatus.SHIPPED,
+                        List.of(createCollectorPurchaseFigurineReq(1001L, new BigDecimal("100.00"))))))
+                .isInstanceOf(CollectorPurchaseNotFoundException.class)
+                .hasMessageContaining("Collector purchase with id 999 was not found");
+    }
+
+    @Test
+    void calculateTotalAmount_shouldReturnZero() {
         assertThat(collectorPurchaseService.calculateTotalAmount(new CollectorPurchase()))
                 .isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -286,6 +413,18 @@ public class CollectorPurchaseServiceTest {
         Figurine figurine = new Figurine();
         figurine.setId(figurineId);
         return figurine;
+    }
+
+    private CollectorPurchaseFigurine createPurchaseFigurine(Long id, CollectorPurchase purchase,
+            Long collectionFigurineId, int quantity, BigDecimal pricePaid, PurchaseType purchaseType) {
+        CollectorPurchaseFigurine purchaseFigurine = new CollectorPurchaseFigurine();
+        purchaseFigurine.setId(id);
+        purchaseFigurine.setPurchase(purchase);
+        purchaseFigurine.setCollectionFigurine(createCollectorCollectionFigurine(collectionFigurineId, 0L, true));
+        purchaseFigurine.setQuantity(quantity);
+        purchaseFigurine.setPricePaid(pricePaid);
+        purchaseFigurine.setPurchaseType(purchaseType);
+        return purchaseFigurine;
     }
 
     private CollectorPurchase createCollectorPurchase(long id) {

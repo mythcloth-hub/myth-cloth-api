@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -65,5 +66,5 @@ public record CollectorPurchaseReq(
          * The list of figurines associated with the purchase. This field is mandatory
          * and must not be empty.
          */
-        @NotEmpty List<CollectorPurchaseFigurineReq> figurines) {
+        @NotEmpty @Valid List<CollectorPurchaseFigurineReq> figurines) {
 }

@@ -16,6 +16,10 @@ import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record CollectorPurchaseFigurineResp(
         /*
+         * Unique identifier for the record.
+         */
+        @Positive long id,
+        /*
          * The ID of the collection figurine associated with the purchase. This field is
          * mandatory and must be a positive value.
          */

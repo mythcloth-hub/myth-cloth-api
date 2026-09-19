@@ -151,6 +151,28 @@ public interface CollectorPurchaseMapper {
     void updateCollectorPurchase(@MappingTarget CollectorPurchase target, CollectorPurchase source);
 
     /**
+     * Updates an existing {@link CollectorPurchaseFigurine} entity with values from
+     * another {@link CollectorPurchaseFigurine} instance.
+     *
+     * <p>
+     * The {@code id}, {@code creationDate}, and {@code updateDate} fields are
+     * ignored to prevent changing the primary key and timestamps of the entity.
+     * Other fields are updated based on the source entity.
+     *
+     * @param target
+     *            the entity to update
+     * @param source
+     *            the source containing the updated values
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "updateDate", ignore = true)
+    @Mapping(target = "purchase", ignore = true) // The purchase will not be updated here
+    @Mapping(target = "collectionFigurine", ignore = true) // The collection figurine will not be updated here
+    void updateCollectorPurchaseFigurine(@MappingTarget CollectorPurchaseFigurine target,
+            CollectorPurchaseFigurine source);
+
+    /**
      * Maps a {@link Currency} object to a {@link CurrencyCode} enum.
      *
      * @param currency

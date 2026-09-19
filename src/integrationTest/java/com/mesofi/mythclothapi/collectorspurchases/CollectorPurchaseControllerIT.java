@@ -164,7 +164,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // The user verifies that the changes are reflected correctly in the retrieved
         // purchase details.
         log.info("8. Performing multiple edits on the purchases and verifying the changes");
-        updateExistingPurchasesAndVerifyChanges(loginResp.accessToken(), purchases);
+        updateExistingPurchasesAndVerifyChanges(loginResp.accessToken(), purchases, collectionFigurineRespList);
     }
 
     /**
@@ -427,9 +427,9 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                 .containsExactly(1L, LocalDate.of(2026, 9, 18), "Mandarake", "XQKUHSCWV", "JPY",
                         new BigDecimal("12800.00"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED,
                         "1ZV912320456954189", "FedEx", null, LocalDate.now(),
-                        List.of(new CollectorPurchaseFigurineResp(1L, 1, new BigDecimal("6400.00"),
+                        List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("6400.00"),
                                 PurchaseType.RETAIL),
-                                new CollectorPurchaseFigurineResp(16L, 1, new BigDecimal("6400.00"),
+                                new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("6400.00"),
                                         PurchaseType.RETAIL)));
 
         // in-store purchase assertions
@@ -443,7 +443,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::figurines)
                 .containsExactly(2L, LocalDate.of(2026, 9, 18), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
                         PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null,
-                        List.of(new CollectorPurchaseFigurineResp(8L, 1, new BigDecimal("1200.00"),
+                        List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("1200.00"),
                                 PurchaseType.SECOND_HAND)));
 
         return purchases;
@@ -470,12 +470,27 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     }
 
     private void updateExistingPurchasesAndVerifyChanges(String jwtCollector,
-            List<CollectorPurchaseResp> existingPurchases) {
+            List<CollectorPurchaseResp> existingPurchases, List<CollectorCollectionFigurineResp> collectionFigurines) {
         // Update the first purchase (online purchase)
         CollectorPurchaseResp online = existingPurchases.getFirst();
+        CollectorPurchaseFigurineResp existingFirstFigurine = online.figurines().getFirst();
+        CollectorPurchaseFigurineResp existingLastFigurine = online.figurines().getLast();
+        CollectorCollectionFigurineResp newCollectionFigurine = collectionFigurines.stream()
+                .filter(CollectorCollectionFigurineResp::isCollected)
+                .filter(collectionFigurine -> online.figurines().stream().noneMatch(purchaseFigurine -> purchaseFigurine
+                        .collectionFigurineId() == collectionFigurine.collectionFigurineId()))
+                .findFirst().orElseThrow();
 
-        List<CollectorPurchaseFigurineReq> updatedFigurines = online.figurines().stream()
-                .map(this::toCollectorPurchaseFigurineReq).toList();
+        List<CollectorPurchaseFigurineReq> updatedFigurines = List.of(
+                // UPDATE quantity 1 → 2
+                new CollectorPurchaseFigurineReq(existingFirstFigurine.collectionFigurineId(), 2,
+                        new BigDecimal("6400.00"), PurchaseType.RETAIL),
+                // No change
+                new CollectorPurchaseFigurineReq(existingLastFigurine.collectionFigurineId(), 1,
+                        new BigDecimal("6400.00"), PurchaseType.RETAIL),
+                // ADD new figurine
+                new CollectorPurchaseFigurineReq(newCollectionFigurine.collectionFigurineId(), 1,
+                        new BigDecimal("1111.00"), PurchaseType.SECOND_HAND));
 
         CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW",
                 Currency.getInstance("USD"), online.purchaseChannel(), ShippingStatus.NOT_SHIPPED, "877394518353",
@@ -494,23 +509,40 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
-                        CollectorPurchaseResp::figurines)
-                .containsExactly(1L, LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
-                        new BigDecimal("12800.00"), PurchaseChannel.ONLINE, ShippingStatus.NOT_SHIPPED, "877394518353",
-                        "UPS", null, null,
-                        List.of(new CollectorPurchaseFigurineResp(1L, 1, new BigDecimal("6400.00"),
-                                PurchaseType.RETAIL),
-                                new CollectorPurchaseFigurineResp(16L, 1, new BigDecimal("6400.00"),
-                                        PurchaseType.RETAIL)));
-    }
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                .containsExactly(online.purchaseId(), LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
+                        new BigDecimal("20311.00"), PurchaseChannel.ONLINE, ShippingStatus.NOT_SHIPPED, "877394518353",
+                        "UPS", null, null);
 
-    private CollectorPurchaseFigurineReq toCollectorPurchaseFigurineReq(CollectorPurchaseFigurineResp resp) {
-        // For the purpose of this test, we will use a dummy collectionFigurineId
-        // (99999L) since we don't have the actual ID.
-        // The update should ignore the collectionFigurineId and only update the
-        // quantity, pricePaid, and purchaseType.
-        return new CollectorPurchaseFigurineReq(99999L, resp.quantity(), resp.pricePaid(), resp.purchaseType());
+        Assertions.assertThat(response.getBody().figurines()).hasSize(3);
+        Assertions.assertThat(response.getBody().figurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.collectionFigurineId() == existingFirstFigurine
+                        .collectionFigurineId())
+                .singleElement()
+                .satisfies(purchaseFigurine -> assertThat(purchaseFigurine)
+                        .extracting(CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
+                                CollectorPurchaseFigurineResp::purchaseType)
+                        .containsExactly(2, new BigDecimal("6400.00"), PurchaseType.RETAIL));
+        Assertions.assertThat(response.getBody().figurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.collectionFigurineId() == existingLastFigurine
+                        .collectionFigurineId())
+                .singleElement()
+                .satisfies(purchaseFigurine -> assertThat(purchaseFigurine)
+                        .extracting(CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
+                                CollectorPurchaseFigurineResp::purchaseType)
+                        .containsExactly(1, new BigDecimal("6400.00"), PurchaseType.RETAIL));
+        Assertions.assertThat(response.getBody().figurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.collectionFigurineId() == newCollectionFigurine
+                        .collectionFigurineId())
+                .singleElement().satisfies(purchaseFigurine -> assertThat(purchaseFigurine.id()).isPositive());
+        Assertions.assertThat(response.getBody().figurines())
+                .filteredOn(purchaseFigurine -> purchaseFigurine.collectionFigurineId() == newCollectionFigurine
+                        .collectionFigurineId())
+                .singleElement()
+                .satisfies(purchaseFigurine -> assertThat(purchaseFigurine)
+                        .extracting(CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
+                                CollectorPurchaseFigurineResp::purchaseType)
+                        .containsExactly(1, new BigDecimal("1111.00"), PurchaseType.SECOND_HAND));
     }
 
     /**
