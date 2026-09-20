@@ -12,7 +12,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Provides access to the local figurine import CSV file used during integration
- * tests.
+ * tests. This implementation uses a minimum CSV fixture that contains only a
+ * subset of the full figurine catalog, allowing for faster test execution.
  *
  * <p>
  * This implementation is active only when the {@code integration} Spring
@@ -22,8 +23,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Profile("integration")
-@ConditionalOnProperty(name = "myth-cloth.figurine-import.csv-source", havingValue = "full")
-public class ClasspathImportCsvSource implements FigurineImportCsvSource {
+@ConditionalOnProperty(name = "myth-cloth.figurine-import.csv-source", havingValue = "min")
+public class ClasspathMinImportCsvSource implements FigurineImportCsvSource {
 
     /**
      * Opens a reader for the local figurine import CSV fixture.
@@ -34,7 +35,7 @@ public class ClasspathImportCsvSource implements FigurineImportCsvSource {
      */
     @Override
     public Reader openReader() throws IOException {
-        ClassPathResource resource = new ClassPathResource("import/MythCloth Catalog - CatalogMyth.csv");
+        ClassPathResource resource = new ClassPathResource("import/MythCloth Min Catalog - CatalogMyth.csv");
 
         if (!resource.exists()) {
             throw new IOException("CSV fixture not found: " + resource.getPath());

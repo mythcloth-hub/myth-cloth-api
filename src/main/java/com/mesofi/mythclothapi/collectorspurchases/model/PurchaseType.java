@@ -1,21 +1,19 @@
 package com.mesofi.mythclothapi.collectorspurchases.model;
 
 /**
- * Represents the type of transaction used to acquire a figurine.
- *
- * <p>
- * This enum describes how a figurine was obtained as part of a collector
- * purchase record. The value is stored as part of purchase history and does not
- * affect the collector's current collection state.
+ * Enum representing the type of purchase for a figurine.
  */
 public enum PurchaseType {
-
-    /** Figurine purchased as a new item directly from a retail seller. */
+    /**
+     * The purchase was made at a retail store.
+     */
     RETAIL,
-
-    /** Figurine purchased before official release or availability. */
+    /**
+     * The purchase was made as a pre-order.
+     */
     PREORDER,
-
-    /** Figurine purchased from a previous owner or secondary market. */
-    SECOND_HAND,
+    /**
+     * The purchase was made as a second-hand item.
+     */
+    SECOND_HAND
 }

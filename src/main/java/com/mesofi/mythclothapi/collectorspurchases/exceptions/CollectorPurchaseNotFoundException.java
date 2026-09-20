@@ -1,4 +1,4 @@
-package com.mesofi.mythclothapi.collectorspurchases;
+package com.mesofi.mythclothapi.collectorspurchases.exceptions;
 
 import java.io.Serial;
 

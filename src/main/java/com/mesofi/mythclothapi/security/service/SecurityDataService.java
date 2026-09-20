@@ -82,11 +82,10 @@ public class SecurityDataService {
             Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
             Permissions.FIGURINES_UPDATE, Permissions.PERMISSIONS_CREATE, Permissions.PERMISSIONS_DELETE,
             Permissions.PERMISSIONS_READ, Permissions.PERMISSIONS_UPDATE, Permissions.PURCHASES_CREATE,
-            Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ, Permissions.PURCHASES_SYNC,
-            Permissions.PURCHASES_UPDATE, Permissions.ROLES_CREATE, Permissions.ROLES_PERMISSIONS_READ,
-            Permissions.ROLES_PERMISSIONS_SYNC, Permissions.ROLES_READ, Permissions.ROLES_UPDATE,
-            Permissions.STATS_READ, Permissions.STORES_CREATE, Permissions.STORES_DELETE, Permissions.STORES_READ,
-            Permissions.STORES_UPDATE);
+            Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ, Permissions.PURCHASES_UPDATE,
+            Permissions.ROLES_CREATE, Permissions.ROLES_PERMISSIONS_READ, Permissions.ROLES_PERMISSIONS_SYNC,
+            Permissions.ROLES_READ, Permissions.ROLES_UPDATE, Permissions.STATS_READ, Permissions.STORES_CREATE,
+            Permissions.STORES_DELETE, Permissions.STORES_READ, Permissions.STORES_UPDATE);
 
     /**
      * Permissions required for collector functionality.
@@ -100,7 +99,9 @@ public class SecurityDataService {
             Permissions.COLLECTIONS_DUPLICATE, Permissions.COLLECTIONS_FIGURINES_ADD,
             Permissions.COLLECTIONS_FIGURINES_DELETE, Permissions.COLLECTIONS_FIGURINES_READ,
             Permissions.COLLECTIONS_READ, Permissions.COLLECTIONS_UPDATE, Permissions.STATS_READ,
-            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES);
+            Permissions.FIGURINES_STORES_READ_CURRENT_PRICES, Permissions.FIGURINES_STORES_READ_HISTORICAL_PRICES,
+            Permissions.PURCHASES_CREATE, Permissions.PURCHASES_DELETE, Permissions.PURCHASES_READ,
+            Permissions.PURCHASES_UPDATE);
 
     /**
      * Permissions assigned to the demo role.

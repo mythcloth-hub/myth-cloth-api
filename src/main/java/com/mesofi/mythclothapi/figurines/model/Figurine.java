@@ -6,9 +6,11 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ColumnResult;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EntityResult;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -17,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
+import jakarta.persistence.SqlResultSetMapping;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
@@ -60,6 +63,7 @@ import lombok.Setter;
  * @see FigurineListener
  * @see ReleaseStatus
  */
+@SqlResultSetMapping(name = "FigurineWithCollectionIdMapping", entities = @EntityResult(entityClass = Figurine.class), columns = @ColumnResult(name = "collection_figurine_id", type = Long.class))
 @Entity
 @EntityListeners(FigurineListener.class)
 @Getter

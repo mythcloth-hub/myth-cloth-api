@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -9,7 +8,6 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -17,12 +15,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.Currency;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -32,13 +28,15 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemReq;
-import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseLineItemResp;
-import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq;
-import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp;
+import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
-import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.security.config.SecurityConfig;
 
 import tools.jackson.databind.ObjectMapper;
@@ -50,346 +48,390 @@ import tools.jackson.databind.ObjectMapper;
 @Import(SecurityConfig.class)
 public class CollectorPurchaseControllerTest {
 
+    private static final long COLLECTION_ID = 77L;
+    private static final String PURCHASES = "/collectors/purchases";
+    private static final String PURCHASES_CREATION = PURCHASES + "/collections/" + COLLECTION_ID;
+    private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
+
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @MockitoBean
-    private CollectorPurchaseService service;
+    private CollectorPurchaseService collectorPurchaseService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
-    void createSummaryLineItem_shouldReturnMethodNotAllowed_whenRequestMethodIsInvalid() throws Exception {
-        mockMvc.perform(patch("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add"))))
-                .andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.detail").value("Request method 'PATCH' is not supported"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
-                .andExpect(jsonPath("$.status").value("405")).andExpect(jsonPath("$.title").value("Method Not Allowed"))
-                .andExpect(jsonPath("$.timestamp").exists());
+    void createPurchase_shouldReturnUnauthorized_whenNotAuthenticated() throws Exception {
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)).andExpect(status().isUnauthorized());
 
-        verifyNoInteractions(service);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"/purchases2/2", "/purchases2/2/figurines"})
-    void createSummaryLineItem_shouldReturn404_whenPostingToInvalidEndpoint(String invalidEndpoint) throws Exception {
-        mockMvc.perform(post(invalidEndpoint)
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add"))))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("The URL you are calling does not exist."))
-                .andExpect(jsonPath("$.instance").value(invalidEndpoint)).andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Endpoint not found")).andExpect(jsonPath("$.timestamp").exists());
-
-        verifyNoInteractions(service);
+        verifyNoInteractions(collectorPurchaseService);
     }
 
     @Test
-    void createSummaryLineItem_shouldReturnUnauthorized_whenJwtTokenIsMissing() throws Exception {
-        mockMvc.perform(post("/purchases/summary-line-items")).andExpect(status().isUnauthorized());
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void createSummaryLineItem_shouldReturnBadRequest_whenBodyIsMissing() throws Exception {
-        mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add"))))
+    void createPurchase_shouldReturnBadRequest_whenRequestBodyIsMissing() throws Exception {
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create"))))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value(
-                        "Required request body is missing: public org.springframework.http.ResponseEntity<com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemResp> com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseController.createSummaryLineItem(org.springframework.security.oauth2.jwt.Jwt,com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryLineItemReq)"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
+                .andExpect(jsonPath("$.detail", containsString("Required request body is missing")))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
                 .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Invalid body"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
-        verifyNoInteractions(service);
+        verifyNoInteractions(collectorPurchaseService);
     }
 
     @Test
-    void createSummaryLineItem_shouldReturn415_whenContentTypeIsMissing() throws Exception {
-        mockMvc.perform(post("/purchases/summary-line-items").content("{}")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add"))))
-                .andExpect(status().isUnsupportedMediaType())
+    void createPurchase_shouldReturnUnsupportedMediaType_whenContentTypeIsMissing() throws Exception {
+
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .content("{}")).andExpect(status().isUnsupportedMediaType())
                 .andExpect(jsonPath("$.detail").value("Content-Type 'application/octet-stream' is not supported"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
                 .andExpect(jsonPath("$.status").value("415"))
                 .andExpect(jsonPath("$.title").value("Unsupported Media Type"))
                 .andExpect(jsonPath("$.timestamp").exists());
 
-        verifyNoInteractions(service);
+        verifyNoInteractions(collectorPurchaseService);
     }
 
     @Test
-    void createSummaryLineItem_shouldReturn400_whenRequestBodyFailsValidation() throws Exception {
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(null, null, null, null,
-                null, null, null, null);
+    void createPurchase_shouldReturnBadRequest_whenRequestContainsInvalidRequiredFields() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(null, null, null, null, null, null, null, null, null);
 
-        mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add")))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
-                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
-                .andExpect(jsonPath("$.timestamp").exists())
-                .andExpect(jsonPath("$.errors.lineItems").value("lineItems is required"))
-                .andExpect(jsonPath("$.errors.shippingStatus").value("shippingStatus is required"))
-                .andExpect(jsonPath("$.errors.currency").value("currency is required"));
-
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void createSummaryLineItem_shouldReturn400_whenRequiredFieldsAreMissing() throws Exception {
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2100, 1, 1),
-                "store".repeat(60), "x".repeat(51), null, null, "abc".repeat(50), "fedex".repeat(50), null);
-
-        mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add")))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
-                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
-                .andExpect(jsonPath("$.timestamp").exists())
-                .andExpect(jsonPath("$.errors.shippingStatus").value("shippingStatus is required"))
-                .andExpect(jsonPath("$.errors.lineItems").value("lineItems is required"))
-                .andExpect(jsonPath("$.errors.carrier").value("carrier must not exceed 50 characters"))
-                .andExpect(jsonPath("$.errors.orderNumber").value("orderNumber must not exceed 50 characters"))
-                .andExpect(jsonPath("$.errors.currency").value("currency is required"))
-                .andExpect(jsonPath("$.errors.store").value("store must not exceed 100 characters"))
-                .andExpect(jsonPath("$.errors.trackingNumber").value("trackingNumber must not exceed 50 characters"))
-                .andExpect(jsonPath("$.errors.orderDate").value("orderDate cannot be in the future"));
-
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void createSummaryLineItem_shouldReturn400_whenMandatoryFieldsAreNull() throws Exception {
-
-        List<CollectorPurchaseLineItemReq> lineItems = new ArrayList<>();
-        lineItems.add(new CollectorPurchaseLineItemReq(null, null, null, null));
-
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2026, 1, 1),
-                "Amiami", "OSMPHKBKI", CurrencyCode.JPY, ShippingStatus.ORDERED, "881682504940", "Fedex", lineItems);
-
-        mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add")))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
-                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
-                .andExpect(jsonPath("$.timestamp").exists())
-                .andExpect(jsonPath("$.errors['lineItems[0].figurineId']").value("figurineId is required"))
-                .andExpect(jsonPath("$.errors['lineItems[0].purchaseType']").value("purchaseType is required"))
-                .andExpect(jsonPath("$.errors['lineItems[0].quantity']").value("quantity is required"))
-                .andExpect(jsonPath("$.errors['lineItems[0].pricePaid']").value("pricePaid is required"));
-
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void createSummaryLineItem_shouldReturn400_whenLineItemFieldsAreInvalid() throws Exception {
-
-        List<CollectorPurchaseLineItemReq> lineItems = new ArrayList<>();
-        lineItems.add(new CollectorPurchaseLineItemReq(-2L, 0, BigDecimal.valueOf(-3.0), PurchaseType.PREORDER));
-
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2026, 1, 1),
-                "Amiami", "OSMPHKBKI", CurrencyCode.JPY, ShippingStatus.ORDERED, "881682504940", "Fedex", lineItems);
-
-        mockMvc.perform(post("/purchases/summary-line-items")
-                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:add")))
-                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items"))
-                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
-                .andExpect(jsonPath("$.timestamp").exists())
-                .andExpect(jsonPath("$.errors['lineItems[0].figurineId']").value("figurineId must be positive"))
-                .andExpect(jsonPath("$.errors['lineItems[0].quantity']").value("quantity must be positive"))
-                .andExpect(jsonPath("$.errors['lineItems[0].pricePaid']").value("pricePaid must be greater than 0"));
-
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void createSummaryLineItem_shouldReturn201_whenRequestIsValid() throws Exception {
-
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2026, 6, 20),
-                "Amiami", "OSMPHKBKI", CurrencyCode.JPY, ShippingStatus.ORDERED, "881682504940", "Fedex",
-                List.of(new CollectorPurchaseLineItemReq(101L, 1, new BigDecimal("129.99"), PurchaseType.PREORDER),
-                        new CollectorPurchaseLineItemReq(102L, 1, new BigDecimal("130.00"), PurchaseType.RETAIL)));
-
-        CollectorPurchaseSummaryLineItemResp response = new CollectorPurchaseSummaryLineItemResp(5001L,
-                LocalDate.of(2026, 6, 20), "AmiAmi", "OSMPHKBKI", CurrencyCode.JPY, new BigDecimal("259.99"), 2,
-                ShippingStatus.ORDERED, "881682504940", "Fedex", null, null,
-                List.of(new CollectorPurchaseLineItemResp(4001L, 101L, 1, new BigDecimal("129.99"),
-                        PurchaseType.PREORDER),
-                        new CollectorPurchaseLineItemResp(4002L, 102L, 1, new BigDecimal("130.00"),
-                                PurchaseType.RETAIL)));
-
-        when(service.createSummaryLineItem(123L, request)).thenReturn(response);
-
-        mockMvc.perform(post("/purchases/summary-line-items")
+        mockMvc.perform(post(PURCHASES_CREATION)
                 .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.purchaseId").value(5001L))
-                .andExpect(jsonPath("$.orderDate").value("2026-06-20")).andExpect(jsonPath("$.store").value("AmiAmi"))
-                .andExpect(jsonPath("$.orderNumber").value("OSMPHKBKI")).andExpect(jsonPath("$.currency").value("JPY"))
-                .andExpect(jsonPath("$.totalAmount").value("259.99")).andExpect(jsonPath("$.totalFigurines").value("2"))
-                .andExpect(jsonPath("$.shippingStatus").value("ORDERED"))
-                .andExpect(jsonPath("$.trackingNumber").value("881682504940"))
-                .andExpect(jsonPath("$.carrier").value("Fedex")).andExpect(jsonPath("$.lineItems.length()").value(2))
-                .andExpect(jsonPath("$.lineItems[0].lineItemId").value(4001L))
-                .andExpect(jsonPath("$.lineItems[0].figurineId").value(101L))
-                .andExpect(jsonPath("$.lineItems[0].quantity").value(1L))
-                .andExpect(jsonPath("$.lineItems[0].pricePaid").value(129.99))
-                .andExpect(jsonPath("$.lineItems[0].purchaseType").value("PREORDER"))
-                .andExpect(jsonPath("$.lineItems[1].lineItemId").value(4002L))
-                .andExpect(jsonPath("$.lineItems[1].figurineId").value(102L))
-                .andExpect(jsonPath("$.lineItems[1].quantity").value(1L))
-                .andExpect(jsonPath("$.lineItems[1].pricePaid").value(130))
-                .andExpect(jsonPath("$.lineItems[1].purchaseType").value("RETAIL"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.seller").value("must not be null"))
+                .andExpect(jsonPath("$.errors.purchaseDate").value("must not be null"))
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
+                .andExpect(jsonPath("$.errors.currency").value("must not be null"))
+                .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
 
-        verify(service).createSummaryLineItem(123L, request);
+        verifyNoInteractions(collectorPurchaseService);
     }
 
     @Test
-    void updateSummaryLineItem_shouldReturn404_whenPurchaseDoesNotExist() throws Exception {
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2026, 6, 21),
-                "Mandarake", "M99881", CurrencyCode.JPY, ShippingStatus.SHIPPED, "TRACK123", "DHL",
-                List.of(new CollectorPurchaseLineItemReq(102L, 1, new BigDecimal("14800"), PurchaseType.SECOND_HAND),
-                        new CollectorPurchaseLineItemReq(103L, 2, new BigDecimal("2000"), PurchaseType.RETAIL)));
+    void createPurchase_shouldReturnBadRequest_whenSellerIsValidButOtherRequiredFieldsAreMissing() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(null, "yoyaKuNow", null, null, null, null, null, null,
+                null);
 
-        when(service.updateSummaryLineItem(1L, 5002L, request))
-                .thenThrow(new CollectorPurchaseNotFoundException(5002L));
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.purchaseDate").value("must not be null"))
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
+                .andExpect(jsonPath("$.errors.currency").value("must not be null"))
+                .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
 
-        mockMvc.perform(put("/purchases/summary-line-items/{purchaseId}", 5002L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:update")))
+        verifyNoInteractions(collectorPurchaseService);
+    }
+
+    @Test
+    void createPurchase_shouldReturnBadRequest_whenPurchaseDateIsInTheFuture() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2099, 1, 1), "yoyaKuNow", null, null, null,
+                null, null, null, null);
+
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.purchaseDate").value("must be a date in the past or in the present"))
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
+                .andExpect(jsonPath("$.errors.currency").value("must not be null"))
+                .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
+
+        verifyNoInteractions(collectorPurchaseService);
+    }
+
+    @Test
+    void createPurchase_shouldReturnBadRequest_whenSellerAndPurchaseDateAreValidButOtherRequiredFieldsAreMissing()
+            throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null, null, null,
+                null, null, null, null);
+
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
+                .andExpect(jsonPath("$.errors.currency").value("must not be null"))
+                .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
+
+        verifyNoInteractions(collectorPurchaseService);
+    }
+
+    @Test
+    void createPurchase_shouldReturnBadRequest_whenCurrencySellerAndPurchaseDateAreValidButOtherRequiredFieldsAreMissing()
+            throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null,
+                Currency.getInstance("JPY"), null, null, null, null, null);
+
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"))
+                .andExpect(jsonPath("$.errors.purchaseChannel").value("must not be null"));
+
+        verifyNoInteractions(collectorPurchaseService);
+    }
+
+    @Test
+    void createPurchase_shouldReturnBadRequest_whenFigurinesAreMissing() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", null,
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, null, null, null, null);
+
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Your request parameters didn't validate"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("400")).andExpect(jsonPath("$.title").value("Validation Failed"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errors.figurines").value("must not be empty"));
+
+        verifyNoInteractions(collectorPurchaseService);
+    }
+
+    @Test
+    void createPurchase_shouldReturnNotFound_whenCollectorDoesNotExist() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+
+        when(collectorPurchaseService.createPurchase(0L, COLLECTION_ID, request))
+                .thenThrow(new CollectorNotFoundException(0L));
+
+        // subject is sent with empty value.
+        mockMvc.perform(post(PURCHASES_CREATION)
+                .with(jwt().jwt(jwt -> jwt.subject("")).authorities(new SimpleGrantedAuthority("purchases:create")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Collector purchase with id 5002 was not found"))
-                .andExpect(jsonPath("$.instance").value("/purchases/summary-line-items/5002"))
+                .andExpect(jsonPath("$.detail").value("Collector with id 0 was not found"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
                 .andExpect(jsonPath("$.status").value("404"))
-                .andExpect(jsonPath("$.title").value("Collector purchase with id 5002 was not found"))
-                .andExpect(jsonPath("$.timestamp").exists());
+                .andExpect(jsonPath("$.title").value("Collector not found")).andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_NOT_FOUND"));
 
-        verify(service).updateSummaryLineItem(1L, 5002L, request);
+        verify(collectorPurchaseService).createPurchase(0L, COLLECTION_ID, request);
     }
 
     @Test
-    void updateSummaryLineItem_shouldReturn200_whenRequestIsValid() throws Exception {
-        CollectorPurchaseSummaryLineItemReq request = new CollectorPurchaseSummaryLineItemReq(LocalDate.of(2026, 6, 21),
-                "Mandarake", "M99881", CurrencyCode.JPY, ShippingStatus.SHIPPED, "TRACK123", "DHL",
-                List.of(new CollectorPurchaseLineItemReq(102L, 1, new BigDecimal("14800"), PurchaseType.SECOND_HAND),
-                        new CollectorPurchaseLineItemReq(103L, 2, new BigDecimal("2000"), PurchaseType.RETAIL)));
+    void createPurchase_shouldReturnNotFound_whenCollectorPurchaseFigurinesAreNotFound() throws Exception {
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
 
-        CollectorPurchaseSummaryLineItemResp response = new CollectorPurchaseSummaryLineItemResp(5002L,
-                LocalDate.of(2026, 6, 21), "Mandarake", "M99881", CurrencyCode.JPY, new BigDecimal("18800"), 3,
-                ShippingStatus.SHIPPED, "TRACK123", "DHL", LocalDate.of(2026, 6, 22), null,
-                List.of(new CollectorPurchaseLineItemResp(7002L, 102L, 1, new BigDecimal("14800"),
-                        PurchaseType.SECOND_HAND),
-                        new CollectorPurchaseLineItemResp(7003L, 103L, 2, new BigDecimal("2000"),
-                                PurchaseType.RETAIL)));
+        when(collectorPurchaseService.createPurchase(123L, COLLECTION_ID, request))
+                .thenThrow(new CollectorPurchaseFigurineNotFoundException(List.of(33L, 55L)));
 
-        when(service.updateSummaryLineItem(eq(1L), eq(5002L), any())).thenReturn(response);
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)
+                .with(jwt().jwt(jwt -> jwt.subject("123")).authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Collector purchase figurines with IDs [33, 55] were not found"))
+                .andExpect(jsonPath("$.instance").value(PURCHASES_CREATION))
+                .andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.title").value("Collector purchase figurines not found"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_FIGURINE_NOT_FOUND"));
 
-        mockMvc.perform(put("/purchases/summary-line-items/{purchaseId}", 5002L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
+        verify(collectorPurchaseService).createPurchase(123L, COLLECTION_ID, request);
+    }
+
+    @Test
+    void createPurchase_shouldReturnCreated_whenRequestIsValid() throws Exception {
+        Long collectorId = 123L;
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+
+        when(collectorPurchaseService.createPurchase(collectorId, COLLECTION_ID, request)).thenReturn(response);
+
+        mockMvc.perform(post(PURCHASES_CREATION, COLLECTION_ID)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:create")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).createPurchase(collectorId, COLLECTION_ID, request);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnPurchases() throws Exception {
+        Long collectorId = 123L;
+
+        List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1),
+                "yoyaKuNow", "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE,
+                ShippingStatus.SHIPPED, "884469419291", "FedEX", LocalDate.now(), null, List.of()));
+
+        when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
+
+        mockMvc.perform(get(PURCHASES)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].purchaseId").value(999L))
+                .andExpect(jsonPath("$[0].purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$[0].seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$[0].orderNumber").value("FZCAQSZTC"))
+                .andExpect(jsonPath("$[0].currency").value("JPY"))
+                .andExpect(jsonPath("$[0].totalAmount").value("62000"))
+                .andExpect(jsonPath("$[0].purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$[0].shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$[0].trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$[0].carrier").value("FedEX")).andExpect(jsonPath("$[0].shippedDate").exists())
+                .andExpect(jsonPath("$[0].deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).retrievePurchases(collectorId);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnNotFound_whenPurchaseDoesNotExist() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 0L;
+
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId))
+                .thenThrow(new CollectorPurchaseNotFoundException(purchaseId));
+
+        // subject is sent with empty value.
+        mockMvc.perform(get(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Collector purchase with id 0 was not found"))
+                .andExpect(jsonPath("$.instance").value("/collectors/purchases/0"))
+                .andExpect(jsonPath("$.status").value("404"))
+                .andExpect(jsonPath("$.title").value("Collector purchase not found"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_NOT_FOUND"));
+
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+    }
+
+    @Test
+    void retrievePurchases_shouldReturnPurchase_whenPurchaseExists() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 999L;
+
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId)).thenReturn(response);
+
+        mockMvc.perform(get(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:read")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
+
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+    }
+
+    @Test
+    void updatePurchase_shouldReturnOK_whenRequestIsValid() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
+                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
+                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
+                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+
+        CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
+                "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
+                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+
+        when(collectorPurchaseService.updatePurchase(collectorId, purchaseId, request)).thenReturn(response);
+
+        mockMvc.perform(put(PURCHASES_UPDATE_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
                         .authorities(new SimpleGrantedAuthority("purchases:update")))
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.purchaseId").value(5002L))
-                .andExpect(jsonPath("$.store").value("Mandarake")).andExpect(jsonPath("$.lineItems.length()").value(2))
-                .andExpect(jsonPath("$.lineItems[0].figurineId").value(102L))
-                .andExpect(jsonPath("$.lineItems[1].figurineId").value(103L));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
 
-        verify(service).updateSummaryLineItem(eq(1L), eq(5002L), any());
+        verify(collectorPurchaseService).updatePurchase(collectorId, purchaseId, request);
     }
 
     @Test
-    void retrieveSummaryLineItems_shouldReturn200_whenPurchasesExist() throws Exception {
-        List<CollectorPurchaseSummaryLineItemResp> response = List.of(new CollectorPurchaseSummaryLineItemResp(5002L,
-                LocalDate.of(2026, 6, 21), "Mandarake", "M99881", CurrencyCode.JPY, new BigDecimal("18800"), 3,
-                ShippingStatus.SHIPPED, "TRACK123", "DHL", LocalDate.of(2026, 6, 22), null,
-                List.of(new CollectorPurchaseLineItemResp(7002L, 102L, 1, new BigDecimal("14800"),
-                        PurchaseType.SECOND_HAND),
-                        new CollectorPurchaseLineItemResp(7003L, 103L, 2, new BigDecimal("2000"),
-                                PurchaseType.RETAIL))));
+    void deletePurchase_shouldReturnPurchases() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
 
-        when(service.retrieveSummaryLineItems(1L)).thenReturn(response);
+        doNothing().when(collectorPurchaseService).deletePurchase(collectorId, purchaseId);
 
-        mockMvc.perform(
-                get("/purchases/summary-line-items").with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:read"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].purchaseId").value(5002L))
-                .andExpect(jsonPath("$[0].store").value("Mandarake"))
-                .andExpect(jsonPath("$[0].lineItems.length()").value(2))
-                .andExpect(jsonPath("$[0].lineItems[0].figurineId").value(102L))
-                .andExpect(jsonPath("$[0].lineItems[1].figurineId").value(103L));
+        mockMvc.perform(delete(PURCHASES_DELETION_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:delete")))
+                .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isNoContent());
 
-        verify(service).retrieveSummaryLineItems(1L);
-    }
-
-    @Test
-    void retrieveSummaryLineItem_shouldReturn200_whenPurchaseExists() throws Exception {
-        CollectorPurchaseSummaryLineItemResp response = new CollectorPurchaseSummaryLineItemResp(5002L,
-                LocalDate.of(2026, 6, 21), "Mandarake", "M99881", CurrencyCode.JPY, new BigDecimal("18800"), 3,
-                ShippingStatus.SHIPPED, "TRACK123", "DHL", LocalDate.of(2026, 6, 22), null,
-                List.of(new CollectorPurchaseLineItemResp(7002L, 102L, 1, new BigDecimal("14800"),
-                        PurchaseType.SECOND_HAND),
-                        new CollectorPurchaseLineItemResp(7003L, 103L, 2, new BigDecimal("2000"),
-                                PurchaseType.RETAIL)));
-
-        when(service.retrieveSummaryLineItem(1L, 5002L)).thenReturn(response);
-
-        mockMvc.perform(get("/purchases/summary-line-items/{purchaseId}", 5002L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:read"))))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.purchaseId").value(5002L))
-                .andExpect(jsonPath("$.store").value("Mandarake")).andExpect(jsonPath("$.lineItems.length()").value(2))
-                .andExpect(jsonPath("$.lineItems[0].figurineId").value(102L))
-                .andExpect(jsonPath("$.lineItems[1].figurineId").value(103L));
-
-        verify(service).retrieveSummaryLineItem(1L, 5002L);
-    }
-
-    @Test
-    void deleteSummaryLineItem_shouldReturn204_whenRequestIsValid() throws Exception {
-        doNothing().when(service).deleteSummaryLineItem(eq(1L), eq(5002L));
-
-        mockMvc.perform(delete("/purchases/summary-line-items/{purchaseId}", 5002L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:delete"))))
-                .andExpect(status().isNoContent());
-
-        verify(service).deleteSummaryLineItem(eq(1L), eq(5002L));
-    }
-
-    @Test
-    void syncPurchaseFigurineTotals_shouldReturn202_whenRequestIsValid() throws Exception {
-        doNothing().when(service).syncPurchaseFigurineTotals(eq(1L), eq(5002L), eq(9001L));
-
-        mockMvc.perform(put("/purchases/{purchaseId}/collections/{collectionId}/sync-total", 5002L, 9001L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:sync"))))
-                .andExpect(status().isAccepted());
-
-        verify(service).syncPurchaseFigurineTotals(eq(1L), eq(5002L), eq(9001L));
-    }
-
-    @Test
-    void syncAllPurchaseFigurineTotals_shouldReturn202_whenRequestIsValid() throws Exception {
-        mockMvc.perform(put("/purchases/collections/{collectionId}/sync-total", 9001L)
-                .with(jwt().jwt(jwt -> jwt.subject("1").claim("name", "Armando"))
-                        .authorities(new SimpleGrantedAuthority("purchases:sync"))))
-                .andExpect(status().isAccepted());
-
-        verifyNoInteractions(service);
+        verify(collectorPurchaseService).deletePurchase(collectorId, purchaseId);
     }
 }

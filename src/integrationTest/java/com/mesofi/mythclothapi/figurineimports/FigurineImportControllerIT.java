@@ -16,6 +16,7 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
@@ -31,6 +32,7 @@ import com.mesofi.mythclothapi.support.ControllerBaseIT;
  * The test uses the real Spring context, security configuration, validation,
  * persistence layer, and REST endpoints.
  */
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/seed-catalogs.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/cleanup-figurine-import-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class FigurineImportControllerIT extends ControllerBaseIT {

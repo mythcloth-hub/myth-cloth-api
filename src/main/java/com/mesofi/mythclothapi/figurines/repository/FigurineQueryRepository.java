@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
 
 /**
  * Defines query operations for retrieving figurine data.
@@ -66,9 +67,9 @@ public interface FigurineQueryRepository {
      *            identifier of the collection to which the figurines must belong
      * @return a paginated result containing the matching figurines and collectable
      *         figurine count
-     * @see #findPaginated(FigurineFilter, Pageable)
      */
-    CollectablePageImpl<Figurine> findPaginated(FigurineFilter filter, Pageable pageable, Long collectionId);
+    CollectablePageImpl<FigurineWithCollectionId> findPaginated(FigurineFilter filter, Pageable pageable,
+            Long collectionId);
 
     /**
      * Retrieves all figurines matching the specified filter criteria.

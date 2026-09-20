@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * Integration test for generating an admin JWT token using the
@@ -28,6 +29,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("integration")
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 public class AdminTokenGeneratorIT {
 
     private static final Logger log = LoggerFactory.getLogger(AdminTokenGeneratorIT.class);

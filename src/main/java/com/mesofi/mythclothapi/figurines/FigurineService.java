@@ -292,8 +292,7 @@ public class FigurineService {
                 .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
                         .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
 
-        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size),
-                collectionId);
+        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
         List<FigurineResp> list = figurines.getContent().stream()
                 .map(figurine -> mapper.toFigurineResp(isCollected(owned, ownedFigurineIds, figurine.getId()), figurine,

@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.mesofi.mythclothapi.security.permissions.dto.PermissionReq;
@@ -25,6 +26,7 @@ import com.mesofi.mythclothapi.support.ControllerBaseIT;
  * creating roles, permissions, associating them, syncing them, and deleting
  * them.
  */
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-role-permission-it.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/cleanup-role-permission-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class RolePermissionControllerIT extends ControllerBaseIT {

@@ -21,6 +21,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogRepositoryNotFoundException;
 import com.mesofi.mythclothapi.collectors.exceptions.CollectorInvalidTokenException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorAlreadyExistsException;
 import com.mesofi.mythclothapi.distributors.exceptions.DistributorNotFoundException;
 import com.mesofi.mythclothapi.error.exceptions.IntegrationException;
@@ -281,5 +283,27 @@ class GlobalExceptionHandlerTest {
         assertThat(result.getDetail()).isEqualTo("Role with ID 1 already has permission 1 assigned.");
         assertThat(ex.getRoleId()).isEqualTo(1L);
         assertThat(ex.getPermissionId()).isEqualTo(1L);
+    }
+
+    @Test
+    void handleCollectorPurchaseFigurineNotFoundException_shouldUseExceptionMessageForTitleAndDetail() {
+        CollectorPurchaseFigurineNotFoundException ex = new CollectorPurchaseFigurineNotFoundException(List.of(1L, 2L));
+
+        ProblemDetail result = handler.handleCollectorPurchaseFigurineNotFoundException(ex);
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        assertThat(result.getTitle()).isEqualTo("Collector purchase figurines not found");
+        assertThat(result.getDetail()).isEqualTo("Collector purchase figurines with IDs [1, 2] were not found");
+    }
+
+    @Test
+    void handleCollectorPurchaseNotFoundException_shouldUseExceptionMessageForTitleAndDetail() {
+        CollectorPurchaseNotFoundException ex = new CollectorPurchaseNotFoundException(1L);
+
+        ProblemDetail result = handler.handleCollectorPurchaseNotFoundException(ex);
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.NOT_FOUND.value());
+        assertThat(result.getTitle()).isEqualTo("Collector purchase not found");
+        assertThat(result.getDetail()).isEqualTo("Collector purchase with id 1 was not found");
     }
 }

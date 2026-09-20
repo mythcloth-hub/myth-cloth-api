@@ -96,6 +96,8 @@ public interface CollectorMapper {
     /**
      * Maps a figurine entity to the collection figurine summary response.
      *
+     * @param collectionFigurineId
+     *            id of the collector collection figurine entity
      * @param figurine
      *            figurine entity to map
      * @param releaseStatus
@@ -106,11 +108,12 @@ public interface CollectorMapper {
      *            number of copies owned in the collection
      * @return figurine summary response populated from the figurine
      */
+    @Mapping(target = "figurineId", source = "figurine.id")
     @Mapping(target = "name", source = "figurine.normalizedName")
     @Mapping(target = "notes", source = "figurine.remarks")
     @Mapping(target = "imageUrl", expression = "java(getFirstImage(figurine.getOfficialImages()))")
-    CollectorCollectionFigurineResp toCollectorCollectionFigurineResp(Figurine figurine, ReleaseStatus releaseStatus,
-            boolean isCollected, int ownedQuantity);
+    CollectorCollectionFigurineResp toCollectorCollectionFigurineResp(long collectionFigurineId, Figurine figurine,
+            ReleaseStatus releaseStatus, boolean isCollected, int ownedQuantity);
 
     /**
      * Returns the first available image URL for a figurine.

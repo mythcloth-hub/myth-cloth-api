@@ -18,6 +18,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -31,6 +32,7 @@ import com.mesofi.mythclothapi.security.service.SecurityDataService;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 
 @AutoConfigureMockMvc
+@TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-collector-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 public class CollectorControllerIT extends ControllerBaseIT {
 
