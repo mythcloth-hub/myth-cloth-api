@@ -49,6 +49,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
@@ -652,8 +653,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private void updateExistingOnlinePurchasesShippingStatusAndVerifyChanges(String jwtCollector,
             CollectorPurchaseResp inStore) {
 
-        CollectorPurchaseReq request = new CollectorPurchaseReq(null, null, null, null, null, ShippingStatus.SHIPPED,
-                null, null, null);
+        ShippingStatusReq request = new ShippingStatusReq(ShippingStatus.SHIPPED);
 
         ResponseEntity<CollectorPurchaseResp> response = rest.patch()
                 .uri(PURCHASES_PARTIAL_UPDATE_BY_ID, inStore.purchaseId()).headers(bearerToken(jwtCollector))

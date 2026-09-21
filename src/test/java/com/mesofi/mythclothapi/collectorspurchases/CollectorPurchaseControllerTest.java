@@ -33,6 +33,7 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
@@ -424,14 +425,11 @@ public class CollectorPurchaseControllerTest {
     }
 
     @Test
-    void updatePurchase_shouldReturnBadRequest_whenInvalidShippingStatus() throws Exception {
+    void updatePurchaseStatus_shouldReturnBadRequest_whenInvalidShippingStatus() throws Exception {
         Long collectorId = 123L;
         Long purchaseId = 321L;
 
-        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
-                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
-                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+        ShippingStatusReq request = new ShippingStatusReq(ShippingStatus.SHIPPED);
 
         when(collectorPurchaseService.updatePurchaseShippingStatus(collectorId, purchaseId, ShippingStatus.SHIPPED))
                 .thenThrow(new CollectorPurchaseInvalidShippingStatusException());
@@ -450,14 +448,11 @@ public class CollectorPurchaseControllerTest {
     }
 
     @Test
-    void updatePurchase_shouldReturnOk_whenValidShippingStatus() throws Exception {
+    void updatePurchaseStatus_shouldReturnOk_whenValidShippingStatus() throws Exception {
         Long collectorId = 123L;
         Long purchaseId = 321L;
 
-        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC",
-                Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291", "FedEX",
-                List.of(new CollectorPurchaseFigurineReq(33L, 2, new BigDecimal("19000"), PurchaseType.PREORDER),
-                        new CollectorPurchaseFigurineReq(55L, 1, new BigDecimal("24000"), PurchaseType.PREORDER)));
+        ShippingStatusReq request = new ShippingStatusReq(ShippingStatus.SHIPPED);
 
         when(collectorPurchaseService.updatePurchaseShippingStatus(collectorId, purchaseId, ShippingStatus.SHIPPED))
                 .thenReturn(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC", "JPY",

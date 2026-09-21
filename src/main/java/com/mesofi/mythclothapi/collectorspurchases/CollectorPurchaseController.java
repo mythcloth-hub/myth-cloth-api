@@ -24,6 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
@@ -124,7 +125,7 @@ public class CollectorPurchaseController {
      *            the authenticated collector JWT token
      * @param purchaseId
      *            the identifier of the purchase to update
-     * @param purchaseRequest
+     * @param shippingStatusReq
      *            the request body containing the updated shipping status of the
      *            purchase
      * @return a CollectorPurchaseResp object representing the updated purchase with
@@ -133,9 +134,10 @@ public class CollectorPurchaseController {
     @PatchMapping("/{purchaseId}/shipping-status")
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_UPDATE + "')")
     public CollectorPurchaseResp updatePurchaseStatus(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId,
-            @RequestBody CollectorPurchaseReq purchaseRequest) {
+            @RequestBody ShippingStatusReq shippingStatusReq) {
+
         return collectorPurchaseService.updatePurchaseShippingStatus(getCollectorId(jwt), purchaseId,
-                purchaseRequest.shippingStatus());
+                shippingStatusReq.shippingStatus());
     }
     /**
      * Deletes a specific collector purchase by its identifier.
