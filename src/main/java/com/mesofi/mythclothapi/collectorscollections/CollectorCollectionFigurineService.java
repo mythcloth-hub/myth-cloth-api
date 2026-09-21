@@ -1,5 +1,8 @@
 package com.mesofi.mythclothapi.collectorscollections;
 
+import static com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseService.PURCHASES_CACHE;
+import static com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseService.PURCHASES_SINGLE_CACHE;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -526,8 +529,8 @@ public class CollectorCollectionFigurineService {
      *             collector
      */
     @Transactional
-    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
-            COLLECTION_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE, COLLECTION_SUMMARY_CACHE, PURCHASES_CACHE,
+            PURCHASES_SINGLE_CACHE}, allEntries = true)
     public void deleteCollection(Long collectorId, Long collectionId) {
         log.info("Deleting collection [{}] from collector [{}]", collectionId, collectorId);
 

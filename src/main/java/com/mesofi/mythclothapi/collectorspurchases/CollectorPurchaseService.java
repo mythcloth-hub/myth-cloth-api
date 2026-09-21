@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CollectorPurchaseService {
 
+    public static final String PURCHASES_CACHE = "purchases";
+    public static final String PURCHASES_SINGLE_CACHE = "purchases-single";
+
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
     private final CollectorPurchaseMapper mapper;
@@ -65,6 +70,7 @@ public class CollectorPurchaseService {
      *             collector or do not belong to the same collection
      */
     @Transactional
+    @CacheEvict(value = {PURCHASES_CACHE, PURCHASES_SINGLE_CACHE}, allEntries = true)
     public CollectorPurchaseResp createPurchase(Long collectorId, Long collectionId,
             @NotNull @Valid CollectorPurchaseReq request) {
         log.info("Creating collector purchase with order date {}", request.purchaseDate());
@@ -115,6 +121,7 @@ public class CollectorPurchaseService {
      *         purchases
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = PURCHASES_CACHE, key = "T(java.util.Objects).hash(#collectorId)")
     public List<CollectorPurchaseResp> retrievePurchases(Long collectorId) {
         log.info("Retrieving collector purchases for collector ID {}", collectorId);
 
@@ -138,6 +145,7 @@ public class CollectorPurchaseService {
      *             collector
      */
     @Transactional(readOnly = true)
+    @Cacheable(value = PURCHASES_SINGLE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #purchaseId)")
     public CollectorPurchaseResp retrievePurchase(Long collectorId, Long purchaseId) {
         log.info("Retrieving collector purchase with ID {} for collector ID {}", purchaseId, collectorId);
 
@@ -166,6 +174,7 @@ public class CollectorPurchaseService {
      *             collector or do not belong to the same collection
      */
     @Transactional
+    @CacheEvict(value = {PURCHASES_CACHE, PURCHASES_SINGLE_CACHE}, allEntries = true)
     public CollectorPurchaseResp updatePurchase(Long collectorId, Long existingPurchaseId,
             @NotNull @Valid CollectorPurchaseReq request) {
         log.info("Updating collector purchase with ID {} for collector ID {}", existingPurchaseId, collectorId);
@@ -236,6 +245,7 @@ public class CollectorPurchaseService {
      *             collector
      */
     @Transactional
+    @CacheEvict(value = {PURCHASES_CACHE, PURCHASES_SINGLE_CACHE}, allEntries = true)
     public void deletePurchase(Long collectorId, Long purchaseId) {
         log.info("Deleting collector purchase with ID {}", purchaseId);
 
