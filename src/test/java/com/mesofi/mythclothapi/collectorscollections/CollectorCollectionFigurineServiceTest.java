@@ -51,6 +51,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseRepository;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
@@ -76,6 +78,8 @@ class CollectorCollectionFigurineServiceTest {
     private CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     @Mock
     private CollectorCollectionRepository collectorCollectionRepository;
+    @Mock
+    private CollectorPurchaseRepository collectorPurchaseRepository;
     @Mock
     private CollectorRepository collectorRepository;
     @Mock
@@ -740,10 +744,12 @@ class CollectorCollectionFigurineServiceTest {
 
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(collection));
+        when(collectorPurchaseRepository.findAllByCollectorAndCollection(collector, collection)).thenReturn(List.of());
         when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(2L, 1L)).thenReturn(1);
 
         service.deleteCollection(1L, 2L);
 
+        verify(collectorPurchaseRepository).findAllByCollectorAndCollection(collector, collection);
         verify(collectorCollectionFigurineRepository).deleteByCollectionIdAndCollectorId(2L, 1L);
         verify(collectorCollectionRepository).deleteCollectionById(2L);
         verify(collectorCollectionRepository, never()).save(any());
@@ -759,11 +765,32 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(favorite));
         when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(2L, 1L)).thenReturn(1);
+        when(collectorPurchaseRepository.findAllByCollectorAndCollection(collector, favorite)).thenReturn(List.of());
 
         service.deleteCollection(1L, 2L);
 
         assertThat(other.isFavorite()).isTrue();
         verify(collectorCollectionRepository).save(other);
+        verify(collectorCollectionRepository).deleteCollectionById(2L);
+        verify(collectorPurchaseRepository).findAllByCollectorAndCollection(collector, favorite);
+    }
+
+    @Test
+    void deleteCollection_shouldDeleteExistingPurchases_beforeRemovingCollection() {
+        CollectorCollection collection = collection(2L, null, "Team", null, null);
+        Collector collector = collector(1L, collection);
+        CollectorPurchase purchase = new CollectorPurchase();
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+        when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(collection));
+        when(collectorPurchaseRepository.findAllByCollectorAndCollection(collector, collection))
+                .thenReturn(List.of(purchase));
+        when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(2L, 1L)).thenReturn(1);
+
+        service.deleteCollection(1L, 2L);
+
+        verify(collectorPurchaseRepository).deleteAll(List.of(purchase));
+        verify(collectorPurchaseRepository).flush();
         verify(collectorCollectionRepository).deleteCollectionById(2L);
     }
 
@@ -776,11 +803,13 @@ class CollectorCollectionFigurineServiceTest {
         when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
         when(collectorCollectionRepository.findById(2L)).thenReturn(Optional.of(favorite));
         when(collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(2L, 1L)).thenReturn(1);
+        when(collectorPurchaseRepository.findAllByCollectorAndCollection(collector, favorite)).thenReturn(List.of());
 
         service.deleteCollection(1L, 2L);
 
         verify(collectorCollectionRepository, never()).save(any());
         verify(collectorCollectionRepository).deleteCollectionById(2L);
+        verify(collectorPurchaseRepository).findAllByCollectorAndCollection(collector, favorite);
     }
 
     @Test
@@ -907,6 +936,24 @@ class CollectorCollectionFigurineServiceTest {
                 new CollectorCollectionResp(2L, "Old", "new.png", "new description", false, 0, 0, List.of()));
         assertThat(current.getImageUrl()).isEqualTo("new.png");
         assertThat(current.getDescription()).isEqualTo("new description");
+    }
+
+    @Test
+    void updateCollection_shouldThrowCollectorCollectionAlreadyExistsException_whenAnotherOwnedCollectionHasSameName() {
+        CollectorCollection current = collection(2L, null, "Old", "old.png", "old description");
+        CollectorCollection sibling = collection(3L, null, "New", null, null);
+        Collector collector = collector(1L, current, sibling);
+
+        when(collectorRepository.findById(1L)).thenReturn(Optional.of(collector));
+
+        assertThatThrownBy(() -> service.updateCollection(1L, 2L,
+                new CollectorCollectionReq(false, "New", "new.png", "new description")))
+                .isInstanceOf(CollectorCollectionAlreadyExistsException.class)
+                .hasMessage("Collector collection with name 'New' already exists");
+
+        verifyNoInteractions(collectorCollectionRepository);
+        assertThat(current.getName()).isEqualTo("Old");
+        assertThat(sibling.getName()).isEqualTo("New");
     }
 
     @Test

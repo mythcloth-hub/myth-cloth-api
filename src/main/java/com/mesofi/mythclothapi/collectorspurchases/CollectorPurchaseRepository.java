@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 
 /**
@@ -42,4 +43,18 @@ public interface CollectorPurchaseRepository extends JpaRepository<CollectorPurc
      *         if not found
      */
     Optional<CollectorPurchase> findByIdAndCollector(Long purchaseId, Collector collector);
+
+    /**
+     * Finds all CollectorPurchase entities associated with the specified Collector
+     * and CollectorCollection.
+     *
+     * @param collector
+     *            the Collector entity for which to find purchases
+     * @param collection
+     *            the CollectorCollection entity for which to find purchases
+     * @return a list of CollectorPurchase entities associated with the specified
+     *         Collector and CollectorCollection
+     */
+    List<CollectorPurchase> findAllByCollectorAndCollection(Collector collector, CollectorCollection collection);
+
 }

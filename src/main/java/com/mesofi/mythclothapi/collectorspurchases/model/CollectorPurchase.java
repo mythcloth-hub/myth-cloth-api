@@ -16,6 +16,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 import com.mesofi.mythclothapi.collectors.Collector;
+import com.mesofi.mythclothapi.collectorscollections.CollectorCollection;
 import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 
@@ -40,6 +41,14 @@ public class CollectorPurchase extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "collector_id", nullable = false)
     private Collector collector;
+
+    /**
+     * The collection to which the purchase belongs. This is a mandatory
+     * relationship, and the collection is fetched lazily to optimize performance.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "collection_id", nullable = false)
+    private CollectorCollection collection;
 
     /**
      * The date when the order was placed. This field is mandatory and cannot be

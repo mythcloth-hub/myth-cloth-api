@@ -50,6 +50,7 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collector", ignore = true) // The collector will be set in the service layer
+    @Mapping(target = "collection", ignore = true) // The collection will be set in the service layer
     @Mapping(target = "orderDate", source = "purchaseDate")
     @Mapping(target = "shippedDate", ignore = true)
     @Mapping(target = "deliveredDate", ignore = true)
@@ -148,6 +149,7 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "creationDate", ignore = true)
     @Mapping(target = "updateDate", ignore = true)
     @Mapping(target = "collector", ignore = true) // The collector will not be updated here
+    @Mapping(target = "collection", ignore = true) // The collection will not be updated here
     @Mapping(target = "figurines", ignore = true) // The figurines will be managed separately in the service layer
     void updateCollectorPurchase(@MappingTarget CollectorPurchase target, CollectorPurchase source);
 
