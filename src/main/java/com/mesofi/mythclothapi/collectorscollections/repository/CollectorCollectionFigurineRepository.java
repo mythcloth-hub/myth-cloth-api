@@ -3,8 +3,6 @@ package com.mesofi.mythclothapi.collectorscollections.repository;
 import java.util.List;
 import java.util.Optional;
 
-import jakarta.transaction.Transactional;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -55,7 +53,6 @@ public interface CollectorCollectionFigurineRepository extends JpaRepository<Col
      * @return the number of figurines deleted
      */
     @Modifying
-    @Transactional
     @Query("""
                 delete from CollectorCollectionFigurine ccf
                 where ccf.collection.id = :collectionId

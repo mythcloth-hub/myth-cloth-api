@@ -44,6 +44,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollectionRepository;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionCatalogProjection;
 import com.mesofi.mythclothapi.collectorscollections.repository.projection.CollectorCollectionSummaryProjection;
+import com.mesofi.mythclothapi.collectorspurchases.CollectorPurchaseRepository;
+import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.FigurineFilterFactory;
 import com.mesofi.mythclothapi.figurines.FigurineNotFoundException;
@@ -100,6 +102,7 @@ public class CollectorCollectionFigurineService {
 
     private final CollectorCollectionFigurineRepository collectorCollectionFigurineRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
+    private final CollectorPurchaseRepository collectorPurchaseRepository;
     private final CollectorRepository collectorRepository;
     private final FigurineRepository figurineRepository;
     private final CollectorMapper collectorMapper;
@@ -534,6 +537,18 @@ public class CollectorCollectionFigurineService {
         // make sure this collector owns the collection to be removed.
         collectorFound.getCollections().stream().filter(c -> c.getId().equals(collectionId)).findFirst()
                 .orElseThrow(() -> new CollectorCollectionNotFoundException(collectionId));
+
+        // if figurines are associated to a purchase, I need to delete the purchase
+        // first, otherwise the figurine cannot be deleted. This is handled by the
+        // database with a foreign key constraint, so I will just delete the figurines
+        // and let the database handle the rest.
+        List<CollectorPurchase> existingPurchases = collectorPurchaseRepository
+                .findAllByCollectorAndCollection(collectorFound, collectionFound);
+
+        if (!existingPurchases.isEmpty()) {
+            collectorPurchaseRepository.deleteAll(existingPurchases);
+            collectorPurchaseRepository.flush();
+        }
 
         // deletes all the figurines associated with the collection.
         int deletedCount = collectorCollectionFigurineRepository.deleteByCollectionIdAndCollectorId(collectionId,

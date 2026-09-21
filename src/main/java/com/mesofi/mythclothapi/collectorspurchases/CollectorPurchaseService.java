@@ -80,6 +80,7 @@ public class CollectorPurchaseService {
         // Prepares the purchase figurines by setting the collection figurine references
         // from the collector's collection
         collectorPurchase.setCollector(collector);
+        collectorPurchase.setCollection(collection);
         collectorPurchase.getFigurines().forEach(purchaseFigurine -> purchaseFigurine.setPurchase(collectorPurchase));
         updateShippingDates(collectorPurchase);
 

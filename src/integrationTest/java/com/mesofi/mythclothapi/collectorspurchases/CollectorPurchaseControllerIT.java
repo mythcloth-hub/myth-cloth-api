@@ -77,6 +77,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String COLLECTION_DELETION_BY_ID = COLLECTIONS + "/{collectionId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
 
@@ -185,6 +186,12 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         log.info(
                 "10. Deleting all existing purchases for the collector and verifying that the purchases were deleted successfully");
         deleteExistingPurchasesAndVerifyDeletion(loginResp.accessToken(), existingPurchases);
+
+        // 11. Delete existing collections for the collector and verify that the
+        // collections were deleted successfully.
+        log.info(
+                "11. Deleting all existing collections for the collector and verifying that the collections were deleted successfully");
+        deleteExistingCollectionsAndVerifyDeletion(loginResp.accessToken(), collectionResp);
     }
 
     /**
@@ -659,6 +666,26 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // Verify that all purchases have been deleted
         List<CollectorPurchaseResp> remainingPurchases = retrieveExistingPurchasesForCollector(jwtCollector, false);
         Assertions.assertThat(remainingPurchases).isEmpty();
+    }
+
+    /**
+     * Deletes existing collections for the collector and verifies that the deletion
+     * was successful.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     * @param collectionResp
+     *            The CollectorCollectionResp representing the collection to be
+     *            deleted.
+     */
+    private void deleteExistingCollectionsAndVerifyDeletion(final String jwtCollector,
+            CollectorCollectionResp collectionResp) {
+
+        ResponseEntity<Void> response = rest.delete().uri(COLLECTION_DELETION_BY_ID, collectionResp.id())
+                .headers(bearerToken(jwtCollector)).retrieve().toEntity(Void.class);
+
+        Assertions.assertThat(response.getStatusCode()).as("Collection deletion should return HTTP 204")
+                .isEqualTo(NO_CONTENT);
     }
 
     /**

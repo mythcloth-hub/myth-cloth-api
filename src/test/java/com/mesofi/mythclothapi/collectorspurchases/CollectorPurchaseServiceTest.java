@@ -78,6 +78,7 @@ public class CollectorPurchaseServiceTest {
 
         CollectorPurchase savedPurchase = purchaseCaptor.getValue();
         assertThat(savedPurchase.getCollector()).isSameAs(collection.getCollector());
+        assertThat(savedPurchase.getCollection()).isSameAs(collection);
         assertThat(savedPurchase.getOrderDate()).isEqualTo(request.purchaseDate());
         assertThat(savedPurchase.getSeller()).isEqualTo(request.seller());
         assertThat(savedPurchase.getOrderNumber()).isEqualTo(request.orderNumber());
