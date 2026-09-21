@@ -76,6 +76,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String PURCHASES_CREATION = PURCHASES + "/collections/{collectionId}";
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_PARTIAL_UPDATE_BY_ID = PURCHASES_UPDATE_BY_ID + "/shipping-status";
     private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String COLLECTION_DELETION_BY_ID = COLLECTIONS + "/{collectionId}";
 
@@ -174,6 +175,12 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         log.info("8.2. Performing updates on the in-store purchase and verifying the changes");
         updateExistingInStorePurchasesAndVerifyChanges(loginResp.accessToken(), purchases.getLast(),
                 collectionFigurineRespList);
+        // 8.3. We do one more change, but this time I partially update the shipping
+        // status of the online purchase to "Shipped" and verify that the change is
+        // reflected correctly.
+        log.info(
+                "8.3. Partially updating the shipping status of the online purchase to 'NOT_SHIPPED' and verifying the change");
+        updateExistingOnlinePurchasesShippingStatusAndVerifyChanges(loginResp.accessToken(), purchases.getFirst());
 
         // 9. Retrieve again all the existing purchases for the collector to delete them
         // and verify that the purchases were deleted successfully.
@@ -640,6 +647,32 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseFigurineResp::quantity, CollectorPurchaseFigurineResp::pricePaid,
                         CollectorPurchaseFigurineResp::purchaseType)
                 .containsExactly(newCollectionFigurineId, 10, new BigDecimal("1110.00"), PurchaseType.RETAIL);
+    }
+
+    private void updateExistingOnlinePurchasesShippingStatusAndVerifyChanges(String jwtCollector,
+            CollectorPurchaseResp inStore) {
+
+        CollectorPurchaseReq request = new CollectorPurchaseReq(null, null, null, null, null, ShippingStatus.SHIPPED,
+                null, null, null);
+
+        ResponseEntity<CollectorPurchaseResp> response = rest.patch()
+                .uri(PURCHASES_PARTIAL_UPDATE_BY_ID, inStore.purchaseId()).headers(bearerToken(jwtCollector))
+                .body(request).retrieve().toEntity(CollectorPurchaseResp.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        Objects.requireNonNull(response.getBody(), "Purchase response body should not be null");
+        assertThat(response.getBody()).isNotNull();
+
+        assertThat(response.getBody()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                .containsExactly(1L, LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
+                        new BigDecimal("20311.00"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "877394518353",
+                        "UPS", LocalDate.of(2026, 9, 21), null);
     }
 
     /**

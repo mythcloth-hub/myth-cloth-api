@@ -30,6 +30,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
@@ -363,6 +364,67 @@ public class CollectorPurchaseServiceTest {
                         List.of(createCollectorPurchaseFigurineReq(1001L, new BigDecimal("100.00"))))))
                 .isInstanceOf(CollectorPurchaseNotFoundException.class)
                 .hasMessageContaining("Collector purchase with id 999 was not found");
+    }
+
+    @Test
+    void updatePurchaseShippingStatus_shouldThrowCollectorPurchaseNotFoundException() {
+        long purchaseId = 999L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> collectorPurchaseService.updatePurchaseShippingStatus(COLLECTOR_ID, purchaseId, null))
+                .isInstanceOf(CollectorPurchaseNotFoundException.class)
+                .hasMessageContaining("Collector purchase with id 999 was not found");
+
+        verify(collectorCollectionFigurineService).retrieveCollector(COLLECTOR_ID);
+        verify(collectorPurchaseRepository).findByIdAndCollector(purchaseId, collector);
+    }
+
+    @Test
+    void updatePurchaseShippingStatus_shouldThrowCollectorPurchaseInvalidShippingStatusException_whenShippingStatusIsNull() {
+        long purchaseId = 999L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorPurchase existingPurchase = createCollectorPurchase(901L);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector))
+                .thenReturn(Optional.of(existingPurchase));
+
+        assertThatThrownBy(() -> collectorPurchaseService.updatePurchaseShippingStatus(COLLECTOR_ID, purchaseId, null))
+                .isInstanceOf(CollectorPurchaseInvalidShippingStatusException.class)
+                .hasMessageContaining("Collector purchase has an invalid shipping status");
+
+        verify(collectorCollectionFigurineService).retrieveCollector(COLLECTOR_ID);
+        verify(collectorPurchaseRepository).findByIdAndCollector(purchaseId, collector);
+    }
+
+    @Test
+    void updatePurchaseShippingStatus_shouldReturnOk_whenValidShippingStatus() {
+
+        long purchaseId = 1000L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorPurchase existingPurchase = createCollectorPurchase(purchaseId);
+        existingPurchase.setCollector(collector);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector))
+                .thenReturn(Optional.of(existingPurchase));
+        when(collectorPurchaseRepository.saveAndFlush(existingPurchase)).thenReturn(existingPurchase);
+
+        CollectorPurchaseResp response = collectorPurchaseService.updatePurchaseShippingStatus(COLLECTOR_ID, purchaseId,
+                ShippingStatus.DELIVERED);
+
+        assertThat(existingPurchase.getShippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
+        assertThat(existingPurchase.getDeliveredDate()).isEqualTo(LocalDate.now());
+        assertThat(response.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
+        assertThat(response.deliveredDate()).isEqualTo(LocalDate.now());
     }
 
     @Test
