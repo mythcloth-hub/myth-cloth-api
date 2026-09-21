@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
 import lombok.RequiredArgsConstructor;
@@ -115,6 +117,28 @@ public class CollectorPurchaseController {
         return collectorPurchaseService.updatePurchase(getCollectorId(jwt), purchaseId, purchaseRequest);
     }
 
+    /**
+     * Updates the shipping status of a specific collector purchase by its
+     * identifier.
+     *
+     * @param jwt
+     *            the authenticated collector JWT token
+     * @param purchaseId
+     *            the identifier of the purchase to update
+     * @param shippingStatusReq
+     *            the request body containing the updated shipping status of the
+     *            purchase
+     * @return a CollectorPurchaseResp object representing the updated purchase with
+     *         the new shipping status
+     */
+    @PatchMapping("/{purchaseId}/shipping-status")
+    @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_UPDATE + "')")
+    public CollectorPurchaseResp updatePurchaseStatus(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId,
+            @RequestBody ShippingStatusReq shippingStatusReq) {
+
+        return collectorPurchaseService.updatePurchaseShippingStatus(getCollectorId(jwt), purchaseId,
+                shippingStatusReq.shippingStatus());
+    }
     /**
      * Deletes a specific collector purchase by its identifier.
      *

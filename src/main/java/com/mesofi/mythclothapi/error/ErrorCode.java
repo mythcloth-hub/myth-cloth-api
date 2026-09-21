@@ -42,6 +42,11 @@ public enum ErrorCode {
     COLLECTOR_COLLECTION_ALREADY_EXISTS,
 
     /**
+     * Indicates that the collector purchase has an invalid shipping status.
+     */
+    COLLECTOR_PURCHASE_INVALID_SHIPPING_STATUS,
+
+    /**
      * Indicates that the requested collector purchase could not be found.
      */
     COLLECTOR_PURCHASE_NOT_FOUND,

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,7 +33,9 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
@@ -54,6 +57,7 @@ public class CollectorPurchaseControllerTest {
     private static final String PURCHASES_RETRIEVAL_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_UPDATE_BY_ID = PURCHASES + "/{purchaseId}";
     private static final String PURCHASES_DELETION_BY_ID = PURCHASES + "/{purchaseId}";
+    private static final String PURCHASES_PARTIAL_UPDATE_BY_ID = PURCHASES_UPDATE_BY_ID + "/shipping-status";
 
     @Autowired
     private MockMvc mockMvc;
@@ -421,7 +425,58 @@ public class CollectorPurchaseControllerTest {
     }
 
     @Test
-    void deletePurchase_shouldReturnPurchases() throws Exception {
+    void updatePurchaseStatus_shouldReturnBadRequest_whenInvalidShippingStatus() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
+
+        ShippingStatusReq request = new ShippingStatusReq(ShippingStatus.SHIPPED);
+
+        when(collectorPurchaseService.updatePurchaseShippingStatus(collectorId, purchaseId, ShippingStatus.SHIPPED))
+                .thenThrow(new CollectorPurchaseInvalidShippingStatusException());
+
+        mockMvc.perform(patch(PURCHASES_PARTIAL_UPDATE_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:update")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Collector purchase has an invalid shipping status"))
+                .andExpect(jsonPath("$.instance").value("/collectors/purchases/321/shipping-status"))
+                .andExpect(jsonPath("$.status").value("400"))
+                .andExpect(jsonPath("$.title").value("Collector purchase has an invalid shipping status"))
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_INVALID_SHIPPING_STATUS"));
+    }
+
+    @Test
+    void updatePurchaseStatus_shouldReturnOk_whenValidShippingStatus() throws Exception {
+        Long collectorId = 123L;
+        Long purchaseId = 321L;
+
+        ShippingStatusReq request = new ShippingStatusReq(ShippingStatus.SHIPPED);
+
+        when(collectorPurchaseService.updatePurchaseShippingStatus(collectorId, purchaseId, ShippingStatus.SHIPPED))
+                .thenReturn(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC", "JPY",
+                        new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291",
+                        "FedEX", LocalDate.now(), null, List.of()));
+
+        mockMvc.perform(patch(PURCHASES_PARTIAL_UPDATE_BY_ID, purchaseId)
+                .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
+                        .authorities(new SimpleGrantedAuthority("purchases:update")))
+                .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.purchaseId").value(999L))
+                .andExpect(jsonPath("$.purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.orderNumber").value("FZCAQSZTC")).andExpect(jsonPath("$.currency").value("JPY"))
+                .andExpect(jsonPath("$.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
+                .andExpect(jsonPath("$.deliveredDate").doesNotExist());
+    }
+
+    @Test
+    void deletePurchase_shouldReturnNoContent_whenSuccessful() throws Exception {
         Long collectorId = 123L;
         Long purchaseId = 321L;
 

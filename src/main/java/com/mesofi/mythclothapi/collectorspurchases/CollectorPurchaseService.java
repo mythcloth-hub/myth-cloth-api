@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
+import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
@@ -193,6 +195,43 @@ public class CollectorPurchaseService {
 
         CollectorPurchase saved = collectorPurchaseRepository.saveAndFlush(existing);
         return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount);
+    }
+
+    /**
+     * Updates the shipping status of an existing collector purchase for the
+     * specified collector.
+     *
+     * @param collectorId
+     *            the identifier of the collector for whom to update the purchase
+     * @param existingPurchaseId
+     *            the identifier of the existing purchase to update
+     * @param shippingStatus
+     *            the new shipping status to set for the purchase
+     * @return a CollectorPurchaseResp object representing the updated purchase
+     * @throws CollectorPurchaseNotFoundException
+     *             if no purchase with the specified identifier exists for the
+     *             collector
+     * @throws CollectorPurchaseInvalidShippingStatusException
+     *             if the provided shipping status is null or invalid
+     */
+    @Transactional
+    @CacheEvict(value = {PURCHASES_CACHE, PURCHASES_SINGLE_CACHE}, allEntries = true)
+    public CollectorPurchaseResp updatePurchaseShippingStatus(Long collectorId, Long existingPurchaseId,
+            ShippingStatus shippingStatus) {
+
+        Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
+        CollectorPurchase existing = collectorPurchaseRepository.findByIdAndCollector(existingPurchaseId, collector)
+                .orElseThrow(() -> new CollectorPurchaseNotFoundException(existingPurchaseId));
+
+        ShippingStatus newShippingStatus = Optional.ofNullable(shippingStatus)
+                .orElseThrow(CollectorPurchaseInvalidShippingStatusException::new);
+
+        // we only allow updates to the shipping status if it is a valid transition
+        existing.setShippingStatus(newShippingStatus);
+        updateShippingDates(existing);
+
+        // CollectorPurchase saved = collectorPurchaseRepository.saveAndFlush(existing);
+        return mapper.toCollectorPurchaseResp(existing, this::calculateTotalAmount);
     }
 
     /**
