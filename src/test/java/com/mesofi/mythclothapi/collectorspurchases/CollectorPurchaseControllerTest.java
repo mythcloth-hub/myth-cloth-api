@@ -33,6 +33,8 @@ import com.mesofi.mythclothapi.collectors.exceptions.CollectorNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.PurchaseSummaryResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
@@ -313,9 +315,13 @@ public class CollectorPurchaseControllerTest {
     void retrievePurchases_shouldReturnPurchases() throws Exception {
         Long collectorId = 123L;
 
-        List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1),
+        PurchaseSummaryResp summary = new PurchaseSummaryResp("JPY", new BigDecimal("62000"));
+
+        List<CollectorPurchaseResp> purchases = List.of(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1),
                 "yoyaKuNow", "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE,
                 ShippingStatus.SHIPPED, "884469419291", "FedEX", null, LocalDate.now(), null, List.of()));
+
+        CollectorPurchaseSummaryResp response = new CollectorPurchaseSummaryResp(summary, purchases);
 
         when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
 
@@ -323,17 +329,20 @@ public class CollectorPurchaseControllerTest {
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
                         .authorities(new SimpleGrantedAuthority("purchases:read")))
                 .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].purchaseId").value(999L))
-                .andExpect(jsonPath("$[0].purchaseDate").value("2026-01-01"))
-                .andExpect(jsonPath("$[0].seller").value("yoyaKuNow"))
-                .andExpect(jsonPath("$[0].orderNumber").value("FZCAQSZTC"))
-                .andExpect(jsonPath("$[0].currency").value("JPY"))
-                .andExpect(jsonPath("$[0].totalAmount").value("62000"))
-                .andExpect(jsonPath("$[0].purchaseChannel").value("ONLINE"))
-                .andExpect(jsonPath("$[0].shippingStatus").value("SHIPPED"))
-                .andExpect(jsonPath("$[0].trackingNumber").value("884469419291"))
-                .andExpect(jsonPath("$[0].carrier").value("FedEX")).andExpect(jsonPath("$[0].shippedDate").exists())
-                .andExpect(jsonPath("$[0].deliveredDate").doesNotExist());
+                .andExpect(jsonPath("$.summary.currency").value("JPY"))
+                .andExpect(jsonPath("$.summary.totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchases[0].purchaseId").value(999L))
+                .andExpect(jsonPath("$.purchases[0].purchaseDate").value("2026-01-01"))
+                .andExpect(jsonPath("$.purchases[0].seller").value("yoyaKuNow"))
+                .andExpect(jsonPath("$.purchases[0].orderNumber").value("FZCAQSZTC"))
+                .andExpect(jsonPath("$.purchases[0].currency").value("JPY"))
+                .andExpect(jsonPath("$.purchases[0].totalAmount").value("62000"))
+                .andExpect(jsonPath("$.purchases[0].purchaseChannel").value("ONLINE"))
+                .andExpect(jsonPath("$.purchases[0].shippingStatus").value("SHIPPED"))
+                .andExpect(jsonPath("$.purchases[0].trackingNumber").value("884469419291"))
+                .andExpect(jsonPath("$.purchases[0].carrier").value("FedEX"))
+                .andExpect(jsonPath("$.purchases[0].shippedDate").exists())
+                .andExpect(jsonPath("$.purchases[0].deliveredDate").doesNotExist());
 
         verify(collectorPurchaseService).retrievePurchases(collectorId);
     }

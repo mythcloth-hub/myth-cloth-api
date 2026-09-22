@@ -12,13 +12,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestClient;
 
 import com.mesofi.mythclothapi.integration.fix.FxApiClient;
+import com.mesofi.mythclothapi.integration.fix.FxApiProperties;
 import com.mesofi.mythclothapi.integration.fix.FxRateResponse;
 
 class FxApiClientTest {
 
     @Test
     void fetchRate_shouldReturnRateWhenPayloadContainsValue() {
-        FxApiClient client = new FxApiClient();
+        FxApiProperties properties = new FxApiProperties("https://fxapi.app");
+
+        FxApiClient client = new FxApiClient(properties);
         RestClient restClient = mock(RestClient.class);
         RestClient.RequestHeadersUriSpec uriSpec = mock(RestClient.RequestHeadersUriSpec.class);
         RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);
@@ -38,7 +41,8 @@ class FxApiClientTest {
 
     @Test
     void fetchRate_shouldThrowWhenPayloadIsMissingRate() {
-        FxApiClient client = new FxApiClient();
+        FxApiProperties properties = new FxApiProperties("https://fxapi.app");
+        FxApiClient client = new FxApiClient(properties);
         RestClient restClient = mock(RestClient.class);
         RestClient.RequestHeadersUriSpec uriSpec = mock(RestClient.RequestHeadersUriSpec.class);
         RestClient.ResponseSpec responseSpec = mock(RestClient.ResponseSpec.class);

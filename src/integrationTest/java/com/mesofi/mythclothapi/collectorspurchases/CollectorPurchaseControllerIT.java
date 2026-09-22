@@ -49,6 +49,8 @@ import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurine
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.PurchaseSummaryResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseChannel;
 import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseType;
@@ -82,6 +84,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private static final String COLLECTION_DELETION_BY_ID = COLLECTIONS + "/{collectionId}";
 
     private static final WireMockServer GOOGLE_API = startGoogleApi();
+    private static final WireMockServer FX_API = startFxApi();
 
     @Autowired
     private SecurityDataService securityDataService;
@@ -89,6 +92,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     @DynamicPropertySource
     static void registerProperties(DynamicPropertyRegistry registry) {
         registry.add("myth-cloth.google.oauth-url", GOOGLE_API::baseUrl);
+        registry.add("myth-cloth.fxapi.url", FX_API::baseUrl);
     }
 
     @BeforeEach
@@ -108,11 +112,29 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                             "exp": "4102444800"
                         }
                         """)));
+        FX_API.resetAll();
+        FX_API.stubFor(get(urlPathEqualTo("/api/mxn/jpy.json")).willReturn(okJson("""
+                {
+                    "base": "MXN",
+                    "target": "JPY",
+                    "rate": 9.104322,
+                    "timestamp": "2026-09-22T19:30:36.346Z"
+                }
+                """)));
+        FX_API.stubFor(get(urlPathEqualTo("/api/usd/mxn.json")).willReturn(okJson("""
+                {
+                    "base": "USD",
+                    "target": "MXN",
+                    "rate": 17.294004,
+                    "timestamp": "2026-09-22T20:55:11.217Z"
+                }
+                """)));
     }
 
     @AfterAll
     static void stopWireMock() {
         GOOGLE_API.stop();
+        FX_API.stop();
     }
 
     @Test
@@ -444,19 +466,26 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector,
             final boolean assertPurchases) {
 
-        ResponseEntity<List<CollectorPurchaseResp>> response = rest.get().uri(PURCHASES)
-                .headers(bearerToken(jwtCollector)).retrieve().toEntity(new ParameterizedTypeReference<>() {
-                });
+        ResponseEntity<CollectorPurchaseSummaryResp> response = rest.get().uri(PURCHASES)
+                .headers(bearerToken(jwtCollector)).retrieve().toEntity(CollectorPurchaseSummaryResp.class);
 
         assertThat(response.getStatusCode()).isEqualTo(OK);
         assertThat(response.getBody()).isNotNull();
-        List<CollectorPurchaseResp> purchases = response.getBody();
-        assertThat(purchases).isNotNull();
-        Objects.requireNonNull(purchases, "Purchases response body should not be null");
+
+        CollectorPurchaseSummaryResp purchaseSummary = response.getBody();
+        assertThat(purchaseSummary).isNotNull();
+        Objects.requireNonNull(purchaseSummary, "Purchases summary response body should not be null");
+
+        PurchaseSummaryResp summary = purchaseSummary.summary();
+        List<CollectorPurchaseResp> purchases = purchaseSummary.purchases();
 
         if (!assertPurchases) {
-            return purchases;
+            return List.of(); // it's valid to return an empty list when we are not asserting the purchases,
+                                // for example, after deletion
         }
+
+        assertThat(summary.currency()).isEqualTo("JPY");
+        assertThat(summary.totalAmount()).isEqualTo(new BigDecimal("23725.19"));
 
         assertThat(purchases.size()).isEqualTo(2);
 
@@ -677,7 +706,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::deliveredDate)
                 .containsExactly(1L, LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
                         new BigDecimal("20311.00"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "877394518353",
-                        "UPS", "https://www.ups.com/track?tracknum=877394518353", LocalDate.of(2026, 9, 21), null);
+                        "UPS", "https://www.ups.com/track?tracknum=877394518353", LocalDate.now(), null);
     }
 
     /**
@@ -752,6 +781,12 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     }
 
     private static WireMockServer startGoogleApi() {
+        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+        wireMockServer.start();
+        return wireMockServer;
+    }
+
+    private static WireMockServer startFxApi() {
         WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
         wireMockServer.start();
         return wireMockServer;

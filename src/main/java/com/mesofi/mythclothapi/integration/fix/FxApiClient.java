@@ -19,8 +19,8 @@ public class FxApiClient {
     private final RestClient restClient;
 
     /** Creates a client configured with the {@code fxapi.app} base URL. */
-    public FxApiClient() {
-        this.restClient = RestClient.builder().baseUrl("https://fxapi.app").build();
+    public FxApiClient(FxApiProperties fxApiProperties) {
+        this.restClient = RestClient.builder().baseUrl(fxApiProperties.url()).build();
     }
 
     /**

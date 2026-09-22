@@ -21,16 +21,16 @@ public interface CollectorPurchaseRepository extends JpaRepository<CollectorPurc
 
     /**
      * Finds a list of CollectorPurchase entities associated with the specified
-     * Collector, ordered by orderDate in descending order.
+     * Collector, ordered by orderDate in ascending order.
      *
      * @param collector
      *            the Collector entity for which to find purchases
      * @param pageable
      *            the Pageable object specifying pagination and sorting
      * @return a list of CollectorPurchase entities associated with the specified
-     *         Collector, ordered by orderDate in descending order
+     *         Collector, ordered by orderDate in ascending order
      */
-    List<CollectorPurchase> findByCollectorOrderByOrderDateDesc(Collector collector, Pageable pageable);
+    List<CollectorPurchase> findByCollectorOrderByOrderDateAsc(Collector collector, Pageable pageable);
 
     /**
      * Finds a CollectorPurchase entity by its ID and associated Collector.

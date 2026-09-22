@@ -1,7 +1,11 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.getDefaultCurrency;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Currency;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +32,8 @@ import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFi
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.PurchaseSummaryResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
@@ -35,6 +41,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +62,7 @@ public class CollectorPurchaseService {
 
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
+    private final CurrencyConversionService currencyConversionService;
     private final CollectorPurchaseMapper mapper;
 
     /**
@@ -131,16 +139,59 @@ public class CollectorPurchaseService {
      */
     @Transactional(readOnly = true)
     @Cacheable(value = PURCHASES_CACHE, key = "T(java.util.Objects).hash(#collectorId)")
-    public List<CollectorPurchaseResp> retrievePurchases(Long collectorId) {
+    public CollectorPurchaseSummaryResp retrievePurchases(Long collectorId) {
         log.info("Retrieving collector purchases for collector ID {}", collectorId);
 
         Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
 
-        return collectorPurchaseRepository
-                .findByCollectorOrderByOrderDateDesc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
+        // Retrieves the collector's purchases, ordered by order date in ascending
+        // order, and maps them to response objects
+        List<CollectorPurchaseResp> purchases = collectorPurchaseRepository
+                .findByCollectorOrderByOrderDateAsc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
                 .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount,
                         this::generateTrackingUrl))
                 .toList();
+
+        // Calculates the summary of the collector's purchases, including the total
+        // amount and the most frequent currency used
+        PurchaseSummaryResp summary = getSummary(purchases);
+
+        return new CollectorPurchaseSummaryResp(summary, purchases);
+    }
+
+    /**
+     * Calculates the summary of the collector's purchases, including the total
+     * amount and the most frequent currency used.
+     *
+     * @param purchases
+     *            the list of collector purchases to summarize
+     * @return a PurchaseSummaryResp object representing the summary of the
+     *         purchases
+     */
+    private PurchaseSummaryResp getSummary(List<CollectorPurchaseResp> purchases) {
+        Map<String, Integer> currencyFrequencies = new HashMap<>();
+
+        for (CollectorPurchaseResp purchase : purchases) {
+            String currency = purchase.currency();
+            currencyFrequencies.put(currency, currencyFrequencies.getOrDefault(currency, 0) + 1);
+        }
+
+        Currency mostFrequentCurrency = currencyFrequencies.entrySet().stream().max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey).map(Currency::getInstance).orElse(getDefaultCurrency());
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (CollectorPurchaseResp purchase : purchases) {
+            if (purchase.currency().equals(mostFrequentCurrency.toString())) {
+                totalAmount = totalAmount.add(purchase.totalAmount());
+            } else {
+                // needs conversion to the most frequent currency
+                BigDecimal convertedAmount = currencyConversionService.convert(purchase.totalAmount(),
+                        purchase.currency(), mostFrequentCurrency.getCurrencyCode());
+                totalAmount = totalAmount.add(convertedAmount);
+            }
+        }
+
+        return new PurchaseSummaryResp(mostFrequentCurrency.getCurrencyCode(), totalAmount);
     }
 
     /**
