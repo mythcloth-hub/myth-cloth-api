@@ -4,6 +4,7 @@ import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionF
 import static com.mesofi.mythclothapi.collectorscollections.CollectorCollectionFigurineService.COLLECTOR_SUMMARY_CACHE;
 import static com.mesofi.mythclothapi.figurines.FigurineService.FIGURINE_CACHE;
 import static com.mesofi.mythclothapi.figurines.FigurineService.FIGURINE_SUMMARY_CACHE;
+import static com.mesofi.mythclothapi.figurines.FigurineService.RECOMMENDED_FIGURINE_CACHE;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -100,7 +101,7 @@ public class FigurineImportService {
      *             the import
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE,
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, RECOMMENDED_FIGURINE_CACHE, COLLECTOR_SUMMARY_CACHE,
             COLLECTOR_FIGURINE_CACHE}, allEntries = true)
     public void importAllFigurinesFromPublicDrive() {
         log.info("Importing all figurines from public drive...");
