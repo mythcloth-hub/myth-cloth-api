@@ -1,7 +1,6 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
 import java.net.URI;
-import java.util.List;
 
 import jakarta.validation.Valid;
 
@@ -19,11 +18,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryResp;
 import com.mesofi.mythclothapi.collectorspurchases.dto.ShippingStatusReq;
 import com.mesofi.mythclothapi.security.permissions.model.Permissions;
 
@@ -75,12 +76,15 @@ public class CollectorPurchaseController {
      *
      * @param jwt
      *            the authenticated collector JWT token
+     * @param currency
+     *            the currency in which to display the purchase amounts
      * @return a list of CollectorPurchaseResp objects representing the collector's
      *         purchases
      */
     @GetMapping
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
-    public List<CollectorPurchaseResp> retrievePurchases(@AuthenticationPrincipal Jwt jwt) {
+    public CollectorPurchaseSummaryResp retrievePurchases(@AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) String currency) {
         return collectorPurchaseService.retrievePurchases(getCollectorId(jwt));
     }
 

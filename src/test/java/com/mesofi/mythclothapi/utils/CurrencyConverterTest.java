@@ -25,4 +25,9 @@ class CurrencyConverterTest {
         assertThat(CurrencyConverter.isDefaultCurrency(Currency.getInstance("JPY"))).isTrue();
         assertThat(CurrencyConverter.isDefaultCurrency(Currency.getInstance("USD"))).isFalse();
     }
+
+    @Test
+    void getDefaultCurrency_shouldReturnDefaultCurrency() {
+        assertThat(CurrencyConverter.getDefaultCurrency()).isEqualTo(Currency.getInstance("JPY"));
+    }
 }

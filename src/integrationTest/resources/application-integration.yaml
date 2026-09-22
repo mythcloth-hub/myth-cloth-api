@@ -26,6 +26,9 @@ myth-cloth:
     client-id: "90909090"
     oauth-url: http://localhost:${wiremock.google.server.port:8091}
 
+  fxapi:
+    url: http://localhost:${wiremock.fxapi.server.port:8092}/
+
   import:
     drive-url: http://localhost:9090/spreadsheets/d/%s/export?format=csv
     file-id: fake

@@ -33,6 +33,8 @@ import com.mesofi.mythclothapi.collectorscollections.model.CollectorCollectionFi
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseFigurineReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseReq;
 import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.CollectorPurchaseSummaryResp;
+import com.mesofi.mythclothapi.collectorspurchases.dto.PurchaseSummaryResp;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseFigurineNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseInvalidShippingStatusException;
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
@@ -44,6 +46,7 @@ import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.config.MapperTestConfig;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = {CollectorPurchaseService.class, MapperTestConfig.class})
@@ -60,6 +63,9 @@ public class CollectorPurchaseServiceTest {
 
     @MockitoBean
     private CollectorPurchaseRepository collectorPurchaseRepository;
+
+    @MockitoBean
+    private CurrencyConversionService currencyConversionService;
 
     @Test
     void createPurchase_shouldCreateShippedPurchaseWithMappedFigurines() {
@@ -188,13 +194,38 @@ public class CollectorPurchaseServiceTest {
         CollectorCollection collectorCollection = new CollectorCollection();
         collectorCollection.setCollector(collector);
 
-        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
-        when(collectorPurchaseRepository.findByCollectorOrderByOrderDateDesc(any(Collector.class),
-                any(PageRequest.class))).thenReturn(List.of(createCollectorPurchase(1L), createCollectorPurchase(2L)));
+        CollectorPurchase firstPurchase = createCollectorPurchase(1L);
+        firstPurchase.setFigurines(new ArrayList<>(List.of(
+                createPurchaseFigurine(701L, firstPurchase, 1001L, 1, new BigDecimal("100.00"), PurchaseType.RETAIL))));
 
-        List<CollectorPurchaseResp> purchases = collectorPurchaseService.retrievePurchases(COLLECTOR_ID);
-        assertThat(purchases).hasSize(2);
-        assertThat(purchases).extracting(CollectorPurchaseResp::purchaseId).containsExactly(1L, 2L);
+        CollectorPurchase secondPurchase = createCollectorPurchase(2L);
+        secondPurchase.setFigurines(new ArrayList<>(List.of(createPurchaseFigurine(702L, secondPurchase, 1002L, 1,
+                new BigDecimal("200.00"), PurchaseType.RETAIL))));
+
+        CollectorPurchase thirdPurchase = createCollectorPurchase(3L);
+        thirdPurchase.setCurrency(CurrencyCode.USD);
+        thirdPurchase.setFigurines(new ArrayList<>(List.of(
+                createPurchaseFigurine(703L, thirdPurchase, 1003L, 1, new BigDecimal("50.00"), PurchaseType.RETAIL))));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByCollectorOrderByOrderDateAsc(any(Collector.class),
+                any(PageRequest.class))).thenReturn(List.of(firstPurchase, secondPurchase, thirdPurchase));
+        when(currencyConversionService.convert(new BigDecimal("50.00"), "USD", "JPY"))
+                .thenReturn(new BigDecimal("300.00"));
+
+        CollectorPurchaseSummaryResp collectorPurchaseSummaryResp = collectorPurchaseService
+                .retrievePurchases(COLLECTOR_ID);
+
+        assertThat(collectorPurchaseSummaryResp).isNotNull();
+
+        PurchaseSummaryResp purchaseSummaryResp = collectorPurchaseSummaryResp.summary();
+        assertThat(purchaseSummaryResp).isNotNull();
+        assertThat(purchaseSummaryResp.currency()).isEqualTo("JPY");
+        assertThat(purchaseSummaryResp.totalAmount()).isEqualByComparingTo(new BigDecimal("600.00"));
+
+        List<CollectorPurchaseResp> purchases = collectorPurchaseSummaryResp.purchases();
+        assertThat(purchases).hasSize(3);
+        assertThat(purchases).extracting(CollectorPurchaseResp::purchaseId).containsExactly(1L, 2L, 3L);
     }
 
     @Test

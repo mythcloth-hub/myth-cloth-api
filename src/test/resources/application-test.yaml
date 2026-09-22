@@ -19,6 +19,9 @@ myth-cloth:
     client-id: "90909090"
     oauth-url: https://oauth2.googleapis.com
 
+  fxapi:
+    url: https://fxapi.app
+
   security:
     jwt:
       secret: "mzEqoh2WPlyQ3LBB7C7kC59IZRcpG3Twxgdj2RGMRik="

@@ -59,4 +59,13 @@ public final class CurrencyConverter {
     public static boolean isDefaultCurrency(Currency currency) {
         return DEFAULT.equals(currency);
     }
+
+    /**
+     * Returns the default currency used by this utility class.
+     *
+     * @return the default {@link Currency} instance
+     */
+    public static Currency getDefaultCurrency() {
+        return DEFAULT;
+    }
 }
