@@ -109,6 +109,7 @@ public class FigurineService {
 
     public static final String FIGURINE_CACHE = "figurines";
     public static final String FIGURINE_SUMMARY_CACHE = "figurine-summary";
+    public static final String RECOMMENDED_FIGURINE_CACHE = "recommended-figurines";
 
     private static final String BY_MYTH_CLOTH_EX_KEY = "by-mythcloth-ex";
     private static final String BY_MYTH_CLOTH_KEY = "by-mythcloth";
@@ -189,8 +190,8 @@ public class FigurineService {
      * @return API response DTO for the created figurine
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
-            PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, RECOMMENDED_FIGURINE_CACHE, COLLECTOR_SUMMARY_CACHE,
+            COLLECTOR_FIGURINE_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp createFigurine(@NotNull @Valid FigurineReq request) {
         log.info("Creating figurine '{}'", request.name());
 
@@ -435,6 +436,8 @@ public class FigurineService {
      *            maximum number of recommendations to return
      * @return a list of recommended figurine response DTOs
      */
+    @Transactional(readOnly = true)
+    @Cacheable(value = RECOMMENDED_FIGURINE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #limit)")
     public List<FigurineRecommendationResp> retrieveRecommendedFigurines(Long collectorId, int limit) {
         log.info("Retrieving recommendations for collector '{}'", collectorId);
 
@@ -519,8 +522,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
-            PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, RECOMMENDED_FIGURINE_CACHE, COLLECTOR_SUMMARY_CACHE,
+            COLLECTOR_FIGURINE_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
     public FigurineResp updateFigurine(@Positive Long id, @NotNull @Valid FigurineReq request) {
         log.info("Updating figurine with id '{}'. New name: '{}'", id, request.name());
 
@@ -592,8 +595,8 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional
-    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, COLLECTOR_SUMMARY_CACHE, COLLECTOR_FIGURINE_CACHE,
-            PRICING_SUMMARY_CACHE}, allEntries = true)
+    @CacheEvict(value = {FIGURINE_CACHE, FIGURINE_SUMMARY_CACHE, RECOMMENDED_FIGURINE_CACHE, COLLECTOR_SUMMARY_CACHE,
+            COLLECTOR_FIGURINE_CACHE, PRICING_SUMMARY_CACHE}, allEntries = true)
     public void deleteFigurine(@Positive Long id) {
         log.info("Deleting figurine with id '{}'", id);
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
