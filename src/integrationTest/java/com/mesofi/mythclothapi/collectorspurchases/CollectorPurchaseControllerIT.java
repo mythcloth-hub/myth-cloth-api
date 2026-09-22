@@ -370,6 +370,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
         assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");
         assertThat(body.carrier()).isEqualTo("FedEx");
+        assertThat(body.trackingUrl()).isEqualTo("https://www.fedex.com/fedextrack/?trknbr=1ZV912320456954189");
         assertThat(body.deliveredDate()).isNotNull();
         assertThat(body.shippedDate()).isNull();
 
@@ -421,6 +422,7 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.shippingStatus()).isNull();
         assertThat(body.trackingNumber()).isNull();
         assertThat(body.carrier()).isNull();
+        assertThat(body.trackingUrl()).isNull();
         assertThat(body.deliveredDate()).isNull();
         assertThat(body.shippedDate()).isNull();
 
@@ -465,11 +467,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
-                        CollectorPurchaseResp::figurines)
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
                 .containsExactly(1L, LocalDate.now(), "Mandarake", "XQKUHSCWV", "JPY", new BigDecimal("12800.00"),
-                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx", null,
-                        LocalDate.now(),
+                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx",
+                        "https://www.fedex.com/fedextrack/?trknbr=1ZV912320456954189", null, LocalDate.now(),
                         List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("6400.00"),
                                 PurchaseType.RETAIL),
                                 new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("6400.00"),
@@ -482,10 +484,10 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate,
-                        CollectorPurchaseResp::figurines)
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
                 .containsExactly(2L, LocalDate.now(), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
-                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null,
+                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null, null,
                         List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("1200.00"),
                                 PurchaseType.SECOND_HAND)));
 
@@ -551,10 +553,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate)
                 .containsExactly(online.purchaseId(), LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
                         new BigDecimal("20311.00"), PurchaseChannel.ONLINE, ShippingStatus.NOT_SHIPPED, "877394518353",
-                        "UPS", null, null);
+                        "UPS", "https://www.ups.com/track?tracknum=877394518353", null, null);
 
         Assertions.assertThat(response.getBody().figurines()).hasSize(3);
         Assertions.assertThat(response.getBody().figurines())
@@ -638,9 +641,10 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate)
                 .containsExactly(inStore.purchaseId(), LocalDate.of(2026, 6, 6), "AnotherSeller", null, "MXN",
-                        new BigDecimal("11100.00"), PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null);
+                        new BigDecimal("11100.00"), PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null, null);
 
         Assertions.assertThat(response.getBody().figurines()).hasSize(1);
         assertThat(response.getBody().figurines().getFirst()).isNotNull()
@@ -669,10 +673,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
                         CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
-                        CollectorPurchaseResp::shippedDate, CollectorPurchaseResp::deliveredDate)
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate)
                 .containsExactly(1L, LocalDate.of(2026, 3, 3), "Jungle", "NEW-XQKUHSCWV-NEW", "USD",
                         new BigDecimal("20311.00"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "877394518353",
-                        "UPS", LocalDate.of(2026, 9, 21), null);
+                        "UPS", "https://www.ups.com/track?tracknum=877394518353", LocalDate.of(2026, 9, 21), null);
     }
 
     /**

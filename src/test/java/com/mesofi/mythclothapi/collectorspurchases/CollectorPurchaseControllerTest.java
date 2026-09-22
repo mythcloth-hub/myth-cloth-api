@@ -287,7 +287,7 @@ public class CollectorPurchaseControllerTest {
 
         CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
                 "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
-                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+                "884469419291", "FedEX", null, LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.createPurchase(collectorId, COLLECTION_ID, request)).thenReturn(response);
 
@@ -315,7 +315,7 @@ public class CollectorPurchaseControllerTest {
 
         List<CollectorPurchaseResp> response = List.of(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1),
                 "yoyaKuNow", "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE,
-                ShippingStatus.SHIPPED, "884469419291", "FedEX", LocalDate.now(), null, List.of()));
+                ShippingStatus.SHIPPED, "884469419291", "FedEX", null, LocalDate.now(), null, List.of()));
 
         when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
 
@@ -368,7 +368,7 @@ public class CollectorPurchaseControllerTest {
 
         CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
                 "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
-                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+                "884469419291", "FedEX", null, LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId)).thenReturn(response);
 
@@ -402,7 +402,7 @@ public class CollectorPurchaseControllerTest {
 
         CollectorPurchaseResp response = new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow",
                 "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
-                "884469419291", "FedEX", LocalDate.now(), null, List.of());
+                "884469419291", "FedEX", null, LocalDate.now(), null, List.of());
 
         when(collectorPurchaseService.updatePurchase(collectorId, purchaseId, request)).thenReturn(response);
 
@@ -457,7 +457,7 @@ public class CollectorPurchaseControllerTest {
         when(collectorPurchaseService.updatePurchaseShippingStatus(collectorId, purchaseId, ShippingStatus.SHIPPED))
                 .thenReturn(new CollectorPurchaseResp(999L, LocalDate.of(2026, 1, 1), "yoyaKuNow", "FZCAQSZTC", "JPY",
                         new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED, "884469419291",
-                        "FedEX", LocalDate.now(), null, List.of()));
+                        "FedEX", null, LocalDate.now(), null, List.of()));
 
         mockMvc.perform(patch(PURCHASES_PARTIAL_UPDATE_BY_ID, purchaseId)
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))

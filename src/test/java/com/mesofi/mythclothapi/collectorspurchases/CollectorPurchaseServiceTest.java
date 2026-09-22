@@ -13,8 +13,12 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -464,6 +468,27 @@ public class CollectorPurchaseServiceTest {
     void calculateTotalAmount_shouldReturnZero() {
         assertThat(collectorPurchaseService.calculateTotalAmount(new CollectorPurchase()))
                 .isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideCarriersForUrlTracking")
+    void generateTrackingUrl_shouldReturnExpectedUrl(String carrier, String trackingNumber, String expected) {
+        CollectorPurchase purchase = new CollectorPurchase();
+        purchase.setCarrier(carrier);
+        purchase.setTrackingNumber(trackingNumber);
+
+        assertThat(collectorPurchaseService.generateTrackingUrl(purchase)).isEqualTo(expected);
+    }
+
+    private static Stream<Arguments> provideCarriersForUrlTracking() {
+        return Stream.of(Arguments.of(null, null, null), Arguments.of(null, "sss", null),
+                Arguments.of("sss", null, null), Arguments.of("ups", null, null),
+                Arguments.of("ups", "123456", "https://www.ups.com/track?tracknum=123456"),
+                Arguments.of("dhl", "654321", "https://www.dhl.com/global-en/home/tracking.html?tracking-id=654321"),
+                Arguments.of("fedex", "abc123", "https://www.fedex.com/fedextrack/?trknbr=abc123"),
+                Arguments.of("correos de mexico", "abc123",
+                        "https://www.correosdemexico.gob.mx/SSLServicios/SeguimientoEnvio/seguimientoportal2.aspx?guia=abc123"),
+                Arguments.of("something-else", "abc123", null));
     }
 
     private CollectorCollection stubOwnedCollection(CollectorCollectionFigurine... figurines) {

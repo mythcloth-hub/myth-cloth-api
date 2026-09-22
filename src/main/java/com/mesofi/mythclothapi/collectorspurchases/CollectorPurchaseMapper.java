@@ -112,8 +112,10 @@ public interface CollectorPurchaseMapper {
     @Mapping(target = "purchaseId", source = "id")
     @Mapping(target = "purchaseDate", source = "orderDate")
     @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount.apply(purchase))")
+    @Mapping(target = "trackingUrl", expression = "java(generateTrackingUrl.apply(purchase))")
     CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase,
-            @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount);
+            @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount,
+            @Context Function<CollectorPurchase, String> generateTrackingUrl);
 
     /**
      * Converts a {@link CollectorPurchaseFigurine} into a

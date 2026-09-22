@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
@@ -45,6 +46,12 @@ public class CollectorPurchaseService {
 
     public static final String PURCHASES_CACHE = "purchases";
     public static final String PURCHASES_SINGLE_CACHE = "purchases-single";
+
+    private static final Map<Pattern, String> TRACKING_URLS = Map.of(Pattern.compile("(?i)^ups$"),
+            "https://www.ups.com/track?tracknum=%s", Pattern.compile("(?i)^dhl$"),
+            "https://www.dhl.com/global-en/home/tracking.html?tracking-id=%s", Pattern.compile("(?i)^fed\\s*ex$"),
+            "https://www.fedex.com/fedextrack/?trknbr=%s", Pattern.compile("(?i)^correos\\s+de\\s+m[eé]xico$"),
+            "https://www.correosdemexico.gob.mx/SSLServicios/SeguimientoEnvio/seguimientoportal2.aspx?guia=%s");
 
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
     private final CollectorPurchaseRepository collectorPurchaseRepository;
@@ -95,7 +102,7 @@ public class CollectorPurchaseService {
         var saved = collectorPurchaseRepository.save(collectorPurchase);
 
         log.info("Saved collector purchase with ID {} and seller '{}'", saved.getId(), saved.getSeller());
-        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount);
+        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount, this::generateTrackingUrl);
     }
 
     /**
@@ -131,7 +138,9 @@ public class CollectorPurchaseService {
 
         return collectorPurchaseRepository
                 .findByCollectorOrderByOrderDateDesc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
-                .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount)).toList();
+                .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount,
+                        this::generateTrackingUrl))
+                .toList();
     }
 
     /**
@@ -155,7 +164,7 @@ public class CollectorPurchaseService {
 
         CollectorPurchase purchase = collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)
                 .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
-        return mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount);
+        return mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount, this::generateTrackingUrl);
     }
 
     /**
@@ -194,7 +203,7 @@ public class CollectorPurchaseService {
         reconcileFigurines(existing, request.figurines());
 
         CollectorPurchase saved = collectorPurchaseRepository.saveAndFlush(existing);
-        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount);
+        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount, this::generateTrackingUrl);
     }
 
     /**
@@ -230,8 +239,7 @@ public class CollectorPurchaseService {
         existing.setShippingStatus(newShippingStatus);
         updateShippingDates(existing);
 
-        // CollectorPurchase saved = collectorPurchaseRepository.saveAndFlush(existing);
-        return mapper.toCollectorPurchaseResp(existing, this::calculateTotalAmount);
+        return mapper.toCollectorPurchaseResp(existing, this::calculateTotalAmount, this::generateTrackingUrl);
     }
 
     /**
@@ -371,4 +379,25 @@ public class CollectorPurchaseService {
         }).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /**
+     * Generates a tracking URL for the purchase based on the carrier and tracking
+     * number.
+     *
+     * @param purchase
+     *            the collector purchase for which to generate the tracking URL
+     * @return the tracking URL if both carrier and tracking number are present,
+     *         otherwise null
+     */
+    public String generateTrackingUrl(CollectorPurchase purchase) {
+        if (purchase.getCarrier() == null || purchase.getTrackingNumber() == null) {
+            return null;
+        }
+
+        for (Map.Entry<Pattern, String> entry : TRACKING_URLS.entrySet()) {
+            if (entry.getKey().matcher(purchase.getCarrier()).matches()) {
+                return entry.getValue().formatted(purchase.getTrackingNumber());
+            }
+        }
+        return null;
+    }
 }
