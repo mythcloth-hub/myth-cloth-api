@@ -224,7 +224,7 @@ public class CollectorCollectionFigurineController {
      * @param page
      *            page number for pagination (default is 0)
      * @param size
-     *            number of items per page for pagination (default is 50, max is
+     *            number of items per page for pagination (default is 20, max is
      *            1000)
      * @return list of figurines assigned to the collection
      */
@@ -233,7 +233,7 @@ public class CollectorCollectionFigurineController {
     public Page<CollectorCollectionFigurineResp> retrieveCollectionFigurines(@AuthenticationPrincipal Jwt jwt,
             @Positive @PathVariable Long collectionId, @RequestParam(required = false) boolean includeRestocks,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "50") @Min(1) @Max(1000) int size) {
+            @RequestParam(defaultValue = "20") @Min(1) @Max(1000) int size) {
         log.info("Retrieving figurines for collection {} with pagination: page {}, size {}, includeRestocks {}",
                 collectionId, page, size, includeRestocks);
 
