@@ -55,6 +55,11 @@ public record CollectorPurchaseResp(
          */
         String carrier,
         /*
+         * The tracking URL of the purchase, this is calculated based on the carrier and
+         * tracking number. This field is optional.
+         */
+        String trackingUrl,
+        /*
          * The date when the purchase was shipped.
          */
         LocalDate shippedDate,
