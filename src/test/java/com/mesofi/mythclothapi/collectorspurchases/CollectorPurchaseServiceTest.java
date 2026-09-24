@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -66,6 +67,22 @@ public class CollectorPurchaseServiceTest {
 
     @MockitoBean
     private CurrencyConversionService currencyConversionService;
+
+    @BeforeEach
+    void setUpCurrencyConversionDefaults() {
+        when(currencyConversionService.convert(any(BigDecimal.class), any(String.class), any(String.class)))
+                .thenAnswer(invocation -> {
+                    BigDecimal amount = invocation.getArgument(0);
+                    String sourceCurrency = invocation.getArgument(1);
+                    String targetCurrency = invocation.getArgument(2);
+
+                    if (sourceCurrency.equals(targetCurrency)) {
+                        return amount;
+                    }
+
+                    return null;
+                });
+    }
 
     @Test
     void createPurchase_shouldCreateShippedPurchaseWithMappedFigurines() {
@@ -214,7 +231,7 @@ public class CollectorPurchaseServiceTest {
                 .thenReturn(new BigDecimal("300.00"));
 
         CollectorPurchaseSummaryResp collectorPurchaseSummaryResp = collectorPurchaseService
-                .retrievePurchases(COLLECTOR_ID);
+                .retrievePurchases(COLLECTOR_ID, null);
 
         assertThat(collectorPurchaseSummaryResp).isNotNull();
 
@@ -247,7 +264,7 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollector(any(Long.class), any(Collector.class)))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId))
+        assertThatThrownBy(() -> collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId, null))
                 .isInstanceOf(CollectorPurchaseNotFoundException.class)
                 .hasMessageContaining("Collector purchase with id 789 was not found");
     }
@@ -271,9 +288,38 @@ public class CollectorPurchaseServiceTest {
         when(collectorPurchaseRepository.findByIdAndCollector(any(Long.class), any(Collector.class)))
                 .thenReturn(Optional.of(createCollectorPurchase(1L)));
 
-        CollectorPurchaseResp purchase = collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId);
+        CollectorPurchaseResp purchase = collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId, null);
         assertThat(purchase).isNotNull();
         assertThat(purchase.purchaseId()).isEqualTo(1L);
+    }
+
+    @Test
+    void retrievePurchase_shouldReturnPurchaseInRequestedCurrency() {
+        Long purchaseId = 1L;
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        CollectorPurchase purchase = createCollectorPurchase(purchaseId);
+        purchase.setCollector(collector);
+        purchase.setFigurines(new ArrayList<>(List.of(
+                createPurchaseFigurine(701L, purchase, 1001L, 2, new BigDecimal("100.00"), PurchaseType.RETAIL),
+                createPurchaseFigurine(702L, purchase, 1002L, 1, new BigDecimal("50.00"), PurchaseType.PREORDER))));
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)).thenReturn(Optional.of(purchase));
+        when(currencyConversionService.convert(new BigDecimal("100.00"), "JPY", "USD"))
+                .thenReturn(new BigDecimal("1.00"));
+        when(currencyConversionService.convert(new BigDecimal("50.00"), "JPY", "USD"))
+                .thenReturn(new BigDecimal("0.50"));
+
+        CollectorPurchaseResp response = collectorPurchaseService.retrievePurchase(COLLECTOR_ID, purchaseId,
+                Currency.getInstance("USD"));
+
+        assertThat(response.currency()).isEqualTo("USD");
+        assertThat(response.totalAmount()).isEqualByComparingTo("2.50");
+        assertThat(purchase.getCurrency()).isEqualTo(CurrencyCode.USD);
+        assertThat(purchase.getFigurines()).extracting(CollectorPurchaseFigurine::getPricePaid)
+                .containsExactly(new BigDecimal("1.00"), new BigDecimal("0.50"));
     }
 
     @Test
@@ -496,9 +542,19 @@ public class CollectorPurchaseServiceTest {
     }
 
     @Test
-    void calculateTotalAmount_shouldReturnZero() {
-        assertThat(collectorPurchaseService.calculateTotalAmount(new CollectorPurchase()))
-                .isEqualByComparingTo(BigDecimal.ZERO);
+    void retrievePurchases_shouldReturnDefaultCurrencyWhenCollectorHasNoPurchases() {
+        Collector collector = new Collector();
+        collector.setId(COLLECTOR_ID);
+
+        when(collectorCollectionFigurineService.retrieveCollector(COLLECTOR_ID)).thenReturn(collector);
+        when(collectorPurchaseRepository.findByCollectorOrderByOrderDateAsc(any(Collector.class),
+                any(PageRequest.class))).thenReturn(List.of());
+
+        CollectorPurchaseSummaryResp response = collectorPurchaseService.retrievePurchases(COLLECTOR_ID, null);
+
+        assertThat(response.summary().currency()).isEqualTo("JPY");
+        assertThat(response.summary().totalAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.purchases()).isEmpty();
     }
 
     @ParameterizedTest

@@ -113,20 +113,44 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         }
                         """)));
         FX_API.resetAll();
+        FX_API.stubFor(get(urlPathEqualTo("/api/mxn/eur.json")).willReturn(okJson("""
+                {
+                    "base": "MXN",
+                    "target": "EUR",
+                    "rate": 0.050194,
+                    "timestamp": "2026-09-23T15:10:10.613Z"
+                }
+                """)));
+        FX_API.stubFor(get(urlPathEqualTo("/api/jpy/eur.json")).willReturn(okJson("""
+                {
+                    "base": "JPY",
+                    "target": "EUR",
+                    "rate": 0.005543,
+                    "timestamp": "2026-09-23T15:15:17.946Z"
+                }
+                """)));
+        FX_API.stubFor(get(urlPathEqualTo("/api/jpy/mxn.json")).willReturn(okJson("""
+                {
+                    "base": "JPY",
+                    "target": "MXN",
+                    "rate": 0.110335,
+                    "timestamp": "2026-09-23T15:25:10.541Z"
+                }
+                """)));
         FX_API.stubFor(get(urlPathEqualTo("/api/mxn/jpy.json")).willReturn(okJson("""
                 {
                     "base": "MXN",
                     "target": "JPY",
-                    "rate": 9.104322,
-                    "timestamp": "2026-09-22T19:30:36.346Z"
+                    "rate": 9.055893,
+                    "timestamp": "2026-09-23T15:45:10.623Z"
                 }
                 """)));
         FX_API.stubFor(get(urlPathEqualTo("/api/usd/mxn.json")).willReturn(okJson("""
                 {
                     "base": "USD",
                     "target": "MXN",
-                    "rate": 17.294004,
-                    "timestamp": "2026-09-22T20:55:11.217Z"
+                    "rate": 17.533976,
+                    "timestamp": "2026-09-24T03:05:10.910Z"
                 }
                 """)));
     }
@@ -143,85 +167,84 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
 
         // 1. The user authenticates using the Google provider and obtains a token
         log.info("1. Authenticating collector with Google provider");
-        CollectorLoginResp loginResp = authenticateCollectorWithGoogle();
+        String token = authenticateCollectorWithGoogle().accessToken();
 
         // 2. The user imports some figurines into the catalog
         log.info("2. Importing figurines into the catalog");
-        List<FigurineResp> allFigurines = importFigurinesIntoCatalog(loginResp.accessToken());
+        List<FigurineResp> allFigurines = importFigurinesIntoCatalog(token);
 
         // 3. Once the figurines are in the catalog, the user creates a collection and
         // adds some figurines to it.
         log.info("3. Creating a collection and adding figurines to it");
-        CollectorCollectionResp collectionResp = createAndAddFigurinesToCollection(loginResp.accessToken(),
-                allFigurines);
+        CollectorCollectionResp collectionResp = createAndAddFigurinesToCollection(token, allFigurines);
 
         // 4. Having the collection with figurines, we retrieve the figurines from the
         // collection to register them in a purchase.
         log.info("4. Retrieving figurines from the collection to register them in a purchase");
-        List<CollectorCollectionFigurineResp> collectionFigurineRespList = retrieveFigurinesFromCollection(
-                loginResp.accessToken(), collectionResp);
+        List<CollectorCollectionFigurineResp> collectionFigurineRespList = retrieveFigurinesFromCollection(token,
+                collectionResp);
 
         // 5. The user registers a new purchase for the collector.
         log.info("5. Registering new purchases for the collector");
-        CollectorPurchaseResp onlinePurchaseResp = registerOnlinePurchase(loginResp.accessToken(), collectionResp.id(),
+        CollectorPurchaseResp onlinePurchaseResp = registerOnlinePurchase(token, collectionResp.id(),
                 collectionFigurineRespList);
         log.info("New online purchase registered: {}", onlinePurchaseResp);
 
-        CollectorPurchaseResp inStorePurchaseResp = registerInStorePurchase(loginResp.accessToken(),
-                collectionResp.id(), collectionFigurineRespList);
+        CollectorPurchaseResp inStorePurchaseResp = registerInStorePurchase(token, collectionResp.id(),
+                collectionFigurineRespList);
         log.info("New in-store purchase registered: {}", inStorePurchaseResp);
 
-        // 6. The user retrieves all purchases for the collector to verify that both
+        // 6.1. The user validates the purchases for the collector with a custom
+        // currency (EUR) by making a GET request to the purchases endpoint and
+        // asserting the response.
+        log.info("6.1. Validating the purchases for the collector with a custom currency (EUR)");
+        validatePurchasesForCollectorWithCustomCurrency(token);
+        // 6.2. The user retrieves all purchases for the collector to verify that both
         // purchases were registered.
-        log.info("6. Retrieving all purchases for the collector to verify that both purchases were registered");
-        List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(loginResp.accessToken(), true);
+        log.info("6.2. Retrieving all purchases for the collector to verify that both purchases were registered");
+        List<CollectorPurchaseResp> purchases = retrieveExistingPurchasesForCollector(token, true);
 
         // 7. The user retrieves a specific purchase by its ID to verify that the
         // details are correct.
         log.info("7. Retrieving a specific purchase by its ID to verify that the details are correct");
-        CollectorPurchaseResp retrievedOnlinePurchase = retrievePurchaseById(loginResp.accessToken(),
-                purchases.getFirst().purchaseId());
-        assertThat(retrievedOnlinePurchase).isEqualTo(onlinePurchaseResp);
-        CollectorPurchaseResp retrievedInStorePurchase = retrievePurchaseById(loginResp.accessToken(),
-                purchases.getLast().purchaseId());
+        CollectorPurchaseResp retrievedInStorePurchase = retrievePurchaseById(token, purchases.getFirst().purchaseId());
         assertThat(retrievedInStorePurchase).isEqualTo(inStorePurchaseResp);
+        CollectorPurchaseResp retrievedOnlinePurchase = retrievePurchaseById(token, purchases.getLast().purchaseId());
+        assertThat(retrievedOnlinePurchase).isEqualTo(onlinePurchaseResp);
 
         // 8.1. The user performs multiple edits on the purchases, such as updating the
         // shipping status, changing the order number, and modifying the total amount.
         // The user verifies that the changes are reflected correctly in the retrieved
         // purchase details.
         log.info("8.1. Performing multiple edits on the purchases and verifying the changes");
-        updateExistingOnlinePurchasesAndVerifyChanges(loginResp.accessToken(), purchases.getFirst(),
-                collectionFigurineRespList);
+        updateExistingOnlinePurchasesAndVerifyChanges(token, purchases.getLast(), collectionFigurineRespList);
         // 8.2. Now we do some updates on the in-store purchase, such as changing the
         // seller.
         log.info("8.2. Performing updates on the in-store purchase and verifying the changes");
-        updateExistingInStorePurchasesAndVerifyChanges(loginResp.accessToken(), purchases.getLast(),
-                collectionFigurineRespList);
+        updateExistingInStorePurchasesAndVerifyChanges(token, purchases.getFirst(), collectionFigurineRespList);
         // 8.3. We do one more change, but this time I partially update the shipping
         // status of the online purchase to "Shipped" and verify that the change is
         // reflected correctly.
         log.info(
                 "8.3. Partially updating the shipping status of the online purchase to 'NOT_SHIPPED' and verifying the change");
-        updateExistingOnlinePurchasesShippingStatusAndVerifyChanges(loginResp.accessToken(), purchases.getFirst());
+        updateExistingOnlinePurchasesShippingStatusAndVerifyChanges(token, purchases.getLast());
 
         // 9. Retrieve again all the existing purchases for the collector to delete them
         // and verify that the purchases were deleted successfully.
         log.info("9. Retrieving all existing purchases for the collector to delete them");
-        List<CollectorPurchaseResp> existingPurchases = retrieveExistingPurchasesForCollector(loginResp.accessToken(),
-                false);
+        List<CollectorPurchaseResp> existingPurchases = retrieveExistingPurchasesForCollector(token, false);
 
         // 10. Finally, the user deletes all existing purchases for the collector and
         // verifies that the purchases were deleted successfully.
         log.info(
                 "10. Deleting all existing purchases for the collector and verifying that the purchases were deleted successfully");
-        deleteExistingPurchasesAndVerifyDeletion(loginResp.accessToken(), existingPurchases);
+        deleteExistingPurchasesAndVerifyDeletion(token, existingPurchases);
 
         // 11. Delete existing collections for the collector and verify that the
         // collections were deleted successfully.
         log.info(
                 "11. Deleting all existing collections for the collector and verifying that the collections were deleted successfully");
-        deleteExistingCollectionsAndVerifyDeletion(loginResp.accessToken(), collectionResp);
+        deleteExistingCollectionsAndVerifyDeletion(token, collectionResp);
     }
 
     /**
@@ -369,25 +392,24 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         // I only need to register purchases for some of the owning figurines, so I will
         // select the first and last figurines from the owning figurines list to
         // register a purchase for them.
-        CollectorCollectionFigurineResp firstFigurine = owningFigurines.getFirst();
-        CollectorCollectionFigurineResp lastFigurine = owningFigurines.getLast();
+        List<CollectorPurchaseFigurineReq> purchaseFigurineReqs = List.of(
+                new CollectorPurchaseFigurineReq(owningFigurines.getFirst().collectionFigurineId(),
+                        owningFigurines.getFirst().ownedQuantity(), new BigDecimal("27000.00"), PurchaseType.RETAIL),
+                new CollectorPurchaseFigurineReq(owningFigurines.getLast().collectionFigurineId(),
+                        owningFigurines.getLast().ownedQuantity(), new BigDecimal("24000.00"), PurchaseType.RETAIL));
 
-        List<CollectorPurchaseFigurineReq> purchaseFigurineReqs = Stream.of(firstFigurine, lastFigurine)
-                .map(ccf -> new CollectorPurchaseFigurineReq(ccf.collectionFigurineId(), ccf.ownedQuantity(),
-                        new BigDecimal("6400.00"), PurchaseType.RETAIL))
-                .toList();
-
-        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Mandarake", "XQKUHSCWV",
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 7, 15), "Mandarake", "XQKUHSCWV",
                 Currency.getInstance("JPY"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189",
                 "FedEx", purchaseFigurineReqs);
 
         CollectorPurchaseResp body = createPurchaseAndGetResponse(jwtCollector, collectionId, request);
         assertThat(body.purchaseId()).isNotNull();
         assertThat(body.purchaseId()).isPositive();
+        assertThat(body.purchaseDate()).isEqualTo(LocalDate.of(2026, 7, 15));
         assertThat(body.seller()).isEqualTo("Mandarake");
         assertThat(body.orderNumber()).isEqualTo("XQKUHSCWV");
         assertThat(body.currency()).isEqualTo("JPY");
-        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("12800.00"));
+        assertThat(body.totalAmount()).isEqualTo(new BigDecimal("51000.00"));
         assertThat(body.purchaseChannel()).isEqualTo(PurchaseChannel.ONLINE);
         assertThat(body.shippingStatus()).isEqualTo(ShippingStatus.DELIVERED);
         assertThat(body.trackingNumber()).isEqualTo("1ZV912320456954189");
@@ -430,12 +452,13 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         new BigDecimal("1200.00"), PurchaseType.SECOND_HAND))
                 .toList();
 
-        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.now(), "Rockshow", null,
+        CollectorPurchaseReq request = new CollectorPurchaseReq(LocalDate.of(2026, 6, 10), "Rockshow", null,
                 Currency.getInstance("MXN"), PurchaseChannel.PHYSICAL_STORE, null, null, null, purchaseFigurineReqs);
 
         CollectorPurchaseResp body = createPurchaseAndGetResponse(jwtCollector, collectionId, request);
         assertThat(body.purchaseId()).isNotNull();
         assertThat(body.purchaseId()).isPositive();
+        assertThat(body.purchaseDate()).isEqualTo(LocalDate.of(2026, 6, 10));
         assertThat(body.seller()).isEqualTo("Rockshow");
         assertThat(body.orderNumber()).isNull();
         assertThat(body.currency()).isEqualTo("MXN");
@@ -449,6 +472,67 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         assertThat(body.shippedDate()).isNull();
 
         return body;
+    }
+
+    /**
+     * Validates the purchases for the collector with a custom currency (USD) by
+     * making a GET request to the purchases endpoint and asserting the response.
+     * This method is similar to #retrieveExistingPurchasesForCollector but does not
+     * return the purchases list, it only validates the response.
+     *
+     * @param jwtCollector
+     *            The JWT token of the collector.
+     */
+    private void validatePurchasesForCollectorWithCustomCurrency(final String jwtCollector) {
+
+        ResponseEntity<CollectorPurchaseSummaryResp> response = rest.get()
+                .uri(uriBuilder -> uriBuilder.path(PURCHASES).queryParam("currency", "EUR").build())
+                .headers(bearerToken(jwtCollector)).retrieve().toEntity(CollectorPurchaseSummaryResp.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(OK);
+        assertThat(response.getBody()).isNotNull();
+
+        CollectorPurchaseSummaryResp purchaseSummary = response.getBody();
+        assertThat(purchaseSummary).isNotNull();
+        Objects.requireNonNull(purchaseSummary, "Purchases summary response body should not be null");
+
+        PurchaseSummaryResp summary = purchaseSummary.summary();
+        List<CollectorPurchaseResp> purchases = purchaseSummary.purchases();
+
+        assertThat(summary.currency()).isEqualTo("EUR");
+        assertThat(summary.totalAmount()).isEqualTo(new BigDecimal("342.92"));
+
+        assertThat(purchases.size()).isEqualTo(2);
+
+        assertThat(purchases.getFirst()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
+                .containsExactly(2L, LocalDate.of(2026, 6, 10), "Rockshow", null, "EUR", new BigDecimal("60.23"),
+                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null, null,
+                        List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("60.23"),
+                                PurchaseType.SECOND_HAND)));
+
+        assertThat(purchases.getLast()).isNotNull()
+                .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
+                        CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
+                        CollectorPurchaseResp::currency, CollectorPurchaseResp::totalAmount,
+                        CollectorPurchaseResp::purchaseChannel, CollectorPurchaseResp::shippingStatus,
+                        CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
+                        CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
+                        CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
+                .containsExactly(1L, LocalDate.of(2026, 7, 15), "Mandarake", "XQKUHSCWV", "EUR",
+                        new BigDecimal("282.69"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED,
+                        "1ZV912320456954189", "FedEx", "https://www.fedex.com/fedextrack/?trknbr=1ZV912320456954189",
+                        null, LocalDate.now(),
+                        List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("149.66"),
+                                PurchaseType.RETAIL),
+                                new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("133.03"),
+                                        PurchaseType.RETAIL)));
     }
 
     /**
@@ -466,8 +550,9 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
     private List<CollectorPurchaseResp> retrieveExistingPurchasesForCollector(final String jwtCollector,
             final boolean assertPurchases) {
 
-        ResponseEntity<CollectorPurchaseSummaryResp> response = rest.get().uri(PURCHASES)
-                .headers(bearerToken(jwtCollector)).retrieve().toEntity(CollectorPurchaseSummaryResp.class);
+        ResponseEntity<CollectorPurchaseSummaryResp> response = rest.get()
+                .uri(uriBuilder -> uriBuilder.path(PURCHASES).build()).headers(bearerToken(jwtCollector)).retrieve()
+                .toEntity(CollectorPurchaseSummaryResp.class);
 
         assertThat(response.getStatusCode()).isEqualTo(OK);
         assertThat(response.getBody()).isNotNull();
@@ -485,11 +570,11 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         }
 
         assertThat(summary.currency()).isEqualTo("JPY");
-        assertThat(summary.totalAmount()).isEqualTo(new BigDecimal("23725.19"));
+        assertThat(summary.totalAmount()).isEqualTo(new BigDecimal("61867.07"));
 
         assertThat(purchases.size()).isEqualTo(2);
 
-        // online purchase assertions
+        // in-store purchase assertions
         assertThat(purchases.getFirst()).isNotNull()
                 .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
                         CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
@@ -498,15 +583,12 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
                         CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
                         CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
-                .containsExactly(1L, LocalDate.now(), "Mandarake", "XQKUHSCWV", "JPY", new BigDecimal("12800.00"),
-                        PurchaseChannel.ONLINE, ShippingStatus.DELIVERED, "1ZV912320456954189", "FedEx",
-                        "https://www.fedex.com/fedextrack/?trknbr=1ZV912320456954189", null, LocalDate.now(),
-                        List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("6400.00"),
-                                PurchaseType.RETAIL),
-                                new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("6400.00"),
-                                        PurchaseType.RETAIL)));
+                .containsExactly(2L, LocalDate.of(2026, 6, 10), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
+                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null, null,
+                        List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("1200.00"),
+                                PurchaseType.SECOND_HAND)));
 
-        // in-store purchase assertions
+        // online purchase assertions
         assertThat(purchases.getLast()).isNotNull()
                 .extracting(CollectorPurchaseResp::purchaseId, CollectorPurchaseResp::purchaseDate,
                         CollectorPurchaseResp::seller, CollectorPurchaseResp::orderNumber,
@@ -515,10 +597,14 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
                         CollectorPurchaseResp::trackingNumber, CollectorPurchaseResp::carrier,
                         CollectorPurchaseResp::trackingUrl, CollectorPurchaseResp::shippedDate,
                         CollectorPurchaseResp::deliveredDate, CollectorPurchaseResp::figurines)
-                .containsExactly(2L, LocalDate.now(), "Rockshow", null, "MXN", new BigDecimal("1200.00"),
-                        PurchaseChannel.PHYSICAL_STORE, null, null, null, null, null, null,
-                        List.of(new CollectorPurchaseFigurineResp(3L, 8L, 1, new BigDecimal("1200.00"),
-                                PurchaseType.SECOND_HAND)));
+                .containsExactly(1L, LocalDate.of(2026, 7, 15), "Mandarake", "XQKUHSCWV", "JPY",
+                        new BigDecimal("51000.00"), PurchaseChannel.ONLINE, ShippingStatus.DELIVERED,
+                        "1ZV912320456954189", "FedEx", "https://www.fedex.com/fedextrack/?trknbr=1ZV912320456954189",
+                        null, LocalDate.now(),
+                        List.of(new CollectorPurchaseFigurineResp(1L, 1L, 1, new BigDecimal("27000.00"),
+                                PurchaseType.RETAIL),
+                                new CollectorPurchaseFigurineResp(2L, 16L, 1, new BigDecimal("24000.00"),
+                                        PurchaseType.RETAIL)));
 
         return purchases;
     }

@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.collectorspurchases;
 
+import static com.mesofi.mythclothapi.utils.CurrencyConverter.toOptionalCurrency;
+
 import java.net.URI;
 
 import jakarta.validation.Valid;
@@ -85,7 +87,7 @@ public class CollectorPurchaseController {
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
     public CollectorPurchaseSummaryResp retrievePurchases(@AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) String currency) {
-        return collectorPurchaseService.retrievePurchases(getCollectorId(jwt));
+        return collectorPurchaseService.retrievePurchases(getCollectorId(jwt), toOptionalCurrency(currency));
     }
 
     /**
@@ -99,8 +101,9 @@ public class CollectorPurchaseController {
      */
     @GetMapping("/{purchaseId}")
     @PreAuthorize("hasAuthority('" + Permissions.PURCHASES_READ + "')")
-    public CollectorPurchaseResp retrievePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId) {
-        return collectorPurchaseService.retrievePurchase(getCollectorId(jwt), purchaseId);
+    public CollectorPurchaseResp retrievePurchase(@AuthenticationPrincipal Jwt jwt, @PathVariable Long purchaseId,
+            @RequestParam(required = false) String currency) {
+        return collectorPurchaseService.retrievePurchase(getCollectorId(jwt), purchaseId, toOptionalCurrency(currency));
     }
 
     /**
