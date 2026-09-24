@@ -49,6 +49,30 @@ public final class CurrencyConverter {
     }
 
     /**
+     * Converts the specified ISO 4217 currency code to a {@link Currency}.
+     * <p>
+     * If the currency code is {@code null}, empty, or does not represent a valid
+     * ISO 4217 currency code, this method logs a warning and returns {@code null}.
+     *
+     * @param currencyCode
+     *            the ISO 4217 currency code to convert
+     * @return the corresponding {@link Currency}, or {@code null} when the code is
+     *         {@code null}, empty, or invalid
+     */
+    public static Currency toOptionalCurrency(String currencyCode) {
+        if (!StringUtils.hasLength(currencyCode)) {
+            return null;
+        }
+
+        try {
+            return Currency.getInstance(currencyCode);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unable to convert '{}' to Currency. Returning null.", currencyCode);
+            return null;
+        }
+    }
+
+    /**
      * Determines whether the specified currency is the default currency.
      *
      * @param currency

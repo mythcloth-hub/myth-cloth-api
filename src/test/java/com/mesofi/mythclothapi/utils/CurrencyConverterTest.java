@@ -30,4 +30,19 @@ class CurrencyConverterTest {
     void getDefaultCurrency_shouldReturnDefaultCurrency() {
         assertThat(CurrencyConverter.getDefaultCurrency()).isEqualTo(Currency.getInstance("JPY"));
     }
+
+    @Test
+    void toOptionalCurrency_shouldReturnNullWhenInputIsNull() {
+        assertThat(CurrencyConverter.toOptionalCurrency(null)).isNull();
+    }
+
+    @Test
+    void toOptionalCurrency_shouldReturnCurrencyWhenInputIsValid() {
+        assertThat(CurrencyConverter.toOptionalCurrency("USD")).isEqualTo(Currency.getInstance("USD"));
+    }
+
+    @Test
+    void toOptionalCurrency_invalidCurrency_returnsNull() {
+        assertThat(CurrencyConverter.toOptionalCurrency("InvalidCurrency")).isNull();
+    }
 }

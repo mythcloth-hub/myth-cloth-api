@@ -4,6 +4,8 @@ import static com.mesofi.mythclothapi.utils.CurrencyConverter.getDefaultCurrency
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Currency;
 import java.util.HashMap;
 import java.util.List;
@@ -39,8 +41,10 @@ import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseI
 import com.mesofi.mythclothapi.collectorspurchases.exceptions.CollectorPurchaseNotFoundException;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchase;
 import com.mesofi.mythclothapi.collectorspurchases.model.CollectorPurchaseFigurine;
+import com.mesofi.mythclothapi.collectorspurchases.model.PurchaseTotal;
 import com.mesofi.mythclothapi.collectorspurchases.model.ShippingStatus;
 import com.mesofi.mythclothapi.common.BaseId;
+import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.integration.fix.CurrencyConversionService;
 
 import lombok.RequiredArgsConstructor;
@@ -109,8 +113,9 @@ public class CollectorPurchaseService {
 
         var saved = collectorPurchaseRepository.save(collectorPurchase);
 
+        PurchaseTotal purchaseTotal = calculatePurchaseTotal(saved);
         log.info("Saved collector purchase with ID {} and seller '{}'", saved.getId(), saved.getSeller());
-        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount, this::generateTrackingUrl);
+        return mapper.toCollectorPurchaseResp(saved, purchaseTotal.totalAmount(), this::generateTrackingUrl);
     }
 
     /**
@@ -130,68 +135,116 @@ public class CollectorPurchaseService {
     }
 
     /**
-     * Retrieves all collector purchases for the specified collector.
+     * Retrieves all collector purchases for the specified collector, optionally
+     * converting the amounts to the requested currency.
      *
      * @param collectorId
      *            the identifier of the collector for whom to retrieve purchases
-     * @return a list of CollectorPurchaseResp objects representing the collector's
-     *         purchases
+     * @param currency
+     *            the currency in which to display the purchase amounts (optional)
+     * @return a CollectorPurchaseSummaryResp object containing the summary and list
+     *         of purchases
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = PURCHASES_CACHE, key = "T(java.util.Objects).hash(#collectorId)")
-    public CollectorPurchaseSummaryResp retrievePurchases(Long collectorId) {
-        log.info("Retrieving collector purchases for collector ID {}", collectorId);
+    @Cacheable(value = PURCHASES_CACHE, key = "T(java.util.Objects).hash(#collectorId, #currency)")
+    public CollectorPurchaseSummaryResp retrievePurchases(Long collectorId, Currency currency) {
+        log.info("Retrieving collector purchases for collector ID {} with currency {}", collectorId, currency);
 
         Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
 
-        // Retrieves the collector's purchases, ordered by order date in ascending
-        // order, and maps them to response objects
-        List<CollectorPurchaseResp> purchases = collectorPurchaseRepository
-                .findByCollectorOrderByOrderDateAsc(collector, PageRequest.of(0, MAX_PURCHASES)).stream()
-                .map(purchase -> mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount,
-                        this::generateTrackingUrl))
+        List<CollectorPurchase> purchases = collectorPurchaseRepository.findByCollectorOrderByOrderDateAsc(collector,
+                PageRequest.of(0, MAX_PURCHASES));
+
+        List<PurchaseTotal> purchaseTotals = purchases.stream().map(cp -> calculatePurchaseTotal(currency, cp))
                 .toList();
 
-        // Calculates the summary of the collector's purchases, including the total
-        // amount and the most frequent currency used
-        PurchaseSummaryResp summary = getSummary(purchases);
+        Currency summaryCurrency = currency == null
+                ? resolveEffectiveCurrency(purchases.stream().map(p -> p.getCurrency().name()).toList())
+                : currency;
 
-        return new CollectorPurchaseSummaryResp(summary, purchases);
+        BigDecimal grandTotalAmount;
+        if (currency == null) {
+            grandTotalAmount = purchaseTotals.stream()
+                    .map(purchaseTotal -> currencyConversionService.convert(purchaseTotal.totalAmount(),
+                            purchaseTotal.currency().getCurrencyCode(), summaryCurrency.getCurrencyCode()))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+        } else {
+            grandTotalAmount = purchaseTotals.stream().map(PurchaseTotal::totalAmount).reduce(BigDecimal.ZERO,
+                    BigDecimal::add);
+        }
+
+        PurchaseSummaryResp summary = new PurchaseSummaryResp(summaryCurrency.getCurrencyCode(), grandTotalAmount);
+        List<CollectorPurchaseResp> purchaseList = new ArrayList<>();
+        for (int i = 0; i < purchases.size(); i++) {
+            CollectorPurchaseResp purchaseResp = mapper.toCollectorPurchaseResp(purchases.get(i),
+                    purchaseTotals.get(i).totalAmount(), this::generateTrackingUrl);
+            purchaseList.add(purchaseResp);
+        }
+
+        return new CollectorPurchaseSummaryResp(summary, purchaseList);
     }
 
     /**
-     * Calculates the summary of the collector's purchases, including the total
-     * amount and the most frequent currency used.
+     * Resolves the effective currency to use for the purchases. If a requested
+     * currency is provided, it is used. Otherwise, the most frequently used
+     * currency among the existing purchases is selected. If no purchases exist, the
+     * default currency is returned.
      *
-     * @param purchases
-     *            the list of collector purchases to summarize
-     * @return a PurchaseSummaryResp object representing the summary of the
-     *         purchases
+     * @param existingCurrencies
+     *            the list of existing currencies from the collector's purchases
+     * @return the effective currency to use for the purchases
      */
-    private PurchaseSummaryResp getSummary(List<CollectorPurchaseResp> purchases) {
+    private Currency resolveEffectiveCurrency(List<String> existingCurrencies) {
+
         Map<String, Integer> currencyFrequencies = new HashMap<>();
 
-        for (CollectorPurchaseResp purchase : purchases) {
-            String currency = purchase.currency();
+        for (String currency : existingCurrencies) {
             currencyFrequencies.put(currency, currencyFrequencies.getOrDefault(currency, 0) + 1);
         }
 
-        Currency mostFrequentCurrency = currencyFrequencies.entrySet().stream().max(Map.Entry.comparingByValue())
+        return currencyFrequencies.entrySet().stream()
+                .max(Map.Entry.<String, Integer>comparingByValue()
+                        .thenComparing(Map.Entry.comparingByKey(Comparator.reverseOrder())))
                 .map(Map.Entry::getKey).map(Currency::getInstance).orElse(getDefaultCurrency());
+    }
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (CollectorPurchaseResp purchase : purchases) {
-            if (purchase.currency().equals(mostFrequentCurrency.toString())) {
-                totalAmount = totalAmount.add(purchase.totalAmount());
-            } else {
-                // needs conversion to the most frequent currency
-                BigDecimal convertedAmount = currencyConversionService.convert(purchase.totalAmount(),
-                        purchase.currency(), mostFrequentCurrency.getCurrencyCode());
-                totalAmount = totalAmount.add(convertedAmount);
-            }
-        }
+    /**
+     * Calculates the total amount of a collector purchase in its original currency.
+     *
+     * @param purchase
+     *            the collector purchase for which to calculate the total amount
+     * @return a PurchaseTotal object containing the total amount and currency
+     */
+    private PurchaseTotal calculatePurchaseTotal(CollectorPurchase purchase) {
+        return calculatePurchaseTotal(null, purchase);
+    }
 
-        return new PurchaseSummaryResp(mostFrequentCurrency.getCurrencyCode(), totalAmount);
+    /**
+     * Calculates the total amount of a collector purchase in the requested
+     * currency.
+     *
+     * @param requestedCurrency
+     *            the currency in which to calculate the total amount (optional)
+     * @param purchase
+     *            the collector purchase for which to calculate the total amount
+     * @return a PurchaseTotal object containing the total amount and currency
+     */
+    private PurchaseTotal calculatePurchaseTotal(Currency requestedCurrency, CollectorPurchase purchase) {
+        String purchaseCurrency = purchase.getCurrency().name();
+        String targetCurrency = requestedCurrency != null ? requestedCurrency.getCurrencyCode() : purchaseCurrency;
+
+        BigDecimal totalAmount = purchase.getFigurines().stream().map(figurine -> {
+            BigDecimal effectivePrice = currencyConversionService.convert(figurine.getPricePaid(), purchaseCurrency,
+                    targetCurrency);
+
+            figurine.setPricePaid(effectivePrice);
+
+            return effectivePrice.multiply(BigDecimal.valueOf(figurine.getQuantity()));
+        }).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        purchase.setCurrency(CurrencyCode.valueOf(targetCurrency));
+
+        return new PurchaseTotal(Currency.getInstance(targetCurrency), totalAmount);
     }
 
     /**
@@ -207,15 +260,17 @@ public class CollectorPurchaseService {
      *             collector
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = PURCHASES_SINGLE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #purchaseId)")
-    public CollectorPurchaseResp retrievePurchase(Long collectorId, Long purchaseId) {
+    @Cacheable(value = PURCHASES_SINGLE_CACHE, key = "T(java.util.Objects).hash(#collectorId, #purchaseId, #currency)")
+    public CollectorPurchaseResp retrievePurchase(Long collectorId, Long purchaseId, Currency currency) {
         log.info("Retrieving collector purchase with ID {} for collector ID {}", purchaseId, collectorId);
 
         Collector collector = collectorCollectionFigurineService.retrieveCollector(collectorId);
 
         CollectorPurchase purchase = collectorPurchaseRepository.findByIdAndCollector(purchaseId, collector)
                 .orElseThrow(() -> new CollectorPurchaseNotFoundException(purchaseId));
-        return mapper.toCollectorPurchaseResp(purchase, this::calculateTotalAmount, this::generateTrackingUrl);
+
+        PurchaseTotal purchaseTotal = calculatePurchaseTotal(currency, purchase);
+        return mapper.toCollectorPurchaseResp(purchase, purchaseTotal.totalAmount(), this::generateTrackingUrl);
     }
 
     /**
@@ -254,7 +309,9 @@ public class CollectorPurchaseService {
         reconcileFigurines(existing, request.figurines());
 
         CollectorPurchase saved = collectorPurchaseRepository.saveAndFlush(existing);
-        return mapper.toCollectorPurchaseResp(saved, this::calculateTotalAmount, this::generateTrackingUrl);
+
+        PurchaseTotal purchaseTotal = calculatePurchaseTotal(saved);
+        return mapper.toCollectorPurchaseResp(saved, purchaseTotal.totalAmount(), this::generateTrackingUrl);
     }
 
     /**
@@ -290,7 +347,8 @@ public class CollectorPurchaseService {
         existing.setShippingStatus(newShippingStatus);
         updateShippingDates(existing);
 
-        return mapper.toCollectorPurchaseResp(existing, this::calculateTotalAmount, this::generateTrackingUrl);
+        PurchaseTotal purchaseTotal = calculatePurchaseTotal(existing);
+        return mapper.toCollectorPurchaseResp(existing, purchaseTotal.totalAmount(), this::generateTrackingUrl);
     }
 
     /**
@@ -412,22 +470,6 @@ public class CollectorPurchaseService {
 
         log.warn("Collector ID {} does not own all figurine IDs {}", collectorId, figurineIds);
         throw new CollectorPurchaseFigurineNotFoundException(figurineIds);
-    }
-
-    /**
-     * Calculates the total amount of the purchase based on the figurines and their
-     * prices.
-     *
-     * @param purchase
-     *            the collector purchase for which to calculate the total amount
-     * @return the total amount of the purchase
-     */
-    public BigDecimal calculateTotalAmount(CollectorPurchase purchase) {
-        return purchase.getFigurines().stream().map(purchaseFigurine -> {
-            BigDecimal unitPrice = purchaseFigurine.getPricePaid();
-            int quantity = purchaseFigurine.getQuantity();
-            return unitPrice.multiply(BigDecimal.valueOf(quantity));
-        }).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**

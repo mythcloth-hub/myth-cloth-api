@@ -323,7 +323,7 @@ public class CollectorPurchaseControllerTest {
 
         CollectorPurchaseSummaryResp response = new CollectorPurchaseSummaryResp(summary, purchases);
 
-        when(collectorPurchaseService.retrievePurchases(collectorId)).thenReturn(response);
+        when(collectorPurchaseService.retrievePurchases(collectorId, null)).thenReturn(response);
 
         mockMvc.perform(get(PURCHASES)
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
@@ -344,7 +344,7 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.purchases[0].shippedDate").exists())
                 .andExpect(jsonPath("$.purchases[0].deliveredDate").doesNotExist());
 
-        verify(collectorPurchaseService).retrievePurchases(collectorId);
+        verify(collectorPurchaseService).retrievePurchases(collectorId, null);
     }
 
     @Test
@@ -352,7 +352,7 @@ public class CollectorPurchaseControllerTest {
         Long collectorId = 123L;
         Long purchaseId = 0L;
 
-        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId))
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId, null))
                 .thenThrow(new CollectorPurchaseNotFoundException(purchaseId));
 
         // subject is sent with empty value.
@@ -367,7 +367,7 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.errorCode").value("COLLECTOR_PURCHASE_NOT_FOUND"));
 
-        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId, null);
     }
 
     @Test
@@ -379,7 +379,7 @@ public class CollectorPurchaseControllerTest {
                 "FZCAQSZTC", "JPY", new BigDecimal("62000"), PurchaseChannel.ONLINE, ShippingStatus.SHIPPED,
                 "884469419291", "FedEX", null, LocalDate.now(), null, List.of());
 
-        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId)).thenReturn(response);
+        when(collectorPurchaseService.retrievePurchase(collectorId, purchaseId, null)).thenReturn(response);
 
         mockMvc.perform(get(PURCHASES_RETRIEVAL_BY_ID, purchaseId)
                 .with(jwt().jwt(jwt -> jwt.subject(String.valueOf(collectorId)))
@@ -396,7 +396,7 @@ public class CollectorPurchaseControllerTest {
                 .andExpect(jsonPath("$.carrier").value("FedEX")).andExpect(jsonPath("$.shippedDate").exists())
                 .andExpect(jsonPath("$.deliveredDate").doesNotExist());
 
-        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId);
+        verify(collectorPurchaseService).retrievePurchase(collectorId, purchaseId, null);
     }
 
     @Test

@@ -105,16 +105,17 @@ public interface CollectorPurchaseMapper {
      *
      * @param purchase
      *            the entity to be converted
-     * @param calculateTotalAmount
-     *            a function to calculate the total amount of the purchase
+     * @param purchaseTotalAmount
+     *            the total amount of the purchase
+     * @param generateTrackingUrl
+     *            a function to generate the tracking URL for the purchase
      * @return a new {@link CollectorPurchaseResp} populated from the entity
      */
     @Mapping(target = "purchaseId", source = "id")
     @Mapping(target = "purchaseDate", source = "orderDate")
-    @Mapping(target = "totalAmount", expression = "java(calculateTotalAmount.apply(purchase))")
+    @Mapping(target = "totalAmount", expression = "java(purchaseTotalAmount)")
     @Mapping(target = "trackingUrl", expression = "java(generateTrackingUrl.apply(purchase))")
-    CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase,
-            @Context Function<CollectorPurchase, BigDecimal> calculateTotalAmount,
+    CollectorPurchaseResp toCollectorPurchaseResp(CollectorPurchase purchase, @Context BigDecimal purchaseTotalAmount,
             @Context Function<CollectorPurchase, String> generateTrackingUrl);
 
     /**
