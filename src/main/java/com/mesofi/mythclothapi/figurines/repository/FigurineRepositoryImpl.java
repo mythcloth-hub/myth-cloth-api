@@ -1,5 +1,7 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
+import static com.mesofi.mythclothapi.figurines.repository.SearchQueryBuilder.FIGURINE_SEARCH_ORDER_BY;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import org.springframework.util.StringUtils;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 /**
  * Custom repository implementation for executing advanced figurine queries.
@@ -114,6 +117,35 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             ) fd ON fd.figurine_id = f.id
             WHERE 1 = 1
             """;
+
+    @Override
+    public CollectablePageImpl<FigurineSearchProjection> findAll(FigurineFilter filter, Pageable pageable,
+            Long collectionId) {
+
+        SearchQueryContext queryContext = SearchQueryBuilder.buildFigurineSearchQueryContext(filter, collectionId);
+        StringBuilder sqlBuilder = queryContext.sql();
+        Map<String, Object> params = queryContext.params();
+
+        Query querySelect = em.createNativeQuery("%s %s".formatted(sqlBuilder, FIGURINE_SEARCH_ORDER_BY),
+                "FigurineSearchProjectionMapping");
+        querySelect.setFirstResult((int) pageable.getOffset());
+        querySelect.setMaxResults(pageable.getPageSize());
+        params.forEach(querySelect::setParameter);
+
+        @SuppressWarnings("unchecked")
+        List<FigurineSearchProjection> results = querySelect.getResultList();
+
+        Query queryCount = em.createNativeQuery(SearchQueryBuilder.COUNT_QUERY.formatted(sqlBuilder));
+        params.forEach(queryCount::setParameter);
+        long totalFigurines = ((Number) queryCount.getSingleResult()).longValue();
+
+        Query queryCollectableCount = em.createNativeQuery(SearchQueryBuilder.COUNT_QUERY
+                .formatted(sqlBuilder.append(" ").append(SearchQueryBuilder.RELEASED_OR_ANNOUNCED_FILTER)));
+        params.forEach(queryCollectableCount::setParameter);
+        long totalCollectableFigurines = ((Number) queryCollectableCount.getSingleResult()).longValue();
+
+        return new CollectablePageImpl<>(results, pageable, totalFigurines, totalCollectableFigurines);
+    }
 
     /**
      * Retrieves a paginated list of figurines matching the specified filter and

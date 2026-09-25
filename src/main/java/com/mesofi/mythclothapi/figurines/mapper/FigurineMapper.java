@@ -22,7 +22,9 @@ import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryMapper;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -47,6 +49,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 /**
  * MapStruct mapper responsible for converting between figurine import models,
@@ -542,34 +545,48 @@ public interface FigurineMapper {
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
     @Mapping(target = "isCollected", ignore = true)
-    @Mapping(target = "name", ignore = true)
-    @Mapping(target = "displayableName", ignore = true)
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "displayableName", source = "figurine.displayName")
     @Mapping(target = "distributors", ignore = true)
     @Mapping(target = "tamashiiUrl", ignore = true)
     @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
     @Mapping(target = "distribution", ignore = true)
-    @Mapping(target = "lineUp", ignore = true)
+    @Mapping(target = "lineUp", source = "figurine.lineupDescription")
     @Mapping(target = "series", ignore = true)
-    @Mapping(target = "group", ignore = true)
-    @Mapping(target = "anniversary", ignore = true)
-    @Mapping(target = "isMetalBody", ignore = true)
-    @Mapping(target = "isOriginalColorEdition", ignore = true)
-    @Mapping(target = "isRevival", ignore = true)
+    @Mapping(target = "group", source = "figurine.groupDescription")
+    @Mapping(target = "anniversary", source = "figurine.anniversaryDescription")
+    @Mapping(target = "isMetalBody", source = "figurine.isMetalBody")
+    @Mapping(target = "isOriginalColorEdition", source = "figurine.isOce")
+    @Mapping(target = "isRevival", source = "figurine.isRevival")
     @Mapping(target = "isPlainCloth", ignore = true)
     @Mapping(target = "isBattleDamaged", ignore = true)
     @Mapping(target = "isGoldenArmor", ignore = true)
-    @Mapping(target = "isGold24kEdition", ignore = true)
+    @Mapping(target = "isGold24kEdition", source = "figurine.isGold")
     @Mapping(target = "isMangaVersion", ignore = true)
     @Mapping(target = "isMultiPack", ignore = true)
     @Mapping(target = "isArticulable", ignore = true)
     @Mapping(target = "notes", ignore = true)
-    @Mapping(target = "officialImageUrls", ignore = true)
+    @Mapping(target = "officialImageUrls", source = "figurine.imageUrl")
     @Mapping(target = "unofficialImageUrls", ignore = true)
     @Mapping(target = "events", ignore = true)
     @Mapping(target = "restocks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    FigurineResp toFigurineResp(Figurine figurine);
+    FigurineResp toFigurineResp(FigurineSearchProjection figurine);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "description", source = "catalogDescription")
+    CatalogResp mapCatalogDescription(String catalogDescription);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "description", source = "anniversaryDescription")
+    @Mapping(target = "year", ignore = true)
+    @Mapping(target = "type", ignore = true)
+    AnniversaryResp mapAnniversaryDescription(String anniversaryDescription);
+
+    default List<String> mapFigurineImageUrl(String imageUrl) {
+        return imageUrl == null ? List.of() : List.of(imageUrl);
+    }
 
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.

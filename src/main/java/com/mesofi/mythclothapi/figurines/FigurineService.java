@@ -69,6 +69,7 @@ import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -288,11 +289,8 @@ public class FigurineService {
             @Positive int size, Long collectionId, Boolean owned) {
         log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
-
-        LineUp lineUp = figurines.getContent().getFirst().getLineup();
-        // System.out.println("Id: " + lineUp.getId());
-        System.out.println("Description: " + lineUp.getDescription());
+        CollectablePageImpl<FigurineSearchProjection> figurines = repository.findAll(filter, PageRequest.of(page, size),
+                collectionId);
 
         List<FigurineResp> figurineRespList = figurines.stream().map(mapper::toFigurineResp).toList();
 

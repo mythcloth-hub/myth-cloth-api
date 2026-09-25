@@ -7,6 +7,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ColumnResult;
+import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -31,6 +32,7 @@ import com.mesofi.mythclothapi.common.Auditable;
 import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurines.repository.FigurineListener;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 import com.mesofi.mythclothapi.figurinestores.model.FigurineStore;
 
 import lombok.AllArgsConstructor;
@@ -63,6 +65,16 @@ import lombok.Setter;
  * @see FigurineListener
  * @see ReleaseStatus
  */
+@SqlResultSetMapping(name = "FigurineSearchProjectionMapping", classes = @ConstructorResult(targetClass = FigurineSearchProjection.class, columns = {
+        @ColumnResult(name = "id", type = Long.class), @ColumnResult(name = "normalized_name", type = String.class),
+        @ColumnResult(name = "display_name", type = String.class),
+        @ColumnResult(name = "current_release_status", type = String.class),
+        @ColumnResult(name = "lineup_description", type = String.class),
+        @ColumnResult(name = "group_description", type = String.class),
+        @ColumnResult(name = "anniversary_description", type = String.class),
+        @ColumnResult(name = "is_metal_body", type = Boolean.class),
+        @ColumnResult(name = "is_oce", type = Boolean.class), @ColumnResult(name = "is_revival", type = Boolean.class),
+        @ColumnResult(name = "is_gold", type = Boolean.class), @ColumnResult(name = "image_url", type = String.class)}))
 @SqlResultSetMapping(name = "FigurineWithCollectionIdMapping", entities = @EntityResult(entityClass = Figurine.class), columns = @ColumnResult(name = "collection_figurine_id", type = Long.class))
 @Entity
 @EntityListeners(FigurineListener.class)
