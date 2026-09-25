@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import com.mesofi.mythclothapi.catalogs.model.LineUp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYearSummaryProjection;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockProjection;
 
 /**
  * Repository for {@link Figurine} persistence and query operations.
@@ -38,6 +39,69 @@ import com.mesofi.mythclothapi.figurines.repository.projection.FigurineReleaseYe
  */
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long>, FigurineQueryRepository {
+
+    @Query(value = """
+            WITH RECURSIVE release_chain (
+                id,
+                previous_release_id,
+                release_date,
+                level
+            ) AS (
+                SELECT
+                    f.id,
+                    f.previous_release_id,
+                    fd.release_date,
+                    1 AS level
+                FROM figurines f
+                LEFT JOIN (
+                    SELECT *
+                    FROM (
+                        SELECT
+                            fd.*,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY figurine_id
+                                ORDER BY id
+                            ) AS rn
+                        FROM figurine_distributor fd
+                    ) x
+                    WHERE rn = 1
+                ) fd
+                    ON fd.figurine_id = f.id
+                WHERE f.id = :figurineId
+
+                UNION ALL
+
+                SELECT
+                    f.id,
+                    f.previous_release_id,
+                    fd.release_date,
+                    rc.level + 1
+                FROM figurines f
+                LEFT JOIN (
+                    SELECT *
+                    FROM (
+                        SELECT
+                            fd.*,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY figurine_id
+                                ORDER BY id
+                            ) AS rn
+                        FROM figurine_distributor fd
+                    ) x
+                    WHERE rn = 1
+                ) fd
+                    ON fd.figurine_id = f.id
+                JOIN release_chain rc
+                    ON f.id = rc.previous_release_id
+            )
+            SELECT
+                id,
+                release_date
+            FROM release_chain
+            WHERE level > 1
+            ORDER BY level
+            """, nativeQuery = true)
+    List<FigurineRestockProjection> findRestockHistoryByFigurineId(Long figurineId);
 
     /**
      * Finds figurines whose legacy name matches one of the specified names.

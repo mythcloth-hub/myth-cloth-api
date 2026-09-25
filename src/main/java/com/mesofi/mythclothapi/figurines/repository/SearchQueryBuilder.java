@@ -90,8 +90,12 @@ public class SearchQueryBuilder {
                     ORDER BY figurine_id
                 ) oi ON oi.figurine_id = f.id
                 """;
+        String joinClauseWithCollection = joinClause + """
+                JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
+                """;
 
-        StringBuilder baseQuery = buildBaseSearchQuery(selectClause, joinClause);
+        String join = collectionId == null ? joinClause : joinClauseWithCollection;
+        StringBuilder baseQuery = buildBaseSearchQuery(selectClause, join);
         return createSearchQueryContext(baseQuery, filter, collectionId);
     }
 

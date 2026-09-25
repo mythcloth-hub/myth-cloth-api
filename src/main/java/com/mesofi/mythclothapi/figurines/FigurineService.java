@@ -71,6 +71,7 @@ import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockProjection;
 import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 import io.micrometer.core.annotation.Timed;
@@ -292,13 +293,20 @@ public class FigurineService {
             @Positive int size, Long collectionId, Boolean owned) {
         log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
+        List<Long> ownedFigurineIds = new ArrayList<>();
+
+        Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
+                .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
+                        .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
+
         CollectablePageImpl<FigurineSearchProjection> figurines = repository.findAll(filter, PageRequest.of(page, size),
                 collectionId);
 
         List<FigurineResp> figurineRespList = figurines.stream().map(fsp -> {
-
-            List<FigurineDistributorProjection> list = figurineDistributorRepository.findByFigurineId(fsp.id());
-            return mapper.toFigurineResp(fsp, list);
+            boolean isCollected = isCollected(owned, ownedFigurineIds, fsp.id());
+            List<FigurineRestockProjection> restockHistory = repository.findRestockHistoryByFigurineId(fsp.id());
+            List<FigurineDistributorProjection> distributors = figurineDistributorRepository.findByFigurineId(fsp.id());
+            return mapper.toFigurineResp(fsp, distributors, restockHistory, isCollected);
         }).toList();
 
         return new CollectablePageImpl<>(figurineRespList, figurines.getPageable(), figurines.getTotalElements(),

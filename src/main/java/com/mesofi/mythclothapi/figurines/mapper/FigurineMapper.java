@@ -50,6 +50,7 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockProjection;
 import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 /**
@@ -545,10 +546,9 @@ public interface FigurineMapper {
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
-    @Mapping(target = "isCollected", ignore = true)
+    @Mapping(target = "isCollected", source = "collected")
     @Mapping(target = "name", source = "figurine.normalizedName")
     @Mapping(target = "displayableName", source = "figurine.displayName")
-    // @Mapping(target = "distributors", ignore = true)
     @Mapping(target = "tamashiiUrl", ignore = true)
     @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
     @Mapping(target = "distribution", ignore = true)
@@ -570,10 +570,11 @@ public interface FigurineMapper {
     @Mapping(target = "officialImageUrls", source = "figurine.imageUrl")
     @Mapping(target = "unofficialImageUrls", ignore = true)
     @Mapping(target = "events", ignore = true)
-    // @Mapping(target = "restocks", ignore = true)
+    @Mapping(target = "restocks", source = "restockHistory")
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    FigurineResp toFigurineResp(FigurineSearchProjection figurine, List<FigurineDistributorProjection> distributors);
+    FigurineResp toFigurineResp(FigurineSearchProjection figurine, List<FigurineDistributorProjection> distributors,
+            List<FigurineRestockProjection> restockHistory, Boolean collected);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "description", source = "catalogDescription")
@@ -597,7 +598,8 @@ public interface FigurineMapper {
     @Mapping(target = "announcedAt", source = "announcementDate")
     FigurineDistributorResp toFigurineDistributorResp(FigurineDistributorProjection distributorProjection);
 
-    // FigurineRestockResp toFigurineRestockResp();
+    @Mapping(target = "id", source = "figurineId")
+    FigurineRestockResp toFigurineRestockResp(FigurineRestockProjection restockProjection);
 
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.
