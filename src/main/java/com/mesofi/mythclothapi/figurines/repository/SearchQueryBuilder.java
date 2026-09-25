@@ -76,19 +76,12 @@ public class SearchQueryBuilder {
         String selectClause = """
                 f.id, f.normalized_name, f.display_name, f.current_release_status,
                 lu.description AS lineup_description, g.description AS group_description, a.name as anniversary_description,
-                f.is_metal_body, f.is_oce, f.is_revival, f.is_gold, oi.official_images AS image_url
+                f.is_metal_body, f.is_oce, f.is_revival, f.is_gold, (SELECT oi.official_images FROM official_images oi WHERE oi.figurine_id = f.id limit 1) AS image_url
                 """;
         String joinClause = """
                 LEFT JOIN lineups lu ON lu.id = f.lineup_id
                 LEFT JOIN groups g ON g.id = f.group_id
                 LEFT JOIN anniversaries a ON a.id = f.anniversary_id
-                LEFT JOIN (
-                    SELECT DISTINCT ON (figurine_id)
-                        figurine_id,
-                        official_images
-                    FROM official_images
-                    ORDER BY figurine_id
-                ) oi ON oi.figurine_id = f.id
                 """;
         String joinClauseWithCollection = joinClause + """
                 JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
