@@ -36,6 +36,7 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorProjection;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
@@ -547,7 +548,7 @@ public interface FigurineMapper {
     @Mapping(target = "isCollected", ignore = true)
     @Mapping(target = "name", source = "figurine.normalizedName")
     @Mapping(target = "displayableName", source = "figurine.displayName")
-    @Mapping(target = "distributors", ignore = true)
+    // @Mapping(target = "distributors", ignore = true)
     @Mapping(target = "tamashiiUrl", ignore = true)
     @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
     @Mapping(target = "distribution", ignore = true)
@@ -569,10 +570,10 @@ public interface FigurineMapper {
     @Mapping(target = "officialImageUrls", source = "figurine.imageUrl")
     @Mapping(target = "unofficialImageUrls", ignore = true)
     @Mapping(target = "events", ignore = true)
-    @Mapping(target = "restocks", ignore = true)
+    // @Mapping(target = "restocks", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    FigurineResp toFigurineResp(FigurineSearchProjection figurine);
+    FigurineResp toFigurineResp(FigurineSearchProjection figurine, List<FigurineDistributorProjection> distributors);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "description", source = "catalogDescription")
@@ -587,6 +588,16 @@ public interface FigurineMapper {
     default List<String> mapFigurineImageUrl(String imageUrl) {
         return imageUrl == null ? List.of() : List.of(imageUrl);
     }
+
+    @Mapping(target = "distributor.countryCode", source = "countryCode")
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "price", ignore = true)
+    @Mapping(target = "priceWithTax", ignore = true)
+    @Mapping(target = "preorderOpensAt", ignore = true)
+    @Mapping(target = "announcedAt", source = "announcementDate")
+    FigurineDistributorResp toFigurineDistributorResp(FigurineDistributorProjection distributorProjection);
+
+    // FigurineRestockResp toFigurineRestockResp();
 
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.

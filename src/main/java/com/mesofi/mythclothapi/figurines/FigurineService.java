@@ -55,6 +55,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorProjection;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorRepository;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
@@ -127,6 +129,7 @@ public class FigurineService {
     private final LineUpRepository lineUpRepository;
     private final FigurineRepository repository;
     private final CurrencyRegionResolver currencyRegionResolver;
+    private final FigurineDistributorRepository figurineDistributorRepository;
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
@@ -292,7 +295,11 @@ public class FigurineService {
         CollectablePageImpl<FigurineSearchProjection> figurines = repository.findAll(filter, PageRequest.of(page, size),
                 collectionId);
 
-        List<FigurineResp> figurineRespList = figurines.stream().map(mapper::toFigurineResp).toList();
+        List<FigurineResp> figurineRespList = figurines.stream().map(fsp -> {
+
+            List<FigurineDistributorProjection> list = figurineDistributorRepository.findByFigurineId(fsp.id());
+            return mapper.toFigurineResp(fsp, list);
+        }).toList();
 
         return new CollectablePageImpl<>(figurineRespList, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());
