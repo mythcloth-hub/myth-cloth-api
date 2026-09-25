@@ -287,8 +287,7 @@ public class FigurineService {
      */
     @Transactional(readOnly = true)
     @Timed(value = "figurine.search", description = "Time spent searching figurines")
-    // @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter,
-    // #page, #size, #collectionId, #owned)")
+    @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter,#page, #size, #collectionId, #owned)")
     public CollectablePageImpl<FigurineResp> retrieveFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
             @Positive int size, Long collectionId, Boolean owned) {
         log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
