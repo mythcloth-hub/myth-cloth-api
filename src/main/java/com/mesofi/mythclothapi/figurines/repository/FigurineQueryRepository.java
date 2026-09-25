@@ -31,6 +31,7 @@ import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
  */
 public interface FigurineQueryRepository {
 
+
     /**
      * Retrieves a paginated list of figurines matching the specified filter
      * criteria.

@@ -235,7 +235,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional(readOnly = true)
-    public FigurineResp readFigurine(@Positive Long id, Long collectionId) {
+    public FigurineResp retrieveFigurine(@Positive Long id, Long collectionId) {
         log.info("Reading figurine with id '{}' and collectionId '{}'", id, collectionId);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -282,6 +282,60 @@ public class FigurineService {
      */
     @Transactional(readOnly = true)
     @Timed(value = "figurine.search", description = "Time spent searching figurines")
+    // @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter,
+    // #page, #size, #collectionId, #owned)")
+    public CollectablePageImpl<FigurineResp> retrieveFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
+            @Positive int size, Long collectionId, Boolean owned) {
+        log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
+
+        CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
+
+        LineUp lineUp = figurines.getContent().getFirst().getLineup();
+        // System.out.println("Id: " + lineUp.getId());
+        System.out.println("Description: " + lineUp.getDescription());
+
+        List<FigurineResp> figurineRespList = figurines.stream().map(mapper::toFigurineResp).toList();
+
+        return new CollectablePageImpl<>(figurineRespList, figurines.getPageable(), figurines.getTotalElements(),
+                figurines.getTotalCollectables());
+    }
+
+    /**
+     * Retrieves a paginated list of figurines matching the provided filter
+     * criteria.
+     *
+     * <p>
+     * This method:
+     *
+     * <ul>
+     * <li>Applies the specified {@link FigurineFilter} to search for figurines
+     * <li>Returns results in a paginated format using the given page and size
+     * parameters
+     * <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO,
+     * including display name, price with tax, and release status
+     * <li>Stores responses in the {@code figurines} cache using a key derived from
+     * the filter, page, and size
+     * </ul>
+     *
+     * @deprecated Use
+     *             {@link #retrieveFigurines(FigurineFilter, int, int, Long, Boolean)}
+     *             instead.
+     * @param filter
+     *            the filter criteria to apply when searching for figurines
+     * @param page
+     *            the page number to retrieve (zero-based)
+     * @param size
+     *            the number of items per page
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
+     * @param collectionId
+     *            optional identifier of the collector's collection to filter by
+     * @return a page of {@link FigurineResp} objects matching the filter
+     */
+    @Deprecated
+    @Transactional(readOnly = true)
+    @Timed(value = "figurine.search", description = "Time spent searching figurines")
     @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter, #page, #size, #collectionId, #owned)")
     public CollectablePageImpl<FigurineResp> filterFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
             @Positive int size, Long collectionId, Boolean owned) {
@@ -295,10 +349,13 @@ public class FigurineService {
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
-        List<FigurineResp> list = figurines.getContent().stream()
-                .map(figurine -> mapper.toFigurineResp(isCollected(owned, ownedFigurineIds, figurine.getId()), figurine,
-                        this::calculatePriceWithTax, this::buildRestockHistory))
-                .toList();
+        List<FigurineResp> list = new ArrayList<>();
+        for (Figurine figurine : figurines.getContent()) {
+            boolean b = isCollected(owned, ownedFigurineIds, figurine.getId());
+            FigurineResp res = mapper.toFigurineResp(b, figurine, this::calculatePriceWithTax,
+                    this::buildRestockHistory);
+            list.add(res);
+        }
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());

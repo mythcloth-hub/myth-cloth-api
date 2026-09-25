@@ -541,6 +541,36 @@ public interface FigurineMapper {
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
+    @Mapping(target = "isCollected", ignore = true)
+    @Mapping(target = "name", ignore = true)
+    @Mapping(target = "displayableName", ignore = true)
+    @Mapping(target = "distributors", ignore = true)
+    @Mapping(target = "tamashiiUrl", ignore = true)
+    @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
+    @Mapping(target = "distribution", ignore = true)
+    @Mapping(target = "lineUp", ignore = true)
+    @Mapping(target = "series", ignore = true)
+    @Mapping(target = "group", ignore = true)
+    @Mapping(target = "anniversary", ignore = true)
+    @Mapping(target = "isMetalBody", ignore = true)
+    @Mapping(target = "isOriginalColorEdition", ignore = true)
+    @Mapping(target = "isRevival", ignore = true)
+    @Mapping(target = "isPlainCloth", ignore = true)
+    @Mapping(target = "isBattleDamaged", ignore = true)
+    @Mapping(target = "isGoldenArmor", ignore = true)
+    @Mapping(target = "isGold24kEdition", ignore = true)
+    @Mapping(target = "isMangaVersion", ignore = true)
+    @Mapping(target = "isMultiPack", ignore = true)
+    @Mapping(target = "isArticulable", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "officialImageUrls", ignore = true)
+    @Mapping(target = "unofficialImageUrls", ignore = true)
+    @Mapping(target = "events", ignore = true)
+    @Mapping(target = "restocks", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    FigurineResp toFigurineResp(Figurine figurine);
+
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.
      *

@@ -63,9 +63,9 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-figurine-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-public class FigurineControllerIT {
+public class FigurineManagementControllerIT {
 
-    private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
+    private static final Logger log = LoggerFactory.getLogger(FigurineManagementControllerIT.class);
 
     /**
      * Base endpoint path for figurine-related operations.
