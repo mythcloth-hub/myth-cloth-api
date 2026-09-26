@@ -361,13 +361,10 @@ public class FigurineService {
 
         CollectablePageImpl<Figurine> figurines = repository.findPaginated(filter, PageRequest.of(page, size));
 
-        List<FigurineResp> list = new ArrayList<>();
-        for (Figurine figurine : figurines.getContent()) {
-            boolean b = isCollected(owned, ownedFigurineIds, figurine.getId());
-            FigurineResp res = mapper.toFigurineResp(b, figurine, this::calculatePriceWithTax,
-                    this::buildRestockHistory);
-            list.add(res);
-        }
+        List<FigurineResp> list = figurines.getContent().stream()
+                .map(figurine -> mapper.toFigurineResp(isCollected(owned, ownedFigurineIds, figurine.getId()), figurine,
+                        this::calculatePriceWithTax, this::buildRestockHistory))
+                .toList();
 
         return new CollectablePageImpl<>(list, figurines.getPageable(), figurines.getTotalElements(),
                 figurines.getTotalCollectables());

@@ -456,10 +456,9 @@ public class FigurineManagementControllerIT {
 
         JsonNode jsonNodeResp = findJsonNodeById(ctx, "p-resp");
 
-        // Execute GET /figurines
-        ResponseEntity<PaginatedResp> response = rest.get()
-                .uri(uriBuilder -> uriBuilder.path(FIGURINES).queryParam("page", 0).queryParam("size", 10).build())
-                .retrieve().toEntity(PaginatedResp.class);
+        // Execute GET /figurines/search
+        ResponseEntity<PaginatedResp> response = rest.get().uri(uriBuilder -> uriBuilder.path(FIGURINES + "/search")
+                .queryParam("page", 0).queryParam("size", 10).build()).retrieve().toEntity(PaginatedResp.class);
 
         // Basic HTTP contract assertions
         HttpHeaders httpHeaders = response.getHeaders();

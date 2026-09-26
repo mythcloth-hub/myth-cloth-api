@@ -1,6 +1,7 @@
 package com.mesofi.mythclothapi.figurines;
 
 import static com.mesofi.mythclothapi.common.CurrencyCode.JPY;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -17,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -198,16 +200,51 @@ class FigurineControllerTest {
     void retrieveFigurine_shouldReturn200_whenFigurineExists() throws Exception {
         FigurineResp response = createFigurineResponse(1L, "Pegasus Seiya");
 
-        when(service.readFigurine(1L, null)).thenReturn(response);
+        when(service.retrieveFigurine(1L, null)).thenReturn(response);
 
         mockMvc.perform(get("/figurines/{id}", 1L)).andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.name").value("Pegasus Seiya"));
 
-        verify(service).readFigurine(1L, null);
+        verify(service).retrieveFigurine(1L, null);
     }
 
     @Test
-    void retrieveFigurines_shouldReturnPaginatedPayload_whenPageAndSizeAreProvided() throws Exception {
+    void retrieveFigurines_shouldReturn200_whenFigurinesExist() throws Exception {
+        FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
+        FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
+        PageRequest pageRequest = PageRequest.of(0, 10);
+
+        when(service.retrieveFigurines(any(FigurineFilter.class), eq(0), eq(10), eq(null), eq(null)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), pageRequest, 5, 0));
+
+        mockMvc.perform(get("/figurines")).andExpect(status().isOk()).andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10)).andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1)).andExpect(jsonPath("$.content.length()").value(2));
+    }
+
+    @Test
+    void retrieveFigurines_shouldReturn200_whenFigurinesExistForUser() throws Exception {
+        FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
+        FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
+        PageRequest pageRequest = PageRequest.of(0, 10);
+
+        when(service.retrieveCollectedFigurineIds(123, null, null)).thenReturn(List.of(1L, 2L));
+
+        when(service.retrieveFigurines(any(FigurineFilter.class), eq(0), eq(10), eq(null), eq(null)))
+                .thenReturn(new CollectablePageImpl<>(List.of(first, second), pageRequest, 5, 0));
+
+        mockMvc.perform(get("/figurines").with(jwt().jwt(jwt -> jwt.subject("123")))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0)).andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(2)).andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.content.length()").value(2));
+
+        ArgumentCaptor<FigurineFilter> filterCaptor = ArgumentCaptor.forClass(FigurineFilter.class);
+        verify(service).retrieveFigurines(filterCaptor.capture(), eq(0), eq(10), eq(null), eq(null));
+        assertThat(filterCaptor.getValue().figurineIds()).containsExactly(1L, 2L);
+    }
+
+    @Test
+    void retrieveFigurineDetails_shouldReturnPaginatedPayload_whenPageAndSizeAreProvided() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         FigurineResp second = createFigurineResponse(2L, "Dragon Shiryu");
         PageRequest pageRequest = PageRequest.of(0, 2);
@@ -215,7 +252,7 @@ class FigurineControllerTest {
         when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first, second), pageRequest, 5, 0));
 
-        mockMvc.perform(get("/figurines").param("page", "0").param("size", "2")).andExpect(status().isOk())
+        mockMvc.perform(get("/figurines/search").param("page", "0").param("size", "2")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.page").value(0)).andExpect(jsonPath("$.size").value(2))
                 .andExpect(jsonPath("$.totalElements").value(5)).andExpect(jsonPath("$.totalPages").value(3))
                 .andExpect(jsonPath("$.content.length()").value(2));
@@ -224,25 +261,26 @@ class FigurineControllerTest {
     }
 
     @Test
-    void retrieveFigurines_shouldReturn500_whenPageIsNegative() throws Exception {
-        mockMvc.perform(get("/figurines").param("page", "-1").param("size", "10"))
+    void retrieveFigurineDetails_shouldReturn500_whenPageIsNegative() throws Exception {
+        mockMvc.perform(get("/figurines/search").param("page", "-1").param("size", "10"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(
                         jsonPath("$.detail").value("retrieveFigurineDetails.page: must be greater than or equal to 0"))
-                .andExpect(jsonPath("$.instance").value("/figurines")).andExpect(jsonPath("$.status").value("500"))
+                .andExpect(jsonPath("$.instance").value("/figurines/search"))
+                .andExpect(jsonPath("$.status").value("500"))
                 .andExpect(jsonPath("$.title").value("Unexpected error occurred, try again later."))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
-    void retrieveFigurines_shouldReturnFilteredResults_whenNameIsProvided() throws Exception {
+    void retrieveFigurineDetails_shouldReturnFilteredResults_whenNameIsProvided() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
         when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
-        mockMvc.perform(get("/figurines").param("name", "seiya").param("page", "0").param("size", "2")
+        mockMvc.perform(get("/figurines/search").param("name", "seiya").param("page", "0").param("size", "2")
                 .param("collectionId", "99").param("owned", "false")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Pegasus Seiya"));
@@ -251,7 +289,7 @@ class FigurineControllerTest {
     }
 
     @Test
-    void retrieveFigurines_shouldReturnAll_whenNameIsShortOrMissing() throws Exception {
+    void retrieveFigurineDetails_shouldReturnAll_whenNameIsShortOrMissing() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
@@ -259,12 +297,12 @@ class FigurineControllerTest {
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
         // name param too short
-        mockMvc.perform(get("/figurines").param("name", "ab").param("page", "0").param("size", "2")
+        mockMvc.perform(get("/figurines/search").param("name", "ab").param("page", "0").param("size", "2")
                 .param("collectionId", "99").param("owned", "false")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1));
 
         // name param missing
-        mockMvc.perform(get("/figurines").param("page", "0").param("size", "2").param("collectionId", "99")
+        mockMvc.perform(get("/figurines/search").param("page", "0").param("size", "2").param("collectionId", "99")
                 .param("owned", "false")).andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1));
 
         verify(service, org.mockito.Mockito.times(2)).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L),
@@ -297,14 +335,14 @@ class FigurineControllerTest {
     }
 
     @Test
-    void retrieveFigurines_shouldSearchByName_whenNameIsExactlyThreeChars() throws Exception {
+    void retrieveFigurineDetails_shouldSearchByName_whenNameIsExactlyThreeChars() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Abc");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
         when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(null), eq(null)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 0));
 
-        mockMvc.perform(get("/figurines").param("name", "abc").param("page", "0").param("size", "2"))
+        mockMvc.perform(get("/figurines/search").param("name", "abc").param("page", "0").param("size", "2"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Abc"));
 
@@ -312,7 +350,7 @@ class FigurineControllerTest {
     }
 
     @Test
-    void retrieveFigurines_shouldUseCollectorSelection_whenJwtIsAuthenticated() throws Exception {
+    void retrieveFigurineDetails_shouldUseCollectorSelection_whenJwtIsAuthenticated() throws Exception {
         FigurineResp first = createFigurineResponse(1L, "Pegasus Seiya");
         PageRequest pageRequest = PageRequest.of(0, 2);
 
@@ -320,12 +358,14 @@ class FigurineControllerTest {
         when(service.filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false)))
                 .thenReturn(new CollectablePageImpl<>(List.of(first), pageRequest, 1, 2));
 
-        mockMvc.perform(get("/figurines").with(jwt().jwt(jwt -> jwt.subject("1"))).param("collectionId", "99")
+        mockMvc.perform(get("/figurines/search").with(jwt().jwt(jwt -> jwt.subject("1"))).param("collectionId", "99")
                 .param("page", "0").param("size", "2").param("owned", "false")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1));
 
         verify(service).retrieveCollectedFigurineIds(1L, 99L, false);
-        verify(service).filterFigurines(any(FigurineFilter.class), eq(0), eq(2), eq(99L), eq(false));
+        ArgumentCaptor<FigurineFilter> filterCaptor = ArgumentCaptor.forClass(FigurineFilter.class);
+        verify(service).filterFigurines(filterCaptor.capture(), eq(0), eq(2), eq(99L), eq(false));
+        assertThat(filterCaptor.getValue().figurineIds()).containsExactly(10L, 11L);
     }
 
     @Test
