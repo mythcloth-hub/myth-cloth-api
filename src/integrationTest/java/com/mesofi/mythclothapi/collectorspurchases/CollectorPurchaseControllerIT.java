@@ -61,6 +61,9 @@ import com.mesofi.mythclothapi.security.service.SecurityDataService;
 import com.mesofi.mythclothapi.support.ControllerBaseIT;
 import com.mesofi.mythclothapi.support.PageResponse;
 
+/**
+ * Integration tests for the CollectorPurchaseController.
+ */
 @AutoConfigureMockMvc
 @TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=min")
 @Sql(scripts = "/seed-catalogs.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
@@ -161,9 +164,16 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         FX_API.stop();
     }
 
+    /**
+     * Test case to manage purchases across online and in-store channels for a
+     * collector. This test covers the entire flow of authenticating a collector,
+     * importing figurines into the catalog, creating a collection, registering
+     * purchases, validating purchases with a custom currency, retrieving purchases,
+     * updating purchases, and deleting purchases and collections.
+     */
     @Test
-    @DisplayName("Register new purchase for multiple channels")
-    void registerNewPurchaseForMultipleChannels() {
+    @DisplayName("Manage purchases across online and in-store channels")
+    void managePurchasesAcrossOnlineAndInStoreChannels() {
 
         // 1. The user authenticates using the Google provider and obtains a token
         log.info("1. Authenticating collector with Google provider");

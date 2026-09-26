@@ -129,7 +129,7 @@ public class FigurineController {
      */
     @GetMapping("/{id}")
     public FigurineResp retrieveFigurine(@PathVariable Long id, @RequestParam(required = false) Long collectionId) {
-        return service.readFigurine(id, collectionId);
+        return service.retrieveFigurine(id, collectionId);
     }
 
     /**
@@ -206,6 +206,119 @@ public class FigurineController {
      *         matched figurines and pagination metadata
      */
     @GetMapping
+    public ResponseEntity<PaginatedResp> retrieveFigurines(Authentication authentication,
+            @RequestParam(required = false) Long collectionId, @RequestParam(required = false) Boolean owned,
+            @RequestParam(required = false) String name, @RequestParam(required = false) Long lineUpId,
+            @RequestParam(required = false) Long seriesId, @RequestParam(required = false) Long groupId,
+            @RequestParam(required = false) Long distributionId, @RequestParam(required = false) Long anniversaryId,
+            @RequestParam(required = false) Boolean metalBody, @RequestParam(required = false) Boolean oce,
+            @RequestParam(required = false) Boolean revival, @RequestParam(required = false) Boolean plainCloth,
+            @RequestParam(required = false) Boolean broken, @RequestParam(required = false) Boolean golden,
+            @RequestParam(required = false) Boolean gold, @RequestParam(required = false) Boolean manga,
+            @RequestParam(required = false) Boolean set, @RequestParam(required = false) Boolean articulable,
+            @RequestParam(required = false) String releaseStatus, @RequestParam(required = false) Boolean restocks,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+
+        CollectablePageImpl<FigurineResp> figurines;
+
+        // First, retrieve the list of figurine ids that belong to the authenticated
+        // collector's collection (if any)
+        List<Long> figurineIds = retrieveCollectedFigurineIds(authentication, collectionId, owned);
+
+        FigurineFilter figurineFilter = FigurineFilterFactory.build(figurineIds, name, lineUpId, seriesId, groupId,
+                distributionId, anniversaryId, metalBody, oce, revival, plainCloth, broken, golden, gold, manga, set,
+                articulable, releaseStatus, restocks);
+
+        // Then, delegate to the service layer to retrieve the filtered and paginated
+        // list of figurines
+        figurines = service.retrieveFigurines(figurineFilter, page, size, collectionId, owned);
+
+        log.info("Number of figurines retrieved: {}", figurines.getContent().size());
+
+        return ResponseEntity.ok(new PaginatedResp(figurines.getContent(), figurines.getNumber(), figurines.getSize(),
+                figurines.getTotalElements(), figurines.getTotalCollectables(), figurines.getTotalPages()));
+    }
+
+    /**
+     * Retrieves a paginated list of figurines, optionally filtered by any
+     * combination of catalog, characteristic, and release-status criteria.
+     *
+     * <p>
+     * This endpoint:
+     *
+     * <ul>
+     * <li>Resolves the authenticated collector's id (if present) and pre-loads
+     * which figurines belong to their collection
+     * <li>Builds a {@link FigurineFilter} from all supplied query parameters and
+     * delegates to the service layer
+     * <li>Returns a paginated response that includes collection-ownership metadata
+     * when a collector is authenticated
+     * </ul>
+     *
+     * <p>
+     * This endpoint is publicly accessible; however, collection-ownership data in
+     * the response is only populated when the request carries a valid JWT.
+     *
+     * @deprecated Use
+     *             {@link #retrieveFigurines(Authentication, Long, Boolean, String, Long, Long, Long, Long, Long, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, Boolean, String, Boolean, int, int)}
+     *             instead.
+     *
+     * @param authentication
+     *            Spring Security authentication context; may be {@code null} for
+     *            unauthenticated requests
+     * @param collectionId
+     *            optional id of a specific collector collection to scope results to
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
+     * @param name
+     *            optional name filter (substring match on normalized name)
+     * @param lineUpId
+     *            optional line-up catalog id filter
+     * @param seriesId
+     *            optional series catalog id filter
+     * @param groupId
+     *            optional group catalog id filter
+     * @param distributionId
+     *            optional distribution catalog id filter
+     * @param anniversaryId
+     *            optional anniversary id filter
+     * @param metalBody
+     *            optional filter for metal-body editions
+     * @param oce
+     *            optional filter for Original Color Edition figurines
+     * @param revival
+     *            optional filter for revival editions
+     * @param plainCloth
+     *            optional filter for plain-cloth variants
+     * @param broken
+     *            optional filter for battle-damaged (broken) variants
+     * @param golden
+     *            optional filter for golden-armor editions
+     * @param gold
+     *            optional filter for Gold 24k editions
+     * @param manga
+     *            optional filter for manga-version figurines
+     * @param set
+     *            optional filter for multipack sets
+     * @param articulable
+     *            optional filter for articulable figurines
+     * @param releaseStatus
+     *            optional release-status filter (e.g. {@code RELEASED},
+     *            {@code ANNOUNCED})
+     * @param restocks
+     *            optional filter to include only restock figurines
+     * @param page
+     *            zero-based page index; must be {@code 0} or greater
+     * @param size
+     *            number of elements per page; must be between {@code 1} and
+     *            {@code 100}
+     * @return {@link ResponseEntity} containing a {@link PaginatedResp} with the
+     *         matched figurines and pagination metadata
+     */
+    @Deprecated
+    @GetMapping("/search")
     public ResponseEntity<PaginatedResp> retrieveFigurineDetails(Authentication authentication,
             @RequestParam(required = false) Long collectionId, @RequestParam(required = false) Boolean owned,
             @RequestParam(required = false) String name, @RequestParam(required = false) Long lineUpId,
@@ -419,6 +532,39 @@ public class FigurineController {
     public ResponseEntity<Void> deleteFigurine(@PathVariable Long id) {
         service.deleteFigurine(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Retrieves the list of figurine ids that belong to the authenticated
+     * collector's collection.
+     *
+     * <p>
+     * This method:
+     *
+     * <ul>
+     * <li>Extracts the authenticated collector's id from the security context
+     * <li>Delegates to the service layer to retrieve the list of collected figurine
+     * ids
+     * </ul>
+     *
+     * @param authentication
+     *            Spring Security authentication context; may be {@code null} for
+     *            unauthenticated requests
+     * @param collectionId
+     *            optional id of a specific collector collection to scope results to
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
+     * @return list of figurine ids that belong to the authenticated collector's
+     *         collection
+     */
+    private List<Long> retrieveCollectedFigurineIds(Authentication authentication, Long collectionId, Boolean owned) {
+        List<Long> figurineIds = new ArrayList<>();
+
+        getCollectorId(authentication).ifPresent(collectorId -> figurineIds
+                .addAll(service.retrieveCollectedFigurineIds(collectorId, collectionId, owned)));
+
+        return figurineIds;
     }
 
     /**

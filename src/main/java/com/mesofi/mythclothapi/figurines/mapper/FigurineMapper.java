@@ -22,7 +22,9 @@ import org.mapstruct.Named;
 import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.anniversaries.AnniversaryMapper;
+import com.mesofi.mythclothapi.anniversaries.dto.AnniversaryResp;
 import com.mesofi.mythclothapi.anniversaries.model.Anniversary;
+import com.mesofi.mythclothapi.catalogs.dto.CatalogResp;
 import com.mesofi.mythclothapi.catalogs.exceptions.CatalogNotFoundException;
 import com.mesofi.mythclothapi.catalogs.model.CatalogContext;
 import com.mesofi.mythclothapi.catalogs.model.Distribution;
@@ -34,6 +36,7 @@ import com.mesofi.mythclothapi.distributors.dto.DistributorResp;
 import com.mesofi.mythclothapi.distributors.model.CountryCode;
 import com.mesofi.mythclothapi.distributors.model.Distributor;
 import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorProjection;
 import com.mesofi.mythclothapi.figurineevents.dto.FigurineEventResp;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
@@ -47,6 +50,8 @@ import com.mesofi.mythclothapi.figurines.dto.FigurineResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRestockResp;
 import com.mesofi.mythclothapi.figurines.dto.FigurineSummaryResp;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockProjection;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 /**
  * MapStruct mapper responsible for converting between figurine import models,
@@ -540,6 +545,138 @@ public interface FigurineMapper {
     FigurineResp toFigurineResp(Boolean collected, Figurine figurine,
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
+
+    // =============== FigurineSearchProjection → API ============================
+    /**
+     * Maps a {@link FigurineSearchProjection} to its API response representation.
+     *
+     * <p>
+     * This mapping is used for search results where the figurine data is projected
+     * from the database. Catalog references are resolved using textual descriptions
+     * rather than identifiers.
+     *
+     * @param figurine
+     *            projected figurine data
+     * @param distributors
+     *            projected distributor data for the figurine
+     * @param restockHistory
+     *            projected restock history for the figurine
+     * @param collected
+     *            whether the figurine is marked as collected by the user
+     * @return API-facing {@link FigurineResp}
+     */
+    @Mapping(target = "isCollected", source = "collected")
+    @Mapping(target = "name", source = "figurine.normalizedName")
+    @Mapping(target = "displayableName", source = "figurine.displayName")
+    @Mapping(target = "tamashiiUrl", ignore = true)
+    @Mapping(target = "releaseStatus", source = "figurine.currentReleaseStatus")
+    @Mapping(target = "distribution", ignore = true)
+    @Mapping(target = "lineUp", source = "figurine.lineupDescription")
+    @Mapping(target = "series", ignore = true)
+    @Mapping(target = "group", source = "figurine.groupDescription")
+    @Mapping(target = "anniversary", source = "figurine.anniversaryDescription")
+    @Mapping(target = "isMetalBody", source = "figurine.isMetalBody")
+    @Mapping(target = "isOriginalColorEdition", source = "figurine.isOce")
+    @Mapping(target = "isRevival", source = "figurine.isRevival")
+    @Mapping(target = "isPlainCloth", ignore = true)
+    @Mapping(target = "isBattleDamaged", ignore = true)
+    @Mapping(target = "isGoldenArmor", ignore = true)
+    @Mapping(target = "isGold24kEdition", source = "figurine.isGold")
+    @Mapping(target = "isMangaVersion", ignore = true)
+    @Mapping(target = "isMultiPack", ignore = true)
+    @Mapping(target = "isArticulable", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "officialImageUrls", source = "figurine.imageUrl")
+    @Mapping(target = "unofficialImageUrls", ignore = true)
+    @Mapping(target = "events", ignore = true)
+    @Mapping(target = "restocks", source = "restockHistory")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    FigurineResp toFigurineResp(FigurineSearchProjection figurine, List<FigurineDistributorProjection> distributors,
+            List<FigurineRestockProjection> restockHistory, Boolean collected);
+
+    /**
+     * Maps a catalog description string to a {@link CatalogResp} DTO.
+     *
+     * <p>
+     * The catalog identifier is intentionally ignored, as the description is used
+     * for display purposes only.
+     *
+     * @param catalogDescription
+     *            catalog description string
+     * @return API-facing {@link CatalogResp}
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "description", source = "catalogDescription")
+    CatalogResp mapCatalogDescription(String catalogDescription);
+
+    /**
+     * Maps a catalog description string to an {@link AnniversaryResp} DTO.
+     *
+     * <p>
+     * The anniversary identifier, year, and type are intentionally ignored, as the
+     * description is used for display purposes only.
+     *
+     * @param anniversaryDescription
+     *            anniversary description string
+     * @return API-facing {@link AnniversaryResp}
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "description", source = "anniversaryDescription")
+    @Mapping(target = "year", ignore = true)
+    @Mapping(target = "type", ignore = true)
+    AnniversaryResp mapAnniversaryDescription(String anniversaryDescription);
+
+    /**
+     * Maps a single image URL to a list containing that URL.
+     *
+     * <p>
+     * This mapping is used to adapt the domain model's single image URL field to
+     * the API response format, which expects a list of image URLs.
+     *
+     * @param imageUrl
+     *            single image URL from the domain model
+     * @return list containing the image URL, or an empty list if the input is
+     *         {@code null}
+     */
+    default List<String> mapFigurineImageUrl(String imageUrl) {
+        return imageUrl == null ? List.of() : List.of(imageUrl);
+    }
+
+    /**
+     * Maps a {@link FigurineDistributorProjection} to its API response
+     * representation.
+     *
+     * <p>
+     * The distributor response contains only the fields required for distributor
+     * listings. Pricing and preorder information are intentionally omitted.
+     *
+     * @param distributorProjection
+     *            projected distributor data
+     * @return API-facing {@link FigurineDistributorResp}
+     */
+    @Mapping(target = "distributor.countryCode", source = "countryCode")
+    @Mapping(target = "currency", ignore = true)
+    @Mapping(target = "price", ignore = true)
+    @Mapping(target = "priceWithTax", ignore = true)
+    @Mapping(target = "preorderOpensAt", ignore = true)
+    @Mapping(target = "announcedAt", source = "announcementDate")
+    FigurineDistributorResp toFigurineDistributorResp(FigurineDistributorProjection distributorProjection);
+
+    /**
+     * Maps a {@link FigurineRestockProjection} to its API response representation.
+     *
+     * <p>
+     * The restock response contains only the fields required for restock listings.
+     *
+     * @param restockProjection
+     *            projected restock data
+     * @return API-facing {@link FigurineRestockResp}
+     */
+    @Mapping(target = "id", source = "figurineId")
+    FigurineRestockResp toFigurineRestockResp(FigurineRestockProjection restockProjection);
+
+    // =============== Figurine → API (Summary & Recommendation) ==========
 
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.

@@ -63,9 +63,9 @@ import com.mesofi.mythclothapi.utils.JsonTestUtils;
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @TestPropertySource(properties = "myth-cloth.figurine-import.csv-source=full")
 @Sql(scripts = "/cleanup-figurine-it.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
-public class FigurineControllerIT {
+public class FigurineManagementControllerIT {
 
-    private static final Logger log = LoggerFactory.getLogger(FigurineControllerIT.class);
+    private static final Logger log = LoggerFactory.getLogger(FigurineManagementControllerIT.class);
 
     /**
      * Base endpoint path for figurine-related operations.
@@ -456,10 +456,9 @@ public class FigurineControllerIT {
 
         JsonNode jsonNodeResp = findJsonNodeById(ctx, "p-resp");
 
-        // Execute GET /figurines
-        ResponseEntity<PaginatedResp> response = rest.get()
-                .uri(uriBuilder -> uriBuilder.path(FIGURINES).queryParam("page", 0).queryParam("size", 10).build())
-                .retrieve().toEntity(PaginatedResp.class);
+        // Execute GET /figurines/search
+        ResponseEntity<PaginatedResp> response = rest.get().uri(uriBuilder -> uriBuilder.path(FIGURINES + "/search")
+                .queryParam("page", 0).queryParam("size", 10).build()).retrieve().toEntity(PaginatedResp.class);
 
         // Basic HTTP contract assertions
         HttpHeaders httpHeaders = response.getHeaders();

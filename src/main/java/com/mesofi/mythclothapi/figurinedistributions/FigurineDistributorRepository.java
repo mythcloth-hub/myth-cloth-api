@@ -1,14 +1,33 @@
 package com.mesofi.mythclothapi.figurinedistributions;
 
-import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.mesofi.mythclothapi.distributors.model.Distributor;
-import com.mesofi.mythclothapi.figurines.model.Figurine;
-
+/**
+ * Repository for managing FigurineDistributor entities.
+ */
 @Repository
 public interface FigurineDistributorRepository extends JpaRepository<FigurineDistributor, Long> {
-    Optional<FigurineDistributor> findByFigurineAndDistributor(Figurine figurine, Distributor distributor);
+
+    /**
+     * Finds a list of FigurineDistributorProjection by the given figurine ID.
+     *
+     * @param figurineId
+     *            the ID of the figurine
+     * @return a list of FigurineDistributorProjection
+     */
+    @Query(value = """
+            SELECT
+                fd.release_date,
+                fd.release_date_confirmed,
+                fd.announcement_date,
+                d.country as country_code
+            FROM figurine_distributor fd
+            JOIN distributors d ON d.id = fd.distributor_id
+            WHERE fd.figurine_id = :figurineId
+            """, nativeQuery = true)
+    List<FigurineDistributorProjection> findByFigurineId(Long figurineId);
 }

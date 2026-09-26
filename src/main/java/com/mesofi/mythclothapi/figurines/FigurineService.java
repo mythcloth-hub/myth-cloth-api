@@ -55,6 +55,8 @@ import com.mesofi.mythclothapi.collectorscollections.repository.CollectorCollect
 import com.mesofi.mythclothapi.common.BaseId;
 import com.mesofi.mythclothapi.common.CurrencyCode;
 import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributor;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorProjection;
+import com.mesofi.mythclothapi.figurinedistributions.FigurineDistributorRepository;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEvent;
 import com.mesofi.mythclothapi.figurineevents.model.FigurineEventType;
 import com.mesofi.mythclothapi.figurines.dto.FigurineRecommendationResp;
@@ -69,6 +71,8 @@ import com.mesofi.mythclothapi.figurines.model.FigurineCharacteristics;
 import com.mesofi.mythclothapi.figurines.model.ReleaseStatus;
 import com.mesofi.mythclothapi.figurines.repository.CollectablePageImpl;
 import com.mesofi.mythclothapi.figurines.repository.FigurineRepository;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockProjection;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
@@ -126,6 +130,7 @@ public class FigurineService {
     private final LineUpRepository lineUpRepository;
     private final FigurineRepository repository;
     private final CurrencyRegionResolver currencyRegionResolver;
+    private final FigurineDistributorRepository figurineDistributorRepository;
     private final CollectorRepository collectorRepository;
     private final CollectorCollectionRepository collectorCollectionRepository;
     private final CollectorCollectionFigurineService collectorCollectionFigurineService;
@@ -235,7 +240,7 @@ public class FigurineService {
      *             if no figurine exists with the given id
      */
     @Transactional(readOnly = true)
-    public FigurineResp readFigurine(@Positive Long id, Long collectionId) {
+    public FigurineResp retrieveFigurine(@Positive Long id, Long collectionId) {
         log.info("Reading figurine with id '{}' and collectionId '{}'", id, collectionId);
 
         var existing = repository.findById(id).orElseThrow(() -> new FigurineNotFoundException(id));
@@ -261,12 +266,72 @@ public class FigurineService {
      * <li>Applies the specified {@link FigurineFilter} to search for figurines
      * <li>Returns results in a paginated format using the given page and size
      * parameters
+     * <li>Maps each {@link FigurineSearchProjection} to a {@link FigurineResp} DTO,
+     * including display name, price with tax, and release status
+     * <li>Stores responses in the {@code figurines} cache using a key derived from
+     * the filter, page, and size
+     * </ul>
+     *
+     * @param filter
+     *            the filter criteria to apply when searching for figurines
+     * @param page
+     *            the page number to retrieve (zero-based)
+     * @param size
+     *            the number of items per page
+     * @param collectionId
+     *            optional identifier of the collector's collection to filter by
+     * @param owned
+     *            optional filter to include only owned figurines; if {@code null},
+     *            all figurines are included
+     * @return a page of {@link FigurineResp} objects matching the filter
+     */
+    @Transactional(readOnly = true)
+    @Timed(value = "figurine.search", description = "Time spent searching figurines")
+    @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter,#page, #size, #collectionId, #owned)")
+    public CollectablePageImpl<FigurineResp> retrieveFigurines(@NotNull FigurineFilter filter, @PositiveOrZero int page,
+            @Positive int size, Long collectionId, Boolean owned) {
+        log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
+
+        List<Long> collectedFigurineIds = new ArrayList<>();
+
+        Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
+                .ifPresent(collectionFound -> collectedFigurineIds.addAll(collectionFound.getFigurines().stream()
+                        .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
+
+        CollectablePageImpl<FigurineSearchProjection> figurinePage = repository.findAll(filter,
+                PageRequest.of(page, size), collectionId);
+
+        List<FigurineResp> figurineResponses = figurinePage.stream().map(fsp -> {
+            boolean isCollected = isCollected(owned, collectedFigurineIds, fsp.id());
+            List<FigurineRestockProjection> restockHistory = repository.findRestockHistoryByFigurineId(fsp.id());
+            List<FigurineDistributorProjection> distributors = figurineDistributorRepository.findByFigurineId(fsp.id());
+            return mapper.toFigurineResp(fsp, distributors, restockHistory, isCollected);
+        }).toList();
+
+        return new CollectablePageImpl<>(figurineResponses, figurinePage.getPageable(), figurinePage.getTotalElements(),
+                figurinePage.getTotalCollectables());
+    }
+
+    /**
+     * Retrieves a paginated list of figurines matching the provided filter
+     * criteria.
+     *
+     * <p>
+     * This method:
+     *
+     * <ul>
+     * <li>Applies the specified {@link FigurineFilter} to search for figurines
+     * <li>Returns results in a paginated format using the given page and size
+     * parameters
      * <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO,
      * including display name, price with tax, and release status
      * <li>Stores responses in the {@code figurines} cache using a key derived from
      * the filter, page, and size
      * </ul>
      *
+     * @deprecated Use
+     *             {@link #retrieveFigurines(FigurineFilter, int, int, Long, Boolean)}
+     *             instead.
      * @param filter
      *            the filter criteria to apply when searching for figurines
      * @param page
@@ -280,6 +345,7 @@ public class FigurineService {
      *            optional identifier of the collector's collection to filter by
      * @return a page of {@link FigurineResp} objects matching the filter
      */
+    @Deprecated
     @Transactional(readOnly = true)
     @Timed(value = "figurine.search", description = "Time spent searching figurines")
     @Cacheable(value = FIGURINE_CACHE, key = "T(java.util.Objects).hash(#filter, #page, #size, #collectionId, #owned)")

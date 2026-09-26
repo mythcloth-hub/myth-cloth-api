@@ -1,5 +1,9 @@
 package com.mesofi.mythclothapi.figurines.repository;
 
+import static com.mesofi.mythclothapi.figurines.repository.SearchQueryBuilder.COUNT_QUERY;
+import static com.mesofi.mythclothapi.figurines.repository.SearchQueryBuilder.FIGURINE_SEARCH_ORDER_BY;
+import static com.mesofi.mythclothapi.figurines.repository.SearchQueryBuilder.RELEASED_OR_ANNOUNCED_FILTER;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +20,7 @@ import org.springframework.util.StringUtils;
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 import com.mesofi.mythclothapi.figurines.model.Figurine;
 import com.mesofi.mythclothapi.figurines.model.FigurineWithCollectionId;
+import com.mesofi.mythclothapi.figurines.repository.projection.FigurineSearchProjection;
 
 /**
  * Custom repository implementation for executing advanced figurine queries.
@@ -114,6 +119,60 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
             ) fd ON fd.figurine_id = f.id
             WHERE 1 = 1
             """;
+
+    /**
+     * Retrieves a paginated list of figurines matching the specified filter and
+     * belonging to the specified collection.
+     *
+     * <p>
+     * In addition to the requested page of figurines, the returned page contains
+     * the total number of matching figurines and the total number of collectable
+     * figurines.
+     * </p>
+     *
+     * <p>
+     * A figurine is considered collectable when its calculated release status is
+     * {@code ANNOUNCED} or {@code RELEASED}.
+     * </p>
+     *
+     * @param filter
+     *            the filtering criteria used to restrict the search results
+     * @param pageable
+     *            the pagination information, including page size and offset
+     * @param collectionId
+     *            the identifier of the collection to which the figurines must
+     *            belong; may be {@code null} to ignore collection filtering
+     * @return a paginated result containing the matching figurines and collectable
+     *         figurine count
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public CollectablePageImpl<FigurineSearchProjection> findAll(FigurineFilter filter, Pageable pageable,
+            Long collectionId) {
+
+        SearchQueryContext queryContext = SearchQueryBuilder.buildFigurineSearchQueryContext(filter, collectionId);
+        String sqlWithoutOrderBy = queryContext.sql().toString();
+        Map<String, Object> params = queryContext.params();
+
+        String searchSql = sqlWithoutOrderBy + FIGURINE_SEARCH_ORDER_BY;
+        Query searchQuery = em.createNativeQuery(searchSql, "FigurineSearchProjectionMapping");
+        searchQuery.setFirstResult((int) pageable.getOffset());
+        searchQuery.setMaxResults(pageable.getPageSize());
+        params.forEach(searchQuery::setParameter);
+        List<FigurineSearchProjection> results = searchQuery.getResultList();
+
+        String countSql = COUNT_QUERY.formatted(sqlWithoutOrderBy);
+        Query queryCount = em.createNativeQuery(countSql);
+        params.forEach(queryCount::setParameter);
+        long totalFigurines = ((Number) queryCount.getSingleResult()).longValue();
+
+        String collectableCountSql = COUNT_QUERY.formatted(sqlWithoutOrderBy + RELEASED_OR_ANNOUNCED_FILTER);
+        Query queryCollectableCount = em.createNativeQuery(collectableCountSql);
+        params.forEach(queryCollectableCount::setParameter);
+        long totalCollectableFigurines = ((Number) queryCollectableCount.getSingleResult()).longValue();
+
+        return new CollectablePageImpl<>(results, pageable, totalFigurines, totalCollectableFigurines);
+    }
 
     /**
      * Retrieves a paginated list of figurines matching the specified filter and
