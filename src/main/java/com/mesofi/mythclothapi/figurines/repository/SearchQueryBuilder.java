@@ -8,11 +8,37 @@ import org.springframework.util.StringUtils;
 
 import com.mesofi.mythclothapi.figurines.FigurineFilter;
 
+/**
+ * Utility class for building SQL search queries for figurines based on dynamic
+ * filter criteria.
+ *
+ * <p>
+ * This class provides methods to construct SQL query strings and parameter maps
+ * for searching figurines in the database. It supports filtering by various
+ * attributes such as name, lineup, series, group, distribution, anniversary,
+ * and collectible characteristics.
+ * </p>
+ */
 public class SearchQueryBuilder {
 
-    public static final String BASE_FIGURINE_SEARCH = """
+    /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private SearchQueryBuilder() {
+    }
+
+    /**
+     * SQL query template for searching figurines with dynamic filters and joins.
+     *
+     * <p>
+     * The template includes placeholders for the SELECT clause and JOIN clauses,
+     * allowing for flexible construction of search queries based on the provided
+     * filter criteria.
+     * </p>
+     */
+    private static final String FIGURINE_SEARCH_QUERY_TEMPLATE = """
             SELECT
-                %s
+            %s
             FROM figurines f
             %s
             LEFT JOIN (
@@ -72,34 +98,72 @@ public class SearchQueryBuilder {
             AND current_release_status IN ('ANNOUNCED', 'RELEASED')
             """;
 
+    private static final String FIGURINE_JOINS = """
+            LEFT JOIN lineups lu ON lu.id = f.lineup_id
+            LEFT JOIN groups g ON g.id = f.group_id
+            LEFT JOIN anniversaries a ON a.id = f.anniversary_id
+            """;
+
+    private static final String COLLECTION_JOIN = """
+            JOIN collector_collection_figurines ccf
+                ON ccf.figurine_id = f.id
+            """;
+
+    /**
+     * Builds a {@link SearchQueryContext} for searching figurines based on the
+     * provided filter criteria and optional collection ID.
+     *
+     * @param filter
+     *            filtering criteria used to restrict the figurine search; may be
+     *            {@code null}
+     * @param collectionId
+     *            identifier of the collection to which the figurines must belong;
+     *            may be {@code null}
+     * @return a {@link SearchQueryContext} containing the constructed SQL query and
+     *         parameter map
+     */
     public static SearchQueryContext buildFigurineSearchQueryContext(FigurineFilter filter, Long collectionId) {
         String selectClause = """
-                f.id, f.normalized_name, f.display_name, f.current_release_status,
-                lu.description AS lineup_description, g.description AS group_description, a.name as anniversary_description,
-                f.is_metal_body, f.is_oce, f.is_revival, f.is_gold, (SELECT oi.official_images FROM official_images oi WHERE oi.figurine_id = f.id limit 1) AS image_url
-                """;
-        String joinClause = """
-                LEFT JOIN lineups lu ON lu.id = f.lineup_id
-                LEFT JOIN groups g ON g.id = f.group_id
-                LEFT JOIN anniversaries a ON a.id = f.anniversary_id
-                """;
-        String joinClauseWithCollection = joinClause + """
-                JOIN collector_collection_figurines ccf ON ccf.figurine_id = f.id
+                f.id,
+                f.normalized_name,
+                f.display_name,
+                f.current_release_status,
+                lu.description AS lineup_description,
+                g.description AS group_description,
+                a.name as anniversary_description,
+                f.is_metal_body,
+                f.is_oce,
+                f.is_revival,
+                f.is_gold,
+                (
+                    SELECT oi.official_images
+                    FROM official_images oi
+                    WHERE oi.figurine_id = f.id
+                    LIMIT 1
+                ) AS image_url
                 """;
 
-        String join = collectionId == null ? joinClause : joinClauseWithCollection;
-        StringBuilder baseQuery = buildBaseSearchQuery(selectClause, join);
+        String joins = FIGURINE_JOINS + (collectionId != null ? COLLECTION_JOIN : "");
+
+        StringBuilder baseQuery = buildBaseSearchQuery(selectClause, joins);
         return createSearchQueryContext(baseQuery, filter, collectionId);
     }
 
-    public static SearchQueryContext buildFigurineSearchQueryContext() {
-        String selectClause = "f.*, NULL as collection_figurine_id";
-        String joinClause = "";
-
-        StringBuilder baseQuery = buildBaseSearchQuery(selectClause, joinClause);
-        return createSearchQueryContext(baseQuery, null, null);
-    }
-
+    /**
+     * Creates a {@link SearchQueryContext} by appending dynamic filters to the
+     * provided base query and populating the parameter map.
+     *
+     * @param baseQuery
+     *            the base SQL query to which filters will be appended
+     * @param filter
+     *            filtering criteria used to restrict the figurine search; may be
+     *            {@code null}
+     * @param collectionId
+     *            identifier of the collection to which the figurines must belong;
+     *            may be {@code null}
+     * @return a {@link SearchQueryContext} containing the constructed SQL query and
+     *         parameter map
+     */
     private static SearchQueryContext createSearchQueryContext(StringBuilder baseQuery, FigurineFilter filter,
             Long collectionId) {
         Map<String, Object> params = new HashMap<>();
@@ -196,10 +260,17 @@ public class SearchQueryBuilder {
         return new SearchQueryContext(baseQuery, params);
     }
 
-    private static StringBuilder buildBaseSearchQuery(String selectClause) {
-        return new StringBuilder(String.format(BASE_FIGURINE_SEARCH, selectClause, ""));
-    }
+    /**
+     * Builds the base SQL search query for figurines using the provided SELECT
+     * clause and JOIN clauses.
+     *
+     * @param selectClause
+     *            the SELECT clause specifying the columns to retrieve
+     * @param joinClause
+     *            the JOIN clauses specifying the relationships between tables
+     * @return a {@link StringBuilder} containing the constructed base SQL query
+     */
     private static StringBuilder buildBaseSearchQuery(String selectClause, String joinClause) {
-        return new StringBuilder(String.format(BASE_FIGURINE_SEARCH, selectClause, joinClause));
+        return new StringBuilder(String.format(FIGURINE_SEARCH_QUERY_TEMPLATE, selectClause, joinClause));
     }
 }

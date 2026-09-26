@@ -546,6 +546,25 @@ public interface FigurineMapper {
             @Context Function<FigurineDistributor, Double> calculatePriceWithTax,
             @Context Function<Figurine, List<FigurineRestockResp>> toFigurineRestockRespList);
 
+    // =============== FigurineSearchProjection → API ============================
+    /**
+     * Maps a {@link FigurineSearchProjection} to its API response representation.
+     *
+     * <p>
+     * This mapping is used for search results where the figurine data is projected
+     * from the database. Catalog references are resolved using textual descriptions
+     * rather than identifiers.
+     *
+     * @param figurine
+     *            projected figurine data
+     * @param distributors
+     *            projected distributor data for the figurine
+     * @param restockHistory
+     *            projected restock history for the figurine
+     * @param collected
+     *            whether the figurine is marked as collected by the user
+     * @return API-facing {@link FigurineResp}
+     */
     @Mapping(target = "isCollected", source = "collected")
     @Mapping(target = "name", source = "figurine.normalizedName")
     @Mapping(target = "displayableName", source = "figurine.displayName")
@@ -576,20 +595,66 @@ public interface FigurineMapper {
     FigurineResp toFigurineResp(FigurineSearchProjection figurine, List<FigurineDistributorProjection> distributors,
             List<FigurineRestockProjection> restockHistory, Boolean collected);
 
+    /**
+     * Maps a catalog description string to a {@link CatalogResp} DTO.
+     *
+     * <p>
+     * The catalog identifier is intentionally ignored, as the description is used
+     * for display purposes only.
+     *
+     * @param catalogDescription
+     *            catalog description string
+     * @return API-facing {@link CatalogResp}
+     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "description", source = "catalogDescription")
     CatalogResp mapCatalogDescription(String catalogDescription);
 
+    /**
+     * Maps a catalog description string to an {@link AnniversaryResp} DTO.
+     *
+     * <p>
+     * The anniversary identifier, year, and type are intentionally ignored, as the
+     * description is used for display purposes only.
+     *
+     * @param anniversaryDescription
+     *            anniversary description string
+     * @return API-facing {@link AnniversaryResp}
+     */
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "description", source = "anniversaryDescription")
     @Mapping(target = "year", ignore = true)
     @Mapping(target = "type", ignore = true)
     AnniversaryResp mapAnniversaryDescription(String anniversaryDescription);
 
+    /**
+     * Maps a single image URL to a list containing that URL.
+     *
+     * <p>
+     * This mapping is used to adapt the domain model's single image URL field to
+     * the API response format, which expects a list of image URLs.
+     *
+     * @param imageUrl
+     *            single image URL from the domain model
+     * @return list containing the image URL, or an empty list if the input is
+     *         {@code null}
+     */
     default List<String> mapFigurineImageUrl(String imageUrl) {
         return imageUrl == null ? List.of() : List.of(imageUrl);
     }
 
+    /**
+     * Maps a {@link FigurineDistributorProjection} to its API response
+     * representation.
+     *
+     * <p>
+     * The distributor response contains only the fields required for distributor
+     * listings. Pricing and preorder information are intentionally omitted.
+     *
+     * @param distributorProjection
+     *            projected distributor data
+     * @return API-facing {@link FigurineDistributorResp}
+     */
     @Mapping(target = "distributor.countryCode", source = "countryCode")
     @Mapping(target = "currency", ignore = true)
     @Mapping(target = "price", ignore = true)
@@ -598,8 +663,20 @@ public interface FigurineMapper {
     @Mapping(target = "announcedAt", source = "announcementDate")
     FigurineDistributorResp toFigurineDistributorResp(FigurineDistributorProjection distributorProjection);
 
+    /**
+     * Maps a {@link FigurineRestockProjection} to its API response representation.
+     *
+     * <p>
+     * The restock response contains only the fields required for restock listings.
+     *
+     * @param restockProjection
+     *            projected restock data
+     * @return API-facing {@link FigurineRestockResp}
+     */
     @Mapping(target = "id", source = "figurineId")
     FigurineRestockResp toFigurineRestockResp(FigurineRestockProjection restockProjection);
+
+    // =============== Figurine → API (Summary & Recommendation) ==========
 
     /**
      * Maps a {@link Figurine} domain entity to a condensed API response.

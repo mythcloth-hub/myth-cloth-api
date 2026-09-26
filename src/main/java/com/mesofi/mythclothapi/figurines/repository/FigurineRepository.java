@@ -40,6 +40,22 @@ import com.mesofi.mythclothapi.figurines.repository.projection.FigurineRestockPr
 @Repository
 public interface FigurineRepository extends JpaRepository<Figurine, Long>, FigurineQueryRepository {
 
+    /**
+     * Retrieves the restock history for a specific figurine, including all previous
+     * releases in the chain.
+     *
+     * <p>
+     * The query uses a recursive common table expression (CTE) to traverse the
+     * previous-release relationships and gather all related figurines. For each
+     * figurine in the chain, only the first distributor record is considered when
+     * determining the release date.
+     * </p>
+     *
+     * @param figurineId
+     *            the ID of the figurine for which to retrieve restock history
+     * @return a list of projections containing the IDs and release dates of all
+     *         previous releases in the chain, ordered by their level in the chain
+     */
     @Query(value = """
             WITH RECURSIVE release_chain (
                 id,

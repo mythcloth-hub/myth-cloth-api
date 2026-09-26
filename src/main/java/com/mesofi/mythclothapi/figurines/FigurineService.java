@@ -266,7 +266,7 @@ public class FigurineService {
      * <li>Applies the specified {@link FigurineFilter} to search for figurines
      * <li>Returns results in a paginated format using the given page and size
      * parameters
-     * <li>Maps each {@link Figurine} entity to a {@link FigurineResp} DTO,
+     * <li>Maps each {@link FigurineSearchProjection} to a {@link FigurineResp} DTO,
      * including display name, price with tax, and release status
      * <li>Stores responses in the {@code figurines} cache using a key derived from
      * the filter, page, and size
@@ -278,11 +278,11 @@ public class FigurineService {
      *            the page number to retrieve (zero-based)
      * @param size
      *            the number of items per page
+     * @param collectionId
+     *            optional identifier of the collector's collection to filter by
      * @param owned
      *            optional filter to include only owned figurines; if {@code null},
      *            all figurines are included
-     * @param collectionId
-     *            optional identifier of the collector's collection to filter by
      * @return a page of {@link FigurineResp} objects matching the filter
      */
     @Transactional(readOnly = true)
@@ -292,24 +292,24 @@ public class FigurineService {
             @Positive int size, Long collectionId, Boolean owned) {
         log.info("Retrieving figurines page '{}', size '{}' and filter: {}", page, size, filter);
 
-        List<Long> ownedFigurineIds = new ArrayList<>();
+        List<Long> collectedFigurineIds = new ArrayList<>();
 
         Optional.ofNullable(collectionId).map(this::retrieveCollectorCollection)
-                .ifPresent(collectionFound -> ownedFigurineIds.addAll(collectionFound.getFigurines().stream()
+                .ifPresent(collectionFound -> collectedFigurineIds.addAll(collectionFound.getFigurines().stream()
                         .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
 
-        CollectablePageImpl<FigurineSearchProjection> figurines = repository.findAll(filter, PageRequest.of(page, size),
-                collectionId);
+        CollectablePageImpl<FigurineSearchProjection> figurinePage = repository.findAll(filter,
+                PageRequest.of(page, size), collectionId);
 
-        List<FigurineResp> figurineRespList = figurines.stream().map(fsp -> {
-            boolean isCollected = isCollected(owned, ownedFigurineIds, fsp.id());
+        List<FigurineResp> figurineResponses = figurinePage.stream().map(fsp -> {
+            boolean isCollected = isCollected(owned, collectedFigurineIds, fsp.id());
             List<FigurineRestockProjection> restockHistory = repository.findRestockHistoryByFigurineId(fsp.id());
             List<FigurineDistributorProjection> distributors = figurineDistributorRepository.findByFigurineId(fsp.id());
             return mapper.toFigurineResp(fsp, distributors, restockHistory, isCollected);
         }).toList();
 
-        return new CollectablePageImpl<>(figurineRespList, figurines.getPageable(), figurines.getTotalElements(),
-                figurines.getTotalCollectables());
+        return new CollectablePageImpl<>(figurineResponses, figurinePage.getPageable(), figurinePage.getTotalElements(),
+                figurinePage.getTotalCollectables());
     }
 
     /**

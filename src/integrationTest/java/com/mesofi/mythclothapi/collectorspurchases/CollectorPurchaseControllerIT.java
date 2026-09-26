@@ -164,6 +164,13 @@ public class CollectorPurchaseControllerIT extends ControllerBaseIT {
         FX_API.stop();
     }
 
+    /**
+     * Test case to manage purchases across online and in-store channels for a
+     * collector. This test covers the entire flow of authenticating a collector,
+     * importing figurines into the catalog, creating a collection, registering
+     * purchases, validating purchases with a custom currency, retrieving purchases,
+     * updating purchases, and deleting purchases and collections.
+     */
     @Test
     @DisplayName("Manage purchases across online and in-store channels")
     void managePurchasesAcrossOnlineAndInStoreChannels() {

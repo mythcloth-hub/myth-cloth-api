@@ -12,6 +12,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FigurineDistributorRepository extends JpaRepository<FigurineDistributor, Long> {
 
+    /**
+     * Finds a list of FigurineDistributorProjection by the given figurine ID.
+     *
+     * @param figurineId
+     *            the ID of the figurine
+     * @return a list of FigurineDistributorProjection
+     */
     @Query(value = """
             SELECT
                 fd.release_date,
