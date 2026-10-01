@@ -298,8 +298,7 @@ public class FigurineService {
                 .ifPresent(collectionFound -> collectedFigurineIds.addAll(collectionFound.getFigurines().stream()
                         .filter(CollectorCollectionFigurine::isOwned).map(ccf -> ccf.getFigurine().getId()).toList()));
 
-        CollectablePageImpl<FigurineSearchProjection> figurinePage = repository.findAll(filter,
-                PageRequest.of(page, size), collectionId);
+        var figurinePage = repository.findAll(filter, PageRequest.of(page, size), collectionId);
 
         List<FigurineResp> figurineResponses = figurinePage.stream().map(fsp -> {
             boolean isCollected = isCollected(owned, collectedFigurineIds, fsp.id());
@@ -534,8 +533,7 @@ public class FigurineService {
                 distinctGroupIds.add(figurine.getGroup().getId());
             }
 
-            FigurineFilter filter = FigurineFilterFactory
-                    .buildReleasedAnnouncedAndGroups(new ArrayList<>(distinctGroupIds));
+            var filter = FigurineFilterFactory.buildReleasedAnnouncedAndGroups(new ArrayList<>(distinctGroupIds));
             return repository.findPaginated(filter, PageRequest.of(0, limit + partialCollection.size())).stream()
                     .filter(figurine -> !figurineIds.contains(figurine.getId()))
                     .map(mapper::toFigurineRecommendationResp).limit(limit).toList();
