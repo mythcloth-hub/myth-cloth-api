@@ -154,7 +154,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
         String sqlWithoutOrderBy = queryContext.sql().toString();
         Map<String, Object> params = queryContext.params();
 
-        String searchSql = sqlWithoutOrderBy + FIGURINE_SEARCH_ORDER_BY;
+        String searchSql = sqlWithoutOrderBy + " " + FIGURINE_SEARCH_ORDER_BY;
         Query searchQuery = em.createNativeQuery(searchSql, "FigurineSearchProjectionMapping");
         searchQuery.setFirstResult((int) pageable.getOffset());
         searchQuery.setMaxResults(pageable.getPageSize());
@@ -166,7 +166,7 @@ public class FigurineRepositoryImpl implements FigurineQueryRepository {
         params.forEach(queryCount::setParameter);
         long totalFigurines = ((Number) queryCount.getSingleResult()).longValue();
 
-        String collectableCountSql = COUNT_QUERY.formatted(sqlWithoutOrderBy + RELEASED_OR_ANNOUNCED_FILTER);
+        String collectableCountSql = COUNT_QUERY.formatted(sqlWithoutOrderBy + " " + RELEASED_OR_ANNOUNCED_FILTER);
         Query queryCollectableCount = em.createNativeQuery(collectableCountSql);
         params.forEach(queryCollectableCount::setParameter);
         long totalCollectableFigurines = ((Number) queryCollectableCount.getSingleResult()).longValue();
